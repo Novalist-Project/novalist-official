@@ -14,7 +14,7 @@ public sealed partial class Workspace
     private async Task<IReadOnlyList<SharedDocumentState>> CaptureSharedProseAsync(string root, IReadOnlyList<string> paths,
         DesktopSceneDocuments documents, CancellationToken ct)
     {
-        var fields = await SharedCodexFields.CaptureAsync(root, paths, ct);
+        var fields = await SharedCodexFields.CaptureAsync(LockedSharedFiles(root), paths, ct);
         var result = new List<SharedDocumentState>();
         foreach (var relative in fields.Select(field => field.Path).Concat(paths.Where(path => path == ".novalist/project.json")).Distinct(StringComparer.Ordinal))
         {

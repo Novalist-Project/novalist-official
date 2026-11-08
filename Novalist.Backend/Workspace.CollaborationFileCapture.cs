@@ -91,7 +91,7 @@ public sealed partial class Workspace
         }
         var prosePaths = changes.Where(change => change.After is not null).Select(change => change.Path).ToArray();
         var fieldPaths = prosePaths.Contains(".novalist/project.json", StringComparer.Ordinal) ? ProjectContentSelection.Read(root).ToArray() : prosePaths;
-        var fields = (await SharedCodexFields.CaptureAsync(root, fieldPaths, ct)).Where(candidate =>
+        var fields = (await SharedCodexFields.CaptureAsync(LockedSharedFiles(root), fieldPaths, ct)).Where(candidate =>
             !ActiveFieldBindings.Any(existing => existing.Path == candidate.Path && existing.Key == candidate.Key && existing.Custom == candidate.Custom && existing.Metadata == candidate.Metadata)).ToArray();
         if (prosePaths.Any(path => path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
         {
