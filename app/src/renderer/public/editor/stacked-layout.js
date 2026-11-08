@@ -66,6 +66,17 @@ window.setTypewriterScroll = function (enabled, anchor) {
     originalSetTypewriterScroll(stackedEnabled ? false : enabled, anchor);
 };
 
+const originalSetPageView = window.setPageView;
+
+/**
+ * Page view sizes every page to a full sheet, so a stack of scenes became a
+ * stack of mostly empty pages - a one-line scene took a screen and a half.
+ * A stack reads as continuous prose instead, whatever the setting says.
+ */
+window.setPageView = function (enabled) {
+    originalSetPageView(stackedEnabled ? false : enabled);
+};
+
 /** Switches the frame between filling its pane and sizing to its prose. */
 window.setStacked = function (enabled) {
     const next = !!enabled;
@@ -74,6 +85,7 @@ window.setStacked = function (enabled) {
     document.documentElement.classList.toggle('nv-stacked', stackedEnabled);
     if (stackedEnabled) {
         originalSetTypewriterScroll(false, window.NovalistEditorState.typewriterAnchor);
+        if (window.NovalistEditorState.pageViewEnabled) originalSetPageView(false);
         stackedResizeObserver.observe(window.NovalistEditorState.editor);
         STACKED_POPUP_IDS.forEach(function (id) {
             const element = document.getElementById(id);

@@ -80,7 +80,6 @@
   color: var(--nl-text-subtle);
   font-size: var(--nl-font-caption);
   font-weight: var(--nl-weight-label);
-  letter-spacing: var(--nl-tracking-eyebrow);
   text-transform: uppercase;
 }
 
@@ -90,14 +89,13 @@
 
 .stacked-editor-words {
   font-weight: normal;
-  letter-spacing: normal;
   text-transform: none;
   font-variant-numeric: tabular-nums;
 }
 
 .stacked-editor-synopsis {
   width: 100%;
-  resize: vertical;
+  resize: none;
   padding: var(--nl-space-tightest) 0;
   border: none;
   border-radius: var(--nl-radius-sm);

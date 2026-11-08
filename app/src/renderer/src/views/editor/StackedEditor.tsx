@@ -317,13 +317,12 @@ function SceneDivider({ onNewScene }: { onNewScene(): void }): React.JSX.Element
     <div className="stacked-editor-divider">
       <div className="stacked-editor-ornament" aria-hidden="true">
         <svg viewBox="0 0 180 24" width="180" height="24" fill="none" stroke="currentColor" strokeWidth="1.25">
-          <path d="M4 12h52M124 12h52" />
+          <path d="M4 12h58M68 12h5M107 12h5M118 12h58" />
           <path d="M4 12l5-3M4 12l5 3M176 12l-5-3M176 12l-5 3" />
-          <circle cx="58" cy="12" r="2.5" fill="currentColor" stroke="none" />
-          <circle cx="122" cy="12" r="2.5" fill="currentColor" stroke="none" />
-          <path d="M64 12l10-10 10 10-10 10z" />
-          <path d="M96 12l10-10 10 10-10 10z" transform="translate(-16 0)" />
-          <path d="M60 12h4M116 12h4" />
+          <circle cx="65" cy="12" r="2.25" fill="currentColor" stroke="none" />
+          <circle cx="115" cy="12" r="2.25" fill="currentColor" stroke="none" />
+          <path d="M73 12l9-9 9 9-9 9z" />
+          <path d="M89 12l9-9 9 9-9 9z" />
         </svg>
       </div>
       <button type="button" className="stacked-editor-new" onClick={onNewScene}>

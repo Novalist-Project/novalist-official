@@ -32,7 +32,7 @@ Between two scenes, **New scene** adds a scene straight after the one above it a
 
 Clicking a scene in the binder that is already in the stack scrolls to it rather than opening it a second time. In **Chapter**, clicking a scene from another chapter switches the stack to that chapter. In a long book, scenes far off screen let go of their editor (after their last words are saved) and load again as you scroll back, so the stack stays quick.
 
-Typewriter scrolling is off while the writing view holds more than one scene; it comes back when you return to **Scene**. The same choice is in **Settings → Editor → Writing view**, can be set per project, and is asked once during the [first-run tour](01-getting-started.md). The command palette has **Writing view: one scene**, **Writing view: whole chapter** and **Writing view: whole manuscript**. The scope is a desktop feature; the phone editor always shows one scene.
+Typewriter scrolling and page view are off while the writing view holds more than one scene, so the stack reads as continuous prose; both come back when you return to **Scene**. The same choice is in **Settings → Editor → Writing view**, can be set per project, and is asked once during the [first-run tour](01-getting-started.md). The command palette has **Writing view: one scene**, **Writing view: whole chapter** and **Writing view: whole manuscript**. The scope is a desktop feature; the phone editor always shows one scene.
 
 The [Manuscript view](10-manuscript.md) remains the place for read-throughs, corkboard and outline work. Its continuous mode is a lighter editor without the scene editor's tools.
 
