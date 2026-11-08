@@ -160,6 +160,10 @@ public class SettingsOverrides
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? PageViewEnabled { get; set; }
 
+    [JsonPropertyName("editorScope")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? EditorScope { get; set; }
+
     // Section grouping mirrors the Settings UI categories so each category gets
     // one Global / This-project scope toggle.
 
@@ -178,6 +182,7 @@ public class SettingsOverrides
         || EditorParagraphSpacing != null || EditorFirstLineIndent != null
         || ComposeDimming != null
         || TypewriterScrollEnabled != null || TypewriterScrollAnchor != null || PageViewEnabled != null
+        || EditorScope != null
         || EnableBookParagraphSpacing != null || EnableBookWidth != null || BookPageFormat != null
         || BookTextBlockWidth != null || BookFontFamily != null || BookFontSize != null;
 
@@ -236,6 +241,7 @@ public class SettingsOverrides
         TypewriterScrollEnabled = source.TypewriterScrollEnabled;
         TypewriterScrollAnchor = source.TypewriterScrollAnchor;
         PageViewEnabled = source.PageViewEnabled;
+        EditorScope = source.EditorScope;
         EnableBookParagraphSpacing = source.EnableBookParagraphSpacing;
         EnableBookWidth = source.EnableBookWidth;
         BookPageFormat = source.BookPageFormat;
@@ -287,6 +293,7 @@ public class SettingsOverrides
         TypewriterScrollEnabled = null;
         TypewriterScrollAnchor = null;
         PageViewEnabled = null;
+        EditorScope = null;
         EnableBookParagraphSpacing = null;
         EnableBookWidth = null;
         BookPageFormat = null;

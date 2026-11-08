@@ -165,6 +165,24 @@ public class SettingsOverridesTests
         => Assert.True(new SettingsOverrides { ReadAloudVoiceUri = "v" }.HasEditorOverride);
 
     [Fact]
+    public void HasEditorOverride_TrueForEditorScopeAlone()
+        => Assert.True(new SettingsOverrides { EditorScope = EditorScopes.Chapter }.HasEditorOverride);
+
+    [Theory]
+    [InlineData("scene", "scene")]
+    [InlineData("chapter", "chapter")]
+    [InlineData("manuscript", "manuscript")]
+    [InlineData("book", "scene")]
+    [InlineData("", "scene")]
+    [InlineData(null, "scene")]
+    public void EditorScopes_Normalize_FallsBackToScene(string? value, string expected)
+        => Assert.Equal(expected, EditorScopes.Normalize(value));
+
+    [Fact]
+    public void AppSettings_EditorScope_DefaultsToOneScene()
+        => Assert.Equal(EditorScopes.Scene, new AppSettings().EditorScope);
+
+    [Fact]
     public void HasWritingOverride_TrueWhenAnySet()
         => Assert.True(new SettingsOverrides { GrammarCheckEnabled = true }.HasWritingOverride);
 
@@ -194,9 +212,11 @@ public class SettingsOverridesTests
             EditorParagraphSpacing = 0,
             EditorFirstLineIndent = 2,
             BookFontSize = 12,
-            EnableBookWidth = true
+            EnableBookWidth = true,
+            EditorScope = EditorScopes.Manuscript
         };
         o.ClearEditor();
+        Assert.Null(o.EditorScope);
         Assert.False(o.HasEditorOverride);
     }
 
@@ -234,6 +254,7 @@ public class SettingsOverridesTests
         TypewriterScrollEnabled = true,
         TypewriterScrollAnchor = "center",
         PageViewEnabled = true,
+        EditorScope = "manuscript",
         EnableBookParagraphSpacing = true,
         EnableBookWidth = true,
         BookPageFormat = "A5",
@@ -287,6 +308,7 @@ public class SettingsOverridesTests
         Assert.True(o.TypewriterScrollEnabled);
         Assert.Equal("center", o.TypewriterScrollAnchor);
         Assert.True(o.PageViewEnabled);
+        Assert.Equal("manuscript", o.EditorScope);
         Assert.True(o.EnableBookParagraphSpacing);
         Assert.True(o.EnableBookWidth);
         Assert.Equal("A5", o.BookPageFormat);

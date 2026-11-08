@@ -1,7 +1,8 @@
 import type { CommandDef } from './commandTypes'
 import { useEditorBridge } from '../stores/editorBridgeStore'
 import { showDictation } from '../dictation/dictationStore'
-import { shell, inEditor, editorOpen, hasSelection, sceneOpen, toggleEditorSetting } from './commandContext'
+import { shell, inEditor, editorOpen, hasSelection, sceneOpen, toggleEditorSetting, updateEditorSetting } from './commandContext'
+import { EDITOR_SCOPES } from '../stores/stackedPaneIds'
 
 /** The named block styles a scene can carry. Body is the absence of a style. */
 const PARAGRAPH_STYLES = ['', 'heading', 'subheading', 'blockquote', 'poetry'] as const
@@ -283,5 +284,14 @@ export const EDITOR_COMMANDS: CommandDef[] = [
     scope: 'view',
     available: editorOpen,
     run: toggleEditorSetting('pageViewEnabled')
-  }
+  },
+  ...EDITOR_SCOPES.map((scope): CommandDef => ({
+    id: `write.scope.${scope}`,
+    labelKey: `stackedEditor.command.${scope}`,
+    categoryKey: 'hotkeys.category.editor',
+    scope: 'view',
+    // A phone always edits one scene; the switch has nothing to change there.
+    available: () => sceneOpen() && window.novalist.isMobile !== true,
+    run: () => updateEditorSetting({ editorScope: scope })
+  }))
 ]

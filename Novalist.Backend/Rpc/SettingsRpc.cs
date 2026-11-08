@@ -142,6 +142,7 @@ public sealed partial class SettingsRpc
             ["typewriterScrollEnabled"] = effective.TypewriterScrollEnabled,
             ["typewriterScrollAnchor"] = effective.TypewriterScrollAnchor,
             ["pageViewEnabled"] = effective.PageViewEnabled,
+            ["editorScope"] = effective.EditorScope,
             ["enableBookParagraphSpacing"] = effective.EnableBookParagraphSpacing,
             ["enableBookWidth"] = effective.EnableBookWidth,
             ["bookPageFormat"] = effective.BookPageFormat,

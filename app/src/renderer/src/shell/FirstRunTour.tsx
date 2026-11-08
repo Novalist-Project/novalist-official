@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../stores/projectStore'
 import { useShellStore, type MainView, type MobileTab } from '../stores/shellStore'
 import { useMotionPresent } from './MotionPresence'
+import { useSettingsStore } from '../stores/settingsStore'
+import { EDITOR_SCOPES, normalizeEditorScope } from '../stores/stackedPaneIds'
+import { setEditorScope } from '../views/editor/EditorScopeSwitch'
 import {
   hasSeenOnboardingTour,
   useOnboardingStore
@@ -303,6 +306,7 @@ export function FirstRunTour({
       {isMobile && window.novalist.platform === 'android' && mobileLayout === 'tablet' && at === 0 && (
         <p className="tour-landscape-hint">{t('tour.landscapeHint')}</p>
       )}
+      {stop.id === 'editor' && !isMobile && <TourEditorScopeQuestion />}
       <div className="tour-task">
         <span className="tour-task-label">{t('tour.tryLabel')}</span>
         <span>{prerequisiteText ?? t(stop.taskKey)}</span>
@@ -333,5 +337,36 @@ export function FirstRunTour({
         </button>
       </div>
     </div>
+  )
+}
+
+/**
+ * The one question the tour asks: whether the writing view holds one scene,
+ * the chapter, or the whole manuscript. Asked at the writing view, where the
+ * answer shows at once, and changeable later from the switch above the
+ * editor or from Settings.
+ */
+function TourEditorScopeQuestion(): React.JSX.Element {
+  const { t } = useTranslation()
+  const current = useSettingsStore((s) => normalizeEditorScope(s.view?.effective.editorScope))
+  return (
+    <fieldset className="tour-question">
+      <legend>{t('stackedEditor.tourQuestion')}</legend>
+      {EDITOR_SCOPES.map((scope) => (
+        <label key={scope} className={`tour-question-option${current === scope ? ' active' : ''}`}>
+          <input
+            type="radio"
+            name="tour-editor-scope"
+            value={scope}
+            checked={current === scope}
+            onChange={() => setEditorScope(scope)}
+          />
+          <span>
+            <strong>{t(`stackedEditor.scope.${scope}`)}</strong>
+            <small>{t(`stackedEditor.scopeHint.${scope}`)}</small>
+          </span>
+        </label>
+      ))}
+    </fieldset>
   )
 }

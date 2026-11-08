@@ -49,6 +49,7 @@ public class EffectiveSettingsTests
             TypewriterScrollEnabled = true,
             TypewriterScrollAnchor = "center",
             PageViewEnabled = true,
+            EditorScope = "chapter",
             EnableBookParagraphSpacing = true,
             EnableBookWidth = true,
             BookPageFormat = "A4",
@@ -83,6 +84,7 @@ public class EffectiveSettingsTests
         Assert.True(sut.TypewriterScrollEnabled);
         Assert.Equal("center", sut.TypewriterScrollAnchor);
         Assert.True(sut.PageViewEnabled);
+        Assert.Equal("chapter", sut.EditorScope);
         Assert.True(sut.EnableBookParagraphSpacing);
         Assert.True(sut.EnableBookWidth);
         Assert.Equal("A4", sut.BookPageFormat);
@@ -123,6 +125,7 @@ public class EffectiveSettingsTests
             TypewriterScrollEnabled = false,
             TypewriterScrollAnchor = "top",
             PageViewEnabled = false,
+            EditorScope = "manuscript",
             EnableBookParagraphSpacing = false,
             EnableBookWidth = false,
             BookPageFormat = "Letter",
@@ -158,6 +161,7 @@ public class EffectiveSettingsTests
         Assert.False(sut.TypewriterScrollEnabled);
         Assert.Equal("top", sut.TypewriterScrollAnchor);
         Assert.False(sut.PageViewEnabled);
+        Assert.Equal("manuscript", sut.EditorScope);
         Assert.False(sut.EnableBookParagraphSpacing);
         Assert.False(sut.EnableBookWidth);
         Assert.Equal("Letter", sut.BookPageFormat);

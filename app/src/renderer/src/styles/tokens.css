@@ -172,6 +172,8 @@
      that four modes without a binder still leave the content area the window. */
   --nl-mode-panel-width: 232px;
   --nl-peek-width: 460px;
+  /* The title, synopsis and label column beside each scene in a stack. */
+  --nl-stacked-column-width: 300px;
   --nl-peek-max-height: 580px;
   --nl-toolbar-menu-width: 320px;
   /* Dialog widths. Two steps: the ordinary card, and the wide one for a dialog

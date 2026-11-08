@@ -6,6 +6,7 @@ import { createProjectWorkspaceActions } from './projectWorkspaceActions'
 import { createProjectLibraryActions } from './projectLibraryActions'
 import { createProjectEditorActions } from './projectEditorActions'
 import { createProjectSceneActions } from './projectSceneActions'
+import { hostPaneId } from './stackedPaneIds'
 
 export const EMPTY_EDITOR: EditorPaneState = {
   shared: null,
@@ -189,7 +190,8 @@ export function targetEditorPane(): string {
   const shell = useShellStore.getState()
   const live = writePaneIds()
   if (live.includes(shell.activePaneId)) return shell.activePaneId
-  const last = useProjectStore.getState().activeEditorPaneId
+  const active = useProjectStore.getState().activeEditorPaneId
+  const last = active && hostPaneId(active)
   if (last && live.includes(last)) return last
   return shell.activePaneId
 }

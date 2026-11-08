@@ -4827,5 +4827,32 @@
     "add": "Szenenziel hinzufügen",
     "saveFailed": "Deine Änderungen sind noch vorhanden, konnten aber nicht gespeichert werden. Versuche es vor dem Schließen erneut.",
     "loadFailed": "Die Szenennotizen konnten nicht geladen werden."
+  },
+  "stackedEditor": {
+    "scopeLabel": "Schreibansicht",
+    "scope": {
+      "scene": "Szene",
+      "chapter": "Kapitel",
+      "manuscript": "Manuskript"
+    },
+    "scopeHint": {
+      "scene": "Immer eine Szene bearbeiten.",
+      "chapter": "Alle Szenen des Kapitels untereinander.",
+      "manuscript": "Alle Szenen des Buchs untereinander."
+    },
+    "command": {
+      "scene": "Schreibansicht: eine Szene",
+      "chapter": "Schreibansicht: ganzes Kapitel",
+      "manuscript": "Schreibansicht: ganzes Manuskript"
+    },
+    "settingLabel": "Schreibansicht",
+    "settingDesc": "Wie viel vom Buch die Schreibansicht zeigt. Bei Kapitel und Manuskript steht jede Szene in einem eigenen Editor untereinander, sodass Sie von einer Szene direkt in die nächste weiterschreiben können, ohne etwas zu öffnen. Jede Szene wird weiterhin für sich gespeichert, bekommt eigene Kommentare und Fußnoten und wird einzeln geprüft.",
+    "tourQuestion": "Wie möchten Sie schreiben?",
+    "sceneHeading": "{{chapter}} – {{scene}}",
+    "words": "{{count}} Wörter",
+    "synopsisPlaceholder": "Was passiert in dieser Szene?",
+    "removeLabel": "Label {{label}} entfernen",
+    "newScene": "Neue Szene",
+    "newSceneTitle": "Szene {{number}}"
   }
 }

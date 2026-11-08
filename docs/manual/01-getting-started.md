@@ -8,7 +8,7 @@ If you already have Novalist open and just want to find your way around, skip to
 
 Novalist explains itself in three places, and all three answer to one switch.
 
-- **The walkthrough** is offered once, the first time you open a project. It starts with the five workspaces and the rail they sit on, then visits the Dashboard, the Manuscript, the editor, Focus Peek, the Codex, the Timeline, Research and Export, naming one thing to try at each stop. **Take the tour** in the Help menu replays it whenever you like.
+- **The walkthrough** is offered once, the first time you open a project. It starts with the five workspaces and the rail they sit on, then visits the Dashboard, the Manuscript, the editor (where it asks whether you want to write one scene at a time, a whole chapter, or the whole manuscript), Focus Peek, the Codex, the Timeline, Research and Export, naming one thing to try at each stop. **Take the tour** in the Help menu replays it whenever you like.
 - **A view introduces itself** the first time you open it: a short line above the screen saying what it is for. Close it with the x and it does not come back. Every view has one, including the ones the walkthrough does not visit.
 - **Contextual tips** appear the first time a feature actually becomes usable - when your caret first lands on a linked name, for instance. Each can be tried, put off, or turned off for good.
 

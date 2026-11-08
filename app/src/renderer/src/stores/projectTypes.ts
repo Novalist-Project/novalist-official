@@ -10,6 +10,8 @@ export interface SceneDto {
   order: number
   wordCount: number
   labelColor: string | null
+  /** Key of the scene's label in the book's label list; null without one. */
+  labelKey?: string | null
   isFavorite: boolean
   synopsis: string | null
   /** Key of the scene's stage; null when the writer has not set one. */

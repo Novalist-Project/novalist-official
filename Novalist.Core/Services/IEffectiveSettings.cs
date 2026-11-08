@@ -30,6 +30,8 @@ public interface IEffectiveSettings
     bool TypewriterScrollEnabled { get; }
     string TypewriterScrollAnchor { get; }
     bool PageViewEnabled { get; }
+    /// <summary>How much of the book the writing view holds: "scene", "chapter" or "manuscript".</summary>
+    string EditorScope { get; }
 
     bool EnableBookParagraphSpacing { get; }
     bool EnableBookWidth { get; }

@@ -217,6 +217,14 @@ public class AppSettings : IEffectiveSettings
     public bool PageViewEnabled { get; set; } = true;
 
     /// <summary>
+    /// How much of the book the writing view holds at once: one scene, every
+    /// scene of the open scene's chapter, or every scene of the book, each in
+    /// its own editor one below the other. See <see cref="EditorScopes"/>.
+    /// </summary>
+    [JsonPropertyName("editorScope")]
+    public string EditorScope { get; set; } = EditorScopes.Scene;
+
+    /// <summary>
     /// Custom LanguageTool API URL. When null or empty, the free public API is used.
     /// Supports self-hosted instances (e.g. "http://localhost:8081/v2/check").
     /// </summary>

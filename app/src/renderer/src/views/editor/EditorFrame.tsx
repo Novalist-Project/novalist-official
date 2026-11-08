@@ -1,5 +1,8 @@
 import { useEditorMessages } from './useEditorMessages'
-import { type CSSProperties, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
+import { editorWindow, listenToEditor } from './editorBridge'
+import { useStackedEditorStore } from '../../stores/stackedEditors'
+import { EditorScopeSwitch } from './EditorScopeSwitch'
 import { EditorToolbar } from './EditorToolbar'
 import { useShellStore } from '../../stores/shellStore'
 import { EntityTypeDialog } from '../../shell/EntityTypeDialog'
@@ -7,14 +10,22 @@ import { AppendToEntityDialog } from '../../shell/AppendToEntityDialog'
 import { InputDialog } from '../../shell/InputDialog'
 import { MotionPresence } from '../../shell/MotionPresence'
 import './editor.css'
-import { useEditorFrameModel } from './useEditorFrameModel'
+import { useEditorFrameModel, type EditorFrameModel } from './useEditorFrameModel'
 import { useEditorPersistence, useEditorScene, useEditorControls } from './useEditorSynchronization'
 import { useTranslation } from 'react-i18next'
 import { editorPane, useProjectStore, type SceneTabRef } from '../../stores/projectStore'
 import { useContentTransition } from '../../shell/useContentTransition'
 
-export function EditorFrame({ paneId }: { paneId?: string }): React.JSX.Element {
+/**
+ * One scene's editor.
+ *
+ * `stacked` is a scene inside the chapter or manuscript stack: the stack draws
+ * the heading and the toolbar once above every scene, so this frame draws only
+ * the prose, as tall as the prose is.
+ */
+export function EditorFrame({ paneId, stacked = false }: { paneId?: string; stacked?: boolean }): React.JSX.Element {
   const model = useEditorFrameModel({ paneId })
+  const stackedHeight = useStackedFrame(model, stacked)
   const suspendMotion = useProjectStore((s) => s.closingProject || s.workspaceSuspended)
   const { editorFontSize, peekScope, t, pane, formatting, speaking, isActiveEditor, showFocusPeekTip, editorRef, completeFocusPeekTip, dismissFocusPeekTip, iframeRef, peek, pendingEntity, createPendingEntity, cancelPendingEntity, pendingAppend, appendSelectionToEntity, setPendingAppend, linkPrompt, setLinkPrompt, pendingImage, setPendingImage, lastReportedHtmlRef, loadingRef, loadAnnotations, applyFootnoteOrder, pushEntityNames, peekRef, i18n, sceneTitleRef, annotationsRef, persistAnnotations, pushAnnotations, paneIds, setPendingEntity, entityIndexRef, setSpeaking, setFormatting } = model
   useEditorPersistence(model)
@@ -26,15 +37,16 @@ export function EditorFrame({ paneId }: { paneId?: string }): React.JSX.Element 
   useEditorControls(model)
   return (
     <div
-      className="editor-pane"
+      className={stacked ? 'editor-pane editor-pane-stacked' : 'editor-pane'}
       style={{ '--nl-focus-page-scale': editorFontSize / 17 } as CSSProperties}
     >
-      {!window.novalist.isMobile && (
+      {!stacked && !window.novalist.isMobile && (
         <div className="editor-scene-heading">
           <div>
             <strong>{peekScope.sceneTitle}</strong>
             <small>{peekScope.chapterTitle}</small>
           </div>
+          <EditorScopeSwitch />
           <button
             className="dialog-button"
             onClick={() => useShellStore.getState().toggleFocusMode()}
@@ -49,9 +61,9 @@ export function EditorFrame({ paneId }: { paneId?: string }): React.JSX.Element 
           </button>
         </div>
       )}
-      <SceneTabStrip paneId={pane} />
-      <EditorToolbar formatting={formatting} speaking={speaking} active={isActiveEditor} />
-      {isActiveEditor && formatting.entityAtCaret && showFocusPeekTip && (
+      {!stacked && <SceneTabStrip paneId={pane} />}
+      {!stacked && <EditorToolbar formatting={formatting} speaking={speaking} active={isActiveEditor} />}
+      {!stacked && isActiveEditor && formatting.entityAtCaret && showFocusPeekTip && (
         <section
           className="editor-onboarding-tip"
           aria-label={t('focusPeek.tipTitle')}
@@ -78,7 +90,8 @@ export function EditorFrame({ paneId }: { paneId?: string }): React.JSX.Element 
       )}
       <iframe
         ref={iframeRef}
-        className="editor-frame"
+        className={stacked ? 'editor-frame editor-frame-stacked' : 'editor-frame'}
+        style={stacked && stackedHeight > 0 ? { height: stackedHeight } : undefined}
         src="./editor/editor.html"
         title="editor"
         sandbox="allow-scripts allow-same-origin"
@@ -134,6 +147,53 @@ export function EditorFrame({ paneId }: { paneId?: string }): React.JSX.Element 
       )}</MotionPresence>
     </div>
   )
+}
+
+/**
+ * Puts a stacked frame into its sized-to-content layout and follows the height
+ * it reports. While it holds the caret, its formatting is published for the
+ * one toolbar above the stack.
+ */
+function useStackedFrame(model: EditorFrameModel, stacked: boolean): number {
+  const { iframeRef, isActiveEditor, formatting, speaking } = model
+  const [height, setHeight] = useState(0)
+  useEffect(() => {
+    const iframe = iframeRef.current
+    if (!iframe || !stacked) return
+    const enter = (): void => {
+      const frame = editorWindow(iframe)
+      if (frame && typeof frame.setStacked === 'function') frame.setStacked(true)
+    }
+    // The frame may already be up when this effect re-runs.
+    enter()
+    return listenToEditor(iframe, (message) => {
+      if (message.type === 'ready') enter()
+      else if (message.type === 'contentHeight') setHeight(Number(message.height) || 0)
+      else if (message.type === 'stackBoundary') moveToNeighbour(iframe, message.direction === 'next' ? 'next' : 'previous')
+    })
+  }, [iframeRef, stacked])
+  useEffect(() => {
+    if (stacked && isActiveEditor) useStackedEditorStore.getState().publish(formatting, speaking)
+  }, [stacked, isActiveEditor, formatting, speaking])
+  return height
+}
+
+/**
+ * Hands the caret from one stacked scene to the one above or below it. The
+ * neighbour is always mounted, because rows near the screen keep their editor.
+ */
+function moveToNeighbour(iframe: HTMLIFrameElement, direction: 'next' | 'previous'): void {
+  const row = iframe.closest('.stacked-editor-scene')
+  const scroll = row?.closest('.stacked-editor-scroll')
+  if (!row || !scroll) return
+  const rows = Array.from(scroll.querySelectorAll('.stacked-editor-scene'))
+  const target = rows[rows.indexOf(row) + (direction === 'next' ? 1 : -1)]
+  const frame = target?.querySelector<HTMLIFrameElement>('iframe.editor-frame-stacked')
+  const neighbour = frame && editorWindow(frame)
+  if (!frame || !neighbour || typeof neighbour.focusStackedEdge !== 'function') return
+  frame.focus()
+  neighbour.focusStackedEdge(direction === 'next' ? 'start' : 'end')
+  frame.scrollIntoView({ block: 'nearest' })
 }
 
 /** Ordered tab strip for the scenes open in one editor pane. */

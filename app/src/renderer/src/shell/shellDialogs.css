@@ -393,6 +393,49 @@
   margin: var(--nl-space-sm) 0 var(--nl-space-md);
 }
 
+/* The tour's one question: how much of the book the writing view holds. */
+.tour-question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nl-space-tighter);
+  margin: 0 0 var(--nl-space-md);
+  padding: 0;
+  border: none;
+}
+
+.tour-question legend {
+  margin-bottom: var(--nl-space-tighter);
+  color: var(--nl-text);
+  font-size: var(--nl-font-ui);
+  font-weight: var(--nl-weight-label);
+}
+
+.tour-question-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--nl-space-sm);
+  padding: var(--nl-space-sm) var(--nl-space-md);
+  border: var(--nl-rule-width) solid var(--nl-border-subtle);
+  border-radius: var(--nl-radius-md);
+  cursor: pointer;
+}
+
+.tour-question-option.active {
+  border-color: var(--nl-accent);
+  background: var(--nl-surface-selected);
+}
+
+.tour-question-option span {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nl-space-hairline);
+}
+
+.tour-question-option small {
+  color: var(--nl-text-dim);
+  font-size: var(--nl-font-caption);
+}
+
 .tour-task {
   background: var(--nl-surface-input);
   border: 1px solid var(--nl-border-subtle);

@@ -356,6 +356,8 @@ On macOS 26 and later the window uses the native Liquid Glass material; older ma
 
 These presentation settings apply to the scene editor, to Manuscript mode, and to the Expose.
 
+- **Writing view** — **Scene**, **Chapter** or **Manuscript**: whether the writing view holds one scene, every scene of the open scene's chapter, or every scene of the book, each in its own editor one below the other. Defaults to **Scene**. The same switch sits above the editor. See [One scene, the chapter, or the manuscript](05-editor.md#one-scene-the-chapter-or-the-manuscript).
+
 Every number box here — and everywhere else in Settings — takes what you type and applies it when you leave the box or press Enter. A number outside the range shown is brought to the nearest end of it at that point, not while you are still typing, so a two-digit value can be typed straight in.
 
 - **Mark hard-to-read sentences** — tints difficult and very difficult sentences in the editor. Toggled from the gauge button on the editor toolbar; the setting is where it is remembered. See [Readability marking](05-editor.md#readability-marking).

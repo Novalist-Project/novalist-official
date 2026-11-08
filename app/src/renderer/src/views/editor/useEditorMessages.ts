@@ -7,6 +7,7 @@ import { pushEditorSettings, pushEditorConfig } from './editorConfiguration'
 import type { EditorMessageContext, EditorHandlerContext } from './editorMessageContext'
 import { createEditorMessageHandlers } from './editorMessageHandlers'
 import { detachSharedEditor, syncSharedEditor } from '../../collaboration/sharedEditors'
+import { activateEditorPane } from '../../stores/stackedEditors'
 
 export function useEditorMessages(context: EditorMessageContext): void {
   const { iframeRef, editorRef, i18n, t, peekRef } = context
@@ -70,11 +71,9 @@ export function useEditorMessages(context: EditorMessageContext): void {
 function createHandlerContext(context: EditorMessageContext, iframe: HTMLIFrameElement): EditorHandlerContext {
   const { pane, iframeRef, peekRef } = context
   const activatePane = (): void => {
-    // Only the focused child document may claim its pane.
-    const shell = useShellStore.getState()
-    if (iframe.contentDocument?.hasFocus() && shell.activePaneId !== pane) {
-      shell.setActivePane(pane)
-    }
+    // Only the focused child document may claim its pane. A scene inside a
+    // stack claims the pane holding the stack, and the scene for itself.
+    if (iframe.contentDocument?.hasFocus()) activateEditorPane(pane)
   }
   const showHoverCard: EditorHandlerContext['showHoverCard'] = (hit, x, y, wordRect, immediate): void => {
     if (!iframeRef.current) return

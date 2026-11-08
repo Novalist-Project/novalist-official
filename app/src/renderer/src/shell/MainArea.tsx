@@ -12,6 +12,9 @@ import { PaneHeader } from './PaneHeader'
 import { ViewIntro } from './ViewIntro'
 import { DesktopViewFrame } from './DesktopViewFrame'
 import { EditorFrame } from '../views/editor/EditorFrame'
+import { StackedEditor } from '../views/editor/StackedEditor'
+import { useSettingsStore } from '../stores/settingsStore'
+import { normalizeEditorScope } from '../stores/stackedPaneIds'
 import { CodexView } from '../views/codex/CodexView'
 import { WikiView } from '../views/wiki/WikiView'
 import { DashboardView } from '../views/dashboard/DashboardView'
@@ -227,13 +230,16 @@ function MainAreaContent({ view, paneId }: { view: MainView; paneId: string }): 
   const keepEditor = useShellStore((s) => s.focusMode && s.focusPaneId === paneId)
   const openSceneId = useProjectStore((s) => editorPane(s, paneId).sceneId)
   const isLoaded = useProjectStore((s) => s.isLoaded)
+  const scope = useSettingsStore((s) => normalizeEditorScope(s.view?.effective.editorScope))
   const writing = view === 'write' && !extView
   return (
     <>
       {(writing || keepEditor) && (
         <main className="main-area" style={writing ? undefined : { display: 'none' }}>
           {openSceneId ? (
-            <EditorFrame paneId={paneId} />
+            scope === 'scene'
+              ? <EditorFrame paneId={paneId} />
+              : <StackedEditor key={`${paneId}:${scope}`} paneId={paneId} scope={scope} />
           ) : (
             <div className="main-placeholder">
               <h1>{t('shell.view.write')}</h1>

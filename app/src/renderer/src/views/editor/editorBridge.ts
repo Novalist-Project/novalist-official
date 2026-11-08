@@ -73,6 +73,12 @@ export interface EditorWindow extends Window {
   setMobile(enabled: boolean): void
   setTypewriterScroll(enabled: boolean, anchor: string): void
   setPageView(enabled: boolean): void
+  /** Sizes the frame to its prose for the chapter and manuscript stacks; the
+   * frame then reports its height as `contentHeight` messages. */
+  setStacked(enabled: boolean): void
+  /** Places the caret at the start or end of the scene, arriving from the
+   * scene above or below it in a stack. */
+  focusStackedEdge(edge: 'start' | 'end'): void
   repaginatePageView(): void
   setBookParagraphSpacing(enabled: boolean): void
   setCommentsData(data: { id: string; anchorText: string; text: string }[]): void

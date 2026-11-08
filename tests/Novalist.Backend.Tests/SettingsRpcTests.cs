@@ -84,6 +84,29 @@ public sealed class SettingsRpcTests : IDisposable
     }
 
     [Fact]
+    public async Task EditorScope_DefaultsToScene_AndRespectsProjectScope()
+    {
+        var view = await _rpc.GetAsync();
+        Assert.Equal("scene", view.GetProperty("effective").GetProperty("editorScope").GetString());
+
+        view = await _rpc.UpdateGlobalAsync(Patch("""{"editorScope":"chapter"}"""));
+        Assert.Equal("chapter", view.GetProperty("effective").GetProperty("editorScope").GetString());
+
+        await OpenProjectAsync();
+        view = await _rpc.UpdateProjectAsync(Patch("""{"editorScope":"manuscript"}"""));
+        Assert.True(view.GetProperty("overriddenSections").GetProperty("editor").GetBoolean());
+        Assert.Equal("manuscript", view.GetProperty("effective").GetProperty("editorScope").GetString());
+        Assert.Equal("chapter", view.GetProperty("global").GetProperty("editorScope").GetString());
+
+        // A value the renderer cannot draw reads as the single-scene editor.
+        view = await _rpc.UpdateProjectAsync(Patch("""{"editorScope":"everything"}"""));
+        Assert.Equal("scene", view.GetProperty("effective").GetProperty("editorScope").GetString());
+
+        view = await _rpc.ClearSectionAsync("editor");
+        Assert.Equal("chapter", view.GetProperty("effective").GetProperty("editorScope").GetString());
+    }
+
+    [Fact]
     public async Task Get_WithoutProject_HasNoOverrides()
     {
         var view = await _rpc.GetAsync();

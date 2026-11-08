@@ -325,6 +325,9 @@ public sealed record SceneDto(
     /// <summary>The same threads by id, so the binder can filter by one.</summary>
     IReadOnlyList<string> PlotlineIds)
 {
+    /// <summary>Key of the scene's label in the book's label list, or null.
+    /// The colour alone cannot name the label beside the prose.</summary>
+    public string? LabelKey { get; init; }
 #if NOVALIST_COLLABORATION
     public SharedEntityFieldsDto? SharedFields { get; init; }
     public SharedEntityFieldsDto? SharedProse { get; init; }
