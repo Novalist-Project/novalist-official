@@ -44,11 +44,17 @@ function fixture(isMobile = false) {
     '../stores/hostBridgeStore': { useHostBridgeStore: { getState: () => ({ pushToast: (message) => { throw new Error(message) } }) } },
     './recoveryJournal': journal
   }, { window: { novalist: { isMobile } } })
+  // The single-scene editor: stacked chapter and manuscript views are covered
+  // by the editor-scope e2e spec, and never intercept an open here.
+  const stackedPaneIds = loadRendererSource('src/stores/stackedPaneIds.ts')
+  const stackedEditors = { currentEditorScope: () => 'scene', activateEditorPane() {},
+    useStackedEditorStore: { getState: () => ({ revealScene() {} }) } }
   const actions = loadRendererSource('src/stores/projectEditorActions.ts', {
     '../rpc/client': { rpc }, './shellStore': { useShellStore: { getState: () => shell }, paneLeaves: () => [] },
     './projectStore': helpers, './projectPersistence': persistence, './sceneWriteQueue': queue,
     './pendingWrites': { capturePendingWrites() {} }, './projectSceneActions': { runSceneContext: (fn) => fn() },
-    '../mobile/recovery': recovery, '../rpc/backgroundReads': background
+    '../mobile/recovery': recovery, '../rpc/backgroundReads': background,
+    './stackedPaneIds': stackedPaneIds, './stackedEditors': stackedEditors
   }, { window: { novalist: { isMobile } } }).createProjectEditorActions(store.setState, store.getState)
   store.setState(actions)
   return { store, shell, rpc, persistence, timers, requests, background, queue, disk: () => disk, readJournal: journal.readRecoveryJournal }
