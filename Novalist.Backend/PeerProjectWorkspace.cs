@@ -6,7 +6,7 @@ using Novalist.Sync.Client;
 namespace Novalist.Backend;
 
 public sealed record HostedSessionDto(Guid SessionId, Guid ProjectId, string Server, string Connection, bool IsOwner, string? RecoveryPath = null, string Mode = "hosted");
-public sealed record SavedHostedProjectDto(string Server, Guid ProjectId, string? RecoveryPath);
+public sealed record SavedHostedProjectDto(string Server, Guid ProjectId, string? RecoveryPath, string Mode = "hosted", DateTimeOffset LastUsed = default);
 
 internal sealed partial class PeerProjectWorkspace : IDisposable
 {

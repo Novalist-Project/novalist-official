@@ -12,6 +12,7 @@ export function useCollaborationAccount(enabled: boolean) {
   const [configuration, setConfiguration] = useState<Configuration | null>(null)
   const [busy, setBusy] = useState<'checking' | 'connecting' | 'signIn' | 'signOut' | null>(null)
   const [error, setError] = useState('')
+  const [enrolled, setEnrolled] = useState(false)
   const [retry, setRetry] = useState(0)
   const generation = useRef(0)
   const active = useRef(false)
@@ -43,7 +44,7 @@ export function useCollaborationAccount(enabled: boolean) {
     if (active.current) return false
     active.current = true
     generation.current++
-    setError(''); setBusy('connecting')
+    setError(''); setBusy('connecting'); setEnrolled(false)
     try {
       const policy = await rpc.request<Configuration>('collaboration/account/configuration', [address])
       setConfiguration(policy)
@@ -67,17 +68,26 @@ export function useCollaborationAccount(enabled: boolean) {
     setError(''); setBusy('signOut')
     try {
       await rpc.request('collaboration/account/signOut', [server.trim()])
-      setAccount(null)
+      setAccount(null); setEnrolled(false)
     } catch (reason) { setError(String(reason)) }
     finally { setBusy(null) }
   }
   const changeServer = (value: string): void => {
     generation.current++
-    setServer(value); setAccount(null); setConfiguration(null); setError(''); setBusy(null)
+    setServer(value); setAccount(null); setConfiguration(null); setError(''); setBusy(null); setEnrolled(false)
+  }
+  const enrollDevice = async (): Promise<void> => {
+    if (active.current) return
+    active.current = true
+    generation.current++
+    setError(''); setEnrolled(false); setBusy('signIn')
+    try { await rpc.request('collaboration/account/enrollDevice', [server.trim()]); setEnrolled(true) }
+    catch (reason) { setError(String(reason)) }
+    finally { active.current = false; setBusy(null) }
   }
   const cancel = async (): Promise<void> => {
     try { await rpc.request('collaboration/account/cancel') }
     catch (reason) { setError(String(reason)) }
   }
-  return { server, account, configuration, busy, error, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
+  return { server, account, configuration, busy, error, enrolled, enrollDevice, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
 }

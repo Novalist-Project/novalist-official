@@ -41,6 +41,19 @@ public sealed class HostedAccountRpc : IAsyncDisposable
     public Task<RelayServerConfiguration> ConfigurationAsync(Uri server, CancellationToken cancellationToken = default) =>
         RelayServerDiscovery.DiscoverAsync(server, cancellationToken);
 
+    [JsonRpcMethod("collaboration/account/enrollDevice")]
+    public async Task EnrollDeviceAsync(Uri server, CancellationToken cancellationToken = default)
+    {
+        CancellationTokenSource operation;
+        lock (gate)
+        {
+            if (signIn is not null) throw new InvalidOperationException("A sign-in is already in progress.");
+            signIn = operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        }
+        try { await accounts.EnrollDeviceAsync(server, openBrowser, operation.Token); }
+        finally { lock (gate) { signIn = null; operation.Dispose(); } }
+    }
+
     [JsonRpcMethod("collaboration/account/status")]
     public async Task<HostedAccountDto?> StatusAsync(Uri server, CancellationToken cancellationToken = default)
     {

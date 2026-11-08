@@ -8,7 +8,7 @@ namespace Novalist.Backend;
 
 internal sealed partial class PeerProjectWorkspace
 {
-    private sealed record SavedConnection(string ProjectIdentity, string Link, string? Name = null);
+    private sealed record SavedConnection(string ProjectIdentity, string Link, string? Name = null, DateTimeOffset LastUsed = default);
 
     internal async Task<SavedHostedProjectDto?> SavedAsync()
     {
@@ -16,7 +16,7 @@ internal sealed partial class PeerProjectWorkspace
         var saved = await SavedConnectionAsync(root, CancellationToken.None);
         if (saved is null) return null;
         var invitation = RelayPeerInvitation.Parse(saved.Link);
-        return new(invitation.Server.AbsoluteUri, invitation.Invitation.Address.ProjectId, null);
+        return new(invitation.Server.AbsoluteUri, invitation.Invitation.Address.ProjectId, null, LastUsed: saved.LastUsed);
     }
 
     internal async Task<HostedSessionDto> ResumeAsync(CancellationToken ct, string? name = null)
@@ -30,7 +30,7 @@ internal sealed partial class PeerProjectWorkspace
     }
 
     private Task RememberAsync(RelayPeerInvitation invitation, string root, string name, CancellationToken ct) =>
-        credentials.WriteAsync(ConnectionKey(root), JsonSerializer.Serialize(new SavedConnection(ProjectIdentity(root), invitation.ToLink(), name)), ct);
+        credentials.WriteAsync(ConnectionKey(root), JsonSerializer.Serialize(new SavedConnection(ProjectIdentity(root), invitation.ToLink(), name, DateTimeOffset.UtcNow)), ct);
 
     private async Task<SavedConnection?> SavedConnectionAsync(string root, CancellationToken ct)
     {

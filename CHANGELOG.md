@@ -21,6 +21,10 @@ could encounter in a previously released version.
 
 ## [Unreleased]
 
+### Added
+
+- **Persistent project hosting** — choose Persistent server alongside relay and direct sessions to store encrypted projects and changes on your server. Register devices through browser sign-in with fresh multi-factor authentication, invite writers who can join while the owner is offline, and reconnect retained local copies to catch up. Local differences remain recoverable. Owners can remove writers with encryption-key renewal or delete the server copy.
+
 ### Fixed
 
 - Scene synopses retain edits when switching views or closing the app while the field is still focused. Background refreshes no longer replace newer summary text, and failed saves keep the text available for retry.

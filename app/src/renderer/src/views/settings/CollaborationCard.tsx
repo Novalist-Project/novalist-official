@@ -16,18 +16,20 @@ export function CollaborationCard(): React.JSX.Element {
   const saved = useHostedSessionStore(state => state.saved)
   const sharing = useHostedSessionStore(state => state.busy !== null)
   const [intent, setIntent] = useState<CollaborationIntent>(loaded ? 'share' : 'join')
-  const [mode, setMode] = useState<string>(session?.mode ?? (saved ? 'hosted' : 'tcp'))
+  const [mode, setMode] = useState<string>(session?.mode ?? saved?.mode ?? (saved ? 'hosted' : 'tcp'))
   const interacted = useRef(false)
   const [steamAvailable, setSteamAvailable] = useState(false)
   const [name, setName] = useState(() => localStorage.getItem('novalist.collaboration.name') ?? '')
-  const account = useCollaborationAccount(mode === 'hosted' && !session)
+  const persistent = mode === 'persistent'
+  const serverMode = mode === 'hosted' || persistent
+  const account = useCollaborationAccount(serverMode && !session)
   const anonymous = account.configuration?.authenticationRequired === false
-  const canConnect = account.configuration !== null && account.busy === null && (!anonymous || Boolean(name.trim()))
+  const canConnect = account.configuration !== null && account.busy === null && (persistent ? !anonymous : !anonymous || Boolean(name.trim()))
   useEffect(() => {
     if (session) { interacted.current = true; setMode(session.mode); setIntent('share') }
     // Preserve reconnect controls and any choice or input made during Steam detection.
-    else if (!interacted.current) setMode(saved ? 'hosted' : steamAvailable ? 'steam' : 'tcp')
-  }, [session?.sessionId, session?.mode, saved?.projectId, saved?.server, steamAvailable])
+    else if (!interacted.current) setMode(saved?.mode ?? (saved ? 'hosted' : steamAvailable ? 'steam' : 'tcp'))
+  }, [session?.sessionId, session?.mode, saved?.projectId, saved?.server, saved?.mode, steamAvailable])
   useEffect(() => {
     if (window.novalist.isMobile) return
     let current = true
@@ -36,8 +38,8 @@ export function CollaborationCard(): React.JSX.Element {
     return () => { current = false }
   }, [])
   if (session) return <div className="collaboration-settings">
-    <p className="settings-hint">{t('collaboration.mode' + (session.mode === 'hosted' ? 'Hosted' : session.mode === 'steam' ? 'Steam' : 'Tcp'))}</p>
-    <SharedProjectCard server={session.server} canConnect={false} intent={intent} />
+    <p className="settings-hint">{t('collaboration.mode' + (session.mode === 'persistent' ? 'Persistent' : session.mode === 'hosted' ? 'Hosted' : session.mode === 'steam' ? 'Steam' : 'Tcp'))}</p>
+    <SharedProjectCard server={session.server} canConnect={false} intent={intent} persistent={persistent} />
   </div>
   return <div className="collaboration-settings" onChangeCapture={() => { interacted.current = true }}
     onClickCapture={() => { interacted.current = true }}>
@@ -52,14 +54,15 @@ export function CollaborationCard(): React.JSX.Element {
       {steamAvailable && <option value="steam">{t('collaboration.modeSteam')}</option>}
       <option value="tcp">{t('collaboration.modeTcp')}</option>
       <option value="hosted">{t('collaboration.modeHosted')}</option>
+      {!window.novalist.isMobile && <option value="persistent">{t('collaboration.modePersistent')}</option>}
     </select>
-    {mode !== 'hosted' ? <PeerProjectCard key={mode} steam={mode === 'steam'} intent={intent} /> : <>
-      <p className="settings-hint" id="collaboration-server-help">{t('collaboration.serverHint')}</p>
+    {!serverMode ? <PeerProjectCard key={mode} steam={mode === 'steam'} intent={intent} /> : <>
+      <p className="settings-hint" id="collaboration-server-help">{t(persistent ? 'collaboration.persistentServerHint' : 'collaboration.serverHint')}</p>
       <div className="settings-button-row">
         <button className="dialog-button" onClick={() => void window.novalist.openExternal('https://github.com/QF0xB/novalist-sync-server')}>
           {t('collaboration.serverProject')}</button>
-        <button className="dialog-button" onClick={() => void window.novalist.openExternal('https://github.com/QF0xB/novalist-sync-server/blob/main/docs/relay.md')}>
-          {t('collaboration.serverSetupGuide')}</button>
+        <button className="dialog-button" onClick={() => void window.novalist.openExternal('https://github.com/QF0xB/novalist-sync-server/blob/main/docs/' + (persistent ? 'self-hosting.md' : 'relay.md'))}>
+          {t(persistent ? 'collaboration.persistentSetupGuide' : 'collaboration.serverSetupGuide')}</button>
       </div>
       <label className="inspector-label" htmlFor="set-collaboration-server">{t('collaboration.server')}</label>
       <input id="set-collaboration-server" className="dialog-input" type="url" value={account.server} disabled={account.busy !== null && account.busy !== 'checking' || sharing}
@@ -67,22 +70,28 @@ export function CollaborationCard(): React.JSX.Element {
       {(account.busy === 'checking' || account.busy === 'connecting') && <p role="status">{t('collaboration.checkingServer')}</p>}
       {account.account && <p role="status">{t('collaboration.signedIn', { name: account.account.displayName })}</p>}
       {account.busy === 'signIn' && <p role="status">{t('collaboration.browserPending')}</p>}
+      {account.busy === 'signIn' && <button className="dialog-button" onClick={() => void account.cancel()}>{t('collaboration.cancelSignIn')}</button>}
       {account.error && <p role="alert">{account.error}</p>}
+      {persistent && anonymous && <p role="alert">{t('collaboration.persistentRequiresAccount')}</p>}
       {anonymous ? <>
         <label className="inspector-label" htmlFor="set-relay-name">{t('collaboration.peerName')}</label>
         <input id="set-relay-name" className="dialog-input" value={name} maxLength={128} disabled={sharing}
           onChange={event => { setName(event.target.value); localStorage.setItem('novalist.collaboration.name', event.target.value) }} />
-      </> : account.account ? <details><summary tabIndex={0}>{t('collaboration.accountDetails')}</summary>
+      </> : account.account ? <details open={persistent}><summary tabIndex={0}>{t('collaboration.accountDetails')}</summary>
         <p className="settings-hint">{t('collaboration.nameHint')}</p>
+        {persistent && <>
+          <p className="settings-hint">{t('collaboration.enrollHint')}</p>
+          <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.enrollDevice()}>{t('collaboration.enrollDevice')}</button>
+          {account.enrolled && <p role="status">{t('collaboration.deviceEnrolled')}</p>}
+        </>}
         <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.signOut()}>{t('collaboration.signOut')}</button>
       </details> : account.configuration ? <div className="settings-button-row">
         <button className="dialog-button primary" disabled={account.busy !== null || sharing || !account.server.trim()}
           onClick={() => void account.signIn()}>{t('collaboration.signIn')}</button>
-        {account.busy === 'signIn' && <button className="dialog-button" onClick={() => void account.cancel()}>{t('collaboration.cancelSignIn')}</button>}
       </div> : <button className="dialog-button" disabled={account.busy !== null || !account.server.trim()} onClick={account.retry}>{t('collaboration.checkServer')}</button>}
       {account.error && !anonymous && <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.signOut()}>{t('collaboration.forgetSignIn')}</button>}
       <SharedProjectCard server={account.server} canConnect={canConnect} intent={intent} name={anonymous ? name.trim() : undefined}
-        prepareConnection={account.signIn} />
+        prepareConnection={account.signIn} persistent={persistent} key={mode} />
     </>}
   </div>
 }

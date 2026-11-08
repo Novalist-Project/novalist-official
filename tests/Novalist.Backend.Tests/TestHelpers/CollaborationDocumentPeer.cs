@@ -10,6 +10,7 @@ internal sealed class CollaborationDocumentPeer
     private readonly Dictionary<Guid, byte[]> states = [];
     private readonly Dictionary<Guid, byte[]> removed = [];
     internal Func<CancellationToken, Task>? BeforeSeed { get; set; }
+    internal Action? BeforeCapture { get; set; }
     internal bool RejectNextLoad { get; set; }
     internal Guid? RejectLoadItem { get; set; }
     internal bool RemoveSeededScenes { get; set; }
@@ -54,6 +55,7 @@ internal sealed class CollaborationDocumentPeer
             }
         }
         if (action != "capture" || id is null) return null;
+        BeforeCapture?.Invoke();
         var state = states[id.Value];
         var value = Encoding.UTF8.GetString(state);
         if (value.StartsWith("html:", StringComparison.Ordinal)) value = value[5..];

@@ -16,6 +16,25 @@ public sealed class JournalTests : IDisposable
 
     public JournalTests() => sequences = new DeviceSequence(Path.Combine(folder, "device.sqlite"), device);
 
+    [Fact]
+    public void PendingMessagesIncludeAcknowledgedFragmentsForRetryAcrossKeyChanges()
+    {
+        using var signing = Key.Create(SignatureAlgorithm.Ed25519);
+        using var cipher = new EnvelopeCipher(project, 0, epochKey);
+        using var journal = new SessionJournal(Database, session, project, sequences);
+        var item = Guid.NewGuid();
+        var update = RandomNumberGenerator.GetBytes(200);
+        var envelopes = journal.AppendMany(item, UpdatePacket.Split(update, 100),
+            (sequence, payload) => cipher.Seal(new(project, item, 0, device, sequence), payload, signing));
+        Assert.True(envelopes.Count > 1);
+        journal.Acknowledge(envelopes[0], 1);
+        var pending = Assert.Single(journal.PendingUpdates());
+        Assert.Equal(item, pending.ItemId);
+        Assert.Equal(update, pending.Update);
+        for (var index = 1; index < envelopes.Count; index++) journal.Acknowledge(envelopes[index], index + 1);
+        Assert.Empty(journal.PendingUpdates());
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(false, true)]

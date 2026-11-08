@@ -8,9 +8,10 @@ import { CollaborationTransferStatus } from './CollaborationTransferStatus'
 import { SteamFriendsInvite } from './SteamFriendsInvite'
 import type { CollaborationIntent } from './CollaborationCard'
 
-export function SharedProjectCard({ server, canConnect, intent, name, prepareConnection }: {
+export function SharedProjectCard({ server, canConnect, intent, name, prepareConnection, persistent = false }: {
   server: string; canConnect: boolean; intent: CollaborationIntent; name?: string
   prepareConnection?: (server: string) => Promise<boolean>
+  persistent?: boolean
 }): React.JSX.Element {
   const { t } = useTranslation()
   const { session, saved, copied, busy, invitation, error, presenceUnavailable, run } = useHostedSessionStore()
@@ -21,7 +22,10 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
 
   const connect = async (operation: 'create' | 'join' | 'resume', params: unknown[], address = server.trim()): Promise<void> => {
     if (prepareConnection && !await prepareConnection(address)) return
-    await run(operation, params)
+    if (persistent) {
+      const target = operation === 'create' ? 'persistentCreate' : operation === 'join' ? 'persistentJoin' : 'persistentResume'
+      await run(target, operation === 'resume' ? [] : operation === 'create' ? params.slice(0, 1) : params.slice(0, 3))
+    } else await run(operation, params)
   }
 
   const join = async (): Promise<void> => {
@@ -39,29 +43,29 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
         }}>{t('collaboration.invite')}</button>}
         <button className="dialog-button" disabled={busy !== null} onClick={() => void run('end')}>{t('collaboration.end')}</button>
         {session.connection === 'KeyRefreshRequired' && <button className="dialog-button primary" disabled={busy !== null} onClick={() => {
-          void run('end').then(() => { if (!useHostedSessionStore.getState().session) return run('resume') })
+          void run('end').then(() => { if (!useHostedSessionStore.getState().session) return run(session.mode === 'persistent' ? 'persistentResume' : 'resume') })
         }}>{t('collaboration.refreshKeys')}</button>}
       </div>
       {session.mode === 'steam' && session.isOwner && <SteamFriendsInvite disabled={busy !== null || session.connection !== 'Connected'} />}
       {invitation && <>
         <label className="inspector-label" htmlFor="set-collaboration-invitation">{t('collaboration.invitation')}</label>
         <textarea id="set-collaboration-invitation" className="dialog-input" value={invitation} readOnly onFocus={event => event.target.select()} />
-        <p className="settings-hint">{t(session.mode === 'hosted' ? 'collaboration.invitationHint' : 'collaboration.peerInvitationHint')}</p>
+        <p className="settings-hint">{t(session.mode === 'persistent' ? 'collaboration.persistentInvitationHint' : session.mode === 'hosted' ? 'collaboration.invitationHint' : 'collaboration.peerInvitationHint')}</p>
       </>}
       {session.isOwner && <details><summary tabIndex={0}>{t('collaboration.access.title')}</summary>
         <SharedProjectAccess sessionId={session.sessionId} disabled={busy !== null || session.connection === 'AccessEnded'} />
       </details>}
     </> : <>
-      {saved && <>
+      {saved && (saved.mode === 'persistent') === persistent && <>
         <p className="settings-hint">{t('collaboration.savedServer', { server: saved.server })}</p>
         <button className="dialog-button primary" disabled={!canConnect || !loaded || busy !== null}
           onClick={() => void connect('resume', [name], saved.server)}>{t('collaboration.resume')}</button>
-        <p className="settings-hint">{t('collaboration.resumeHint')}</p>
+        <p className="settings-hint">{t(persistent ? 'collaboration.persistentResumeHint' : 'collaboration.resumeHint')}</p>
       </>}
       <div className="collaboration-options">
       {intent === 'share' ? <section className="collaboration-option" aria-labelledby="collaboration-host-title">
       <h4 id="collaboration-host-title">{t('collaboration.hostTitle')}</h4>
-      <p className="settings-hint">{t('collaboration.hostHint')}</p>
+       <p className="settings-hint">{t(persistent ? 'collaboration.persistentHostHint' : 'collaboration.hostHint')}</p>
       <button className="dialog-button primary" disabled={!canConnect || !loaded || busy !== null} onClick={() => void connect('create', [server.trim(), name])}>
         {t('collaboration.create')}
       </button>
@@ -73,13 +77,13 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
         onChange={event => setLink(event.target.value)} />
       <CollaborationDestination id="set-collaboration-destination" busy={busy !== null} onChange={setDestination} />
       <div className="settings-button-row">
-        <button className="dialog-button primary" disabled={!canConnect || busy !== null || !link.trim() || !destination.valid} onClick={() => void join()}>
+        <button className="dialog-button primary" disabled={!canConnect || busy !== null || !link.trim() || !destination.valid || persistent && destination.existing} onClick={() => void join()}>
           {t('collaboration.join')}
         </button>
         {loaded && !destination.existing && <button className="dialog-button" disabled={busy !== null || !destination.valid}
           onClick={() => void run('copy', [destination.path])}>{t('collaboration.copy')}</button>}
       </div>
-      <p className="settings-hint">{t('collaboration.joinHint')}</p>
+       <p className="settings-hint">{t(persistent ? 'collaboration.persistentJoinHint' : 'collaboration.joinHint')}</p>
       </section>}
       </div>
     </>}

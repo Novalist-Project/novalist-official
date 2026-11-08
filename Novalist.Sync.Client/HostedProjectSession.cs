@@ -1,5 +1,7 @@
 namespace Novalist.Sync.Client;
 
+public sealed record PendingSessionUpdate(Guid ItemId, byte[] Update);
+
 public sealed class HostedProjectSession : IAsyncDisposable
 {
     private readonly DeviceSequence sequence;
@@ -90,6 +92,13 @@ public sealed class HostedProjectSession : IAsyncDisposable
         using var sequence = new DeviceSequence(Path.Combine(storage, "devices", deviceId.ToString("N") + ".sqlite"), deviceId);
         using var journal = new SessionJournal(Path.Combine(storage, "sessions", sessionId.ToString("N"), "journal.sqlite"), sessionId, projectId, sequence);
         return journal.PendingCompoundEdits();
+    }
+
+    public static IReadOnlyList<PendingSessionUpdate> ReadPendingUpdates(string storage, Guid sessionId, Guid projectId, Guid deviceId)
+    {
+        using var sequence = new DeviceSequence(Path.Combine(storage, "devices", deviceId.ToString("N") + ".sqlite"), deviceId);
+        using var journal = new SessionJournal(Path.Combine(storage, "sessions", sessionId.ToString("N"), "journal.sqlite"), sessionId, projectId, sequence);
+        return journal.PendingUpdates();
     }
 
     public Task StartAsync(bool createProject, CancellationToken ct) => RunAsync(async token =>

@@ -298,6 +298,26 @@ public sealed partial class SessionJournal : IDisposable
         return command.ExecuteNonQuery();
     });
 
+    internal IReadOnlyList<PendingSessionUpdate> PendingUpdates()
+    {
+        lock (gate)
+        {
+            using var command = Command("""
+                SELECT item, payload, pending FROM changes c WHERE sender = $device AND
+                    item IN (SELECT item FROM changes WHERE sender = $device AND pending = 1) AND
+                    NOT EXISTS (SELECT 1 FROM field_edits f WHERE f.sender_seq = c.sender_seq)
+                ORDER BY sender_seq
+                """, ("$device", device.ToString("D")));
+            using var reader = command.ExecuteReader();
+            var packets = new List<(Guid Item, UpdatePacket Packet, bool Pending)>();
+            while (reader.Read()) packets.Add((Guid.Parse(reader.GetString(0)), UpdatePacket.Parse((byte[])reader[1]), reader.GetInt64(2) != 0));
+            return packets.GroupBy(value => (value.Item, value.Packet.MessageId)).Where(group => group.Any(value => value.Pending))
+                .Select(group => new PendingSessionUpdate(group.Key.Item,
+                    UpdatePacket.Assemble(group.Select(value => value.Packet))
+                    ?? throw new InvalidDataException("A queued project update is incomplete."))).ToArray();
+        }
+    }
+
     private void EnsureOpen()
     {
         if (IsClosed) throw new InvalidOperationException("The collaboration session is closed.");

@@ -9,10 +9,10 @@ interface HostedSession {
   connection: string
   isOwner: boolean
   recoveryPath: string | null
-  mode: 'hosted' | 'tcp' | 'steam'
+  mode: 'hosted' | 'persistent' | 'tcp' | 'steam'
 }
 
-interface SavedHostedProject { server: string; projectId: string; recoveryPath: string | null }
+interface SavedHostedProject { server: string; projectId: string; recoveryPath: string | null; mode: 'hosted' | 'persistent' }
 export interface CollaborationTransferProgress {
   phase: 'scanning' | 'connecting' | 'comparing' | 'transferring' | 'installing' | 'complete'
   completedFiles: number
@@ -21,7 +21,7 @@ export interface CollaborationTransferProgress {
   totalBytes: number
   reusedFiles: number
 }
-type Operation = 'create' | 'join' | 'invite' | 'end' | 'resume' | 'copy' | 'peerHost' | 'peerJoin' | 'steamHost' | 'steamJoin'
+type Operation = 'create' | 'join' | 'invite' | 'end' | 'resume' | 'persistentCreate' | 'persistentJoin' | 'persistentResume' | 'copy' | 'peerHost' | 'peerJoin' | 'steamHost' | 'steamJoin'
 interface HostedSessionState {
   session: HostedSession | null
   saved: SavedHostedProject | null
@@ -87,6 +87,10 @@ export const useHostedSessionStore = create<HostedSessionState>((set, get) => ({
       else if (operation === 'end') {
         await rpc.request('collaboration/end')
         set({ session: null, presenceFailures: [], presenceUnavailable: false })
+      } else if (operation === 'persistentCreate' || operation === 'persistentJoin' || operation === 'persistentResume') {
+        const method = operation === 'persistentCreate' ? 'collaboration/persistent/create' : operation === 'persistentJoin'
+          ? 'collaboration/persistent/join' : 'collaboration/persistent/resume'
+        set({ session: await rpc.request<HostedSession>(method, params), presenceFailures: [], presenceUnavailable: false })
       } else if (operation === 'resume') {
         set({ session: await rpc.request<HostedSession>('collaboration/resume', params), presenceFailures: [], presenceUnavailable: false })
       } else if (operation === 'peerHost') {

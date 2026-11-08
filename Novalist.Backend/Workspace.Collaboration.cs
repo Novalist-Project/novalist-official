@@ -14,6 +14,11 @@ public sealed partial class Workspace
     internal Func<Func<Task>, Task>? DispatchSharedUpdate { get; set; }
     internal Func<Func<Task>, CancellationToken, Task>? DispatchSharedCapture { get; set; }
     internal PeerProjectWorkspace? PeerProjects { get; set; }
+    internal HostedProjectWorkspace? HostedProjects { get; set; }
+    internal bool HasCollaborationSession => PeerProjects?.IsActive == true || HostedProjects?.IsActive == true;
+    internal IReadOnlyList<ParticipantPresence>? CollaborationParticipants(Guid sessionId) =>
+        HostedProjects?.IsActive == true ? HostedProjects.Participants(sessionId) :
+        PeerProjects?.IsActive == true ? PeerProjects.Participants(sessionId) : null;
     private SharedSceneWorkspace? sharedScenes;
     private Guid sharedSession;
     private string? sharedRoot;
@@ -96,7 +101,7 @@ public sealed partial class Workspace
         var html = snapshot.Html ?? throw new InvalidOperationException("The shared scene was deleted.");
         await WordHistory.RecordBaselineAsync(Projects.ActiveBook?.Id ?? "", sceneId,
             CountWords(Core.Utilities.TextDiff.StripHtml(SharedBlockBoundary().Replace(html, "\n"))));
-        return new(sceneId, html, Core.Services.ContentHasher.Hash(html), new(sharedSession, item.Value, snapshot.State, PeerProjects?.IsActive == true));
+        return new(sceneId, html, Core.Services.ContentHasher.Hash(html), new(sharedSession, item.Value, snapshot.State, HasCollaborationSession));
     }
 
     internal SharedSceneWorkspace RequireSharedScenes(Guid sessionId)
@@ -122,9 +127,18 @@ public sealed partial class Workspace
 
     internal async Task DetachSharedScenesAsync()
     {
+        if (HostedProjects?.IsActive == true)
+        {
+            await FlushSharedProjectFilesAsync();
+            await HostedProjects.FlushAsync();
+        }
         await DetachSharedProjectFilesAsync();
         await DetachSharedFieldsAsync();
-        if (sharedScenes is not null) await sharedScenes.CloseAsync(CancellationToken.None);
+        if (sharedScenes is not null)
+        {
+            if (HostedProjects?.OwnsJournal == true) await sharedScenes.DisposeAsync();
+            else await sharedScenes.CloseAsync(CancellationToken.None);
+        }
         sharedScenes = null;
         sharedItems.Clear();
         sharedSceneFiles.Clear();
@@ -135,11 +149,12 @@ public sealed partial class Workspace
         sharedRoot = null;
         sharedSession = Guid.Empty;
         if (PeerProjects is { } peers) await peers.ReleaseAsync();
+        if (HostedProjects is { } hosted) await hosted.ReleaseAsync();
     }
 
     internal void RequireNoSharedSession()
     {
-        if (sharedScenes is not null || sharedFields is not null || PeerProjects?.IsActive == true) throw new InvalidOperationException("Close the collaboration session asynchronously before closing this workspace.");
+        if (sharedScenes is not null || sharedFields is not null || HasCollaborationSession) throw new InvalidOperationException("Close the collaboration session asynchronously before closing this workspace.");
     }
 
     private async Task<bool> RecordSharedSceneAsync(string root, string relative, string html, bool local)

@@ -87,6 +87,26 @@ public sealed class HostedAccounts : IAsyncDisposable
         finally { gate.Release(); }
     }
 
+    public async Task EnrollDeviceAsync(Uri server, Func<Uri, CancellationToken, Task> openBrowser, CancellationToken ct)
+    {
+        using var operation = BeginOperation(ct);
+        ct = operation.Token;
+        var account = await RestoreAsync(server, ct) ?? throw new InvalidOperationException("Sign in before registering this device.");
+        var devices = new DeviceIdentityStore(credentials);
+        using var device = await devices.GetOrCreateAsync(account.Authority, account.Subject, ct);
+        var key = "recovery-device:" + JsonSerializer.Serialize(new[] { account.Authority.AbsoluteUri.TrimEnd('/'), account.Subject });
+        var saved = await credentials.ReadAsync(key, ct);
+        var recoveryKey = saved is null ? System.Security.Cryptography.RandomNumberGenerator.GetBytes(32) : Convert.FromBase64String(saved);
+        try
+        {
+            if (saved is null) await credentials.WriteAsync(key, Convert.ToBase64String(recoveryKey), ct);
+            using var recovery = RecoveryDeviceIdentity.Derive(recoveryKey);
+            if (browser is null) await HostedDeviceEnrollment.EnrollAsync(server, device, recovery, account, openBrowser, ct);
+            else await HostedDeviceEnrollment.EnrollAsync(server, device, recovery, account, browser, ct);
+        }
+        finally { System.Security.Cryptography.CryptographicOperations.ZeroMemory(recoveryKey); }
+    }
+
     private CancellationTokenSource BeginOperation(CancellationToken ct)
     {
         lock (lifecycle)

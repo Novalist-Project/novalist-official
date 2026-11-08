@@ -10,9 +10,13 @@ A Novalist project folder chosen by the writer outside the app's private storage
 **Linked cloud project**:
 A Novalist project connected to a folder in the writer's cloud account. The writer can work on a downloaded copy while offline, and pending changes are synchronized with that same folder when connected.
 **Hosted project**:
-A shared Novalist project whose connected clients communicate through a packet
-relay. The relay does not persist project data; joining requires an online host.
-See [ADR 0007](docs/adr/0007-relay-only-collaboration.md).
+A shared Novalist project whose collaborators communicate through a server.
+
+**Relay session**:
+A live collaboration session whose server forwards encrypted traffic without retaining project data. Joining requires an online host.
+
+**Persistent hosted project**:
+A shared project whose server retains encrypted project data and changes so invited writers can join and catch up while the owner is offline.
 
 **Steam collaboration session**:
 A shared project editing session joined through Steam that remains available while its hosting writer is online.
