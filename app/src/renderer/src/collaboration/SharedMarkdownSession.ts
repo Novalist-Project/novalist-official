@@ -6,7 +6,7 @@ import { diffChars } from 'diff'
 import { SceneUpdateInbox } from './SceneUpdateInbox'
 import { validateSceneUpdate } from './validateSceneUpdate'
 import { RemoteSelections, type ParticipantSelection, type SharedSelection } from './remoteSelections'
-import type { SharedEditorConnection } from './SharedEditorSession'
+import { SHARED_WRITE_DELAY_MS, type SharedEditorConnection } from './SharedEditorSession'
 
 export class SharedMarkdownSession {
   private readonly doc = new Y.Doc()
@@ -15,6 +15,7 @@ export class SharedMarkdownSession {
   private readonly unsubscribe: () => void
   private readonly undo: Y.UndoManager
   private writing: Promise<void> | null = null
+  private batch: ReturnType<typeof setTimeout> | null = null
   private failed = false
   private detached = false
   private view: EditorView | null = null
@@ -32,7 +33,7 @@ export class SharedMarkdownSession {
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
       if (origin !== null) {
         this.pending.push(update.slice())
-        this.startWriting()
+        this.scheduleWriting()
       }
       // Checklist views have no EditorView to observe remote changes through.
       this.changed(this.failed)
@@ -85,7 +86,13 @@ export class SharedMarkdownSession {
 
   async refresh(): Promise<void> { this.receive(await this.connection.read()) }
 
+  private scheduleWriting(): void {
+    if (this.batch || this.writing) return
+    this.batch = setTimeout(() => { this.batch = null; this.startWriting() }, SHARED_WRITE_DELAY_MS)
+  }
+
   private startWriting(): void {
+    if (this.batch) { clearTimeout(this.batch); this.batch = null }
     if (!this.writing && this.pending.length) this.writing = Promise.resolve().then(() => this.writePending())
   }
 
