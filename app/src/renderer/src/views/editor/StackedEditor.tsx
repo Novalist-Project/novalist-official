@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus, X } from 'lucide-react'
 import { rpc } from '../../rpc/client'
+import { useHostBridgeStore } from '../../stores/hostBridgeStore'
 import { editorPane, useProjectStore, type SceneDto } from '../../stores/projectStore'
 import { useShellStore } from '../../stores/shellStore'
 import { stackMembers, type EditorScope, type StackMember } from '../../stores/stackedPaneIds'
@@ -36,6 +37,10 @@ const IDLE_FORMATTING: FormattingState = {
   hasSelection: false,
   linkActive: false,
   entityAtCaret: false
+}
+
+function reportFailure(error: unknown): void {
+  useHostBridgeStore.getState().pushToast(error instanceof Error ? error.message : String(error))
 }
 
 /** Height kept for a scene whose editor is not mounted, until it is measured. */
@@ -75,17 +80,18 @@ export function StackedEditor({ paneId, scope }: { paneId: string; scope: Exclud
   )
   const activeMember = members.find((member) => member.paneId === activeEditorPaneId)
     ?? members.find((member) => member.paneId === paneId)
-  const isActiveStack = activeMember !== undefined && writingHere
+  const isActiveStack = writingHere && members.some((member) => member.paneId === activeEditorPaneId)
 
   useEffect(() => {
     void rpc.request<SceneLabel[]>('labels/list').then(setLabels).catch(() => setLabels([]))
   }, [chapters])
 
   // Arriving at the stack lands on the scene that was opened, not the top.
-  const initialScene = useRef(host.sceneId)
+  // Opening a scene from another chapter swaps the whole stack without
+  // remounting it, so this follows the opened scene rather than running once.
   useEffect(() => {
-    if (initialScene.current) scrollToScene(scrollRef.current, initialScene.current, 'auto')
-  }, [])
+    if (host.sceneId) scrollToScene(scrollRef.current, host.sceneId, 'auto')
+  }, [host.sceneId])
 
   useEffect(() => {
     if (scrollRequest) scrollToScene(scrollRef.current, scrollRequest.sceneId, 'smooth')
@@ -199,7 +205,7 @@ function StackedSceneEditor({ member, isHost }: { member: StackMember; isHost: b
   const loaded = useProjectStore((s) => s.editors[member.paneId]?.sceneId === member.sceneId)
   useEffect(() => {
     if (isHost) return
-    void loadStackedScene(member.paneId, member.chapterGuid, member.sceneId)
+    void loadStackedScene(member.paneId, member.chapterGuid, member.sceneId).catch(reportFailure)
     return () => void releaseStackedScene(member.paneId)
   }, [isHost, member.paneId, member.chapterGuid, member.sceneId])
   return loaded ? <EditorFrame paneId={member.paneId} stacked /> : null
@@ -242,7 +248,8 @@ function SceneColumn({ member, scene, labels }: { member: StackMember; scene: Sc
   const words = liveText === null ? scene.wordCount : computeStats(liveText, i18n.language).wordCount
   const [synopsis, setSynopsis] = useState(scene.synopsis ?? '')
   useEffect(() => setSynopsis(scene.synopsis ?? ''), [scene.synopsis])
-  const label = labels.find((entry) => entry.key === scene.labelKey)
+  const labelKey = scene.labelKey?.toLowerCase()
+  const label = labelKey ? labels.find((entry) => entry.key.toLowerCase() === labelKey) : undefined
   const target = [{ chapterGuid: member.chapterGuid, sceneId: member.sceneId }]
   const setLabel = (key: string | null): void => {
     void setSceneMetadata(target, 'label', key, (entry) => rpc.request('labels/setScene', [entry.sceneId, key]))
@@ -253,7 +260,10 @@ function SceneColumn({ member, scene, labels }: { member: StackMember; scene: Sc
       <button
         type="button"
         className="stacked-editor-title"
-        onClick={() => activateEditorPane(member.paneId)}
+        onClick={() => {
+          useStackedEditorStore.getState().revealScene(member.sceneId)
+          activateEditorPane(member.paneId)
+        }}
       >
         <span>{t('stackedEditor.sceneHeading', { chapter: member.chapterTitle, scene: scene.title })}</span>
         <span className="stacked-editor-words">{t('stackedEditor.words', { count: words })}</span>
@@ -273,7 +283,10 @@ function SceneColumn({ member, scene, labels }: { member: StackMember; scene: Sc
           rows={2}
           onChange={(event) => setSynopsis(event.target.value)}
           onBlur={() => {
-            if (synopsis !== (scene.synopsis ?? '')) void setStackedSynopsis(member.chapterGuid, member.sceneId, synopsis)
+            if (synopsis !== (scene.synopsis ?? '')) {
+              // The typed text stays in the box, so the next blur retries.
+              void setStackedSynopsis(member.chapterGuid, member.sceneId, synopsis).catch(reportFailure)
+            }
           }}
         />
       </ScenePlanningText>

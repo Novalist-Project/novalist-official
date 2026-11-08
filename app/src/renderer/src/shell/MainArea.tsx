@@ -230,7 +230,10 @@ function MainAreaContent({ view, paneId }: { view: MainView; paneId: string }): 
   const keepEditor = useShellStore((s) => s.focusMode && s.focusPaneId === paneId)
   const openSceneId = useProjectStore((s) => editorPane(s, paneId).sceneId)
   const isLoaded = useProjectStore((s) => s.isLoaded)
-  const scope = useSettingsStore((s) => normalizeEditorScope(s.view?.effective.editorScope))
+  // A phone always edits one scene, whatever the project asks for.
+  const scope = useSettingsStore((s) => window.novalist.isMobile === true
+    ? 'scene'
+    : normalizeEditorScope(s.view?.effective.editorScope))
   const writing = view === 'write' && !extView
   return (
     <>

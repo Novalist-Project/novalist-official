@@ -1,5 +1,5 @@
 import { useEditorMessages } from './useEditorMessages'
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useLayoutEffect, useState } from 'react'
 import { editorWindow, listenToEditor } from './editorBridge'
 import { useStackedEditorStore } from '../../stores/stackedEditors'
 import { EditorScopeSwitch } from './EditorScopeSwitch'
@@ -11,7 +11,7 @@ import { InputDialog } from '../../shell/InputDialog'
 import { MotionPresence } from '../../shell/MotionPresence'
 import './editor.css'
 import { useEditorFrameModel, type EditorFrameModel } from './useEditorFrameModel'
-import { useEditorPersistence, useEditorScene, useEditorControls } from './useEditorSynchronization'
+import { capturePendingEdit, useEditorPersistence, useEditorScene, useEditorControls } from './useEditorSynchronization'
 import { useTranslation } from 'react-i18next'
 import { editorPane, useProjectStore, type SceneTabRef } from '../../stores/projectStore'
 import { useContentTransition } from '../../shell/useContentTransition'
@@ -93,7 +93,7 @@ export function EditorFrame({ paneId, stacked = false }: { paneId?: string; stac
         className={stacked ? 'editor-frame editor-frame-stacked' : 'editor-frame'}
         style={stacked && stackedHeight > 0 ? { height: stackedHeight } : undefined}
         src="./editor/editor.html"
-        title="editor"
+        title={stacked ? t('stackedEditor.frameTitle', { scene: peekScope.sceneTitle }) : 'editor'}
         sandbox="allow-scripts allow-same-origin"
       />
       {peek.overlay}
@@ -157,6 +157,15 @@ export function EditorFrame({ paneId, stacked = false }: { paneId?: string; stac
 function useStackedFrame(model: EditorFrameModel, stacked: boolean): number {
   const { iframeRef, isActiveEditor, formatting, speaking } = model
   const [height, setHeight] = useState(0)
+  // A stacked scene scrolled out of reach takes its frame with it, and the
+  // frame holds back its last keystrokes for 50 ms. A layout cleanup still runs
+  // while the frame is in the document, so those keystrokes reach the store
+  // before the stack writes the scene and lets it go.
+  useLayoutEffect(() => {
+    if (!stacked) return
+    return () => capturePendingEdit(model)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stacked])
   useEffect(() => {
     const iframe = iframeRef.current
     if (!iframe || !stacked) return

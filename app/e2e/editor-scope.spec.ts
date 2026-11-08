@@ -24,7 +24,8 @@ test('chapter and manuscript scopes stack one editor per scene', async () => {
       .toBe('chapter')
     const rows = h.page.locator('.stacked-editor-scene')
     await expect(rows).toHaveCount(3)
-    await expect(h.page.locator('iframe[title="editor"]')).toHaveCount(3)
+    await expect(h.page.locator('iframe.editor-frame-stacked')).toHaveCount(3)
+    await expect(h.page.locator('iframe.editor-frame-stacked').nth(1)).toHaveAttribute('title', 'Scene editor: Middle')
     await expect(h.page.locator('.stacked-editor-column').nth(1)).toContainText('ONE – MIDDLE', { ignoreCase: true })
 
     // Typing into the second scene writes the second scene, not the opened one.
@@ -78,8 +79,16 @@ test('chapter and manuscript scopes stack one editor per scene', async () => {
       .filter((editor) => editor.sceneId === id).length, two.scenes[0].id)
     expect(holders).toBe(1)
 
-    // Back to one scene: a single editor and no stacked entries left behind.
+    // Words typed just before a scene's editor is let go are still written.
+    const later = h.page.frameLocator(`[data-stacked-scene="${two.scenes[0].id}"] iframe`).locator('#editor')
+    await later.click()
+    await later.pressSequentially('Last words.')
     await h.page.getByRole('radio', { name: 'Scene' }).click()
+    await expect
+      .poll(async () => (await h.rpc<{ html: string }>('scenes/read', [two.guid, two.scenes[0].id])).html)
+      .toContain('Last words.')
+
+    // Back to one scene: a single editor and no stacked entries left behind.
     await expect(h.page.locator('iframe[title="editor"]')).toHaveCount(1)
     await expect
       .poll(() => h.page.evaluate(() => Object.keys(window.novalistStores.project.getState().editors)

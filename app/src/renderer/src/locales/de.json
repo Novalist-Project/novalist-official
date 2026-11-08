@@ -4853,6 +4853,7 @@
     "synopsisPlaceholder": "Was passiert in dieser Szene?",
     "removeLabel": "Label {{label}} entfernen",
     "newScene": "Neue Szene",
-    "newSceneTitle": "Szene {{number}}"
+    "newSceneTitle": "Szene {{number}}",
+    "frameTitle": "Szenen-Editor: {{scene}}"
   }
 }

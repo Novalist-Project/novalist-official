@@ -6,24 +6,27 @@ import { registerPendingWrite } from '../../stores/pendingWrites'
 import { type EditorFrameModel } from './useEditorFrameModel'
 import { captureSharedEditor, syncSharedEditor } from '../../collaboration/sharedEditors'
 
+type PendingEditSource = Pick<EditorFrameModel, 'editorRef' | 'pane' | 'lastReportedHtmlRef'>
+
+/** Moves an edit the frame has not reported yet into the store. */
+export function capturePendingEdit({ editorRef, pane, lastReportedHtmlRef }: PendingEditSource): void {
+  if (captureSharedEditor(pane)) return
+  const live = editorRef.current
+  const store = useProjectStore.getState()
+  const current = editorPane(store, pane)
+  if (!live || !current.sceneId) return
+  const change = live.capturePendingContentChange(lastReportedHtmlRef.current ?? undefined)
+  if (!change) return
+  lastReportedHtmlRef.current = change.html
+  store.onEditorContentChanged(pane, change.html, change.plainText)
+}
+
 export function useEditorPersistence({ editorRef, pane, openSceneId, lastReportedHtmlRef }: Pick<EditorFrameModel, 'editorRef' | 'pane' | 'openSceneId' | 'lastReportedHtmlRef'>): void {
 // The iframe normally reports an edit after 50 ms and the project store
   // writes it after two seconds. An update may already be cached, so capture
   // the live DOM and drain both delays before the installer is allowed to run.
   useEffect(() => {
-    const capture = (): void => {
-      if (captureSharedEditor(pane)) return
-      const live = editorRef.current
-      const store = useProjectStore.getState()
-      const current = editorPane(store, pane)
-      if (live && current.sceneId) {
-        const change = live.capturePendingContentChange(lastReportedHtmlRef.current ?? undefined)
-        if (change) {
-          lastReportedHtmlRef.current = change.html
-          store.onEditorContentChanged(pane, change.html, change.plainText)
-        }
-      }
-    }
+    const capture = (): void => capturePendingEdit({ editorRef, pane, lastReportedHtmlRef })
     return registerPendingWrite(async () => {
       capture()
       await useProjectStore.getState().flushPane(pane)

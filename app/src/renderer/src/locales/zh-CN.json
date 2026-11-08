@@ -4887,6 +4887,7 @@
     "synopsisPlaceholder": "这个场景发生了什么？",
     "removeLabel": "移除标签 {{label}}",
     "newScene": "新场景",
-    "newSceneTitle": "场景 {{number}}"
+    "newSceneTitle": "场景 {{number}}",
+    "frameTitle": "场景编辑器：{{scene}}"
   }
 }
