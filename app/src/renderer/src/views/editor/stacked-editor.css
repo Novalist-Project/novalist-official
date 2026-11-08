@@ -1,6 +1,8 @@
 /* Chapter and manuscript scopes: one editor per scene, one below the other,
    each with a column describing it. */
 
+/* Inside the editor heading, whose title block is the one child that grows. */
+.editor-scene-heading > .editor-scope-switch,
 .editor-scope-switch {
   display: inline-flex;
   flex: none;
