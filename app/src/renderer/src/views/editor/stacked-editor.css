@@ -33,6 +33,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  padding-top: var(--nl-space-xl);
   background: var(--nl-surface-editor);
 }
 
@@ -47,6 +48,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--nl-stacked-column-width);
   align-items: start;
+  padding-block: var(--nl-space-md);
   scroll-margin-top: var(--nl-space-md);
 }
 
@@ -60,7 +62,9 @@
 
 .editor-frame-stacked {
   height: auto;
-  min-height: calc(var(--nl-space-xxl) * 3);
+  /* An empty scene still reads as room to write, not as a gap between two
+     dividers. */
+  min-height: calc(var(--nl-space-xxl) * 5);
 }
 
 .stacked-editor-column {
