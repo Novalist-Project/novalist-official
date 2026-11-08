@@ -107,6 +107,9 @@ public sealed class PeerProjectRpcTests
         coordinator.Validate(new("host-window", 0, null), "scenes/read");
         coordinator.Notify = (method, payload) =>
         {
+            // The joiner publishes files its open created (e.g. migrated acts.json), so the host
+            // also receives collaboration notifications; only coordinator messages carry a token.
+            if (!method.StartsWith("workspace/", StringComparison.Ordinal)) return Task.CompletedTask;
             var token = JsonSerializer.SerializeToElement(payload).GetProperty("token").GetString()!;
             if (method == "workspace/prepare") coordinator.Prepared(token, true, null);
             else coordinator.Applied(token);
