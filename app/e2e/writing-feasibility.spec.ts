@@ -5,6 +5,8 @@ import './fixtures/writingContract'
 import { seedWritingBook } from './fixtures/writingBook'
 import { measureWriting, writingEnvironment, type WritingMetrics } from './fixtures/writingMetrics'
 import { writeFile } from 'node:fs/promises'
+import './fixtures/writingReviewRegressions'
+import { writingProvenance } from './fixtures/writingProvenance'
 
 const smallBook = { wordCount: 4, scenes: [
   { id: 'scene-a', html: '<p>alpha bravo</p>' },
@@ -12,10 +14,10 @@ const smallBook = { wordCount: 4, scenes: [
 ] }
 
 test('original: native selection crosses two scene surfaces', async () => {
-  test.fail(true, 'Diagnostic control: selection cannot span separate iframe documents; original RED preserved in the report.')
   const h = await launchWriting('original')
   try {
     await h.seed(smallBook)
+    expect(await Promise.all(h.frames().map(frame => frame.locator('#editor').textContent()))).toEqual(['alpha bravo', 'charlie delta'])
     const selected = await h.page.evaluate(() => {
       const frames = Array.from(document.querySelectorAll('iframe'))
       const first = frames[0].contentDocument!
@@ -25,6 +27,7 @@ test('original: native selection crosses two scene surfaces', async () => {
       first.getSelection()!.setBaseAndExtent(start, 6, end, 7)
       return first.getSelection()!.toString()
     })
+    test.fail(true, 'Diagnostic control: selection cannot span separate iframe documents; original RED preserved in the report.')
     expect(selected).toContain('bravo')
     expect(selected).toContain('charlie')
   } finally { await h.close() }
@@ -174,8 +177,9 @@ for (const sceneCount of [100, 500, 1000]) {
     test.setTimeout(900_000)
     const h = await launchWriting('experiment', 2)
     const longSceneWords = process.env.NOVALIST_WRITING_DISTRIBUTION === 'extreme' ? sceneCount * 250 : 25_000
-    const evidence: { environment?: Awaited<ReturnType<typeof writingEnvironment>>; sceneCount: number; wordCount: number; longSceneWords: number; optimized: boolean; timing: string; firstEditReadyMs?: number; rounds: WritingMetrics[]; modes: { name: string; metrics: WritingMetrics }[] } = {
-      sceneCount, wordCount: sceneCount * 1000, longSceneWords, optimized: process.env.NOVALIST_WRITING_OPTIMIZE !== '0', timing: 'input-event-to-second-animation-frame', rounds: [], modes: []
+    const provenance = writingProvenance()
+    const evidence: { environment?: Awaited<ReturnType<typeof writingEnvironment>>; sceneCount: number; wordCount: number; longSceneWords: number; optimized: boolean; scoped: boolean; provenance: ReturnType<typeof writingProvenance>; timing: string; firstEditReadyMs?: number; rounds: WritingMetrics[]; modes: { name: string; metrics: WritingMetrics }[] } = {
+      sceneCount, wordCount: sceneCount * 1000, longSceneWords, optimized: provenance.adaptations.optimized, scoped: provenance.adaptations.scoped, provenance, timing: 'input-event-to-second-animation-frame', rounds: [], modes: []
     }
     try {
       evidence.environment = await writingEnvironment(h.page)
@@ -335,7 +339,15 @@ test('experiment: composition pins its scene and defers a projection change unti
   const h = await launchWriting('experiment')
   try {
     await h.seed(smallBook)
-    await h.page.evaluate(() => window.writingPanes[0].select({ scene: 0, offset: 5 }, { scene: 0, offset: 5 }))
+    await h.page.evaluate(() => {
+      window.writingPublications = []
+      window.addEventListener('message', event => {
+        if (typeof event.data?.novalistEditor !== 'string') return
+        const message = JSON.parse(event.data.novalistEditor)
+        if (message.type === 'contentChanged') window.writingPublications.push({ sceneId: message.sceneId, html: message.html })
+      })
+      window.writingPanes[0].select({ scene: 0, offset: 5 }, { scene: 0, offset: 5 })
+    })
     const session = await h.page.context().newCDPSession(h.page)
     await session.send('Input.imeSetComposition', { text: '漢', selectionStart: 1, selectionEnd: 1 })
     const pinned = await h.page.evaluate(() => {
@@ -345,6 +357,9 @@ test('experiment: composition pins its scene and defers a projection change unti
     expect(pinned).toBe(false)
     await session.send('Input.insertText', { text: '漢字' })
     await expect.poll(() => h.page.evaluate(() => window.writingPanes[0].serialize()[0].text)).toBe('alpha漢字 bravo')
+    await expect.poll(() => h.page.evaluate(() => Array.from(document.querySelector('iframe')!.contentDocument!.querySelectorAll<HTMLElement>('[data-scene-id]'), scene => scene.hidden))).toEqual([true, false])
+    await h.frames()[0].evaluate(() => (window as unknown as EditorWindow).flushPendingContentChange())
+    await expect.poll(() => h.page.evaluate(() => window.writingPublications)).toEqual([{ sceneId: 'scene-a', html: '<p>alpha漢字 bravo</p>' }])
     await session.detach()
   } finally { await h.close() }
 })

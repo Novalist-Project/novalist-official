@@ -85,12 +85,16 @@ class ExperimentPane implements WritingPane {
       const state = history.scenes[index]
       if (!state.text.length) state.doc.transact(() => updateRichText(state.text, markup.read()))
       else markup.render(state.text.toDelta())
+      const transactionSelections = new WeakMap<Y.Transaction, LogicalSelection | null>()
+      state.doc.on('beforeTransaction', transaction => {
+        if (!this.applying && !this.composing) transactionSelections.set(transaction, this.selection() ?? this.savedSelection)
+      })
       state.text.observe(event => {
         if (this.applying || this.composing) return
-        const saved = this.selection()
+        const saved = transactionSelections.get(event.transaction)
         if (!optimized || !applySimpleInsertion(markup, event.delta)) this.render(index)
         this.observer.takeRecords()
-        if (saved) this.restore(saved)
+        if (saved) { this.savedSelection = saved; this.restore(saved) }
       })
       return { root, markup, state }
     })
@@ -114,9 +118,23 @@ class ExperimentPane implements WritingPane {
       if (!this.composing) this.capture()
     })
     this.root.addEventListener('beforeinput', event => this.beforeInput(event), true)
+    this.root.addEventListener('keydown', event => {
+      if (this.composing || event.isComposing || event.keyCode === 229 || event.altKey || !(event.ctrlKey || event.metaKey)) return
+      const key = event.key.toLowerCase()
+      if (key !== 'z' && key !== 'y') return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      if (key === 'y' || event.shiftKey) this.redo()
+      else this.undo()
+    }, true)
     this.root.addEventListener('copy', event => this.copy(event))
     this.root.addEventListener('paste', event => this.paste(event), true)
-    this.root.addEventListener('compositionstart', () => { this.composing = true })
+    this.root.addEventListener('compositionstart', () => {
+      this.capture()
+      this.composing = true
+      const ranges = this.selectedRanges()
+      if (ranges.length > 1) this.replaceRanges(ranges)
+    })
     this.root.addEventListener('compositionend', () => {
       this.editor.setTimeout(() => {
         this.composing = false
@@ -149,16 +167,14 @@ class ExperimentPane implements WritingPane {
   }
 
   private render(index: number): void {
-    const saved = this.selection()
     const view = this.views[index]
     view.markup.render(view.state.text.toDelta())
     this.observer?.takeRecords()
-    if (saved) this.restore(saved)
   }
 
   private point(node: Node, offset: number): RelativePoint | null {
     const scene = this.views.findIndex(view => view.root.contains(node))
-    if (scene < 0) return null
+    if (scene < 0 || this.views[scene].root.hidden) return null
     const view = this.views[scene]
     view.markup.read()
     const index = view.markup.position(node, offset)
@@ -174,6 +190,7 @@ class ExperimentPane implements WritingPane {
   }
 
   private restore(selection: LogicalSelection): void {
+    if (this.views[selection.anchor.scene].root.hidden || this.views[selection.focus.scene].root.hidden) return
     const resolve = (point: RelativePoint) => {
       const view = this.views[point.scene]
       view.markup.read()
@@ -232,6 +249,7 @@ class ExperimentPane implements WritingPane {
   }
 
   private beforeInput(event: InputEvent): void {
+    if (this.composing || event.isComposing) return
     if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
       event.preventDefault()
       event.stopImmediatePropagation()
@@ -239,8 +257,18 @@ class ExperimentPane implements WritingPane {
       else this.redo()
       return
     }
-    if (event.isComposing || !event.inputType.startsWith('delete')) return
     const ranges = this.selectedRanges()
+    if (ranges.length > 1 && ['insertText', 'insertReplacementText', 'insertParagraph', 'insertLineBreak'].includes(event.inputType)) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      this.replaceRanges(ranges, () => {
+        if (event.inputType === 'insertParagraph') this.editor.document.execCommand('insertParagraph')
+        else if (event.inputType === 'insertLineBreak') this.editor.document.execCommand('insertHTML', false, '<br>')
+        else this.editor.document.execCommand('insertText', false, event.data ?? '')
+      })
+      return
+    }
+    if (!event.inputType.startsWith('delete')) return
     const selection = this.editor.getSelection()
     if (selection?.isCollapsed && ranges.length === 1 && selection.anchorNode) {
       const view = this.views[ranges[0].index]
@@ -255,13 +283,7 @@ class ExperimentPane implements WritingPane {
     if (ranges.length < 2) return
     event.preventDefault()
     event.stopImmediatePropagation()
-    for (const { index, range } of ranges.reverse()) {
-      range.deleteContents()
-      const root = this.views[index].root
-      if (!root.textContent && !root.querySelector('img')) root.replaceChildren(this.editor.sanitizeSceneFragment('<p><br></p>'))
-      this.dirty.add(index)
-    }
-    this.capture()
+    this.replaceRanges(ranges)
   }
 
   private copy(event: ClipboardEvent): void {
@@ -279,6 +301,15 @@ class ExperimentPane implements WritingPane {
     if (ranges.length < 2 || !event.clipboardData) return
     event.preventDefault()
     event.stopImmediatePropagation()
+    const transfer = event.clipboardData
+    this.replaceRanges(ranges, () => {
+      const html = transfer.getData('text/html')
+      if (html) this.editor.document.execCommand('insertHTML', false, this.editor.sanitizePastedHtml(html))
+      else this.editor.document.execCommand('insertText', false, transfer.getData('text/plain'))
+    })
+  }
+
+  private replaceRanges(ranges: { index: number; range: Range }[], insert?: () => void): void {
     this.capture()
     this.commanding = true
     try {
@@ -286,14 +317,19 @@ class ExperimentPane implements WritingPane {
       start.collapse(true)
       for (const { index, range } of [...ranges].reverse()) {
         range.deleteContents()
+        const root = this.views[index].root
+        if (!root.textContent && !root.querySelector('img')) root.replaceChildren(this.editor.sanitizeSceneFragment('<p><br></p>'))
         this.dirty.add(index)
+      }
+      const first = this.views[ranges[0].index].root
+      if (start.startContainer === first || !first.contains(start.startContainer)) {
+        start.selectNodeContents(first.firstElementChild ?? first)
+        start.collapse(true)
       }
       const selection = this.editor.getSelection()!
       selection.removeAllRanges()
       selection.addRange(start)
-      const html = event.clipboardData.getData('text/html')
-      if (html) this.editor.document.execCommand('insertHTML', false, this.editor.sanitizePastedHtml(html))
-      else this.editor.document.execCommand('insertText', false, event.clipboardData.getData('text/plain'))
+      insert?.()
     } finally { this.commanding = false }
     this.capture()
   }
@@ -301,6 +337,7 @@ class ExperimentPane implements WritingPane {
   serialize() {
     this.capture()
     return this.views.map((view, index) => {
+      if (!view.root.isConnected || !this.root.contains(view.root) || view.root.dataset.sceneId !== this.book.scenes[index].id) throw new Error('A live scene owner was detached or replaced.')
       const clone = view.root.cloneNode(true) as HTMLElement
       clone.querySelectorAll('.nv-focus-block').forEach(node => node.classList.remove('nv-focus-block'))
       clone.querySelectorAll('[class=""]').forEach(node => node.removeAttribute('class'))
