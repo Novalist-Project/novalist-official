@@ -72,12 +72,12 @@ const expressions: Record<string, [string, string][]> = {
   ],
   'writingSceneCapture.ts': [['scene.innerText', 'globalThis.__writingLayout.measure("capture.innerText",()=>scene.innerText)']],
   'writingPageLayout.ts': [
-    ['measuringPage.append(...blocks)', 'globalThis.__writingLayout.measure("page.measureWrites",()=>measuringPage.append(...blocks))'],
+    ['presentation.append(measuringPage, ...blocks)', 'globalThis.__writingLayout.measure("page.measureWrites",()=>presentation.append(measuringPage, ...blocks))'],
     ['block.offsetHeight', 'globalThis.__writingLayout.measure("page.heightRead",()=>block.offsetHeight)'],
     ['const heights = blocks.map', 'globalThis.__writingLayout.count("page.atoms",blocks.length); const heights = blocks.map'],
-    ['page.append(block)', 'globalThis.__writingLayout.count("page.blockMoves"); globalThis.__writingLayout.measure("page.commitWrite",()=>page.append(block))'],
+    ['presentation.append(page, block)', 'globalThis.__writingLayout.count("page.blockMoves"); globalThis.__writingLayout.measure("page.commitWrite",()=>presentation.append(page, block))'],
     ['selection!.setBaseAndExtent(saved.anchor, saved.anchorOffset, saved.focus, saved.focusOffset)', 'globalThis.__writingLayout.measure("page.selectionRestore",()=>selection!.setBaseAndExtent(saved.anchor, saved.anchorOffset, saved.focus, saved.focusOffset))'],
-    ["measuringPage.remove()", 'globalThis.__writingLayout.count("page.scenes"); measuringPage.remove()']
+    ["presentation.remove(measuringPage)", 'globalThis.__writingLayout.count("page.scenes"); presentation.remove(measuringPage)']
   ]
 }
 

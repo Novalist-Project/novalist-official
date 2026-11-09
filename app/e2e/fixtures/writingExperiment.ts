@@ -7,6 +7,7 @@ import type { WritingCommand, WritingPane, WritingPoint } from './writingContrac
 import { applySimpleInsertion } from './writingIncremental'
 import { installScenePagination } from './writingPageLayout'
 import { installSceneCapture, type CaptureTelemetry } from './writingSceneCapture'
+import { authoredClass, contentRecords, scenePoint, WritingPresentation } from './writingPresentation'
 
 interface SceneDocument { doc: Y.Doc; text: Y.Text; history: Y.UndoManager }
 interface SceneView { root: HTMLElement; markup: SceneMarkup; state: SceneDocument }
@@ -25,6 +26,22 @@ interface ExperimentEditor extends EditorWindow {
 }
 
 const writer = {}
+
+class ExperimentMarkup extends SceneMarkup {
+  read() {
+    return super.read().map(run => {
+      if (!run.attributes?.block) return run
+      const blocks: { attributes: Record<string, string> }[] = JSON.parse(run.attributes.block)
+      for (const block of blocks) {
+        if (!('class' in block.attributes)) continue
+        const value = authoredClass(block.attributes.class)
+        if (value) block.attributes.class = value
+        else delete block.attributes.class
+      }
+      return { ...run, attributes: { ...run.attributes, block: JSON.stringify(blocks) } }
+    })
+  }
+}
 
 class CompoundHistory {
   readonly undoGroups: number[][] = []
@@ -70,16 +87,20 @@ class ExperimentPane implements WritingPane {
   private commanding = false
   private pendingScope: number[] | null = null
   private savedSelection: LogicalSelection | null = null
+  private readonly viewIndices = new Map<HTMLElement, number>()
+  private acceptSceneContent: ((scene: HTMLElement) => void) | undefined
 
   constructor(private readonly editor: ExperimentEditor, private readonly book: FixtureBook, private readonly history: CompoundHistory, optimized: boolean, scoped: boolean) {
     this.root = editor.document.getElementById('editor')!
     this.root.replaceChildren()
+    const presentation = new WritingPresentation()
     this.views = book.scenes.map((scene, index) => {
       const root = editor.document.createElement('section')
       root.dataset.sceneId = scene.id
       root.append(editor.sanitizeSceneFragment(scene.html))
       this.root.append(root)
-      const markup = new SceneMarkup({ document: editor.document,
+      this.viewIndices.set(root, index)
+      const markup = new ExperimentMarkup({ document: editor.document,
         sanitizeSceneFragment: html => editor.sanitizeSceneFragment(html),
         toDisplayImages: content => editor.toDisplayImages(content) }, root)
       const state = history.scenes[index]
@@ -87,27 +108,28 @@ class ExperimentPane implements WritingPane {
       else markup.render(state.text.toDelta())
       const transactionSelections = new WeakMap<Y.Transaction, LogicalSelection | null>()
       state.doc.on('beforeTransaction', transaction => {
-        if (!this.applying && !this.composing) transactionSelections.set(transaction, this.selection() ?? this.savedSelection)
+        if (!this.applying && !this.composing && this.selectionTouches(index)) transactionSelections.set(transaction, this.selection() ?? this.savedSelection)
       })
       state.text.observe(event => {
         if (this.applying || this.composing) return
         const saved = transactionSelections.get(event.transaction)
+        this.markDirty(contentRecords(this.observer.takeRecords()))
         if (!optimized || !applySimpleInsertion(markup, event.delta)) this.render(index)
-        this.observer.takeRecords()
+        this.markDirty(contentRecords(this.observer.takeRecords()).filter(record => !root.contains(record.target)))
+        this.acceptSceneContent?.(root)
         if (saved) { this.savedSelection = saved; this.restore(saved) }
       })
       return { root, markup, state }
     })
-    this.observer = new MutationObserver(records => this.markDirty(records))
-    this.observer.observe(this.root, { subtree: true, childList: true, characterData: true, attributes: true })
+    this.observer = presentation.observe(this.root, records => this.markDirty(records))
     if (optimized) {
       const style = editor.document.createElement('style')
       style.textContent = '#editor [data-scene-id] { content-visibility: auto; contain-intrinsic-size: auto 600px; }'
       editor.document.head.append(style)
-      installScenePagination(editor)
+      installScenePagination(editor, presentation)
     }
     editor.setCommentsData(Array.from(this.root.querySelectorAll<HTMLElement>('[data-comment-id]'), mark => ({ id: mark.dataset.commentId!, anchorText: mark.textContent ?? '', text: 'Synthetic annotation' })))
-    if (scoped) installSceneCapture(editor)
+    if (scoped) this.acceptSceneContent = installSceneCapture(editor, presentation)
     this.installEvents()
   }
 
@@ -153,14 +175,14 @@ class ExperimentPane implements WritingPane {
     for (const record of records) {
       const node = record.target.nodeType === 1 ? record.target as Element : record.target.parentElement
       const root = node?.closest('[data-scene-id]')
-      const index = this.views.findIndex(view => view.root === root)
-      if (index >= 0) this.dirty.add(index)
+      const index = this.viewIndices.get(root as HTMLElement)
+      if (index !== undefined) this.dirty.add(index)
     }
   }
 
   capture(): void {
     if (this.composing || this.applying || this.commanding) return
-    this.markDirty(this.observer.takeRecords())
+    this.markDirty(contentRecords(this.observer.takeRecords()))
     this.applying = true
     try { this.history.capture(this.views, [...this.dirty]) }
     finally { this.applying = false; this.dirty.clear() }
@@ -169,16 +191,25 @@ class ExperimentPane implements WritingPane {
   private render(index: number): void {
     const view = this.views[index]
     view.markup.render(view.state.text.toDelta())
-    this.observer?.takeRecords()
   }
 
   private point(node: Node, offset: number): RelativePoint | null {
-    const scene = this.views.findIndex(view => view.root.contains(node))
-    if (scene < 0 || this.views[scene].root.hidden) return null
+    const resolved = scenePoint(this.root, node, offset)
+    const scene = resolved ? this.viewIndices.get(resolved.scene) : undefined
+    if (scene === undefined || this.views[scene].root.hidden) return null
     const view = this.views[scene]
     view.markup.read()
-    const index = view.markup.position(node, offset)
+    const index = view.markup.position(resolved!.node, resolved!.offset)
     return index === null ? null : { scene, position: Y.createRelativePositionFromTypeIndex(view.state.text, index) }
+  }
+
+  private selectionTouches(index: number): boolean {
+    const selected = this.editor.getSelection()
+    const a = scenePoint(this.root, selected?.anchorNode ?? null, selected?.anchorOffset ?? 0)
+    const f = scenePoint(this.root, selected?.focusNode ?? null, selected?.focusOffset ?? 0)
+    const anchor = a ? this.viewIndices.get(a.scene) : this.savedSelection?.anchor.scene
+    const focus = f ? this.viewIndices.get(f.scene) : this.savedSelection?.focus.scene
+    return anchor !== undefined && focus !== undefined && index >= Math.min(anchor, focus) && index <= Math.max(anchor, focus)
   }
 
   private selection(): LogicalSelection | null {
@@ -376,8 +407,8 @@ class ExperimentPane implements WritingPane {
   sampleCount(): number { return this.latencies.length }
   sceneCount(): number { return this.root.querySelectorAll('[data-scene-id]').length }
   activeScene(): string | null {
-    const node = this.editor.getSelection()?.focusNode
-    return this.views.find(view => node && view.root.contains(node))?.root.dataset.sceneId ?? null
+    const selection = this.editor.getSelection()
+    return scenePoint(this.root, selection?.focusNode ?? null, selection?.focusOffset ?? 0)?.scene.dataset.sceneId ?? null
   }
 
   inspect() {

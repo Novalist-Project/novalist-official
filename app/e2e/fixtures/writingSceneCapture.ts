@@ -1,4 +1,5 @@
 import type { EditorWindow } from '../../src/renderer/src/views/editor/editorBridge'
+import { contentRecords, scenePoint, type WritingPresentation } from './writingPresentation'
 
 export interface CaptureTelemetry { samplesMs: number[]; sceneIds: string[] }
 declare global { interface Window { writingCaptureTelemetry?: CaptureTelemetry } }
@@ -11,7 +12,7 @@ interface CaptureEditor extends EditorWindow {
   writingCaptureTelemetry: CaptureTelemetry
 }
 
-export function installSceneCapture(editor: CaptureEditor): void {
+export function installSceneCapture(editor: CaptureEditor, presentation: WritingPresentation): (scene: HTMLElement) => void {
   const root = editor.document.getElementById('editor')!
   const scenes = Array.from(root.querySelectorAll<HTMLElement>('[data-scene-id]'))
   const clean = editor.getCleanContentHtml.bind(editor)
@@ -21,9 +22,8 @@ export function installSceneCapture(editor: CaptureEditor): void {
   const telemetry: CaptureTelemetry = { samplesMs: [], sceneIds: [] }
   editor.writingCaptureTelemetry = telemetry
   const active = (): HTMLElement | null => {
-    const node = editor.getSelection()?.focusNode
-    const element = node?.nodeType === 1 ? node as Element : node?.parentElement
-    return element?.closest<HTMLElement>('[data-scene-id]') ?? null
+    const selection = editor.getSelection()
+    return scenePoint(root, selection?.focusNode ?? null, selection?.focusOffset ?? 0)?.scene ?? null
   }
   const serialize = (scene: HTMLElement): string => {
     const start = editor.performance.now()
@@ -39,8 +39,7 @@ export function installSceneCapture(editor: CaptureEditor): void {
       if (scene) dirty.add(scene)
     }
   }
-  const observer = new MutationObserver(markDirty)
-  observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true })
+  const observer = presentation.observe(root, markDirty)
   const capture = (scene: HTMLElement, previous = baseline.get(scene)) => {
     if (editor.NovalistEditorState.isComposing || editor.NovalistEditorState.isSettingContent) return null
     const html = serialize(scene)
@@ -63,10 +62,11 @@ export function installSceneCapture(editor: CaptureEditor): void {
     return target ? capture(target, previous) : null
   }
   editor.reportContentChanged = () => {
-    markDirty(observer.takeRecords())
+    markDirty(contentRecords(observer.takeRecords()))
     for (const scene of dirty) {
       const change = capture(scene)
       if (change) editor.sendMessage({ type: 'contentChanged', ...change })
     }
   }
+  return scene => { markDirty(contentRecords(observer.takeRecords())); baseline.set(scene, clean(scene)); dirty.delete(scene) }
 }
