@@ -31,17 +31,23 @@ test('review I1: native replacement retains live owners, peer suffix and compoun
   } finally { await h.close() }
 })
 
-test('review I1: insertReplacementText uses the protected transaction path', async () => {
+test('review N1: event-dispatched replacement reads DataTransfer and preserves native undo', async () => {
   const h = await launchWriting('experiment', 2)
   try {
     await h.seed(book)
     const handled = await h.page.evaluate(() => {
       window.writingPanes[0].select({ scene: 0, offset: 6 }, { scene: 1, offset: 7 })
-      const event = new InputEvent('beforeinput', { inputType: 'insertReplacementText', data: 'replacement', bubbles: true, cancelable: true })
+      const dataTransfer = new DataTransfer()
+      dataTransfer.setData('text/plain', 'replacement')
+      const event = new InputEvent('beforeinput', { inputType: 'insertReplacementText', data: null, dataTransfer, bubbles: true, cancelable: true })
       document.querySelector('iframe')!.contentDocument!.getElementById('editor')!.dispatchEvent(event)
       return event.defaultPrevented
     })
     expect(handled).toBe(true)
+    expect(await livePanes(h.page)).toEqual([replaced, replaced])
+    await h.page.keyboard.press(`${modifier}+z`)
+    expect(await livePanes(h.page)).toEqual([original, original])
+    await h.page.keyboard.press(`${modifier}+Shift+z`)
     expect(await livePanes(h.page)).toEqual([replaced, replaced])
   } finally { await h.close() }
 })

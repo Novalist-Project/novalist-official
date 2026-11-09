@@ -264,7 +264,10 @@ class ExperimentPane implements WritingPane {
       this.replaceRanges(ranges, () => {
         if (event.inputType === 'insertParagraph') this.editor.document.execCommand('insertParagraph')
         else if (event.inputType === 'insertLineBreak') this.editor.document.execCommand('insertHTML', false, '<br>')
-        else this.editor.document.execCommand('insertText', false, event.data ?? '')
+        else {
+          const text = event.inputType === 'insertReplacementText' ? event.dataTransfer?.getData('text/plain') ?? event.data ?? '' : event.data ?? ''
+          this.editor.document.execCommand('insertText', false, text)
+        }
       })
       return
     }

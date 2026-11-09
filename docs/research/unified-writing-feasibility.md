@@ -174,6 +174,13 @@ are not substituted for it. Further work should target scene-aware layout and
 bounded visible services within the existing engine. No engine replacement,
 threshold change, or production rollout follows from these results.
 
+Review round 2 corrected the replacement-event payload case: `insertReplacementText`
+now reads plain text from `DataTransfer` when `data` is null. Its explicitly
+event-dispatched regression verifies both live scene owners, exact peer text and
+native undo/redo. Native typing and CDP composition remain separate real-input
+checks. This replacement-only branch change did not trigger another headless
+scale run; the table above remains attributed to its recorded source revision.
+
 ## Behavior assertions and remaining gates
 
 Verified focused behavior includes actual mouse drag and backward keyboard
