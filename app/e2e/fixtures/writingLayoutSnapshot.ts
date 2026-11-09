@@ -4,6 +4,8 @@ import './writingContract'
 export async function snapshotWriting(page: Page) {
   return page.evaluate(() => ({
     panes: window.writingPanes.map((pane, index) => {
+      const scenes = pane.serialize()
+      const data = pane.inspect()
       const frameDocument = document.querySelectorAll('iframe')[index].contentDocument!
       const selection = frameDocument.getSelection()!
       const point = (node: Node | null, offset: number) => {
@@ -13,7 +15,6 @@ export async function snapshotWriting(page: Page) {
         const range = frameDocument.createRange(); range.selectNodeContents(root); range.setEnd(node, offset)
         return { sceneId: root.dataset.sceneId, offset: range.toString().length }
       }
-      const data = pane.inspect()
       const deltas = data.deltas.map(runs => {
         const identities = new Map<string, number>()
         return runs.map(run => {
@@ -26,7 +27,7 @@ export async function snapshotWriting(page: Page) {
           return { ...run, attributes: { ...run.attributes, block: JSON.stringify(blocks) } }
         })
       })
-      return { scenes: pane.serialize(), deltas, undoGroups: data.undoGroups, redoGroups: data.redoGroups,
+      return { scenes, deltas, undoGroups: data.undoGroups, redoGroups: data.redoGroups,
         owners: Array.from(frameDocument.querySelectorAll<HTMLElement>('[data-scene-id]'), root => ({ id: root.dataset.sceneId, connected: root.isConnected })),
         selection: { anchor: point(selection.anchorNode, selection.anchorOffset), focus: point(selection.focusNode, selection.focusOffset), text: selection.toString() } }
     }),

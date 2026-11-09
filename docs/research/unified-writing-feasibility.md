@@ -240,6 +240,77 @@ workload remains unproven.
 
 ## Provisional adapter decision
 
+### Bounded cost attribution (diagnostic, not acceptance)
+
+The [profile records](writing-layout-profile.json) preserve a separate synthetic
+100/1000-scene run at clean `b854f6fc913edf0c09786cf2caf04718b9f1862a`, source
+digest `a60d044ec1a705acb37748979e6b1766a45ffe169e4b34e0e9dcdfb705eac8dc`.
+This uses HeadlessChrome149.0.7827.55, two panes, the fixed25k-word long scene,
+formatting/images/comments, and opt-in function telemetry plus eight CDP traces.
+Raw traces remain local test artifacts. The saved summaries contain only opaque
+identities, counts, durations and environment metadata.
+
+Each mode has nine actual inputs at the beginning, middle and end, with scrolling
+and DOM search,90ms between inputs and1100ms trailing observation. Acceptance
+uses30samples, offset0, no1000ms mode-settle wait or90ms input gap; it also uses
+a different native runtime/viewport. Here p95 of nine is the maximum sample.
+Diagnostic p95 values (100/1000scenes) were normal94.7/95.1ms,
+page30.3/1272.6ms, typewriter32.1/30.2ms, combined27.8/1276.0ms. They neither
+replace the native table nor establish a latency pass or a comparable overhead
+ratio. In particular, slower acceptance typewriter behavior remains unresolved.
+
+The table reports totals across nine1000-scene inputs plus their delayed window.
+Function totals include measured children and cannot be added together.
+
+| Source/path | Observed cost/count | Interpretation |
+| --- | --- | --- |
+| `CompoundHistory.capture`, page | 1190ms aggregate,1145.6ms maximum;1013 rich-text updates and3111 mapping reads | Large first-window amplification is real in this trace, but not reproduced by the isolated probes below; do not call it steady-state per-input cost. |
+| Scene paginator, page | 182.2ms over10passes;12scene passes/1364atoms;49.0ms selection restore | Dirty-scene repagination, not1000scenes per input. Full setup reflow is outside this timing window. Height reads alone account for2.2ms; function self-time includes packing, DOM work and uninstrumented browser calls. |
+| Comment gutter, page / typewriter | 58.4/37.5ms;4100/3700anchor rects,4063/3667offscreen | Whole-book anchor work is measured, but is not the dominant observed capture spike. Card-height time is included separately in the archive. |
+| Whole-root caret prefix, page / typewriter | 108.2/55.8ms;127.3M/83.4M UTF-16 characters copied | Repeated manuscript-prefix copying remains unbounded; status semantics were preserved. |
+| Formatting selected blocks, page / typewriter | 94.8/59.3ms over24/16calls | Whole-root selection discovery also scales with book size. The prose-block counter includes this path, not just dimming. |
+| Actual recenter, page / typewriter | 0.5/0.2ms over9calls each | Small in this spaced-input probe; insufficient to explain or dismiss native typewriter failures. |
+
+Pipeline trace accounting separates nested browser work from script. At1000scenes,
+normal/page/typewriter/combined exclusive Script was355.4/1696.8/284.4/1677.2ms;
+Layout27.5/1128.1/25.2/1154.9ms; Style4.7/155.6/6.1/160.3ms; and
+Paint32.9/74.1/30.6/78.8ms. Page/combined maximum renderer tasks were1150.4/
+1153.2ms. Only308.3/304.0ms of their layout was nested under measured script
+events; function timers alone would miss this distinction. These are trace-event
+interval unions, not CPU-sampling attribution or total compositor/GPU time.
+
+The [three bounded origin probes](writing-layout-capture-origin.json) identify
+setup contamination without claiming to reproduce every traced spike. Page
+setup leaves1000dirty scenes per pane; the fingerprint capture drains two
+1000-scene batches, opening2000Yjs transactions with **zero content changes**.
+The capture pane suppresses its own pre-transaction selection work, while the
+other pane's listener still snapshots its active selection for each document,
+including no-op transactions. Subsequent input batches touch one or two scenes.
+The fresh-page first long-scene capture costs74.5ms, then12.1/13.3ms; after
+normal-mode warmup, the first three are7.7/9.3/10.3ms. A third probe including
+trace startup also remains bounded and leaves dirty sets empty at trace start.
+Thus the original1146ms traced-only spike is unresolved, not proof that every
+input captures the whole book. Extra read-only wrappers/listeners and their
+individual source hashes are recorded for these diagnostic probes.
+
+Primary modes retain disabled dimming/readability/grammar defaults. No focus
+clearing ran there; zoom was1, with6–8resize callbacks totaling at most0.1ms and
+no measured refresh/anchor-restore calls. A separately labelled enabled-service
+probe observes one correction near613ms, readability near722ms, and grammar
+submission near1811ms at1000scenes. Frontend mapping took0.6ms across both
+requests; no backend analysis/result application was supplied. A1800ms wait
+after input allows debounce rescheduling; this is not backend-service parity.
+
+**Smallest next adaptation:** distinguish presentation-only wrapper mutations
+from content dirtiness at the existing pagination/capture seam, preserving real
+edits in mixed observer batches. Stop no-op layout work from opening scene
+transactions or repeatedly snapshotting an unrelated pane's selection; first
+prove zero content/history/publication changes and actual input preservation.
+Then bound visible/pinned comment geometry and cache or otherwise resolve the
+measured whole-root caret/formatting work without changing their semantics.
+Do not replace the paginator or implement paper-gap representation in this step.
+Continuous-page semantics and all existing failed performance gates remain open.
+
 Retain separate scene documents and use scene-aware DOM positions plus grouped
 writer-origin scene histories if this approach is continued. Do not migrate to
 one book-wide Yjs document or use whole-scene snapshot replacement for shared

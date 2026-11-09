@@ -13,6 +13,18 @@ import './fixtures/writingLayoutTelemetry'
 const book = { wordCount: 4, scenes: [{ id: 'scene-a', html: '<p>alpha bravo</p>' }, { id: 'scene-b', html: '<p>charlie delta</p>' }] }
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control'
 
+test('profile snapshot: dirty DOM and semantic history describe the same captured revision', async () => {
+  const h = await launchWriting('experiment', 1, false)
+  try {
+    await h.seed(book)
+    await h.frames()[0].evaluate(() => { document.querySelector('[data-scene-id] p')!.firstChild!.textContent = 'omega bravo' })
+    const snapshot = (await snapshotWriting(h.page)).panes[0]
+    expect(snapshot.scenes[0].text).toBe('omega bravo')
+    expect(snapshot.deltas[0].map(run => run.insert).join('')).toBe('omega bravo\n')
+    expect(snapshot.undoGroups).toEqual([[0]])
+  } finally { await h.close() }
+})
+
 async function observePublications(h: WritingHarness) {
   await h.page.evaluate(() => {
     window.writingPublications = []
@@ -24,6 +36,13 @@ async function observePublications(h: WritingHarness) {
   })
 }
 
+async function blockIdentities(h: WritingHarness) {
+  return h.page.evaluate(() => window.writingPanes.map(pane => pane.inspect().deltas.map(runs => runs.flatMap(run => {
+    const blocks: { id: string }[] = run.attributes?.block ? JSON.parse(run.attributes.block) : []
+    return blocks.map(block => block.id)
+  }))))
+}
+
 test('profile invariance: telemetry retains prose, selection, owners, history and publication count', async () => {
   const results: Awaited<ReturnType<typeof snapshotWriting>>[][] = []
   for (const profiling of [false, true]) {
@@ -33,13 +52,17 @@ test('profile invariance: telemetry retains prose, selection, owners, history an
       await observePublications(h)
       await h.page.evaluate(() => window.writingPanes[0].select({ scene: 1, offset: 7 }, { scene: 0, offset: 6 }))
       const before = await snapshotWriting(h.page)
+      const identities = await blockIdentities(h)
+      expect(identities.every(pane => new Set(pane.flat()).size === 2)).toBe(true)
       if (profiling) await h.page.evaluate(() => window.__writingLayout.start())
+      await h.frames()[0].evaluate(() => (window as unknown as { getCaretPosition(): { line: number; column: number } }).getCaretPosition())
       await h.page.waitForTimeout(1000)
       if (profiling) {
         const telemetry = await h.page.evaluate(() => window.__writingLayout.stop())
         expect(Object.keys(telemetry.spans).length).toBeGreaterThan(0)
       }
       expect(await snapshotWriting(h.page)).toEqual(before)
+      expect(await blockIdentities(h)).toEqual(identities)
       await h.page.keyboard.insertText('replacement')
       await h.frames()[0].evaluate(() => (window as unknown as EditorWindow).flushPendingContentChange())
       await expect.poll(() => h.page.evaluate(() => window.writingPublications.length)).toBe(2)
