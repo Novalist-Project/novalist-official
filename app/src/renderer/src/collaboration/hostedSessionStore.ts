@@ -10,6 +10,7 @@ interface HostedSession {
   isOwner: boolean
   recoveryPath: string | null
   mode: 'hosted' | 'persistent' | 'tcp' | 'steam'
+  hasPendingUpdates?: boolean
 }
 
 interface SavedHostedProject { server: string; projectId: string; recoveryPath: string | null; mode: 'hosted' | 'persistent' }
@@ -73,6 +74,12 @@ export const useHostedSessionStore = create<HostedSessionState>((set, get) => ({
       ])
       if (isCurrent() && !get().busy) set({ session, saved, ...(!session ? { invitation: '' } : {}),
         ...(session?.sessionId !== get().session?.sessionId ? { presenceFailures: [], presenceUnavailable: false } : {}) })
+      // Another writer compacted the shared history while this session was behind. With nothing waiting to
+      // be sent, reloading from the newest checkpoint loses nothing, so do it without asking.
+      if (isCurrent() && session?.mode === 'persistent' && session.connection === 'CheckpointRefreshRequired' && !session.hasPendingUpdates) {
+        await get().run('end')
+        if (!get().session) await get().run('persistentResume')
+      }
     } catch (error) { if (isCurrent()) set({ error: String(error) }) }
   },
   async run(operation, params) {

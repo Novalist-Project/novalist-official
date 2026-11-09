@@ -61,6 +61,11 @@ the persistent protocol from `novalist-sync-server`. Automated backend and real
 server tests cover registration, owner-offline joining and catch-up, retained
 copies, failed-join cleanup, reconnect rollback, pending prose across key refresh,
 member removal with a reserved rotation boundary, deletion, and mode selection.
+Any writer compacts the server history without a key change once it outgrows the
+last checkpoint fourfold: a fresh checkpoint and a pointer to it join the log at a
+new boundary, and devices behind that boundary restart from it on resume or join.
+Backend, sync-client and real-server integration tests cover compaction by a
+non-owner, offline resume, invitations from before a compaction and old servers.
 Isolated two-desktop acceptance for the new persistent controls remains pending.
 
 Approved test boundaries: editor API, collaboration session API, real transports.

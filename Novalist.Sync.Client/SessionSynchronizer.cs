@@ -5,7 +5,7 @@ using System.Threading.Channels;
 
 namespace Novalist.Sync.Client;
 
-public enum SessionConnectionState { Stopped, Connecting, Connected, Reconnecting, Failed, AccessEnded, KeyRefreshRequired }
+public enum SessionConnectionState { Stopped, Connecting, Connected, Reconnecting, Failed, AccessEnded, KeyRefreshRequired, CheckpointRefreshRequired }
 public sealed record SessionConnectionStatus(SessionConnectionState State, Exception? Error = null);
 
 public sealed class SessionSynchronizer : IAsyncDisposable
@@ -90,6 +90,7 @@ public sealed class SessionSynchronizer : IAsyncDisposable
 
     private bool IsTransient(Exception error)
     {
+        if (HostedProtocol.IsTransitionInProgress(error)) return true;
         if (error is HttpRequestException http)
             return http.StatusCode is null or HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests ||
                 (int)http.StatusCode is >= 500 and <= 599;
@@ -108,6 +109,8 @@ public sealed class SessionSynchronizer : IAsyncDisposable
     }
 
     private void Wake() => pending.Writer.TryWrite(true);
+    // Runs a pass soon even without local saves, so updates the server added on its own are caught up.
+    public void RequestPass() => Wake();
     private void SetStatus(SessionConnectionState state, Exception? error = null)
     {
         lock (statusGate) Volatile.Write(ref status, terminalError is null ? new(state, error) : new(SessionConnectionState.Failed, terminalError));

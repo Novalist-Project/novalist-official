@@ -110,6 +110,7 @@
     "connection": {
       "AccessEnded": "Access to this shared project has ended. End this session to continue with your local copy.",
       "KeyRefreshRequired": "Shared access changed. Refresh to continue; your unshared writing will be kept in a recovery copy.",
+      "CheckpointRefreshRequired": "Another writer compacted the shared history while you were away. Refresh to continue; your unshared writing will be kept in a recovery copy.",
       "Stopped": "Sharing is paused.",
       "Connecting": "Connecting to the shared project…",
       "Connected": "Connected to the shared project.",

@@ -117,7 +117,7 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
             SequencedUpdate update;
             lock (server.gate)
             {
-                if (server.reservations.Values.Any(value => value.Project == header.ProjectId)) throw new HubException("Project writes are reserved for key rotation.");
+                if (server.reservations.Values.Any(value => value.Project == header.ProjectId)) throw new HubException(HostedProtocol.TransitionInProgress);
                 var history = server.projects[header.ProjectId];
                 if (history.FirstOrDefault(item => item.Envelope.Header.AsSpan().SequenceEqual(envelope.Header)) is { } previous) return previous.ServerSeq;
                 update = new(history.Count + 1, envelope);
@@ -129,7 +129,11 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
         public async IAsyncEnumerable<SequencedUpdate> CatchUp(Guid project, long after, [EnumeratorCancellation] CancellationToken ct)
         {
             SequencedUpdate[] updates;
-            lock (server.gate) updates = server.projects[project].Where(update => update.ServerSeq > after).ToArray();
+            lock (server.gate)
+            {
+                if (after < server.HistoryStart(project) - 1) throw new HubException(HostedProtocol.HistoryReplaced);
+                updates = server.projects[project].Where(update => update.ServerSeq > after).ToArray();
+            }
             foreach (var update in updates) { ct.ThrowIfCancellationRequested(); yield return update; }
             await Task.CompletedTask;
         }

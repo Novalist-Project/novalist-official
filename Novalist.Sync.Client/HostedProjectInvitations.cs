@@ -3,7 +3,8 @@ using NSec.Cryptography;
 
 namespace Novalist.Sync.Client;
 
-public sealed record HostedInvitationOptions(CheckpointReference Checkpoint, DateTimeOffset ExpiresAt);
+// FirstServerSequence: where the history starts after a compaction; null keeps the access state's own boundary.
+public sealed record HostedInvitationOptions(CheckpointReference Checkpoint, DateTimeOffset ExpiresAt, long? FirstServerSequence = null);
 
 public static class HostedProjectInvitations
 {
@@ -22,7 +23,8 @@ public static class HostedProjectInvitations
         var secret = delegation.Export(KeyBlobFormat.RawPrivateKey);
         try
         {
-            var link = HostedInvitationBootstrap.Encode(access.State, invitation, grant, secret, options.Checkpoint);
+            var state = options.FirstServerSequence is { } first ? access.State with { FirstServerSequence = first } : access.State;
+            var link = HostedInvitationBootstrap.Encode(state, invitation, grant, secret, options.Checkpoint);
             await transport.CreateInvitationAsync(access.ProjectId, invitation, options.ExpiresAt, ct);
             return link;
         }

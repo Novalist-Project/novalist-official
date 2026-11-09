@@ -76,7 +76,7 @@ internal sealed partial class PersistentSessionServer
                 project = rotation.Begin.ProjectId;
                 epoch = server.epochs[project] = rotation.Begin.PreviousEpoch + 1;
                 server.projects[project].AddRange(rotation.Updates);
-                server.members[project].Remove(request.RemovedMemberId);
+                if (request.RemovedMemberId is { } removedMember) server.members[project].Remove(removedMember);
                 foreach (var grant in rotation.Grants)
                 {
                     server.grants[(project, grant.DeviceId)] = new(epoch, rotation.Begin.PreviousServerSeq + 1, rotation.Grantor, grant.Payload);

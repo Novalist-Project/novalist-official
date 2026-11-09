@@ -152,6 +152,7 @@ public sealed partial class DesktopSharingTests
         private readonly BackendHost host;
         public JsonRpc Rpc { get; }
         public DesktopPeer Peer { get; }
+        internal HostedProjectWorkspace Persistent => host.Workspace.HostedProjects!;
 
         public DesktopParticipant(string settings, TestIdentityProvider issuer)
         {

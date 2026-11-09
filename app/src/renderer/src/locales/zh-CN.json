@@ -110,6 +110,7 @@
     "connection": {
       "AccessEnded": "你对此共享项目的访问权限已结束。结束此会话后，可以继续使用本地副本。",
       "KeyRefreshRequired": "共享访问权限已更改。刷新后即可继续；尚未共享的写作内容将保留在恢复副本中。",
+      "CheckpointRefreshRequired": "你离线期间，另一位作者压缩了共享历史记录。刷新后即可继续；尚未共享的写作内容将保留在恢复副本中。",
       "Stopped": "共享已暂停。",
       "Connecting": "正在连接共享项目…",
       "Connected": "已连接共享项目。",

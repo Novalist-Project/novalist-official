@@ -9,7 +9,7 @@ namespace Novalist.Backend;
 internal sealed partial class HostedProjectWorkspace
 {
     private sealed record SavedProject(int Version, Guid SessionId, Guid ProjectId, Uri Server, Guid DeviceId,
-        string Root, string LocalProjectId, CheckpointReference Checkpoint, string? RecoveryPath, uint Epoch);
+        string Root, string LocalProjectId, CheckpointReference Checkpoint, string? RecoveryPath, uint Epoch, long? CheckpointStart = null);
 
     internal async Task<SavedHostedProjectDto?> SavedAsync()
     {
@@ -43,7 +43,7 @@ internal sealed partial class HostedProjectWorkspace
         ct.ThrowIfCancellationRequested();
         var saved = new SavedProject(1, runtime.Id, runtime.Access.ProjectId, runtime.Access.Server, runtime.Device.Id,
             root, ReadProjectId(root), runtime.Checkpoint ?? throw new InvalidOperationException("The checkpoint is missing."),
-            runtime.RecoveryPath, runtime.Access.Epoch);
+            runtime.RecoveryPath, runtime.Access.Epoch, runtime.CheckpointStart);
         return workspace.FileService.WriteTextAsync(RegistryPath(root), JsonSerializer.Serialize(saved));
     }
 
@@ -64,8 +64,11 @@ internal sealed partial class HostedProjectWorkspace
         {
             await runtime.Session.StartAsync(false, ct);
             var archivePath = Path.Combine(storage, "sessions", runtime.Id.ToString("N"), "checkpoint.zip");
-            if (runtime.Access.Epoch != saved.Epoch)
+            if (runtime.Id != saved.SessionId)
             {
+                // After a compaction the checkpoint is only named inside the log this session just caught up.
+                runtime.Checkpoint ??= (CheckpointPointer.Read(runtime.Session.Updates)
+                    ?? throw new InvalidDataException("The newest project checkpoint is missing.")).Reference;
                 await using var download = OpenArchive(runtime.Id);
                 await CheckpointTransfer.DownloadAsync(runtime.Session.Updates,
                     runtime.Checkpoint ?? throw new InvalidDataException("The refreshed checkpoint is missing."), download,
@@ -97,7 +100,15 @@ internal sealed partial class HostedProjectWorkspace
         }
         catch { await runtime.DisposeAsync(); throw; }
         current = runtime;
+        StartCompactionChecks(runtime);
         return runtime.View();
+    }
+
+    // Null for servers from before history compaction, which never move the history without a key change.
+    private static async Task<HostedProjectHistory?> ReadHistoryAsync(HostedTransport transport, Guid project, CancellationToken ct)
+    {
+        try { return await transport.GetProjectHistoryAsync(project, ct); }
+        catch (Microsoft.AspNetCore.SignalR.HubException) { return null; }
     }
 
     private async Task<Runtime> ReopenAsync(SavedProject saved, CancellationToken ct)
@@ -113,19 +124,35 @@ internal sealed partial class HostedProjectWorkspace
                 ?? throw new InvalidOperationException("This device no longer has the saved project credentials.");
             var pendingEdits = HostedProjectSession.ReadPendingCompoundEdits(storage, saved.SessionId, saved.ProjectId, device.Id);
             var pendingUpdates = HostedProjectSession.ReadPendingUpdates(storage, saved.SessionId, saved.ProjectId, device.Id);
+            HostedProjectHistory? history;
             await using (var transport = new HostedTransport(saved.Server, device, () => account.GetAccessTokenAsync(stopping.Token)))
             {
                 await transport.ConnectAsync(ct);
                 if (await accessStore.RefreshEpochAsync(access, device, transport, ct) is { } next)
                 { access.Dispose(); access = next; }
+                history = await ReadHistoryAsync(transport, access.ProjectId, ct);
             }
-            var id = access.Epoch == saved.Epoch ? saved.SessionId : Guid.NewGuid();
+            var sameEpoch = access.Epoch == saved.Epoch;
+            var (first, last) = sameEpoch ? HostedProjectSession.ReadJournalPosition(storage, saved.SessionId, saved.ProjectId, device.Id)
+                : (access.FirstServerSequence, access.FirstServerSequence - 1);
+            // A compaction replaced the history this device would catch up from, so it starts again at the newest checkpoint.
+            var start = history is { } server && last < server.HistoryStartsAt - 1 ? server.HistoryStartsAt : first;
+            var compacted = start != first;
+            if (start != access.FirstServerSequence)
+            {
+                var aligned = access.StartingAt(start, device);
+                access.Dispose();
+                access = aligned;
+            }
+            var fresh = !sameEpoch || compacted;
+            var id = fresh ? Guid.NewGuid() : saved.SessionId;
             session = await HostedProjectSession.OpenAsync(storage, id, access, device, () => account.GetAccessTokenAsync(stopping.Token));
-            if (id != saved.SessionId) foreach (var edit in pendingEdits) session.Updates.SaveCompoundEdit(edit);
+            if (fresh) foreach (var edit in pendingEdits) session.Updates.SaveCompoundEdit(edit);
             return new(id, device, access, session, account.DisplayName)
             {
-                Checkpoint = access.Epoch == saved.Epoch ? saved.Checkpoint : access.Checkpoint,
-                PendingUpdates = access.Epoch == saved.Epoch ? [] : pendingUpdates
+                Checkpoint = compacted ? null : sameEpoch ? saved.Checkpoint : access.Checkpoint,
+                CheckpointStart = fresh ? null : saved.CheckpointStart,
+                PendingUpdates = fresh ? pendingUpdates : []
             };
         }
         catch

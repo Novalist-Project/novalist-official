@@ -17,6 +17,7 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
     internal bool IsActive => current is not null;
     internal bool OwnsJournal { get { lock (operationGate) return current is not null || pending is not null; } }
     internal HostedSessionDto? Status => current?.View();
+    internal long? AdoptedCheckpointStart => current?.CheckpointStart;
 
     internal HostedProjectWorkspace(Workspace workspace, HostedAccounts accounts, ICollaborationCredentials credentials)
     {
@@ -55,6 +56,7 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
             throw;
         }
         current = runtime;
+        StartCompactionChecks(runtime);
         return runtime.View();
     }
 
@@ -71,9 +73,10 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
         try
         {
             await runtime.Session.ConnectAsync(ct);
-            await accessStore.ActivateAsync(runtime.Access, runtime.Session.Transport, ct);
             await runtime.Session.StartAsync(false, ct);
-            runtime.Checkpoint = runtime.Access.Checkpoint ?? throw new InvalidDataException("The invitation has no project checkpoint.");
+            // A pointer in the caught-up log names a checkpoint newer than the invitation's, written by a compaction.
+            runtime.Checkpoint = CheckpointPointer.Read(runtime.Session.Updates)?.Reference
+                ?? runtime.Access.Checkpoint ?? throw new InvalidDataException("The invitation has no project checkpoint.");
             await using var archive = OpenArchive(runtime.Id);
             await workspace.ReportCollaborationProgressAsync(new("transferring", 0, 0, 0, 0));
             await CheckpointTransfer.DownloadAsync(runtime.Session.Updates, runtime.Checkpoint, archive, RetainedProjectCopies.FreeSpace(destination), ct);
@@ -104,14 +107,17 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
             throw;
         }
         current = runtime;
+        StartCompactionChecks(runtime);
         return runtime.View();
     }
 
     internal async Task<string> InviteAsync(DateTimeOffset expiresAt, CancellationToken ct)
     {
         var runtime = RequireOwner();
+        AdoptLatestCheckpoint(runtime);
         return await HostedProjectInvitations.CreateAsync(runtime.Access, runtime.Device, runtime.Session.Transport,
-            new(runtime.Checkpoint ?? throw new InvalidOperationException("Publish the project before inviting someone."), expiresAt), ct);
+            new(runtime.Checkpoint ?? throw new InvalidOperationException("Publish the project before inviting someone."), expiresAt,
+                runtime.CheckpointStart), ct);
     }
 
     private async Task<Runtime> PrepareAsync(Uri server, string? link, CancellationToken ct)
@@ -124,6 +130,19 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
             access = link is null ? await accessStore.CreateOwnerAsync(server, device, ct) : await accessStore.PrepareJoinAsync(link, device, ct);
             if (access.Server != new Uri(server.AbsoluteUri.TrimEnd('/') + '/'))
                 throw new InvalidOperationException("Connect to the server named by this invitation.");
+            if (link is not null)
+            {
+                await using var transport = new HostedTransport(access.Server, device, () => account.GetAccessTokenAsync(stopping.Token));
+                await transport.ConnectAsync(ct);
+                await accessStore.ActivateAsync(access, transport, ct);
+                // An invitation made before a compaction names a start the server no longer serves.
+                if (await ReadHistoryAsync(transport, access.ProjectId, ct) is { } history && history.HistoryStartsAt > access.FirstServerSequence)
+                {
+                    var moved = access.StartingAt(history.HistoryStartsAt, device);
+                    access.Dispose();
+                    access = moved;
+                }
+            }
             var id = Guid.NewGuid();
             var session = await HostedProjectSession.OpenAsync(storage, id, access, device, () => account.GetAccessTokenAsync(stopping.Token));
             return new(id, device, access, session, account.DisplayName);
@@ -204,11 +223,20 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
         internal HostedProjectSession Session => session;
         internal string Name => name;
         internal CheckpointReference? Checkpoint { get; set; }
+        // Where the server history starts at Checkpoint when a compaction moved it past this session's own start.
+        internal long? CheckpointStart { get; set; }
+        internal bool CompactionUnsupported { get; set; }
+        internal CancellationTokenSource Stopping { get; } = new();
+        internal Task CompactionChecks { get; set; } = Task.CompletedTask;
         internal string? RecoveryPath { get; set; }
         internal IReadOnlyList<PendingSessionUpdate> PendingUpdates { get; init; } = [];
-        internal HostedSessionDto View() => new(id, access.ProjectId, access.Server.AbsoluteUri, session.Status.State.ToString(), access.IsOwner, RecoveryPath, "persistent");
+        internal HostedSessionDto View() => new(id, access.ProjectId, access.Server.AbsoluteUri, session.Status.State.ToString(), access.IsOwner, RecoveryPath, "persistent",
+            session.Updates.HasPendingUpdates);
         public async ValueTask DisposeAsync()
         {
+            await Stopping.CancelAsync();
+            await CompactionChecks;
+            Stopping.Dispose();
             await session.DisposeAsync();
             access.Dispose();
             device.Dispose();

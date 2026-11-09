@@ -84,6 +84,17 @@ rotates project keys and publishes a fresh encrypted checkpoint. Remaining
 writers use **Refresh keys** to reconnect. Deleting the shared project removes
 its server copy; participants keep their local copies.
 
+Novalist keeps the server's update history small on its own. Your edits are
+grouped for a quarter of a second before they are saved. When the history since
+the last checkpoint grows to more than four times the checkpoint's size (and at
+least 1 MB), the app of any connected writer with nothing left to send uploads a
+fresh encrypted checkpoint, at most once a day; the server then discards the
+replaced history after its grace period. Keys and invitations stay valid, and
+nobody is interrupted. A writer who was offline while this happened reconnects
+from the newest checkpoint automatically when nothing of theirs is waiting to be
+sent; otherwise **Refresh keys** appears and unshared writing goes into a
+recovery copy. Older servers without this feature keep their full history.
+
 The following relay instructions describe live-host sessions, not persistent
 hosting.
 

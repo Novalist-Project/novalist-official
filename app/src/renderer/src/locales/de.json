@@ -110,6 +110,7 @@
     "connection": {
       "AccessEnded": "Der Zugriff auf dieses geteilte Projekt wurde beendet. Beende diese Sitzung, um mit deiner lokalen Kopie weiterzuarbeiten.",
       "KeyRefreshRequired": "Der gemeinsame Zugriff wurde geändert. Aktualisiere ihn, um fortzufahren. Noch nicht geteilte Texte bleiben in einer Wiederherstellungskopie erhalten.",
+      "CheckpointRefreshRequired": "Eine andere Person hat den gemeinsamen Verlauf verdichtet, während du nicht verbunden warst. Aktualisiere, um fortzufahren. Noch nicht geteilte Texte bleiben in einer Wiederherstellungskopie erhalten.",
       "Stopped": "Die Zusammenarbeit ist pausiert.",
       "Connecting": "Verbindung zum geteilten Projekt wird hergestellt…",
       "Connected": "Mit dem geteilten Projekt verbunden.",

@@ -42,7 +42,7 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
           void run('invite', [new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()])
         }}>{t('collaboration.invite')}</button>}
         <button className="dialog-button" disabled={busy !== null} onClick={() => void run('end')}>{t('collaboration.end')}</button>
-        {session.connection === 'KeyRefreshRequired' && <button className="dialog-button primary" disabled={busy !== null} onClick={() => {
+        {(session.connection === 'KeyRefreshRequired' || session.connection === 'CheckpointRefreshRequired') && <button className="dialog-button primary" disabled={busy !== null} onClick={() => {
           void run('end').then(() => { if (!useHostedSessionStore.getState().session) return run(session.mode === 'persistent' ? 'persistentResume' : 'resume') })
         }}>{t('collaboration.refreshKeys')}</button>}
       </div>
