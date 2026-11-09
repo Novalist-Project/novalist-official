@@ -1,4 +1,13 @@
 type Consume = (records: MutationRecord[]) => void
+interface ChildChange { target: Node; added: Node[]; removed: Node[] }
+
+function removals(nodes: Node[]): ChildChange[] {
+  return nodes.flatMap(node => node.parentNode ? [{ target: node.parentNode, added: [], removed: [node] }] : [])
+}
+
+function sameNodes(actual: NodeList, expected: Node[]): boolean {
+  return actual.length === expected.length && expected.every((node, index) => actual[index] === node)
+}
 
 export function authoredClass(value: string | null): string {
   return (value ?? '').split(/\s+/).filter(name => name && name !== 'nv-focus-block').join(' ')
@@ -19,32 +28,39 @@ export class WritingPresentation {
     return observer
   }
 
-  private move(nodes: Node[], parent: Node, operation: () => void): void {
-    const targets = new Set([parent, ...nodes.flatMap(node => node.parentNode ? [node.parentNode] : [])])
-    const moved = new Set(nodes)
+  private move(expected: ChildChange[], operation: () => void): void {
     for (const [observer, consume] of this.observers) consume(contentRecords(observer.takeRecords()))
     try { operation() }
     finally {
-      for (const [observer, consume] of this.observers) consume(contentRecords(observer.takeRecords()).filter(record =>
-        record.type !== 'childList' || !targets.has(record.target) ||
-        [...record.addedNodes, ...record.removedNodes].some(node => !moved.has(node))))
+      for (const [observer, consume] of this.observers) {
+        let next = 0
+        const records = contentRecords(observer.takeRecords())
+        const authored = records.filter(record => {
+          const change = expected[next]
+          if (record.type !== 'childList' || !change || record.target !== change.target ||
+            !sameNodes(record.addedNodes, change.added) || !sameNodes(record.removedNodes, change.removed)) return true
+          next++
+          return false
+        })
+        consume(next === expected.length ? authored : records)
+      }
     }
   }
 
   append(parent: HTMLElement, ...nodes: Node[]): void {
-    this.move(nodes, parent, () => parent.append(...nodes))
+    this.move([...removals(nodes), { target: parent, added: nodes, removed: [] }], () => parent.append(...nodes))
   }
 
   unwrap(page: Element): void {
     const parent = page.parentNode
     if (!parent) return
     const children = Array.from(page.childNodes)
-    this.move([page, ...children], parent, () => page.replaceWith(...children))
+    this.move([...removals(children), { target: parent, added: children, removed: [page] }], () => page.replaceWith(...children))
   }
 
   remove(page: Element): void {
     const parent = page.parentNode
-    if (parent) this.move([page], parent, () => page.remove())
+    if (parent) this.move([{ target: parent, added: [], removed: [page] }], () => page.remove())
   }
 }
 

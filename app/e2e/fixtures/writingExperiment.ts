@@ -88,7 +88,7 @@ class ExperimentPane implements WritingPane {
   private pendingScope: number[] | null = null
   private savedSelection: LogicalSelection | null = null
   private readonly viewIndices = new Map<HTMLElement, number>()
-  private acceptSceneContent: ((scene: HTMLElement) => void) | undefined
+  private acceptSceneContent: ((scene: HTMLElement) => () => void) | undefined
 
   constructor(private readonly editor: ExperimentEditor, private readonly book: FixtureBook, private readonly history: CompoundHistory, optimized: boolean, scoped: boolean) {
     this.root = editor.document.getElementById('editor')!
@@ -114,9 +114,10 @@ class ExperimentPane implements WritingPane {
         if (this.applying || this.composing) return
         const saved = transactionSelections.get(event.transaction)
         this.markDirty(contentRecords(this.observer.takeRecords()))
+        const acknowledge = this.acceptSceneContent?.(root)
         if (!optimized || !applySimpleInsertion(markup, event.delta)) this.render(index)
         this.markDirty(contentRecords(this.observer.takeRecords()).filter(record => !root.contains(record.target)))
-        this.acceptSceneContent?.(root)
+        acknowledge?.()
         if (saved) { this.savedSelection = saved; this.restore(saved) }
       })
       return { root, markup, state }

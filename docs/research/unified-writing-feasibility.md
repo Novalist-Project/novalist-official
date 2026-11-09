@@ -434,3 +434,43 @@ gate or a replacement for full native acceptance. Normal/page/combined p95 still
 miss 50 ms here; existing continuous-page, latency, layout/scroll, concurrency and
 production-parity gates remain closed. Next work needs a separately scoped
 diagnosis of visible delayed layout/scroll and remaining whole-root work.
+
+### Presentation review fix round 1
+
+Independent review reproduced two attribution defects in the first refinement.
+The test-only move classifier now matches exact ordered additions/removals and
+requires the complete expected move sequence before suppressing records. Extra
+same-node removal/reorder records and incomplete throwing operations remain
+authored work. Publication acknowledgement now snapshots pending local dirtiness
+before a peer render; an unpublished local revision keeps ownership instead of
+being silently accepted as published. Focused tests require one capture/history
+group/publication and matching DOM/Y.Text in both panes, while pure remote edits
+retain zero echo publications and pure presentation retains zero content work.
+
+The [matched viewport evidence](writing-presentation-viewport-review.json) uses
+24 rich scenes/24,000 words with a 5,000-word long scene in both executable
+pre-refinement baseline `5672bf79` and the updated test engine. Eight headless
+passive cases and eight native passive cases compare normal/page modes, a visible
+distant peer caret and an intentionally scrolled-away peer view. Four additional
+native cases use a minimal normal-mode alternating-focus/reveal/edit trigger.
+All matched peer logical endpoints, rectangles, scroll positions, heights and
+scripted scroll-write sequences are exactly equal at every recorded checkpoint.
+
+Passive earlier-scene editing keeps the native visible peer caret at top
+489.859375 in normal mode (489.765625 in page mode) in both variants; intentionally
+away controls stay at scrollTop 0 without peer scroll writes. The alternating
+trigger then reproduces the bad viewport state in both variants. After the
+intentional switch to a middle-scene caret, its input-frame top is already
+6961.3125, outside the 935 px host viewport. A later existing `focus.restore`
+callback changes scrollTop from 29745 to 45770, adding a -16025 px displacement
+and leaving caret top -9063.6875. The callback is the unchanged 100 ms restore in
+`clipboard-focus-events.js`; baseline/current callback sequence and values match.
+
+This separates initial stable passive-peer state, reveal/layout displacement
+after deliberate focus/target change, and the additional delayed scroll restore.
+It establishes equivalent behavior for these matched triggers, not a complete
+cause for every million-word displacement. The unchanged focus/scroll issue and
+remaining reveal/layout instability belong in the next bounded geometry
+diagnosis; no geometry source was changed or full benchmark rerun here.
+Historical measurements retain their original revisions. All broad layout,
+continuous-page, concurrency, production and performance gates stay closed.

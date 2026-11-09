@@ -5,6 +5,7 @@ import { snapshotWriting } from './fixtures/writingLayoutSnapshot'
 import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 import type * as Y from 'yjs'
 import type { WritingPane } from './fixtures/writingContract'
+import type { FixtureBook } from './fixtures/writingBook'
 
 interface TransactionPane extends WritingPane { views: { state: { doc: Y.Doc; text: Y.Text } }[] }
 
@@ -17,12 +18,87 @@ const book = { wordCount: 2500, scenes: [
 ] }
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control'
 
-async function setup(): Promise<WritingHarness> {
+async function setup(fixture: FixtureBook = book): Promise<WritingHarness> {
   const h = await launchWriting('experiment', 2, false)
-  await h.seed(book)
+  await h.seed(fixture)
   await h.page.evaluate(installPresentationProbe)
   return h
 }
+
+for (const change of ['remove', 'reorder', 'partial-remove'] as const) {
+  test(`presentation review I1: extra same-node ${change} survives an owned append and throw`, async () => {
+    const fixture = { wordCount: 3, scenes: [{ id: 'a', html: change === 'reorder' ? '<p>alpha</p><p>bravo</p>' : '<p>alpha bravo</p>' }, { id: 'b', html: '<p>charlie</p>' }] }
+    const h = await setup(fixture)
+    try {
+      await h.frames()[0].evaluate(change => {
+        const append = Element.prototype.append
+        Element.prototype.append = function (...nodes) {
+          if (change === 'partial-remove' && this.classList.contains('nv-page') && nodes.some(node => node instanceof Element && node.matches('p'))) {
+            (nodes[0] as Element).remove()
+            throw new Error('Synthetic same-node mutation')
+          }
+          append.apply(this, nodes)
+          if (!this.classList.contains('nv-page') || !nodes.some(node => node instanceof Element && node.matches('p'))) return
+          if (change === 'remove') (nodes[0] as Element).remove()
+          else this.prepend(nodes.at(-1) as Node)
+          throw new Error('Synthetic same-node mutation')
+        }
+        try { (window as unknown as EditorWindow).setPageView(true) }
+        catch (error) { if (!(error instanceof Error) || error.message !== 'Synthetic same-node mutation') throw error }
+        finally { Element.prototype.append = append }
+      }, change)
+      await flush(h)
+      const after = await snapshotWriting(h.page)
+      const html = change === 'reorder' ? '<p>bravo</p><p>alpha</p>' : ''
+      expect(after.panes[0].scenes[0].html).toBe(html)
+      expect(after.panes[1].scenes).toEqual(after.panes[0].scenes)
+      expect(after.panes[1].deltas).toEqual(after.panes[0].deltas)
+      expect(after.panes[0].deltas[0].map(run => run.insert).join('')).toBe(change === 'reorder' ? 'bravo\nalpha\n' : '')
+      expect(after.panes[0].undoGroups).toEqual([[0]])
+      expect(after.publications).toEqual([{ sceneId: 'a', html }])
+      expect(await h.page.evaluate(() => window.writingWork.captures)).toBe(1)
+      await h.page.evaluate(() => window.writingPanes[0].undo())
+      expect((await snapshotWriting(h.page)).panes[0].scenes.map(scene => scene.html)).toEqual(fixture.scenes.map(scene => scene.html))
+    } finally { await h.close() }
+  })
+}
+
+test('presentation review I2: pending same-scene local content publishes once after a peer insertion', async () => {
+  const h = await setup()
+  try {
+    await h.page.evaluate(() => {
+      const peer = document.querySelectorAll('iframe')[1].contentDocument!
+      peer.querySelector('[data-scene-id="scene-b"] p')!.firstChild!.textContent = 'queued local delta'
+      window.writingPanes[0].remoteInsert(1, 0, 'REMOTE ')
+      window.writingPanes[1].capture()
+    })
+    await flush(h)
+    const after = await snapshotWriting(h.page)
+    expect(after.panes[0].scenes[1].html).toBe('<p>REMOTE queued local delta</p>')
+    expect(after.panes[1].scenes).toEqual(after.panes[0].scenes)
+    expect(after.panes[0].deltas[1].map(run => run.insert).join('')).toBe('REMOTE queued local delta\n')
+    expect(after.panes[1].deltas).toEqual(after.panes[0].deltas)
+    expect(after.panes[0].undoGroups).toEqual([[1]])
+    expect(after.publications).toEqual([{ sceneId: 'scene-b', html: '<p>REMOTE queued local delta</p>' }])
+    await flush(h)
+    expect(await h.page.evaluate(() => window.writingPublications)).toEqual(after.publications)
+  } finally { await h.close() }
+})
+
+test('presentation review I2: a pure peer insertion produces no authored publication or undo group', async () => {
+  const h = await setup()
+  try {
+    await h.page.evaluate(() => window.writingPanes[0].remoteInsert(1, 0, 'REMOTE '))
+    await flush(h)
+    const after = await snapshotWriting(h.page)
+    expect(after.panes[0].scenes[1].html).toBe('<p>REMOTE charlie delta</p>')
+    expect(after.panes[1].scenes).toEqual(after.panes[0].scenes)
+    expect(after.panes[1].deltas).toEqual(after.panes[0].deltas)
+    expect(after.panes[0].undoGroups).toEqual([])
+    expect(after.publications).toEqual([])
+    expect(await h.page.evaluate(() => window.writingWork.captures)).toBe(0)
+  } finally { await h.close() }
+})
 
 async function flush(h: WritingHarness): Promise<void> {
   await h.page.evaluate(() => {

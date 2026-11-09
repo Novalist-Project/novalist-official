@@ -12,7 +12,7 @@ interface CaptureEditor extends EditorWindow {
   writingCaptureTelemetry: CaptureTelemetry
 }
 
-export function installSceneCapture(editor: CaptureEditor, presentation: WritingPresentation): (scene: HTMLElement) => void {
+export function installSceneCapture(editor: CaptureEditor, presentation: WritingPresentation): (scene: HTMLElement) => () => void {
   const root = editor.document.getElementById('editor')!
   const scenes = Array.from(root.querySelectorAll<HTMLElement>('[data-scene-id]'))
   const clean = editor.getCleanContentHtml.bind(editor)
@@ -68,5 +68,14 @@ export function installSceneCapture(editor: CaptureEditor, presentation: Writing
       if (change) editor.sendMessage({ type: 'contentChanged', ...change })
     }
   }
-  return scene => { markDirty(contentRecords(observer.takeRecords())); baseline.set(scene, clean(scene)); dirty.delete(scene) }
+  return scene => {
+    markDirty(contentRecords(observer.takeRecords()))
+    const pendingLocal = dirty.has(scene)
+    return () => {
+      markDirty(contentRecords(observer.takeRecords()))
+      if (pendingLocal) return
+      baseline.set(scene, clean(scene))
+      dirty.delete(scene)
+    }
+  }
 }
