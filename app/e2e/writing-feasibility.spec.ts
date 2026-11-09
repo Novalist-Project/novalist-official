@@ -44,6 +44,106 @@ test('experiment: boundary Backspace and Delete preserve both scenes', async () 
   } finally { await h.close() }
 })
 
+test('experiment: paste across scenes preserves both owners and undoes in one action', async () => {
+  const h = await launchWriting('experiment')
+  try {
+    await h.seed(smallBook)
+    const result = await h.page.evaluate(() => {
+      const pane = window.writingPanes[0]
+      pane.select({ scene: 0, offset: 6 }, { scene: 1, offset: 7 })
+      const editor = document.querySelector('iframe')!.contentDocument!.getElementById('editor')!
+      const transfer = new DataTransfer()
+      transfer.setData('text/html', '<b>replacement</b>')
+      editor.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: transfer }))
+      const pasted = pane.serialize()
+      const count = pane.sceneCount()
+      pane.undo()
+      return { pasted, count, undone: pane.serialize() }
+    })
+    expect(result.count).toBe(2)
+    expect(result.pasted.map(scene => scene.text)).toEqual(['alpha replacement', ' delta'])
+    expect(result.undone.map(scene => scene.text)).toEqual(['alpha bravo', 'charlie delta'])
+  } finally { await h.close() }
+})
+
+test('experiment: mouse drag selects text across two scene wrappers', async () => {
+  const h = await launchWriting('experiment')
+  try {
+    await h.seed(smallBook)
+    const points = await h.page.evaluate(() => {
+      const frame = document.querySelector('iframe')!
+      const offset = frame.getBoundingClientRect()
+      return [6, 7].map((character, index) => {
+        const range = frame.contentDocument!.createRange()
+        const text = frame.contentDocument!.querySelectorAll('[data-scene-id] p')[index].firstChild!
+        range.setStart(text, character)
+        range.setEnd(text, character + 1)
+        const rect = range.getBoundingClientRect()
+        return { x: rect.x + offset.x, y: rect.y + offset.y + rect.height / 2 }
+      })
+    })
+    await h.page.mouse.move(points[0].x, points[0].y)
+    await h.page.mouse.down()
+    await h.page.mouse.move(points[1].x, points[1].y, { steps: 10 })
+    await h.page.mouse.up()
+    const selection = await h.frames()[0].evaluate(() => window.getSelection()!.toString())
+    expect(selection).toContain('bravo')
+    expect(selection).toContain('charlie')
+  } finally { await h.close() }
+})
+
+test('experiment: page view paginates paragraphs inside a long scene', async () => {
+  const h = await launchWriting('experiment')
+  try {
+    await seedWritingBook(h, { sceneCount: 2, wordCount: 4000, rich: true })
+    const result = await h.frames()[0].evaluate(() => {
+      const editor = window as unknown as EditorWindow
+      editor.setPageView(true)
+      const paragraphs = Array.from(document.querySelectorAll('[data-scene-id] p'))
+      const pages = new Set(paragraphs.map(paragraph => paragraph.closest('.nv-page')))
+      return { pages: pages.size, sceneRoots: document.querySelectorAll('[data-scene-id]').length }
+    })
+    expect(result.sceneRoots).toBe(2)
+    expect(result.pages).toBeGreaterThan(2)
+  } finally { await h.close() }
+})
+
+test('experiment: continuous page view does not force a new page at every scene', async () => {
+  const h = await launchWriting('experiment')
+  try {
+    await h.seed(smallBook)
+    const pages = await h.frames()[0].evaluate(() => {
+      ;(window as unknown as EditorWindow).setPageView(true)
+      return document.querySelectorAll('.nv-page').length
+    })
+    expect(pages).toBe(1)
+  } finally { await h.close() }
+})
+
+test('experiment: the existing content publication path captures each touched scene separately', async () => {
+  const h = await launchWriting('experiment')
+  try {
+    await h.seed(smallBook)
+    await h.page.evaluate(() => {
+      window.writingPublications = []
+      window.addEventListener('message', event => {
+        if (typeof event.data?.novalistEditor !== 'string') return
+        const message = JSON.parse(event.data.novalistEditor)
+        if (message.type === 'contentChanged') window.writingPublications.push({ sceneId: message.sceneId, html: message.html })
+      })
+      window.writingPanes[0].select({ scene: 0, offset: 0 }, { scene: 0, offset: 0 })
+    })
+    await h.page.keyboard.insertText('A')
+    await h.page.evaluate(() => window.writingPanes[0].select({ scene: 1, offset: 0 }, { scene: 1, offset: 0 }))
+    await h.page.keyboard.insertText('B')
+    await h.frames()[0].evaluate(() => (window as unknown as EditorWindow).flushPendingContentChange())
+    await expect.poll(() => h.page.evaluate(() => [...new Set(window.writingPublications.map(publication => publication.sceneId))].sort())).toEqual(['scene-a', 'scene-b'])
+    const result = await h.page.evaluate(() => window.writingPublications)
+    expect(result.find(publication => publication.sceneId === 'scene-a')?.html).toBe('<p>Aalpha bravo</p>')
+    expect(result.find(publication => publication.sceneId === 'scene-b')?.html).toBe('<p>Bcharlie delta</p>')
+  } finally { await h.close() }
+})
+
 test('experiment: backward keyboard selection survives scope round trip and redo restores both formatted scenes', async () => {
   const h = await launchWriting('experiment')
   try {
@@ -73,13 +173,24 @@ for (const sceneCount of [100, 500, 1000]) {
   test(`experiment: scale ${sceneCount} scenes with two panes and five traversal rounds`, async ({}, testInfo) => {
     test.setTimeout(900_000)
     const h = await launchWriting('experiment', 2)
-    const evidence: { environment?: Awaited<ReturnType<typeof writingEnvironment>>; sceneCount: number; wordCount: number; firstEditReadyMs?: number; rounds: WritingMetrics[]; modes: { name: string; metrics: WritingMetrics }[] } = {
-      sceneCount, wordCount: sceneCount * 1000, rounds: [], modes: []
+    const longSceneWords = process.env.NOVALIST_WRITING_DISTRIBUTION === 'extreme' ? sceneCount * 250 : 25_000
+    const evidence: { environment?: Awaited<ReturnType<typeof writingEnvironment>>; sceneCount: number; wordCount: number; longSceneWords: number; optimized: boolean; timing: string; firstEditReadyMs?: number; rounds: WritingMetrics[]; modes: { name: string; metrics: WritingMetrics }[] } = {
+      sceneCount, wordCount: sceneCount * 1000, longSceneWords, optimized: process.env.NOVALIST_WRITING_OPTIMIZE !== '0', timing: 'input-event-to-second-animation-frame', rounds: [], modes: []
     }
     try {
       evidence.environment = await writingEnvironment(h.page)
       const started = performance.now()
-      await seedWritingBook(h, { sceneCount, wordCount: evidence.wordCount, rich: true })
+      await seedWritingBook(h, { sceneCount, wordCount: evidence.wordCount, rich: true, longSceneWords })
+      const rich = await h.page.evaluate(async () => {
+        const documents = Array.from(document.querySelectorAll('iframe'), frame => frame.contentDocument!)
+        const images = documents.flatMap(document => Array.from(document.images))
+        await Promise.all(images.map(image => image.decode()))
+        return { images: images.filter(image => image.naturalWidth === 640 && image.naturalHeight === 360).length,
+          comments: documents.reduce((count, document) => count + document.querySelectorAll('.nv-comment').length, 0) }
+      })
+      expect(rich.images).toBe(sceneCount / 5)
+      expect(rich.comments).toBe(sceneCount / 5)
+      await h.page.waitForFunction(count => Array.from(document.querySelectorAll('iframe')).every(frame => frame.contentDocument!.querySelectorAll('.nv-cc-card').length === count), sceneCount / 10)
       await h.page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())))
       evidence.firstEditReadyMs = performance.now() - started
       for (const name of ['normal', 'page', 'typewriter']) {
@@ -103,11 +214,11 @@ for (const sceneCount of [100, 500, 1000]) {
           await h.page.keyboard.insertText('q')
           await h.page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))))
         }
-        const metrics = await measureWriting(h.page)
+        const metrics = await measureWriting(h.page, evidence.modes.length * 15)
         evidence.modes.push({ name, metrics })
         expect.soft(metrics.editorRuntimeCount).toBe(2)
         expect.soft(metrics.sceneRootCount).toBe(sceneCount * 2)
-        expect.soft(metrics.inputSamplesMs.length).toBeGreaterThanOrEqual((evidence.modes.length) * 30)
+        expect.soft(metrics.inputSamplesMs.length).toBe(30)
         expect.soft(metrics.inputP95Ms).toBeLessThan(50)
       }
       for (let round = 0; round < 5; round++) {

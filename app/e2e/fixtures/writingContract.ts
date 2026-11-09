@@ -20,6 +20,7 @@ export interface WritingPane {
 declare global {
   interface Window {
     writingPanes: WritingPane[]
-    installWriting(book: FixtureBook): void
+    writingPublications: { sceneId: string; html: string }[]
+    installWriting(book: FixtureBook, optimized: boolean, scoped: boolean): void
   }
 }

@@ -1,11 +1,14 @@
 import { _electron, chromium, type Browser, type ElectronApplication, type Page, type Frame } from '@playwright/test'
-import { readFile } from 'node:fs/promises'
-import { basename, resolve, sep } from 'node:path'
+import { readFile, mkdtemp, rm } from 'node:fs/promises'
+import { basename, dirname, join, resolve, sep } from 'node:path'
+import { tmpdir } from 'node:os'
 import requireDesktopPermission from '../desktopSetup'
 import type { EditorWindow } from '../../src/renderer/src/views/editor/editorBridge'
 import type { FixtureBook } from './writingBook'
 import { build } from 'esbuild'
 import './writingContract'
+import { closeTestApp } from '../harness'
+import { scopeEditorSource } from './writingEngineSource'
 
 export type WritingMode = 'original' | 'experiment'
 export interface WritingHarness {
@@ -18,10 +21,26 @@ export interface WritingHarness {
 export async function launchWriting(mode: WritingMode, paneCount = 1): Promise<WritingHarness> {
   let browser: Browser | undefined
   let electron: ElectronApplication | undefined
+  let profile: string | undefined
   let page: Page
+  const optimized = process.env.NOVALIST_WRITING_OPTIMIZE !== '0'
+  const scoped = mode === 'experiment' && optimized && process.env.NOVALIST_WRITING_SCOPED !== '0'
+  const close = async (): Promise<void> => {
+    try {
+      if (electron) await closeTestApp(electron)
+      if (browser) await browser.close()
+    } finally {
+      if (profile) {
+        if (dirname(profile) !== resolve(tmpdir()) || !basename(profile).startsWith('novalist-writing-')) throw new Error('Unexpected fixture profile location.')
+        await rm(profile, { recursive: true, force: true })
+      }
+    }
+  }
+  try {
   if (process.env.NOVALIST_WRITING_ENGINE === 'electron') {
     requireDesktopPermission()
-    electron = await _electron.launch({ args: [resolve('e2e/fixtures/writingElectron.cjs')] })
+    profile = await mkdtemp(join(resolve(tmpdir()), 'novalist-writing-'))
+    electron = await _electron.launch({ args: [resolve('e2e/fixtures/writingElectron.cjs'), `--user-data-dir=${profile}`], env: { ...process.env, NOVALIST_NO_CLIPBOARD: '1' } })
     page = await electron.firstWindow()
   } else {
     browser = await chromium.launch({ headless: true })
@@ -38,7 +57,8 @@ export async function launchWriting(mode: WritingMode, paneCount = 1): Promise<W
     const root = resolve('src/renderer/public')
     const file = resolve(root, `.${pathname}`)
     if (!file.startsWith(root + sep)) throw new Error('Asset outside the editor fixture.')
-    await route.fulfill({ contentType, body: await readFile(file) })
+    const body = await readFile(file)
+    await route.fulfill({ contentType, body: scoped && name.endsWith('.js') ? scopeEditorSource(name, body.toString('utf8')) : body })
   })
   await page.goto('http://127.0.0.1:38917/harness')
   if (mode === 'experiment') {
@@ -61,14 +81,12 @@ export async function launchWriting(mode: WritingMode, paneCount = 1): Promise<W
       }, count)
       await page.waitForFunction(count => Array.from(document.querySelectorAll('iframe')).filter(frame => {
         const editor = frame.contentWindow as EditorWindow | null
-        return typeof editor?.setContent === 'function'
+        return frame.contentDocument?.readyState === 'complete' && typeof editor?.setContent === 'function'
       }).length === count, count)
-      if (mode === 'experiment') await page.evaluate(book => window.installWriting(book), book)
+      if (mode === 'experiment') await page.evaluate(({ book, optimized, scoped }) => window.installWriting(book, optimized, scoped), { book, optimized, scoped })
       else for (const [index, frame] of frames().entries()) await frame.evaluate(scene => (window as unknown as EditorWindow).setContent(scene.html), book.scenes[index % book.scenes.length])
     },
-    async close() {
-      if (electron) await electron.close()
-      if (browser) await browser.close()
-    }
+    close
   }
+  } catch (error) { await close(); throw error }
 }

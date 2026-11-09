@@ -4,12 +4,25 @@ import { updateRichText } from '../../src/renderer/src/collaboration/richText'
 import type { EditorWindow } from '../../src/renderer/src/views/editor/editorBridge'
 import type { FixtureBook } from './writingBook'
 import type { WritingCommand, WritingPane, WritingPoint } from './writingContract'
+import { applySimpleInsertion } from './writingIncremental'
+import { installScenePagination } from './writingPageLayout'
+import { installSceneCapture, type CaptureTelemetry } from './writingSceneCapture'
 
 interface SceneDocument { doc: Y.Doc; text: Y.Text; history: Y.UndoManager }
 interface SceneView { root: HTMLElement; markup: SceneMarkup; state: SceneDocument }
 interface RelativePoint { scene: number; position: Y.RelativePosition }
 interface LogicalSelection { anchor: RelativePoint; focus: RelativePoint }
-interface ExperimentEditor extends EditorWindow { wrapSelectionAsComment(id: string): string | null }
+interface ExperimentEditor extends EditorWindow {
+  wrapSelectionAsComment(id: string): string | null
+  sanitizePastedHtml(html: string): string
+  NovalistEditorState: { pageViewMutationObserver: MutationObserver | null; isComposing: boolean; isSettingContent: boolean }
+  schedulePageViewRepaginate(): void
+  getCleanContentHtml(root?: HTMLElement): string
+  buildGrammarPlainTextMap(root?: HTMLElement): { plainText: string; textNodes: unknown[] }
+  reportContentChanged(): void
+  sendMessage(message: object): void
+  writingCaptureTelemetry: CaptureTelemetry
+}
 
 const writer = {}
 
@@ -58,7 +71,7 @@ class ExperimentPane implements WritingPane {
   private pendingScope: number[] | null = null
   private savedSelection: LogicalSelection | null = null
 
-  constructor(private readonly editor: ExperimentEditor, private readonly book: FixtureBook, private readonly history: CompoundHistory) {
+  constructor(private readonly editor: ExperimentEditor, private readonly book: FixtureBook, private readonly history: CompoundHistory, optimized: boolean, scoped: boolean) {
     this.root = editor.document.getElementById('editor')!
     this.root.replaceChildren()
     this.views = book.scenes.map((scene, index) => {
@@ -72,22 +85,37 @@ class ExperimentPane implements WritingPane {
       const state = history.scenes[index]
       if (!state.text.length) state.doc.transact(() => updateRichText(state.text, markup.read()))
       else markup.render(state.text.toDelta())
-      state.text.observe(() => { if (!this.applying && !this.composing) this.render(index) })
+      state.text.observe(event => {
+        if (this.applying || this.composing) return
+        const saved = this.selection()
+        if (!optimized || !applySimpleInsertion(markup, event.delta)) this.render(index)
+        this.observer.takeRecords()
+        if (saved) this.restore(saved)
+      })
       return { root, markup, state }
     })
     this.observer = new MutationObserver(records => this.markDirty(records))
     this.observer.observe(this.root, { subtree: true, childList: true, characterData: true, attributes: true })
+    if (optimized) {
+      const style = editor.document.createElement('style')
+      style.textContent = '#editor [data-scene-id] { content-visibility: auto; contain-intrinsic-size: auto 600px; }'
+      editor.document.head.append(style)
+      installScenePagination(editor)
+    }
+    editor.setCommentsData(Array.from(this.root.querySelectorAll<HTMLElement>('[data-comment-id]'), mark => ({ id: mark.dataset.commentId!, anchorText: mark.textContent ?? '', text: 'Synthetic annotation' })))
+    if (scoped) installSceneCapture(editor)
     this.installEvents()
   }
 
   private installEvents(): void {
     this.root.addEventListener('input', event => {
       const start = event.timeStamp
-      this.editor.requestAnimationFrame(() => this.latencies.push(this.editor.performance.now() - start))
+      this.editor.requestAnimationFrame(() => this.editor.requestAnimationFrame(() => this.latencies.push(this.editor.performance.now() - start)))
       if (!this.composing) this.capture()
     })
     this.root.addEventListener('beforeinput', event => this.beforeInput(event), true)
     this.root.addEventListener('copy', event => this.copy(event))
+    this.root.addEventListener('paste', event => this.paste(event), true)
     this.root.addEventListener('compositionstart', () => { this.composing = true })
     this.root.addEventListener('compositionend', () => {
       this.editor.setTimeout(() => {
@@ -246,12 +274,37 @@ class ExperimentPane implements WritingPane {
     event.clipboardData.setData('text/html', container.innerHTML)
   }
 
+  private paste(event: ClipboardEvent): void {
+    const ranges = this.selectedRanges()
+    if (ranges.length < 2 || !event.clipboardData) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    this.capture()
+    this.commanding = true
+    try {
+      const start = ranges[0].range.cloneRange()
+      start.collapse(true)
+      for (const { index, range } of [...ranges].reverse()) {
+        range.deleteContents()
+        this.dirty.add(index)
+      }
+      const selection = this.editor.getSelection()!
+      selection.removeAllRanges()
+      selection.addRange(start)
+      const html = event.clipboardData.getData('text/html')
+      if (html) this.editor.document.execCommand('insertHTML', false, this.editor.sanitizePastedHtml(html))
+      else this.editor.document.execCommand('insertText', false, event.clipboardData.getData('text/plain'))
+    } finally { this.commanding = false }
+    this.capture()
+  }
+
   serialize() {
     this.capture()
     return this.views.map((view, index) => {
       const clone = view.root.cloneNode(true) as HTMLElement
       clone.querySelectorAll('.nv-focus-block').forEach(node => node.classList.remove('nv-focus-block'))
       clone.querySelectorAll('[class=""]').forEach(node => node.removeAttribute('class'))
+      clone.querySelectorAll('.nv-page').forEach(page => page.replaceWith(...page.childNodes))
       return { id: this.book.scenes[index].id, html: clone.innerHTML, text: clone.textContent ?? '' }
     })
   }
@@ -288,12 +341,12 @@ class ExperimentPane implements WritingPane {
   }
 }
 
-window.installWriting = book => {
+window.installWriting = (book, optimized, scoped) => {
   const states = book.scenes.map(() => {
     const doc = new Y.Doc()
     const text = doc.getText('prose')
     return { doc, text, history: new Y.UndoManager(text, { trackedOrigins: new Set([writer]) }) }
   })
   const history = new CompoundHistory(states)
-  window.writingPanes = Array.from(document.querySelectorAll('iframe'), frame => new ExperimentPane(frame.contentWindow as ExperimentEditor, book, history))
+  window.writingPanes = Array.from(document.querySelectorAll('iframe'), frame => new ExperimentPane(frame.contentWindow as ExperimentEditor, book, history, optimized, scoped))
 }
