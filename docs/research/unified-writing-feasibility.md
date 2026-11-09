@@ -242,7 +242,8 @@ workload remains unproven.
 
 ### Bounded cost attribution (diagnostic, not acceptance)
 
-The [profile records](writing-layout-profile.json) preserve a separate synthetic
+The [marker-windowed profile records](writing-layout-profile-windowed.json) derive
+from the unchanged [original full-stream archive](writing-layout-profile.json), a separate synthetic
 100/1000-scene run at clean `b854f6fc913edf0c09786cf2caf04718b9f1862a`, source
 digest `a60d044ec1a705acb37748979e6b1766a45ffe169e4b34e0e9dcdfb705eac8dc`.
 This uses HeadlessChrome149.0.7827.55, two panes, the fixed25k-word long scene,
@@ -271,13 +272,35 @@ Function totals include measured children and cannot be added together.
 | Formatting selected blocks, page / typewriter | 94.8/59.3ms over24/16calls | Whole-root selection discovery also scales with book size. The prose-block counter includes this path, not just dimming. |
 | Actual recenter, page / typewriter | 0.5/0.2ms over9calls each | Small in this spaced-input probe; insufficient to explain or dismiss native typewriter failures. |
 
-Pipeline trace accounting separates nested browser work from script. At1000scenes,
-normal/page/typewriter/combined exclusive Script was355.4/1696.8/284.4/1677.2ms;
-Layout27.5/1128.1/25.2/1154.9ms; Style4.7/155.6/6.1/160.3ms; and
-Paint32.9/74.1/30.6/78.8ms. Page/combined maximum renderer tasks were1150.4/
-1153.2ms. Only308.3/304.0ms of their layout was nested under measured script
-events; function timers alone would miss this distinction. These are trace-event
-interval unions, not CPU-sampling attribution or total compositor/GPU time.
+Pipeline accounting now uses the validated writing-profile-start/end marker
+interval, matching the active telemetry window. At1000scenes,
+normal/page/typewriter/combined exclusive Script was355.4/1602.9/284.4/1583.4ms;
+Layout27.5/207.1/25.2/202.7ms; Style4.7/13.7/6.1/19.4ms; and
+Paint32.9/68.9/30.6/73.7ms. Page/combined maximum renderer tasks remain1150.4/
+1153.2ms;184.951/179.797ms of layout intersects script. Their in-window Layout
+event counts are66each. All events are clipped to the half-open marker interval:
+straddling events contribute only positive overlap; layout counts and maximum
+task time use that same overlap. Nested-layout duration is a per-thread union
+of layout/script intersection. These are trace-event interval unions, not
+CPU-sampling attribution or total compositor/GPU time.
+
+The original pipeline totals included pre-start work: page920.921ms layout/
+141.907ms style, combined952.241ms layout/140.949ms style. Those values are
+excluded above; the other six streams' pipeline totals are unchanged. Historical
+unrestricted values remain in the original archive and the derived archive's
+explicit fullStreamPipeline fields. Function-cost rows already used active
+telemetry and are unchanged. The large capture task remains in-window; clipping
+does not establish its cause or remove the failed gates.
+
+No benchmark was rerun. Eight original streams were reprocessed with algorithm
+renderer-profile-mark-window-v2 at clean postprocessor revision
+`03a80572e3acc633d8be75444d5187949a5611d7`, digest
+`5912b2eafc4e3fe7ca9fb3952da7472e91fd656179f8c21ed09a566163e769b3`.
+Original measurement/source provenance remains b854f6fc in every record;
+postprocessing provenance is stored separately. The original full-stream archive
+is byte-identical. Active-recording invariance also now covers real replacement,
+flush, keyboard undo/redo and delayed work, with capture/mapping/observer spans
+and exact disabled/enabled semantic snapshots required.
 
 The [three bounded origin probes](writing-layout-capture-origin.json) identify
 setup contamination without claiming to reproduce every traced spike. Page
