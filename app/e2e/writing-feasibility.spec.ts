@@ -13,6 +13,25 @@ const smallBook = { wordCount: 4, scenes: [
   { id: 'scene-b', html: '<p>charlie delta</p>' }
 ] }
 
+test('electron host: inherited Node mode does not prevent native editor startup', async () => {
+  test.skip(process.env.NOVALIST_WRITING_ENGINE !== 'electron', 'Native launch regression requires the authorized Electron engine.')
+  const inheritedNodeMode = process.env.ELECTRON_RUN_AS_NODE
+  process.env.ELECTRON_RUN_AS_NODE = '1'
+  try {
+    const h = await launchWriting('experiment')
+    try {
+      await h.seed(smallBook)
+      await h.page.evaluate(() => window.writingPanes[0].select({ scene: 0, offset: 11 }, { scene: 0, offset: 11 }))
+      await h.page.keyboard.type(' native')
+      expect(await h.page.evaluate(() => window.writingPanes[0].serialize().map(scene => scene.text))).toEqual(['alpha bravo native', 'charlie delta'])
+      expect(process.env.ELECTRON_RUN_AS_NODE).toBe('1')
+    } finally { await h.close() }
+  } finally {
+    if (inheritedNodeMode === undefined) delete process.env.ELECTRON_RUN_AS_NODE
+    else process.env.ELECTRON_RUN_AS_NODE = inheritedNodeMode
+  }
+})
+
 test('original: native selection crosses two scene surfaces', async () => {
   const h = await launchWriting('original')
   try {

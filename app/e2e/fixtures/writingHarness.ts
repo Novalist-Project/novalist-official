@@ -40,7 +40,9 @@ export async function launchWriting(mode: WritingMode, paneCount = 1): Promise<W
   if (process.env.NOVALIST_WRITING_ENGINE === 'electron') {
     requireDesktopPermission()
     profile = await mkdtemp(join(resolve(tmpdir()), 'novalist-writing-'))
-    electron = await _electron.launch({ args: [resolve('e2e/fixtures/writingElectron.cjs'), `--user-data-dir=${profile}`], env: { ...process.env, NOVALIST_NO_CLIPBOARD: '1' } })
+    const env = Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined && entry[0] !== 'ELECTRON_RUN_AS_NODE'))
+    env.NOVALIST_NO_CLIPBOARD = '1'
+    electron = await _electron.launch({ args: [resolve('e2e/fixtures/writingElectron.cjs'), `--user-data-dir=${profile}`], env })
     page = await electron.firstWindow()
   } else {
     browser = await chromium.launch({ headless: true })
