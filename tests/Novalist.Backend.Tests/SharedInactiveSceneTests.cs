@@ -1,6 +1,7 @@
 using System.Text;
 using Novalist.Backend.Rpc;
 using Novalist.Backend.Tests.TestHelpers;
+using Novalist.Core.Services;
 using Novalist.Sync.Client.Tests;
 using Xunit;
 
@@ -43,10 +44,12 @@ public sealed class SharedInactiveSceneTests
         var before = await guest.Rpc.InvokeAsync<DashboardDto>("dashboard/get", 7);
 
         const string changed = "Four newly written words.";
+        var files = new FileService();
+        var guestScenePath = Path.Combine(guestRoot, relative);
         await owner.Rpc.InvokeAsync("collaboration/writeScene", session.SessionId, document.ItemId, Encoding.UTF8.GetBytes("<p>" + changed + "</p>"));
-        for (var attempt = 0; attempt < 100 && !(await File.ReadAllTextAsync(Path.Combine(guestRoot, relative), ct)).Contains(changed, StringComparison.Ordinal); attempt++)
+        for (var attempt = 0; attempt < 100 && !(await files.ReadTextAsync(guestScenePath).WaitAsync(ct)).Contains(changed, StringComparison.Ordinal); attempt++)
             await Task.Delay(20, ct);
-        Assert.Contains(changed, await File.ReadAllTextAsync(Path.Combine(guestRoot, relative), ct));
+        Assert.Contains(changed, await files.ReadTextAsync(guestScenePath).WaitAsync(ct));
         if (anotherDraft)
         {
             var clone = (await guest.Rpc.InvokeAsync<SceneContentDto>("scenes/read", chapter.Guid, scene.Id)).Shared ?? throw new InvalidOperationException("Missing cloned shared scene.");
