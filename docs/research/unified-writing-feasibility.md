@@ -342,3 +342,95 @@ interfaces are not ratified until continuous pagination, bounded services,
 history/selection edge cases and the full performance/host gate pass.
 
 No changelog entry is appropriate: all changes are test/research assets.
+
+## Presentation attribution refinement
+
+The bounded follow-up keeps the existing scene paginator and one scene-owned
+Y.Doc per scene. A shared test-only owned-move seam separates wrapper operations
+from authored dirtiness in history and scoped publication capture. It processes
+preexisting mutation records before each native wrapper move and retains real
+character/attribute/child mutations in mixed or throwing operations. Native
+selection restoration also covers page disable/re-enable. Transaction-keyed
+pre-change selection snapshots remain; unrelated scene transactions no longer
+read or restore a different selected scene. Native section/editor-container
+endpoints share lookup with active context and publication capture.
+
+Fifteen new browser regressions pass in both headless Chromium and Electron.
+They cover rich prose/comments, an empty and long scene, two panes, native
+forward/backward ranges and carets, delayed repagination, mixed/reentrant/throwing
+mutations, IME deferral, nested transactions, container endpoints, exact semantic
+state/HTML/raw block identities, connected owner identity, history and publication
+counts. The unchanged focused editing suites also pass: 23 native cases;
+22 headless cases plus one host skip, including the expected original diagnostic.
+Two telemetry invariance cases and nine Node telemetry contracts pass; typecheck
+and 509 Node tests pass with one existing skip. Both source freezes pass all eight
+source doctors and staged aislop at score 100 with zero findings.
+
+With 24 mounted scenes per pane, layout-only mode changes and delayed repagination
+produce zero actual scene captures, markup reads, scoped publication serializer
+calls, Yjs transactions, undo groups and publications. The next input captures
+one scene, creates one changed transaction plus the existing Yjs formatting
+cleanup transaction, and uses at most four author-pane markup reads. Peer rendering
+acknowledges only its changed owner's clean-HTML baseline; that additional direct
+HTML read is outside the scoped serializer counter. Unrelated selected scenes
+have zero mapping reads, selection snapshots and restores.
+
+The [native bounded diagnostic](writing-presentation-capture.json) uses clean
+`9edf21793b58b35ab309291b57868b47aa34b872`, source SHA256
+`4f929678ff390da1dd06770a4d83a9926b9abc4df216ca071ac4d6854e775ef5`.
+Engine adaptation source is unchanged from `d2ed9207`; the later commit corrects
+only the diagnostic's authored-publication oracle. Four modes each receive 30
+actual native inputs, alternating panes and beginning/middle/end targets at
+offset 0, with double-animation-frame timing, no mode settle/inter-input sleep,
+1,000 scenes/1 million words and the fixed 25,000-word long scene. There are no profiler
+body timers or CDP trace; ordinary existing capture telemetry remains enabled.
+Exact HTML/Y.Text and last-publication checks run outside the timed input burst.
+Each mode includes a 1,000 ms observation tail, unlike original no-tail acceptance;
+that changes the state entering the following mode. Independent native frame
+cadence was not collected. These timings establish no causal before/after speedup.
+Same reference hardware/browser as the earlier native run: Ryzen 9 9950X3D,
+32 logical CPUs, 32 GiB-class RAM, Windows 10.0.26300, Chrome 148.0.7778.280,
+viewport 1424x935, DPR 1. The entire four-mode diagnostic passed in 34.5 seconds.
+
+| Mode | First input ms | All 30 p95 ms | Subsequent 29 p95 ms |
+| --- | ---: | ---: | ---: |
+| Normal |87.4|54.2|27.5|
+| Page |24.5|116.5|116.5|
+| Typewriter |39.8|39.8|18.9|
+| Page + typewriter |33.3|117.5|117.5|
+
+Each mode change adds zero scoped serializations; the complete burst plus tail
+adds exactly 15 per pane, 30 total, with exactly 30 authored history groups and
+publications. An individual input observation may contain up to two scoped serializer
+calls because the other pane's real pending debounce can complete in that window;
+there is no whole-book serialization spike. Every mode's tail contains one real
+pending publication, not presentation amplification. The separately preserved
+[initial partial run](writing-presentation-capture-partial.json) at `d2ed9207`
+failed an incorrect diagnostic assertion that this legitimate delayed publication
+could not occur; it is not engine-failure or acceptance evidence.
+
+Delayed layout/scroll remains a correctness concern: page-mode tails replace 24
+wrappers per pane; combined tails replace 12/13. In normal/page/combined modes,
+the last selected peer caret moves far outside the viewport during the 1,000 ms
+observation tail, while typewriter-only endpoints agree. For example page caret
+top 39.6 becomes -93797.4; combined 489.8 becomes 364225.8. No matched pre-change run
+of this immediate-cadence diagnostic establishes causality. These observations
+cannot be called stable visible layout or attributed solely to this fix.
+No geometry repair or further benchmark was performed.
+
+The [same-scene concurrency probe](writing-presentation-concurrency.json) executes
+both baseline `5672bf79` and updated fixture bodies. A remote formatting render
+still overwrites an uncommitted local edit in the same scene in both versions.
+Processing pre-render records improves a simple insertion case that previously
+left DOM/Y.Text divergent, but arbitrary pending-local/remote/IME interleavings
+remain an unresolved correctness gate. Queued edits in another scene are
+specifically covered and preserved. This is not an accepted concurrency policy.
+
+The archived diagnostic is 33,752 bytes, SHA256
+`0535de0380ae6a7e23f37778ea683b473815a7026b8f6cfa8b09ccb80c9c9564`;
+filesystem byte/deep-equality checks preserve source/environment provenance and
+all 120 samples. This is one bounded diagnostic, not the five-round heap/runtime
+gate or a replacement for full native acceptance. Normal/page/combined p95 still
+miss 50 ms here; existing continuous-page, latency, layout/scroll, concurrency and
+production-parity gates remain closed. Next work needs a separately scoped
+diagnosis of visible delayed layout/scroll and remaining whole-root work.
