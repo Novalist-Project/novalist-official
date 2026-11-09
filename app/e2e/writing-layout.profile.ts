@@ -63,6 +63,7 @@ test('profile invariance: telemetry retains prose, selection, owners, history an
       }
       expect(await snapshotWriting(h.page)).toEqual(before)
       expect(await blockIdentities(h)).toEqual(identities)
+      const editingStart = profiling ? await h.page.evaluate(() => { window.__writingLayout.start(); return performance.now() }) : 0
       await h.page.keyboard.insertText('replacement')
       await h.frames()[0].evaluate(() => (window as unknown as EditorWindow).flushPendingContentChange())
       await expect.poll(() => h.page.evaluate(() => window.writingPublications.length)).toBe(2)
@@ -72,8 +73,20 @@ test('profile invariance: telemetry retains prose, selection, owners, history an
       await h.page.keyboard.press(`${modifier}+z`)
       const undone = await snapshotWriting(h.page)
       expect(undone.panes[0].scenes.map(scene => scene.text)).toEqual(['alpha bravo', 'charlie delta'])
+      const redoAt = await h.page.evaluate(() => performance.now())
       await h.page.keyboard.press(`${modifier}+Shift+z`)
       const redone = await snapshotWriting(h.page)
+      await h.page.waitForTimeout(180)
+      if (profiling) {
+        const telemetry = await h.page.evaluate(() => window.__writingLayout.stop())
+        for (const name of ['writingExperiment.ts:CompoundHistory.capture', 'writingExperiment.ts:ExperimentPane.point',
+          'writingExperiment.ts:callback:state.text.observe', 'sceneMarkup.ts:SceneMarkup.read', 'writingSceneCapture.ts:serialize']) {
+          expect(telemetry.spans[name]?.count ?? 0, name).toBeGreaterThan(0)
+        }
+        expect(telemetry.spans['writingExperiment.ts:callback:state.text.observe'].count).toBeGreaterThanOrEqual(6)
+        expect(telemetry.spans['writingExperiment.ts:callback:state.text.observe'].lastMs).toBeGreaterThanOrEqual(redoAt - editingStart)
+      }
+      expect(await blockIdentities(h)).toEqual(identities)
       results.push([before, changed, undone, redone])
     } finally { await h.close() }
   }

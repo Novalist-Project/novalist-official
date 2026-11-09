@@ -4,7 +4,7 @@ import { runInNewContext } from 'node:vm'
 import { readFileSync } from 'node:fs'
 import { createLayoutTelemetry } from '../e2e/fixtures/writingLayoutTelemetry.ts'
 import { instrumentBodies, profileWritingSource, layoutSourceNames } from '../e2e/fixtures/writingLayoutSource.ts'
-import { summarizeLayoutTrace } from '../e2e/fixtures/writingLayoutTrace.ts'
+import { summarizeLayoutTrace, profileTraceWindow } from '../e2e/fixtures/writingLayoutTrace.ts'
 
 test('nested spans subtract child duration and retain numeric counters', () => {
   let time = 0
@@ -70,7 +70,7 @@ test('trace accounting excludes nested layout and style from inclusive script du
     event('FunctionCall', 0, 10000), event('FunctionCall', 1000, 8000),
     event('UpdateLayoutTree', 2000, 1000), event('Layout', 3000, 4000),
     event('Paint', 10000, 2000), event('RunTask', 0, 12000)
-  ])
+  ], { startUs: 0, endUs: 12000 })
   assert.deepEqual(result, { scriptMs: 5, styleMs: 1, layoutMs: 4, paintMs: 2, nestedLayoutMs: 4, maxTaskMs: 12, layoutCount: 1 })
 })
 
@@ -83,4 +83,30 @@ test('anchor probe preserves the same rect and counts only already measured offs
   telemetry.rect('anchor', () => ({ top: 2, bottom: 5 }), 100)
   assert.equal(reads, 1)
   assert.deepEqual(telemetry.stop().counters, { 'anchor.reads': 2, 'anchor.offscreen': 1 })
+})
+
+test('trace window clips crossing events and excludes boundary-only, pre-window and post-window work', () => {
+  const event = (name, ts, dur) => ({ name, ph: 'X', pid: 1, tid: 2, ts, dur })
+  const result = summarizeLayoutTrace([
+    { name: 'thread_name', ph: 'M', pid: 1, tid: 2, ts: 0, args: { name: 'CrRendererMain' } },
+    event('FunctionCall', -5000, 5000), event('Layout', 0, 500), event('Layout', 500, 500),
+    event('FunctionCall', 0, 5000), event('Layout', 0, 2000), event('UpdateLayoutTree', 2000, 1000),
+    event('Paint', 4000, 2000), event('Layout', 6000, 1000),
+    event('FunctionCall', 9000, 5000), event('Layout', 10000, 3000),
+    event('RunTask', 0, 15000), event('RunTask', -10000, 10500), event('RunTask', 11000, 30000),
+    event('Paint', 12000, 3000), event('Layout', 11000, 1000)
+  ], { startUs: 1000, endUs: 11000 })
+  assert.deepEqual(result, { scriptMs: 2, styleMs: 1, layoutMs: 3, paintMs: 2, nestedLayoutMs: 2, maxTaskMs: 10, layoutCount: 3 })
+})
+
+test('profile markers require one ordered pair on the same renderer thread', () => {
+  const metadata = { name: 'thread_name', ph: 'M', pid: 1, tid: 2, ts: 0, args: { name: 'CrRendererMain' } }
+  const start = { name: 'writing-profile-start', ph: 'I', pid: 1, tid: 2, ts: 1000 }
+  const end = { name: 'writing-profile-end', ph: 'I', pid: 1, tid: 2, ts: 11000 }
+  assert.deepEqual(profileTraceWindow([metadata, start, end]), { startUs: 1000, endUs: 11000 })
+  assert.throws(() => profileTraceWindow([metadata, start]), /exactly one/)
+  assert.throws(() => profileTraceWindow([metadata, start, start, end]), /exactly one/)
+  assert.throws(() => profileTraceWindow([metadata, { ...start, ts: 11000 }, end]), /interval/)
+  assert.throws(() => profileTraceWindow([metadata, start, { ...end, tid: 3 }]), /thread/)
+  assert.throws(() => summarizeLayoutTrace([metadata], { startUs: 2, endUs: 1 }), /interval/)
 })
