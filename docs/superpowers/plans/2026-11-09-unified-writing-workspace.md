@@ -10,7 +10,7 @@
 
 **Spec:** [Unified writing workspace design](../specs/2026-11-09-unified-writing-workspace-design.md).
 **ADR:** [One continuous writing surface](../../adr/0008-unified-writing-surface.md).
-**Status:** Ready for review; not executed. Task 1 is a mandatory feasibility gate.
+**Status:** Implementation authorized on 2026-11-09. Task 1 is in progress and remains a mandatory feasibility gate; later tasks are pending its result.
 
 ## Global Constraints
 

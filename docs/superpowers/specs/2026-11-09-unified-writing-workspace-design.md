@@ -1,7 +1,7 @@
 # Unified writing workspace
 
 Product requirements confirmed through the design interview on 2026-11-09.
-Ready for review with the implementation plan. No production code has changed;
+Implementation authorized on 2026-11-09. No production code has changed;
 module boundaries remain subject to the feasibility gate.
 
 ## Intent and references

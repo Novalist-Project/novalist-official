@@ -1,0 +1,53 @@
+name: Unified writing feasibility
+
+on:
+  push:
+    branches: [feat/unified-writing-workspace]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: writing-feasibility-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editor-gate:
+    name: Continuous editor experiment
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Install browser dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Typecheck harness
+        run: npm run typecheck
+      - name: Headless Chromium experiment
+        env:
+          NOVALIST_WRITING_ENGINE: chromium
+        run: npx playwright test --config playwright.writing-feasibility.config.ts --workers=1 --output test-results/writing-feasibility/chromium
+      - name: Isolated Electron experiment
+        if: ${{ !cancelled() }}
+        env:
+          NOVALIST_WRITING_ENGINE: electron
+          NOVALIST_E2E_ALLOW_DESKTOP: '1'
+        run: xvfb-run --auto-servernum npx playwright test --config playwright.writing-feasibility.config.ts --workers=1 --output test-results/writing-feasibility/electron
+      - name: Upload gate evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: writing-feasibility-evidence
+          path: app/test-results/
+          if-no-files-found: warn
+          retention-days: 14
