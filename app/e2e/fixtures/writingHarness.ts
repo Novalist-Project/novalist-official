@@ -9,6 +9,8 @@ import { build } from 'esbuild'
 import './writingContract'
 import { closeTestApp } from '../harness'
 import { scopeEditorSource } from './writingEngineSource'
+import { createLayoutTelemetry } from './writingLayoutTelemetry'
+import { profileWritingSource, layoutSourceNames } from './writingLayoutSource'
 
 export type WritingMode = 'original' | 'experiment'
 export interface WritingHarness {
@@ -18,7 +20,7 @@ export interface WritingHarness {
   close(): Promise<void>
 }
 
-export async function launchWriting(mode: WritingMode, paneCount = 1): Promise<WritingHarness> {
+export async function launchWriting(mode: WritingMode, paneCount = 1, profiling = process.env.NOVALIST_WRITING_PROFILE === '1'): Promise<WritingHarness> {
   let browser: Browser | undefined
   let electron: ElectronApplication | undefined
   let profile: string | undefined
@@ -48,6 +50,7 @@ export async function launchWriting(mode: WritingMode, paneCount = 1): Promise<W
     browser = await chromium.launch({ headless: true })
     page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
   }
+  if (profiling) await page.addInitScript({ content: `globalThis.__writingLayout=window===window.top?(${createLayoutTelemetry.toString()})():window.top.__writingLayout;` })
   await page.route('http://127.0.0.1:38917/**', async route => {
     const pathname = new URL(route.request().url()).pathname
     const name = basename(pathname)
@@ -60,11 +63,17 @@ export async function launchWriting(mode: WritingMode, paneCount = 1): Promise<W
     const file = resolve(root, `.${pathname}`)
     if (!file.startsWith(root + sep)) throw new Error('Asset outside the editor fixture.')
     const body = await readFile(file)
-    await route.fulfill({ contentType, body: scoped && name.endsWith('.js') ? scopeEditorSource(name, body.toString('utf8')) : body })
+    let served: string | Buffer = scoped && name.endsWith('.js') ? scopeEditorSource(name, body.toString('utf8')) : body
+    if (profiling && name.endsWith('.js')) served = profileWritingSource(name, served.toString())
+    await route.fulfill({ contentType, body: served })
   })
   await page.goto('http://127.0.0.1:38917/harness')
   if (mode === 'experiment') {
-    const bundle = await build({ entryPoints: [resolve('e2e/fixtures/writingExperiment.ts')], bundle: true, write: false, format: 'iife', platform: 'browser' })
+    const bundle = await build({ entryPoints: [resolve('e2e/fixtures/writingExperiment.ts')], bundle: true, write: false, format: 'iife', platform: 'browser',
+      plugins: profiling ? [{ name: 'writing-layout-profile', setup(builder) {
+        builder.onLoad({ filter: /\.ts$/ }, async ({ path }) => layoutSourceNames.includes(basename(path))
+          ? { contents: profileWritingSource(basename(path), await readFile(path, 'utf8')), loader: 'ts' } : undefined)
+      } }] : [] })
     await page.addScriptTag({ content: bundle.outputFiles[0].text })
   }
   const frames = (): Frame[] => page.frames().filter(frame => frame !== page.mainFrame())

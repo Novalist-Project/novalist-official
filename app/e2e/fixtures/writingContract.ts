@@ -16,6 +16,7 @@ export interface WritingPane {
   samples(): number[]
   sceneCount(): number
   activeScene(): string | null
+  inspect(): { deltas: { insert: string; attributes?: Record<string, string> }[][]; undoGroups: number[][]; redoGroups: number[][] }
 }
 declare global {
   interface Window {

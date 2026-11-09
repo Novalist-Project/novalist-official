@@ -379,6 +379,11 @@ class ExperimentPane implements WritingPane {
     const node = this.editor.getSelection()?.focusNode
     return this.views.find(view => node && view.root.contains(node))?.root.dataset.sceneId ?? null
   }
+
+  inspect() {
+    return { deltas: this.views.map(view => view.state.text.toDelta()),
+      undoGroups: this.history.undoGroups.map(group => [...group]), redoGroups: this.history.redoGroups.map(group => [...group]) }
+  }
 }
 
 window.installWriting = (book, optimized, scoped) => {

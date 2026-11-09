@@ -183,6 +183,28 @@ scale run; the table above remains attributed to its recorded source revision.
 
 ## Behavior assertions and remaining gates
 
+### Native Electron confirmation
+
+The unchanged acceptance matrix was run on native Electron at clean revision
+`111df9b28fdb1ea2426efe3c5cad5f383e2213ca`, after repairing the test launcher's
+inherited Node-mode environment. Chrome was `148.0.7778.280`, viewport
+1424 by 935 at DPR 1. The [directly verified native archive](writing-feasibility-electron.json)
+contains the original three records, including environment and all samples.
+
+| Scenes / words | Normal p95 | Page p95 | Typewriter p95 |
+| --- | ---: | ---: | ---: |
+| 100 / 100k | 13.1 ms | 95.5 ms | 37.0 ms |
+| 500 / 500k | 24.9 ms | 265.0 ms | 165.0 ms |
+| 1,000 / 1M | 42.0 ms | 454.0 ms | 325.7 ms |
+
+The 27-case native run completed in 2.1 minutes with 22 positive passes, one
+expected original diagnostic, and the four existing hard failures: continuous
+page flow and the three scale cases. All five traversal rounds retained two
+runtimes and passed the document/heap checks. Every record identifies clean
+source digest `7d30068265216676978e6d2c17a0a669fcf860ce1c361eeb50088c5b811dbec0`.
+Native normal-mode latency passes; page/typewriter costs still block rollout.
+No instrumented timing is substituted for these acceptance samples.
+
 Verified focused behavior includes actual mouse drag and backward keyboard
 selection across scenes, copied prose, bold/italic/highlight/comments, protected
 Backspace/Delete and paste, empty-scene retention, compound undo/redo through
