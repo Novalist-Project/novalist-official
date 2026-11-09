@@ -125,10 +125,54 @@ partial attribution, not a complete CPU profile. Pagination, comment-gutter
 geometry, scrolling and layout work remain candidates; their separate costs
 have not yet been isolated.
 
-The final headless command ran 16 tests: 11 experiment assertions passed, one
+The pre-review scoped run executed 16 tests: 11 experiment assertions passed, one
 original-engine diagnostic failed as expected, and four hard gate cases failed
 (continuous pagination plus the three scale tests). No acceptance assertion was
 marked expected-failure or removed to obtain a green result.
+
+### Review round 1
+
+Independent review found native replacement, keyboard-history routing, and remote
+selection defects that the original positive tests did not exercise. Source
+`d5696b6718ebcedcf127956a93e8a21939939404` addresses those reproduced cases and adds
+ten regressions. The tested native replacement/IME paths retain connected scene owners and the second
+scene's suffix, keyboard undo/redo consume exactly one logical transaction, and
+forward/backward selections plus independent pane carets survive remote updates
+and scope changes. The new cases pass with both incremental and full-render
+paths. The original diagnostic now validates setup before declaring expected
+failure; the IME scope assertion checks the deferred visibility and exactly one
+committed publication.
+
+The previously committed scoped JSON was truncated tool output. It has been
+regenerated directly from the intact originals, parsed and deep-compared. The
+original baseline and rendering-adapted aggregates also deep-match their
+originals. `archiveWritingMetrics.mjs` performs this packaging and verification
+without passing sample data through model/tool-output text.
+
+The [updated matrix](writing-feasibility-review-1.json) was run once after the
+source commit, preserving all older measured records:
+
+| Scenes / words | Normal p95 | Page p95 | Typewriter p95 | Maximum single serialization |
+| --- | ---: | ---: | ---: | ---: |
+| 100 / 100k | 29.7 ms | 76.3 ms | 42.3 ms | 1.4 ms |
+| 500 / 500k | 30.0 ms | 270.1 ms | 223.6 ms | 1.2 ms |
+| 1,000 / 1M | 42.1 ms | 496.5 ms | 354.5 ms | 1.3 ms |
+
+The full 26-case run completed in 3.2 minutes: 21 experiment passes, one expected
+original diagnostic, and four hard failures (continuous page flow and the three
+scale cases). All five traversal rounds completed with two runtimes, stable
+document counts and the heap bound satisfied. The measured source was clean;
+each record carries its exact revision, explicit scoped/optimized adaptation
+flags, distribution and the same relevant-source digest
+`e259126678230c5aef3528cf8600a0df89052e7c886ed4da35f06823be31de97`.
+The new archive is parsed and deep-equal to its three original metric files.
+
+Normal-mode latency still passes at every scale. Page/typewriter costs and
+continuous-page semantics still block the gate. The cost of retaining correct
+selection/history is included in this new matrix; the earlier faster timings
+are not substituted for it. Further work should target scene-aware layout and
+bounded visible services within the existing engine. No engine replacement,
+threshold change, or production rollout follows from these results.
 
 ## Behavior assertions and remaining gates
 
@@ -159,8 +203,8 @@ are regression seeds, not evidence that every feature works in this adapter.
 Unimplemented/unverified rows remain rollout blockers, including host commands,
 extension active-scene context and passive reads, failed/delayed durable saves,
 compound recovery, full proofing/readability services, structural inverses,
-search/replace transactions, independent remote selection and composition
-interleavings, and mobile/project round trips. The benchmark performs DOM text
+search/replace transactions, combined remote/composition interleavings,
+and mobile/project round trips. The benchmark performs DOM text
 search between inputs and exercises real editor timers/comment layout; it does
 not complete actual backend proofing analyses concurrently. That acceptance
 workload remains unproven.
