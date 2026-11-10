@@ -1,4 +1,4 @@
-type TextItem = number | { text: string; collapse: boolean; lineBreak?: boolean }
+type TextItem = number | { text: string; collapse: boolean; lineBreak?: boolean; capitalize?: boolean }
 
 function textLocale(element: HTMLElement): string | undefined {
   const language = element.closest('[lang]')?.getAttribute('lang')
@@ -17,20 +17,20 @@ function textItems(node: Node, items: TextItem[]): void {
   if (node.nodeType === 3) {
     if (style.visibility !== 'visible') return
     let text = node.textContent ?? ''
-    const locale = ['uppercase', 'lowercase', 'capitalize'].includes(style.textTransform) ? textLocale(element) : undefined
+    const locale = ['uppercase', 'lowercase'].includes(style.textTransform) ? textLocale(element) : undefined
     if (style.textTransform === 'uppercase') text = locale ? text.toLocaleUpperCase(locale) : text.toUpperCase()
     else if (style.textTransform === 'lowercase') text = locale ? text.toLocaleLowerCase(locale) : text.toLowerCase()
-    else if (style.textTransform === 'capitalize') text = text.replace(/(^|\s)(\p{L})/gu, (_, prefix: string, letter: string) => prefix + (locale ? letter.toLocaleUpperCase(locale) : letter.toUpperCase()))
+    const transform = { capitalize: style.textTransform === 'capitalize' }
     const collapse = style.whiteSpace === 'normal' || style.whiteSpace === 'nowrap'
     if (collapse) text = text.replace(/[\t\n\r ]+/g, ' ')
     else if (style.whiteSpace === 'pre-line') {
       text.split(/\r\n|[\r\n]/).forEach((line, index) => {
         if (index) items.push({ text: '\n', collapse: false, lineBreak: true })
-        items.push({ text: line.replace(/[\t ]+/g, ' '), collapse: true })
+        items.push({ text: line.replace(/[\t ]+/g, ' '), collapse: true, ...transform })
       })
       return
     }
-    items.push({ text, collapse })
+    items.push({ text, collapse, ...transform })
     return
   }
   if (node.nodeType !== 1 || style.display === 'none') return
@@ -53,6 +53,7 @@ function textItems(node: Node, items: TextItem[]): void {
 export function logicalSceneText(nodes: readonly Node[]): string {
   const items: TextItem[] = []
   nodes.forEach(node => textItems(node, items))
+  capitalizeWords(items)
   let output = ''
   let breaks = 0
   let space = false
@@ -76,6 +77,21 @@ export function logicalSceneText(nodes: readonly Node[]): string {
     }
   }
   return output
+}
+
+function capitalizeWords(items: TextItem[]): void {
+  if (!items.some(item => typeof item !== 'number' && item.capitalize)) return
+  const text = items.map(item => typeof item === 'number' ? '\n' : item.text).join('')
+  const starts = new Set(Array.from(new Intl.Segmenter(undefined, { granularity: 'word' }).segment(text))
+    .filter(segment => segment.isWordLike).map(segment => segment.index))
+  let offset = 0
+  for (const item of items) {
+    if (typeof item === 'number') { offset++; continue }
+    const start = offset
+    offset += item.text.length
+    if (item.capitalize) item.text = item.text.replace(/\p{L}/gu, (letter: string, index: number) =>
+      starts.has(start + index) ? letter.toUpperCase() : letter)
+  }
 }
 
 declare global { interface Window { writingLogicalSceneText(nodes: readonly Node[]): string } }

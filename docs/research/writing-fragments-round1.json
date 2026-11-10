@@ -1,0 +1,178 @@
+{
+  "kind": "fragment-foundation-review-round1",
+  "baseRevision": "59946b205020defe38febb60689b2a82a6f103f0",
+  "findings": [
+    "I1 keyed block reorder",
+    "I2 capitalization word context"
+  ],
+  "sourceBinding": "Exact sources archived for all four variants; embedded provenance digests verified. Status-only records use the frozen command/source binding. Node test source is archived separately from the browser digest.",
+  "evidence": "Content-free JSON records were preserved byte-for-byte. No post-capture redaction. Failure console logs retain digest references only; source and result records establish the exact cases. Earlier foundation archives are unchanged.",
+  "limits": "Test-only. Publication parity is bounded to nineteen fixtures; neutral first-letter uppercase is not universal Unicode titlecase or NBSP equivalence. Two comment hard REDs and wider Task1 gates remain open. Existing mapper attribute reapplication is unchanged.",
+  "variants": [
+    {
+      "name": "red",
+      "sourceSha256": "713f28fa9036b0d0647c5075c7593a4306aea1a084cd5fd7eb043674da471004",
+      "files": 282
+    },
+    {
+      "name": "green",
+      "sourceSha256": "6d16d7c28c2a3090681327092113ef112bff9f9d8cdb7e3204b349d16dd639af",
+      "files": 282
+    },
+    {
+      "name": "final",
+      "sourceSha256": "45b1e0599a4f190032d0989c20c1cbf54502766afcf22a90c3d4e1419eaeb2fb",
+      "files": 282
+    },
+    {
+      "name": "accepted",
+      "sourceSha256": "c06f9736884e99608ada1713658286147d27bfcf23c3d3cab7501926cd19780b",
+      "files": 282
+    }
+  ],
+  "runs": [
+    {
+      "name": "publication-red",
+      "variant": "red",
+      "passed": 1,
+      "failed": 3,
+      "engine": "electron",
+      "fragments": false,
+      "command": "npx playwright test --config playwright.writing-presentation.config.ts e2e/writing-surface.spec.ts --grep capitalize- --output test-results/writing-fragments-round1-publication-red --workers 1",
+      "environment": {
+        "NOVALIST_WRITING_ENGINE": "electron",
+        "NOVALIST_WRITING_FRAGMENTS": "0",
+        "NOVALIST_WRITING_OPTIMIZE": "0",
+        "NOVALIST_E2E_ALLOW_DESKTOP": "1"
+      },
+      "sourceSha256": "713f28fa9036b0d0647c5075c7593a4306aea1a084cd5fd7eb043674da471004",
+      "log": {
+        "file": "fragments-round1-publication-red.log",
+        "sha256": "f7ca6da3ecc8035bbb7c420d8fa26e95fcc0c53ed3ad458da59a08adff1efb37"
+      },
+      "records": 5,
+      "embeddedSourceRecords": 4
+    },
+    {
+      "name": "publication-green",
+      "variant": "green",
+      "passed": 17,
+      "failed": 0,
+      "engine": "electron",
+      "fragments": false,
+      "command": "npx playwright test --config playwright.writing-presentation.config.ts e2e/writing-surface.spec.ts --output test-results/writing-fragments-round1-publication-green --workers 1",
+      "environment": {
+        "NOVALIST_WRITING_ENGINE": "electron",
+        "NOVALIST_WRITING_FRAGMENTS": "0",
+        "NOVALIST_WRITING_OPTIMIZE": "0",
+        "NOVALIST_E2E_ALLOW_DESKTOP": "1"
+      },
+      "sourceSha256": "6d16d7c28c2a3090681327092113ef112bff9f9d8cdb7e3204b349d16dd639af",
+      "log": {
+        "file": "fragments-round1-publication-green.log",
+        "sha256": "2cdc98f361a45efd618099a532f7afccc8a35f660e9a3cb406408dd1427c42e2"
+      },
+      "records": 18,
+      "embeddedSourceRecords": 17
+    },
+    {
+      "name": "publication-final",
+      "variant": "final",
+      "passed": 18,
+      "failed": 1,
+      "engine": "electron",
+      "fragments": false,
+      "command": "npx playwright test --config playwright.writing-presentation.config.ts e2e/writing-surface.spec.ts --output test-results/writing-fragments-round1-publication-final --workers 1",
+      "environment": {
+        "NOVALIST_WRITING_ENGINE": "electron",
+        "NOVALIST_WRITING_FRAGMENTS": "0",
+        "NOVALIST_WRITING_OPTIMIZE": "0",
+        "NOVALIST_E2E_ALLOW_DESKTOP": "1"
+      },
+      "sourceSha256": "45b1e0599a4f190032d0989c20c1cbf54502766afcf22a90c3d4e1419eaeb2fb",
+      "log": {
+        "file": "fragments-round1-publication-final.log",
+        "sha256": "f968eb99aeefa3e8bf61715d4896007bbe521113f72eb0996e1669b9f360a681"
+      },
+      "records": 20,
+      "embeddedSourceRecords": 19
+    },
+    {
+      "name": "publication-accepted",
+      "variant": "accepted",
+      "passed": 19,
+      "failed": 0,
+      "engine": "electron",
+      "fragments": false,
+      "command": "npx playwright test --config playwright.writing-presentation.config.ts e2e/writing-surface.spec.ts --output test-results/writing-fragments-round1-publication-accepted --workers 1",
+      "environment": {
+        "NOVALIST_WRITING_ENGINE": "electron",
+        "NOVALIST_WRITING_FRAGMENTS": "0",
+        "NOVALIST_WRITING_OPTIMIZE": "0",
+        "NOVALIST_E2E_ALLOW_DESKTOP": "1"
+      },
+      "sourceSha256": "c06f9736884e99608ada1713658286147d27bfcf23c3d3cab7501926cd19780b",
+      "log": {
+        "file": "fragments-round1-publication-accepted.log",
+        "sha256": "26dec40662ad676bb6aa798cc5d88245a99e3bdea79164da5ecab8ee31338a44"
+      },
+      "records": 20,
+      "embeddedSourceRecords": 19
+    },
+    {
+      "name": "correctness",
+      "variant": "accepted",
+      "passed": 12,
+      "failed": 0,
+      "engine": "chromium",
+      "fragments": true,
+      "command": "npx playwright test --config playwright.writing-feasibility.config.ts --grep 'experiment:' --grep-invert 'scale ' --output test-results/writing-fragments-round1-correctness --workers 1",
+      "environment": {
+        "NOVALIST_WRITING_ENGINE": "chromium",
+        "NOVALIST_WRITING_FRAGMENTS": "1",
+        "NOVALIST_WRITING_OPTIMIZE": "1"
+      },
+      "sourceSha256": "c06f9736884e99608ada1713658286147d27bfcf23c3d3cab7501926cd19780b",
+      "log": {
+        "file": "fragments-round1-correctness.log",
+        "sha256": "b68a211e0679c64ca42359e4b2b00b26ae7ca7d3b7a289e0bb81d000d1dcc95d"
+      },
+      "records": 1,
+      "embeddedSourceRecords": 0
+    },
+    {
+      "name": "presentation",
+      "variant": "accepted",
+      "passed": 23,
+      "failed": 0,
+      "engine": "chromium",
+      "fragments": true,
+      "command": "npx playwright test --config playwright.writing-presentation.config.ts e2e/writing-presentation.spec.ts --output test-results/writing-fragments-round1-presentation --workers 1",
+      "environment": {
+        "NOVALIST_WRITING_ENGINE": "chromium",
+        "NOVALIST_WRITING_FRAGMENTS": "1",
+        "NOVALIST_WRITING_OPTIMIZE": "1"
+      },
+      "sourceSha256": "c06f9736884e99608ada1713658286147d27bfcf23c3d3cab7501926cd19780b",
+      "log": {
+        "file": "fragments-round1-presentation.log",
+        "sha256": "14eae9b6703dcc1ec026068750bacd9dcf2beccaf77ad291975314e48eff52c8"
+      },
+      "records": 1,
+      "embeddedSourceRecords": 0
+    }
+  ],
+  "checks": {
+    "node": "31/31",
+    "typecheck": "web/node/e2e passed",
+    "doctors": "8/8",
+    "aislop": "100; 0 errors; 0 warnings; npm audit unavailable spawn npm ENOENT"
+  },
+  "archive": {
+    "file": "fragments-round1-evidence.json.gz",
+    "bytes": 7203642,
+    "sha256": "115a4ffd9332f63a894fe40dbb373b5be22f895d430ed643cfbc7ff4ff8e8d44",
+    "records": 65,
+    "blobs": 354
+  }
+}

@@ -50,12 +50,15 @@ export function fragmentSceneMarkupSource(source: string): string {
   replace('      if (parent.childNodes[index] !== node) parent.insertBefore(node, parent.childNodes[index] ?? null)\n      used.add(node)\n      index++\n    }\n    while (parent.childNodes.length > index) parent.lastChild?.remove()', `      used.add(node)
       ordered.push(node)
     }
-    for (const [index, node] of ordered.entries()) {
+    let next: Node | null = null
+    for (const node of ordered.toReversed()) {
       const current = Array.from(surface ? surface.atoms() : parent.childNodes).filter(candidate => used.has(candidate))
-      if (current[index] === node) continue
-      const next = ordered.slice(index + 1).find(candidate => previous.includes(candidate)) ?? null
-      if (surface) surface.insertBefore(node, next)
-      else parent.insertBefore(node, next)
+      const index = current.indexOf(node)
+      if (index < 0 || (current[index + 1] ?? null) !== next) {
+        if (surface) surface.insertBefore(node, next)
+        else parent.insertBefore(node, next)
+      }
+      next = node
     }
     for (const node of previous) if (!used.has(node)) {
       if (surface) surface.remove(node)

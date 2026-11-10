@@ -78,6 +78,30 @@ test('fragment patch reserves keyed blocks before unkeyed matches and leaves unc
   f.dom.window.close()
 })
 
+for (const split of [false, true]) test(`reverse keyed blocks retain identity and rich order, surface ${split}`, () => {
+  const f = fixture('<p title="first">alpha <em>one</em></p><p>bravo</p><p>charlie <strong>three</strong></p>')
+  const original = Array.from(f.root.childNodes)
+  const groups = []
+  let group = []
+  for (const run of f.markup.read()) {
+    group.push(run)
+    if (run.insert.endsWith('\n')) { groups.push(group); group = [] }
+  }
+  assert.equal(groups.length, 3)
+  assert.equal(group.length, 0)
+  if (split) f.split(2)
+  const requested = groups.reverse().flat()
+  f.markup.render(requested)
+  assert.deepEqual(f.surface.atoms(), original.toReversed())
+  assert.deepEqual(f.markup.read(), requested)
+  const observer = new f.dom.window.MutationObserver(() => {})
+  observer.observe(f.root.parentNode, { childList: true, subtree: true, characterData: true })
+  f.markup.render(requested)
+  assert.deepEqual(observer.takeRecords(), [])
+  observer.disconnect()
+  f.dom.window.close()
+})
+
 test('unadapted element contract continues to read and render ordinary authored content', () => {
   const f = fixture('<p title="keep">alpha <em>beta</em></p>tail')
   const atoms = Array.from(f.root.childNodes)

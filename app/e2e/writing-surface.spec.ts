@@ -19,7 +19,13 @@ const fixtures = [
   { name: 'pre-line-block-edge', html: '<div style="white-space:pre-line">  alpha  \n  bravo  </div><p>charlie</p>' },
   { name: 'pre-line-inline', html: '<div style="white-space:pre-line"> alpha <em>  bravo </em>  charlie \n <strong> delta </strong> echo </div>' },
   { name: 'invalid-language-uppercase', html: '<p lang="en_US" style="text-transform:uppercase">alpha i</p><p>tail</p>' },
-  { name: 'inherited-language-uppercase', html: '<p lang="tr" style="text-transform:uppercase"><em>iki</em></p><p>tail</p>' }
+  { name: 'inherited-language-uppercase', html: '<p lang="tr" style="text-transform:uppercase"><em>iki</em></p><p>tail</p>' },
+  { name: 'capitalize-space', html: '<p style="text-transform:capitalize">alpha bravo</p><p>tail</p>' },
+  { name: 'capitalize-hyphen', html: '<p style="text-transform:capitalize">alpha-bravo</p><p>tail</p>' },
+  { name: 'capitalize-quoted', html: '<p style="text-transform:capitalize">"alpha" bravo</p><p>tail</p>' },
+  { name: 'capitalize-inline-word', html: '<p style="text-transform:capitalize">al<em>pha</em> bravo</p><p>tail</p>' },
+  { name: 'capitalize-fragment-word', html: '<span style="text-transform:capitalize">al</span><em style="text-transform:capitalize">pha</em><span style="text-transform:capitalize"> bravo</span>' },
+  { name: 'capitalize-mixed-context', html: '<p style="text-transform:capitalize">al<span style="text-transform:none">pha</span> bravo<br>charlie</p><p lang="tr" style="text-transform:capitalize">al<em lang="en">pha</em> <strong>iki</strong></p>' }
 ]
 
 for (const fixture of fixtures) {
