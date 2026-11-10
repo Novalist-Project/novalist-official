@@ -88,7 +88,8 @@ public sealed class WritingRpcTests
         var request = await SeedAsync(workspace, directory.Path);
         var reference = request.Changes[0].Ref;
         var scene = workspace.ResolveScene(reference.ChapterGuid, reference.SceneId).scene;
-        scene.Comments = [new SceneComment { Id = "comment", AnchorText = "Before", Text = "Note", Author = "Original" }];
+        scene.Comments = [new SceneComment { Id = "comment", AnchorText = "Before", Text = "Note", Author = "Original",
+            Replies = [new() { Id = "reply", Author = "Reviewer", Text = "Reply" }] }];
         await workspace.Projects.SaveScenesAsync();
         var before = WritingAnnotations.FromScene(scene);
         var after = new WritingAnnotations([new("comment", "After", "Changed", true)], [new("footnote", 1, "Text")]);
@@ -99,7 +100,12 @@ public sealed class WritingRpcTests
         Assert.Equal("Original", Assert.Single(scene.Comments!).Author);
         Assert.Equal("Changed", scene.Comments![0].Text);
         var passive = await new ScenesRpc(workspace).ReadPassiveAsync(reference.BookId, reference.DraftId, reference.ChapterGuid, reference.SceneId);
-        Assert.Equal(after.Comments, passive.Annotations!.Comments);
+        var saved = Assert.Single(passive.Annotations!.Comments);
+        Assert.Equal("After", saved.AnchorText);
+        Assert.Equal("Changed", saved.Text);
+        Assert.True(saved.Resolved);
+        Assert.Equal("Original", saved.Author);
+        Assert.Equal("Reply", Assert.Single(saved.Replies!).Text);
         Assert.Equal("conflict", (await new WritingRpc(workspace).CommitAsync(request with { TransactionId = "new", Changes = [] })).Status);
     }
 

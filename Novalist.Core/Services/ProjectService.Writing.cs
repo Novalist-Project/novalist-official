@@ -54,7 +54,7 @@ public partial class ProjectService
             if (prose is not null)
             {
                 files.Add(new(resolved.Path, raw, FileFrontMatter.Stamp(FileFrontMatter.Strip(prose.AfterHtml), scene.Id)));
-                scene.WordCount = ScriptAwareCounting.Count(TextDiff.StripHtml(prose.AfterHtml));
+                scene.WordCount = ScriptAwareCounting.Count(TextDiff.StripBlockHtml(prose.AfterHtml));
                 words.Add(new(resolved.Ref.BookId, scene.Id, scene.WordCount));
             }
             if (annotations is not null) ApplyWritingAnnotations(scene, annotations.After);
@@ -70,20 +70,21 @@ public partial class ProjectService
             || (annotations is not null && !SameWritingAnnotations(annotations.Before, WritingAnnotations.FromScene(scene)));
 
     private static bool SameWritingAnnotations(WritingAnnotations left, WritingAnnotations right)
-        => left.Comments.SequenceEqual(right.Comments) && left.Footnotes.SequenceEqual(right.Footnotes);
+        => left.Comments.Length == right.Comments.Length
+            && left.Comments.Zip(right.Comments).All(pair => pair.First.Matches(pair.Second))
+            && left.Footnotes.SequenceEqual(right.Footnotes);
 
     private void ApplyWritingAnnotations(SceneData scene, WritingAnnotations annotations)
     {
         if (annotations.Comments.Select(comment => comment.Id).Distinct().Count() != annotations.Comments.Length
-            || annotations.Footnotes.Select(note => note.Id).Distinct().Count() != annotations.Footnotes.Length)
+            || annotations.Footnotes.Select(note => note.Id).Distinct().Count() != annotations.Footnotes.Length
+            || annotations.Comments.Any(comment => comment.Replies is { } replies && replies.Select(reply => reply.Id).Distinct().Count() != replies.Length))
             throw new InvalidDataException("Duplicate writing annotation identity.");
         var previous = (scene.Comments ?? []).ToDictionary(comment => comment.Id);
         scene.Comments = annotations.Comments.Select(comment =>
         {
             var kept = previous.GetValueOrDefault(comment.Id) ?? new SceneComment { Id = comment.Id, Author = ProjectSettings.Author };
-            kept.AnchorText = comment.AnchorText;
-            kept.Text = comment.Text;
-            kept.Resolved = comment.Resolved;
+            comment.ApplyTo(kept);
             return kept;
         }).ToList();
         scene.Footnotes = annotations.Footnotes.Select(note => new SceneFootnote { Id = note.Id, Number = note.Number, Text = note.Text }).ToList();
