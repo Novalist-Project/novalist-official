@@ -9,6 +9,86 @@ namespace Novalist.Sync.Client.Tests;
 public sealed class SharedProjectFilesTests
 {
     [Fact]
+    public async Task FailedSendRebindsRetainedEnvelopeWithoutReplanningUnderFreshLease()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var peers = new Peers();
+        var initial = new Dictionary<string, byte[]> { ["Book/book.json"] = Bytes("{}") };
+        await using var files = peers.Workspace(0, new(initial));
+        await files.StartAsync(initial, ct);
+        var planned = 0;
+        Task<SharedProjectCommit> Plan(IReadOnlyDictionary<string, byte[]> current, CancellationToken token)
+        {
+            planned++;
+            return Task.FromResult(new SharedProjectCommit([new("Book/book.json", current["Book/book.json"], Bytes("{\"title\":\"After\"}"))], new([], []), "receipt"));
+        }
+        peers.FailPushes = 1;
+        await Assert.ThrowsAsync<IOException>(() => files.CommitStrictAsync("send", "hash", Plan, ct));
+        Assert.Equal("receipt", await files.CommitStrictAsync("send", "hash", Plan, ct));
+        Assert.Equal(1, planned);
+        Assert.Single(peers.Sessions[0].ReadCommittedItem(files.ItemId));
+    }
+
+    [Fact]
+    public async Task StrictBatchRetriesPartialProjectionWithoutDuplicatingPublishedChanges()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var peers = new Peers();
+        var initial = new Dictionary<string, byte[]> { ["Book/book.json"] = Bytes("{\"title\":\"Before\"}") };
+        var disk = new Dictionary<string, byte[]>(initial);
+        var fail = true;
+        var applied = 0;
+        await using var files = new SharedProjectFiles(peers.Sessions[0], (projection, _) =>
+        {
+            foreach (var change in projection.Changes) disk[change.Path] = change.After!;
+            if (fail) throw new IOException("Injected projection interruption.");
+            applied++;
+            Assert.Equal(new byte[] { 1, 2 }, Assert.Single(projection.DocumentUpdates).Update);
+            return Task.CompletedTask;
+        });
+        await files.StartAsync(initial, ct);
+        var planned = 0;
+        Task<SharedProjectCommit> Plan(IReadOnlyDictionary<string, byte[]> current, CancellationToken token)
+        {
+            planned++;
+            return Task.FromResult(new SharedProjectCommit([new("Book/book.json", current["Book/book.json"], Bytes("{\"title\":\"After\"}"))], new([], []), "receipt")
+            { DocumentUpdates = [new(Guid.NewGuid(), [1, 2])] });
+        }
+        await Assert.ThrowsAsync<IOException>(() => files.CommitStrictAsync("recover", "hash", Plan, ct));
+        fail = false;
+        Assert.Equal("receipt", await files.CommitStrictAsync("recover", "hash", Plan, ct));
+        Assert.Equal(1, planned);
+        Assert.Equal(1, applied);
+        Assert.Equal("{\"title\":\"After\"}", Text(disk["Book/book.json"]));
+        Assert.Single(peers.Sessions[0].ReadCommittedItem(files.ItemId));
+    }
+
+    [Fact]
+    public async Task StrictBatchPlansUnderLeaseAndReplaysReceiptWithoutRepeatingMutation()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var peers = new Peers();
+        var initial = new Dictionary<string, byte[]> { ["Book/book.json"] = Bytes("{\"title\":\"Before\"}") };
+        var disk = new Dictionary<string, byte[]>(initial);
+        await using var first = peers.Workspace(0, disk);
+        await first.StartAsync(initial, ct);
+        var planned = 0;
+        Task<SharedProjectCommit> Plan(IReadOnlyDictionary<string, byte[]> current, CancellationToken token)
+        {
+            planned++;
+            Assert.Equal(initial["Book/book.json"], current["Book/book.json"]);
+            return Task.FromResult(new SharedProjectCommit([new("Book/book.json", current["Book/book.json"], Bytes("{\"title\":\"After\"}"))], new([], []), "receipt"));
+        }
+        Assert.Equal("receipt", await first.CommitStrictAsync("transaction", "fingerprint", Plan, ct));
+        Assert.Equal("receipt", await first.CommitStrictAsync("transaction", "fingerprint", Plan, ct));
+        Assert.Equal(1, planned);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => first.CommitStrictAsync("transaction", "different", Plan, ct));
+        await Assert.ThrowsAsync<SharedProjectConflictException>(() => first.CommitStrictAsync("stale", "fingerprint", (_, _) => Task.FromResult(
+            new SharedProjectCommit([new("Book/book.json", initial["Book/book.json"], Bytes("{}"))], new([], []), "bad")), ct));
+        Assert.Equal("{\"title\":\"After\"}", Text(disk["Book/book.json"]));
+    }
+
+    [Fact]
     public async Task AProjectMutationArrivesAsAWholeAndReplaysAfterReopening()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -256,6 +336,7 @@ public sealed class SharedProjectFilesTests
         private readonly List<IDisposable> resources = [];
         private readonly List<SequencedUpdate> updates = [];
         public CollaborationSession[] Sessions { get; }
+        internal int FailPushes { get; set; }
 
         public Peers()
         {
@@ -286,6 +367,7 @@ public sealed class SharedProjectFilesTests
                 leases.ReleaseFieldLeaseAsync(Arg.Any<FieldLeaseRequest>(), Arg.Any<CancellationToken>()).Returns(true);
                 leases.PushFieldEditAsync(Arg.Any<FieldLeaseRequest>(), Arg.Any<UpdateEnvelope>(), Arg.Any<CancellationToken>()).Returns(call =>
                 {
+                    if (FailPushes > 0) { FailPushes--; throw new IOException("Injected send interruption."); }
                     var number = updates.Count + 1L;
                     updates.Add(new(number, call.Arg<UpdateEnvelope>()));
                     return number;

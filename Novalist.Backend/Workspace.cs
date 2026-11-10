@@ -330,6 +330,19 @@ public sealed record SceneDto(
 {
     public IReadOnlyList<string> Cast { get; init; } = [];
     public string? Pov { get; init; }
+    public string? Goal { get; init; }
+    public string? Outcome { get; init; }
+    public string? Notes { get; init; }
+    public string? LabelKey { get; init; }
+    public IReadOnlyDictionary<string, string>? Properties { get; init; }
+    public string? NarrativeMode { get; init; }
+    public string? Strand { get; init; }
+    public string? FocusEntityId { get; init; }
+    public string DateStart { get; init; } = string.Empty;
+    public string DateEnd { get; init; } = string.Empty;
+    public string DateNote { get; init; } = string.Empty;
+    public int? WordTarget { get; init; }
+    public string? BeatKey { get; init; }
 #if NOVALIST_COLLABORATION
     public SharedEntityFieldsDto? SharedFields { get; init; }
     public SharedEntityFieldsDto? SharedProse { get; init; }

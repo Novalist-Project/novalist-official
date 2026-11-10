@@ -29,8 +29,11 @@ public sealed class WritingOperationJournal
         return operation;
     }
 
+    public Task<WritingOperation> ReadOperationAsync(string operationId) => ReadAsync(JournalPath(operationId));
+
     public async Task<WritingOperation> PrepareAsync(string transactionId, string fingerprint,
-        IReadOnlyList<WritingFileMutation> mutations, CancellationToken ct = default, WritingSceneHash[]? hashes = null)
+        IReadOnlyList<WritingFileMutation> mutations, CancellationToken ct = default, WritingSceneHash[]? hashes = null,
+        WritingStructureDetails? structure = null)
     {
         ct.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrWhiteSpace(transactionId);
@@ -41,7 +44,7 @@ public sealed class WritingOperationJournal
         if (existing?.State == "committed") return existing;
         if (existing?.State == "prepared") await RollbackAsync(existing);
         await ValidateBeforeAsync(changes, ct);
-        var operation = new WritingOperation(OperationId(transactionId), transactionId, fingerprint, "prepared", changes) { Hashes = hashes ?? [] };
+        var operation = new WritingOperation(OperationId(transactionId), transactionId, fingerprint, "prepared", changes) { Hashes = hashes ?? [], FocusScene = structure?.FocusScene, Structure = structure?.Context };
         await _files.CreateDirectoryAsync(_directory);
         await SaveAsync(operation);
         return operation;
@@ -60,7 +63,7 @@ public sealed class WritingOperationJournal
                 ct.ThrowIfCancellationRequested();
                 var path = Resolve(change.Path);
                 if (await ReadOptionalAsync(path) != change.Before)
-                    throw new IOException("A writing file changed during commit.");
+                    throw new WritingConflictException("A writing file changed during commit.");
                 await WriteOptionalAsync(path, change.After);
             }
             await SaveAsync(operation with { State = "committed" });
@@ -110,7 +113,7 @@ public sealed class WritingOperationJournal
         {
             ct.ThrowIfCancellationRequested();
             if (await ReadOptionalAsync(Resolve(change.Path)) != change.Before)
-                throw new IOException("An affected writing file changed before commit.");
+                throw new WritingConflictException("An affected writing file changed before commit.");
         }
     }
 
@@ -164,7 +167,10 @@ public sealed class WritingOperationJournal
 }
 
 public sealed record WritingFileMutation(string Path, string? Before, string? After);
+public sealed record WritingStructureDetails(SceneRef? FocusScene, WritingStructureContext Context);
 public sealed record WritingOperation(string OperationId, string TransactionId, string Fingerprint, string State, WritingFileMutation[] Files)
 {
     public WritingSceneHash[] Hashes { get; init; } = [];
+    public SceneRef? FocusScene { get; init; }
+    public WritingStructureContext? Structure { get; init; }
 }

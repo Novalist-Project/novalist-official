@@ -21,6 +21,7 @@ public sealed partial class Workspace
         }
         ValidateSharedMetadataProjection(entity, binding, SharedMetadataFields.ParseValue(binding, value));
         var next = entity.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        if (projectingSharedFiles) { await ProjectWritingMetadataAsync(root, binding, entity, previous ?? "", next); return; }
         if (binding.Metadata?.Kind is "codex" or "override" or "section" or "state" or "image" or "attachment")
         {
             var id = entity["id"]?.GetValue<string>() ?? throw new InvalidDataException("The shared Codex identity is missing.");

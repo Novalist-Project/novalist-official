@@ -7,9 +7,15 @@ namespace Novalist.Sync.Client;
 public sealed record SharedFileChange(string Path, byte[]? Before, byte[]? After);
 public sealed record SharedFileRecovery(string Id, string Path, byte[] Content);
 public sealed record SharedProjectProjection(IReadOnlyList<SharedFileChange> Changes,
-    IReadOnlyList<SharedFileRecovery> Recoveries, long Sequence, SharedProjectState AddedState);
+    IReadOnlyList<SharedFileRecovery> Recoveries, long Sequence, SharedProjectState AddedState)
+{
+    public IReadOnlyList<SharedDocumentUpdate> DocumentUpdates { get; init; } = [];
+    public IReadOnlyList<SharedMetadataUpdate> MetadataUpdates { get; init; } = [];
+}
+public sealed record SharedDocumentUpdate(Guid ItemId, byte[] Update);
+public sealed record SharedMetadataUpdate(Guid ItemId, string Before, string After);
 
-public sealed class SharedProjectFiles : IAsyncDisposable
+public sealed partial class SharedProjectFiles : IAsyncDisposable
 {
     private readonly CollaborationSession session;
     private readonly Func<SharedProjectProjection, CancellationToken, Task> apply;
@@ -24,7 +30,9 @@ public sealed class SharedProjectFiles : IAsyncDisposable
     private long projectedSequence;
     private bool started;
     private bool disposed;
-    private sealed record FileBatch(int Version, IReadOnlyList<SharedFileChange> Changes, SharedProjectState AddedState, long ObservedSequence = 0);
+    private sealed record FileBatch(int Version, IReadOnlyList<SharedFileChange> Changes, SharedProjectState AddedState, long ObservedSequence = 0,
+        string? TransactionId = null, string? Fingerprint = null, string? ResultJson = null,
+        IReadOnlyList<SharedDocumentUpdate>? DocumentUpdates = null, IReadOnlyList<SharedMetadataUpdate>? MetadataUpdates = null);
 
     public Guid ItemId { get; }
     public Func<Func<Task>, Task> DispatchRemote { get; set; } = action => action();
@@ -139,6 +147,7 @@ public sealed class SharedProjectFiles : IAsyncDisposable
         {
             var batch = await DecodeAsync(update, ct);
             if (batch is null) continue;
+            if (batch.TransactionId is not null && receipts.ContainsKey(batch.TransactionId)) continue;
             var changes = new List<SharedFileChange>();
             var recoveries = new List<SharedFileRecovery>();
             foreach (var change in batch.Changes)
@@ -162,7 +171,9 @@ public sealed class SharedProjectFiles : IAsyncDisposable
                 nextState = SharedProjectFileBindings.Update(state, added, nextFiles);
             }
             catch (InvalidDataException) { Reject(update.Payload); continue; }
-            await apply(new(changes, recoveries, update.ServerSeq, added), ct);
+            await apply(new(changes, recoveries, update.ServerSeq, added) { DocumentUpdates = batch.DocumentUpdates ?? [], MetadataUpdates = batch.MetadataUpdates ?? [] }, ct);
+            if (batch.TransactionId is not null) receipts.Add(batch.TransactionId, new(batch.Fingerprint ?? throw new InvalidDataException("Missing receipt fingerprint."),
+                batch.ResultJson ?? throw new InvalidDataException("Missing receipt result.")));
             foreach (var change in changes.Where(change => change.After is null)) deletedPaths[change.Path] = update.ServerSeq;
             foreach (var item in state.Documents.Select(document => document.ItemId).Concat(state.Fields.Select(field => field.ItemId))
                 .Except(nextState.Documents.Select(document => document.ItemId).Concat(nextState.Fields.Select(field => field.ItemId))))
@@ -214,7 +225,13 @@ public sealed class SharedProjectFiles : IAsyncDisposable
 
     private static void Validate(FileBatch batch)
     {
-        if (batch.Version != 1 || batch.ObservedSequence < 0 || batch.Changes is not { Count: > 0 }) throw new InvalidDataException("Unsupported project file batch.");
+        if (batch.Version is not (1 or 2) || batch.ObservedSequence < 0 || batch.Changes is not { Count: > 0 }) throw new InvalidDataException("Unsupported project file batch.");
+        if (batch.DocumentUpdates is { Count: > 0 } updates && (batch.Version != 2 || updates.Any(update => update.ItemId == Guid.Empty || update.Update.Length == 0)
+            || updates.Select(update => update.ItemId).Distinct().Count() != updates.Count)) throw new InvalidDataException("Invalid structural document updates.");
+        if (batch.TransactionId is not null && (string.IsNullOrWhiteSpace(batch.TransactionId) || string.IsNullOrWhiteSpace(batch.Fingerprint) || batch.ResultJson is null))
+            throw new InvalidDataException("Invalid writing receipt.");
+        if (batch.MetadataUpdates is { Count: > 0 } metadata && (batch.Version != 2 || metadata.Any(update => update.ItemId == Guid.Empty || update.Before is null || update.After is null)
+            || metadata.Select(update => update.ItemId).Distinct().Count() != metadata.Count)) throw new InvalidDataException("Invalid structural metadata updates.");
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var change in batch.Changes)
         {

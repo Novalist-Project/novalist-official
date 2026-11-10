@@ -58,7 +58,7 @@ public sealed class WritingOperationJournalTests
         await journal.RollbackAsync(retry);
         await Assert.ThrowsAsync<InvalidOperationException>(() => journal.CommitAsync(prepared));
         await files.WriteTextAsync(path, "external");
-        await Assert.ThrowsAsync<IOException>(() => journal.PrepareAsync("transaction", "hash", [new(path, null, "after")]));
+        await Assert.ThrowsAsync<WritingConflictException>(() => journal.PrepareAsync("transaction", "hash", [new(path, null, "after")]));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => journal.RecoverAsync(new CancellationToken(true)));
     }
 

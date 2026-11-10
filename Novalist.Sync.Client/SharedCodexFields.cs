@@ -25,10 +25,11 @@ public static class SharedCodexFields
     private sealed record FolderSchema(string[] Keys, bool Custom);
     private sealed record Value(SharedFieldBinding Binding, string Text);
 
-    public static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, CancellationToken ct)
+    public static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, CancellationToken ct,
+        Func<string, CancellationToken, Task<byte[]>>? read = null)
     {
-        var basic = (await EnumerateAsync(root, paths, ct)).Select(value => value.Binding with { ItemId = Guid.NewGuid() }).ToArray();
-        var metadata = await SharedMetadataFields.CaptureAsync(root, paths, basic.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct);
+        var basic = (await EnumerateAsync(root, paths, ct, read)).Select(value => value.Binding with { ItemId = Guid.NewGuid() }).ToArray();
+        var metadata = await SharedMetadataFields.CaptureAsync(root, paths, basic.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct, read);
         return [.. basic, .. metadata];
     }
 
@@ -74,16 +75,18 @@ public static class SharedCodexFields
         }
     }
 
-    private static async Task<IReadOnlyList<Value>> EnumerateAsync(string root, IReadOnlyList<string> paths, CancellationToken ct)
+    private static async Task<IReadOnlyList<Value>> EnumerateAsync(string root, IReadOnlyList<string> paths, CancellationToken ct,
+        Func<string, CancellationToken, Task<byte[]>>? read = null)
     {
-        using var project = JsonDocument.Parse(await ReadBytesAsync(root, ".novalist/project.json", ct));
+        read ??= (path, token) => ReadBytesAsync(root, path, token);
+        using var project = JsonDocument.Parse(await read(".novalist/project.json", ct));
         var folders = Folders(project.RootElement);
         var result = new List<Value>();
         foreach (var path in paths)
         {
             var slash = path.LastIndexOf('/');
             if (slash < 0 || !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || !folders.TryGetValue(path[..slash], out var schema)) continue;
-            var bytes = await ReadBytesAsync(root, path, ct);
+            var bytes = await read(path, ct);
             using var entity = JsonDocument.Parse(bytes);
             var id = Text(entity.RootElement, "id");
             if (string.IsNullOrEmpty(id) || !string.Equals(Path.GetFileNameWithoutExtension(path), id, StringComparison.Ordinal))

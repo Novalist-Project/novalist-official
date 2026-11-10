@@ -110,6 +110,11 @@ public sealed partial class Workspace
                 ResolvePlotlineIds(s))
             {
                 Cast = s.Cast?.ToArray() ?? [], Pov = s.AnalysisOverrides?.Pov,
+                Goal = s.Goal, Outcome = s.Outcome, Notes = s.Notes, LabelKey = s.LabelKey,
+                Properties = s.Properties is null ? null : new Dictionary<string, string>(s.Properties),
+                NarrativeMode = s.NarrativeMode, Strand = s.Strand, FocusEntityId = s.FocusEntityId,
+                DateStart = s.DateRange?.Start ?? s.Date, DateEnd = s.DateRange?.End ?? string.Empty,
+                DateNote = s.DateRange?.Note ?? string.Empty, WordTarget = s.WordTarget, BeatKey = s.BeatKey,
 #if NOVALIST_COLLABORATION
                 SharedFields = SharedSceneMetadata(s.Id), SharedProse = SharedSceneProse(s.Id)
 #endif

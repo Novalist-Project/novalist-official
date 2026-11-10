@@ -151,13 +151,13 @@ public sealed partial class Workspace
         await FileService.WriteTextAsync(path, next);
     }
 
-    private EntityHistory FieldHistory(string root, SharedFieldBinding binding)
+    private EntityHistory FieldHistory(string root, SharedFieldBinding binding, Core.Services.ProjectService? projects = null)
     {
         var project = Projects.CurrentProject ?? throw new InvalidOperationException("The shared project is no longer open.");
         var book = project.Books.SingleOrDefault(book => binding.Path.StartsWith(book.FolderName + '/', StringComparison.OrdinalIgnoreCase));
         var bookRoot = book?.FolderName + (book?.ActiveDraft is { } draft ? "/Drafts/" + draft.FolderName : "");
         var snapshots = book is null ? project.WorldBibleFolder + "/Snapshots" : bookRoot + '/' + book.SnapshotFolder;
-        return new EntityHistory(Projects, snapshotRoot: SharedProjectPath.Resolve(root, snapshots));
+        return new EntityHistory(projects ?? Projects, snapshotRoot: SharedProjectPath.Resolve(root, snapshots));
     }
 
     private static string PropertyName(JsonObject value, string key) => value.Select(property => property.Key)

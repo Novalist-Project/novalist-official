@@ -54,6 +54,13 @@ public sealed partial class Workspace
             using var projection = BeginSharedProjection();
             if (Projects.ProjectRoot != root) throw new InvalidOperationException("The shared project is no longer open.");
             if (sharedProse.TryGetValue(item, out var prose)) { await ProjectSharedProseAsync(root, prose, snapshot); return; }
+            if (sharedItems.TryGetValue(files[item].Relative, out var owner) && owner != item)
+            {
+                if ((snapshot.Recovered ?? snapshot.Html) is { } retained)
+                    await WriteSharedFileRecoveryAsync(root, item.ToString("N"), files[item].Relative,
+                        Encoding.UTF8.GetBytes(FileFrontMatter.Stamp(retained, files[item].SceneId)));
+                return;
+            }
             await PrepareSharedProjectionPathAsync(files[item].Relative);
             if (snapshot.Html is null)
             {
@@ -161,6 +168,7 @@ public sealed partial class Workspace
 
     private async Task<bool> RecordSharedSceneAsync(string root, string relative, string html, bool local)
     {
+        if (projectingSharedFiles) return await RecordInactiveSharedSceneAsync(root, relative, html);
         if (Projects.ProjectRoot != root || Projects.ActiveBook is not { } book || Projects.ScenesManifest is not { } manifest) return false;
         foreach (var chapter in book.Chapters)
         {

@@ -8,6 +8,7 @@ public sealed partial class Workspace
     private SharedProjectFiles? sharedProjectFiles;
     private Dictionary<string, byte[]> sharedDiskFiles = new(StringComparer.Ordinal);
     private bool projectingSharedFiles;
+    private long projectingSharedSequence;
 
     internal async Task AttachSharedProjectAsync(Guid sessionId, CollaborationSession session,
         SharedProjectState state, Stream archive, CancellationToken ct)
@@ -77,8 +78,12 @@ public sealed partial class Workspace
         using var projectionScope = BeginSharedProjection();
         var root = sharedRoot ?? throw new InvalidOperationException("The shared project is closed.");
         projectingSharedFiles = true;
+        projectingSharedSequence = projection.Sequence;
         try
         {
+            if (projection.DocumentUpdates.Count > 0) await RequireSharedScenes(sharedSession).ValidateStructureAsync(projection.DocumentUpdates, ct);
+            if (projection.MetadataUpdates.Count > 0)
+                await (sharedFields ?? throw new InvalidOperationException("The shared fields are closed.")).ValidateStructureAsync(projection.MetadataUpdates, ct);
             foreach (var recovery in projection.Recoveries)
                 await WriteSharedFileRecoveryAsync(root, recovery.Id, recovery.Path, recovery.Content);
             foreach (var change in projection.Changes.OrderBy(change => change.Path == ".novalist/project.json"))
@@ -94,8 +99,10 @@ public sealed partial class Workspace
                     await FileService.WriteBytesAsync(path, current is null ? content : MaskSeparatelySharedContent(change.Path, content, current));
                 else await FileService.DeleteFileAsync(path);
             }
-            await ReloadSharedWorkspaceAsync();
             await AddSharedProjectBindingsAsync(projection.AddedState, ct);
+            if (projection.MetadataUpdates.Count > 0)
+                await (sharedFields ?? throw new InvalidOperationException("The shared fields are closed.")).ApplyStructureAsync(projection.MetadataUpdates, projection.Sequence, ct);
+            if (projection.DocumentUpdates.Count > 0) await RequireSharedScenes(sharedSession).ApplyStructureAsync(projection.DocumentUpdates, ct);
             foreach (var change in projection.Changes)
             {
                 var path = SharedProjectPath.Resolve(root, change.Path);
@@ -103,6 +110,7 @@ public sealed partial class Workspace
                     change.Path, await FileService.ReadBytesAsync(path), ct);
                 else sharedDiskFiles.Remove(change.Path);
             }
+            await ReloadSharedWorkspaceAsync();
             if (Coordinator?.Notify is { } notify)
                 await notify("collaboration/projectUpdated", new { sessionId = sharedSession, state = BuildState() });
         }
