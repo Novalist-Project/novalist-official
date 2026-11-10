@@ -81,7 +81,7 @@ public sealed partial class Workspace
             var file = files[item];
             if (changed) await FileService.WriteTextAsync(SharedProjectPath.Resolve(root, file.Relative),
                 FileFrontMatter.Stamp(FileFrontMatter.Strip(snapshot.Html), file.SceneId));
-            var counted = await RecordSharedSceneAsync(root, file.Relative, snapshot.Html, local);
+            var counted = await RecordSharedSceneAsync(root, file.Relative, file.SceneId, snapshot.Html, local);
             projected[item] = snapshot.Html;
             if (counted) recorded.Add(item);
         });
@@ -166,9 +166,9 @@ public sealed partial class Workspace
         if (sharedScenes is not null || sharedFields is not null || PeerProjects?.IsActive == true) throw new InvalidOperationException("Close the collaboration session asynchronously before closing this workspace.");
     }
 
-    private async Task<bool> RecordSharedSceneAsync(string root, string relative, string html, bool local)
+    private async Task<bool> RecordSharedSceneAsync(string root, string relative, string sceneId, string html, bool local)
     {
-        if (projectingSharedFiles) return await RecordInactiveSharedSceneAsync(root, relative, html);
+        if (projectingSharedFiles) return await RecordInactiveSharedSceneAsync(root, relative, sceneId, html);
         if (Projects.ProjectRoot != root || Projects.ActiveBook is not { } book || Projects.ScenesManifest is not { } manifest) return false;
         foreach (var chapter in book.Chapters)
         {
@@ -181,7 +181,7 @@ public sealed partial class Workspace
                 return true;
             }
         }
-        return await RecordInactiveSharedSceneAsync(root, relative, html);
+        return await RecordInactiveSharedSceneAsync(root, relative, sceneId, html);
     }
 
     [GeneratedRegex(@"</?(?:p|div|h[1-6]|ul|ol|li|dl|dt|dd|blockquote|pre|table|thead|tbody|tfoot|tr|td|th|figure|figcaption|br|hr)\b[^>]*>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]

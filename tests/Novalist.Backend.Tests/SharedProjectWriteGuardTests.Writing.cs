@@ -161,6 +161,52 @@ public sealed partial class SharedProjectWriteGuardTests
     }
 
     [Fact]
+    public async Task RecreatedSharedChildCanSplitAndRecoverProjectionWithRetiredBindingAtSamePath()
+    {
+        var files = new InterruptedStructureFiles();
+        await using var fixture = await SharedProjectFixture.StartAsync(files);
+        var workspace = fixture.Host.Workspace;
+        var book = workspace.Projects.ActiveBook!;
+        var chapter = Assert.Single(book.Chapters);
+        var scene = Assert.Single(workspace.Projects.GetScenesForChapter(chapter.Guid));
+        var reference = new SceneRef(book.Id, book.ActiveDraftId, chapter.Guid, scene.Id);
+        var shared = fixture.Scene;
+        var prepared = new SharedSplitPreparation(fixture.SessionId, shared.ItemId, shared.State, Encoding.UTF8.GetBytes("html:<p>Original</p>"),
+            Guid.NewGuid(), Encoding.UTF8.GetBytes("html:<p> prose.</p>"), shared.State);
+        var command = new SplitSceneCommand(reference, "<p>Original</p>", "<p> prose.</p>", "<p>Original prose.</p>", ContentHasher.Hash("<p>Original prose.</p>")) { SharedSplit = prepared };
+        var split = await fixture.Desktop.InvokeAsync<StructureResult>("writing/structure", new StructureRequest("first-split", 0, book.Id, book.ActiveDraftId, command));
+        Assert.Equal("committed", split.Status);
+        var inverse = new SharedStructureInverse(fixture.SessionId, shared.ItemId, prepared.RetainedUpdate, shared.State);
+        Assert.Equal("committed", (await fixture.Desktop.InvokeAsync<StructureResult>("writing/undoStructure", split.OperationId, 0, inverse)).Status);
+        var replacement = Guid.NewGuid();
+        var redo = new SharedStructureInverse(fixture.SessionId, shared.ItemId, shared.State, prepared.RetainedUpdate, replacement, prepared.CreatedState);
+        Assert.Equal("committed", (await fixture.Desktop.InvokeAsync<StructureResult>("writing/redoStructure", split.OperationId, 0, redo)).Status);
+        const string childHtml = "<p>Child two words.</p>";
+        await fixture.Desktop.InvokeAsync("collaboration/writeScene", fixture.SessionId, replacement, Encoding.UTF8.GetBytes("html:" + childHtml));
+        var child = await workspace.RequireSharedScenes(fixture.SessionId).ReadAsync(replacement, TestContext.Current.CancellationToken);
+        var childPreparation = new SharedSplitPreparation(fixture.SessionId, replacement, child.State, Encoding.UTF8.GetBytes("html:<p>Child</p>"),
+            Guid.NewGuid(), Encoding.UTF8.GetBytes("html:<p> two words.</p>"), child.State);
+        var childCommand = new SplitSceneCommand(split.FocusScene!, "<p>Child</p>", "<p> two words.</p>", childHtml, ContentHasher.Hash(childHtml)) { SharedSplit = childPreparation };
+        var request = new StructureRequest("split-recreated-child", 0, book.Id, book.ActiveDraftId, childCommand);
+        files.RejectedText = "<p>Child</p>";
+        Assert.Equal("retryable", (await fixture.Desktop.InvokeAsync<StructureResult>("writing/structure", request)).Status);
+        Assert.Equal(2, Assert.Single(workspace.BuildState().Chapters).Scenes.Count);
+        files.RejectedText = null;
+        var completed = await fixture.Desktop.InvokeAsync<StructureResult>("writing/structure", request);
+        Assert.Equal("committed", completed.Status);
+        var scenes = Assert.Single(completed.State!.Chapters).Scenes;
+        Assert.Equal(3, scenes.Count);
+        Assert.Equal(1, scenes.Single(item => item.Id == split.FocusScene!.SceneId).WordCount);
+        Assert.Equal(2, scenes.Single(item => item.Id == completed.FocusScene!.SceneId).WordCount);
+        Assert.Equal(completed.FocusScene, (await fixture.Desktop.InvokeAsync<StructureResult>("writing/structure", request)).FocusScene);
+        await fixture.Desktop.InvokeAsync("collaboration/writeScene", fixture.SessionId, prepared.CreatedItemId, Encoding.UTF8.GetBytes("html:<p>Late retired child.</p>"));
+        Assert.Contains(Directory.GetFiles(Path.Combine(fixture.Root, "Recovered edits"), "*.novalist", SearchOption.AllDirectories), path => File.ReadAllText(path).Contains("Late retired child."));
+        Assert.Equal("<p>Child</p>", (await workspace.RequireSharedScenes(fixture.SessionId).ReadAsync(replacement, TestContext.Current.CancellationToken)).Html);
+        var next = request with { TransactionId = "after-replayed-child-split", Command = new CreateActCommand("Next act", null) };
+        Assert.Equal("committed", (await fixture.Desktop.InvokeAsync<StructureResult>("writing/structure", next)).Status);
+    }
+
+    [Fact]
     public async Task SharedAnnotationCommitReplaysAndUndoKeepsPeerAddedRecords()
     {
         await using var fixture = await SharedProjectFixture.StartAsync();
