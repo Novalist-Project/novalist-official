@@ -176,6 +176,36 @@ internal sealed class WorkspaceCoordinator(Workspace workspace, SemaphoreSlim ga
         lock (_sync) return _clients.Count > 0;
     }
 
+    internal async Task<T> RunWritingAsync<T>(Func<Task<T>> action, CancellationToken ct)
+    {
+        var lease = WorkspaceRequestContext.Lease;
+        if (lease is { Held: false }) throw new InvalidOperationException("The workspace transaction has yielded its write gate.");
+        var ownsLease = lease is null;
+        if (lease is null)
+        {
+            await gate.WaitAsync(ct);
+            lease = new WorkspaceGateLease(gate);
+        }
+        using var context = WorkspaceRequestContext.Enter(WorkspaceRequestContext.Identity, lease);
+        try
+        {
+            lock (_sync)
+            {
+                if (_transition is not null && (WorkspaceRequestContext.Identity?.FlushToken != _transition.Token || _transition.Prepared.Task.IsCompleted))
+                    throw new InvalidOperationException("The workspace is preparing a context change.");
+            }
+            return await action();
+        }
+        finally
+        {
+            if (ownsLease)
+            {
+                lease.Active = false;
+                lease.Yield();
+            }
+        }
+    }
+
     private sealed class Transition(string token, WorkspaceGateLease lease)
     {
         internal string Token { get; } = token;

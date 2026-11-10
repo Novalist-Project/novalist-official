@@ -20,11 +20,18 @@ public sealed class WritingSceneReadTests
         using var gate = new SemaphoreSlim(1, 1);
         workspace.Coordinator = new WorkspaceCoordinator(workspace, gate);
         var rpc = new ScenesRpc(workspace);
+        Assert.False(rpc.Activate(book.Id, book.ActiveDraftId!, chapter.Guid, scene.Id, 0, "pane", 1, 1));
+        Assert.Throws<InvalidOperationException>(() => rpc.SetFocusedWritingOwner("1", "pane", 0, 1));
         _ = workspace.ExtensionsHost;
         var opened = 0;
         workspace.HostServices!.SceneOpened += _ => opened++;
         using (WorkspaceRequestContext.Enter(new("0", 0, null), null))
+        {
+            Assert.Throws<InvalidOperationException>(() => rpc.SetFocusedWritingOwner("1", "pane", 0, -1));
+            rpc.SetFocusedWritingOwner("1", "pane", 1, 1);
             rpc.SetFocusedWritingOwner("1", "pane", 0, 2);
+            rpc.SetFocusedWritingOwner("2", "other", 0, 1);
+        }
         using (WorkspaceRequestContext.Enter(new("1", 0, null), null))
         {
             Assert.False(rpc.Activate(book.Id, book.ActiveDraftId!, chapter.Guid, scene.Id, 0, "pane", 1, 1));
@@ -35,6 +42,8 @@ public sealed class WritingSceneReadTests
         using (WorkspaceRequestContext.Enter(new("2", 0, null), null))
             Assert.False(rpc.Activate(book.Id, book.ActiveDraftId!, chapter.Guid, scene.Id, 0, "pane", 2, 3));
         Assert.Equal(1, opened);
+        await rpc.ReadAsync(chapter.Guid, scene.Id);
+        Assert.Equal(2, opened);
     }
 
     [Fact]
@@ -78,5 +87,7 @@ public sealed class WritingSceneReadTests
         await workspace.FileService.WriteTextAsync(projects.GetSceneFilePath(chapter, scene), FileFrontMatter.Stamp("<p>Other</p>", "other"));
         await Assert.ThrowsAsync<IOException>(() => reader.ReadAsync(reference));
         Assert.Equal(scene.Id, projects.GetScenesForChapter(chapter.Guid).Single().Id);
+        scene.FileName = Path.Combine("..", "..", "..", "..", "..", "outside.html");
+        await Assert.ThrowsAsync<InvalidDataException>(() => reader.ReadAsync(reference));
     }
 }

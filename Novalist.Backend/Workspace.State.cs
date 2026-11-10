@@ -109,6 +109,7 @@ public sealed partial class Workspace
                 s.Stage, s.ExcludeFromExport, s.Inactive, ResolvePlotlineColors(s),
                 ResolvePlotlineIds(s))
             {
+                Cast = s.Cast?.ToArray() ?? [], Pov = s.AnalysisOverrides?.Pov,
 #if NOVALIST_COLLABORATION
                 SharedFields = SharedSceneMetadata(s.Id), SharedProse = SharedSceneProse(s.Id)
 #endif

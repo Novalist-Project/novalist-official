@@ -160,6 +160,7 @@ public sealed class BackendHost : IDisposable, IAsyncDisposable
     {
         rpc.AddLocalRpcTarget(new ProjectRpc(_workspace), targetOptions);
         rpc.AddLocalRpcTarget(new ScenesRpc(_workspace), targetOptions);
+        rpc.AddLocalRpcTarget(new WritingRpc(_workspace), targetOptions);
         rpc.AddLocalRpcTarget(new BinderRpc(_workspace), targetOptions);
         rpc.AddLocalRpcTarget(new CollectionsRpc(_workspace), targetOptions);
         rpc.AddLocalRpcTarget(new CompletionRpc(_workspace), targetOptions);

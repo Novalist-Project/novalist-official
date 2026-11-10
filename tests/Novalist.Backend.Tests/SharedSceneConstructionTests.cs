@@ -17,6 +17,28 @@ namespace Novalist.Backend.Tests;
 public sealed class SharedSceneConstructionTests
 {
     [Fact]
+    public async Task PassiveWritingReadsRetainSharedChannelsAndCompoundWritesCannotBypassThem()
+    {
+        await using var fixture = await ConstructionFixture.StartAsync();
+        var state = fixture.Document(fixture.ScenePath, "html:<p>Original.</p>");
+        await fixture.AttachAsync([state]);
+        var workspace = fixture.Host.Workspace;
+        var book = workspace.Projects.ActiveBook!;
+        var reference = new SceneRef(book.Id, book.ActiveDraftId!, fixture.Chapter.Guid, fixture.Scene.Id);
+        var passive = await fixture.Rpc.InvokeAsync<SceneContentDto>("scenes/readPassive",
+            reference.BookId, reference.DraftId, reference.ChapterGuid, reference.SceneId);
+        Assert.Equal(state.ItemId, passive.Shared?.ItemId);
+        Assert.Equal("<p>Original.</p>", passive.Html);
+        var request = new WritingCommitRequest("shared-write", 0,
+            [new(reference, 0, passive.Html, "<p>Forbidden local write</p>")], []);
+        var result = await fixture.Rpc.InvokeAsync<WritingCommitResult>("writing/commit", request);
+        Assert.Equal("retryable", result.Status);
+        Assert.Contains("Original", await File.ReadAllTextAsync(Path.Combine(fixture.Root, fixture.ScenePath)));
+        var local = await workspace.Projects.CreateSceneAsync(fixture.Chapter.Guid, "Local");
+        Assert.Null((await new ScenesRpc(workspace).ReadPassiveAsync(book.Id, book.ActiveDraftId!, fixture.Chapter.Guid, local.Id)).Shared);
+    }
+
+    [Fact]
     public async Task ChangedSceneBytesRejectStaleSharedStateAndRetainTheLocalWriting()
     {
         await using var fixture = await ConstructionFixture.StartAsync();

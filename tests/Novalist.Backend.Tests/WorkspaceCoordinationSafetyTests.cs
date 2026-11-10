@@ -8,6 +8,35 @@ namespace Novalist.Backend.Tests;
 [Collection("BackendStatics")]
 public sealed class WorkspaceCoordinationSafetyTests
 {
+    [Fact]
+    public async Task WritingFlushUsesExistingGateAndRefusingWindowVetoesContextChange()
+    {
+        using var directory = new TempDir();
+        using var workspace = new Workspace(directory.Path);
+        using var gate = new SemaphoreSlim(1, 1);
+        var coordinator = new WorkspaceCoordinator(workspace, gate);
+        coordinator.Validate(new("1", 0, null), "project/getState");
+        var flushes = 0;
+        coordinator.Notify = async (method, payload) =>
+        {
+            if (method != "workspace/prepare") return;
+            var token = JsonSerializer.SerializeToElement(payload).GetProperty("token").GetString()!;
+            await Assert.ThrowsAsync<InvalidOperationException>(() => coordinator.RunWritingAsync(() => Task.FromResult(0), CancellationToken.None));
+            await gate.WaitAsync();
+            var lease = new WorkspaceGateLease(gate);
+            using (WorkspaceRequestContext.Enter(new("1", 0, token), lease))
+                flushes += await coordinator.RunWritingAsync(() => Task.FromResult(1), CancellationToken.None);
+            lease.Active = false;
+            lease.Yield();
+            coordinator.Prepared(token, false, "unsaved");
+        };
+        var changed = false;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => coordinator.RunAsync("project/close", () => { changed = true; return Task.CompletedTask; }));
+        Assert.False(changed);
+        Assert.Equal(1, flushes);
+        Assert.Equal(0, coordinator.Epoch);
+    }
+
     [Theory]
     [InlineData("snapshots/restore")]
     [InlineData("search/replaceAll")]

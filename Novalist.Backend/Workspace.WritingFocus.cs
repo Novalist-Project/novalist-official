@@ -8,7 +8,8 @@ public sealed partial class Workspace
     {
         if (WorkspaceRequestContext.Identity?.Owner != "0")
             throw new InvalidOperationException("Only the window coordinator can set writing focus.");
-        if (epoch != (Coordinator?.Epoch ?? 0) || generation < 0)
+        if (epoch != (Coordinator?.Epoch ?? 0)) return;
+        if (generation < 0)
             throw new InvalidOperationException("The writing focus request is obsolete.");
         if (_writingFocus is { } current && current.Epoch == epoch && generation <= current.Generation) return;
         _writingFocus = new(owner, sourceId, epoch, generation);
