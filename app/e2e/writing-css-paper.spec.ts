@@ -2,7 +2,7 @@ import { expect, test, type Frame } from '@playwright/test'
 import { writeFile } from 'node:fs/promises'
 import { launchWriting } from './fixtures/writingHarness'
 import { writingProvenance } from './fixtures/writingProvenance'
-import { writingDiagnosticEvidence } from './fixtures/writingDiagnosticEvidence'
+import { writingDiagnosticEvidence } from './fixtures/writingDiagnosticEvidence.mts'
 
 async function nativeState(frame: Frame) {
   return frame.evaluate(() => {
@@ -96,7 +96,8 @@ for (const containment of [false, true]) {
         const after = measure()
         return { html, unchangedHtml: root.innerHTML === html, connected: nodes.every((node, index) => node.isConnected && root.childNodes[index] === node), em, before, after }
       }, containment)
-      await writeFile(info.outputPath('css-raw.json'), JSON.stringify(writingDiagnosticEvidence({ provenance: writingProvenance(), containment, result }), null, 2))
+      await writeFile(info.outputPath('css-raw.json'), JSON.stringify(writingDiagnosticEvidence({ provenance: writingProvenance(),
+        workload: { route: 'original', appliedAdaptations: false, panes: 1, scenes: 1, words: 7 }, containment, result }), null, 2))
       expect(result.unchangedHtml).toBe(true)
       expect(result.connected).toBe(true)
       expect(result.after[0][0].top - result.before[0][0].top).toBeCloseTo(8 * result.em)

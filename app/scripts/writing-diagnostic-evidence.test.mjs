@@ -1,16 +1,28 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { writingDiagnosticEvidence } from '../e2e/fixtures/writingDiagnosticEvidence.ts'
+import { writingDiagnosticEvidence } from '../e2e/fixtures/writingDiagnosticEvidence.mts'
 
 test('diagnostic evidence replaces authored strings without changing geometry or input', () => {
   const prose = 'synthetic \u00e9vidence'
   const signature = { sha256: createHash('sha256').update(prose).digest('hex'), characters: prose.length, utf8Bytes: Buffer.byteLength(prose) }
-  const input = { html: prose, nested: [{ text: prose, authored: prose }], serialized: [prose, prose], geometry: { text: { top: 1, bottom: 4 } }, connected: true }
+  const input = { result: { html: prose, nested: [{ text: prose, authored: prose }], geometry: { text: { top: 1, bottom: 4 } }, connected: true }, serialized: [prose, prose] }
   const before = structuredClone(input)
   const result = writingDiagnosticEvidence(input)
-  assert.deepEqual(result, { htmlEvidence: signature, nested: [{ textEvidence: signature, authoredEvidence: signature }], serializedEvidence: [signature, signature], geometry: { text: { top: 1, bottom: 4 } }, connected: true })
+  assert.deepEqual(result, { result: { htmlEvidence: signature, nested: [{ textEvidence: signature, authoredEvidence: signature }], geometry: { text: { top: 1, bottom: 4 } }, connected: true }, serializedEvidence: [signature, signature] })
   assert.deepEqual(input, before)
   assert.equal(JSON.stringify(result).includes(prose), false)
   assert.deepEqual(writingDiagnosticEvidence({ serialized: prose }), { serializedEvidence: signature })
+})
+
+test('diagnostic evidence preserves metadata including authored source digests', () => {
+  const digest = '870d7211ac9e09d8f990520a7b4c5ece87bc2c4e19e084ed159050f092bb1c7b'
+  const input = { variantSourceSha256: { authored: digest }, provenance: { authored: digest }, workload: { authored: digest },
+    before: { html: 'sample' }, first: { text: 'sample' }, second: { text: 'sample' }, samples: [{ html: 'sample' }] }
+  const output = writingDiagnosticEvidence(input)
+  for (const key of ['variantSourceSha256', 'provenance', 'workload']) assert.equal(JSON.stringify(output[key]), JSON.stringify(input[key]))
+  assert.equal(output.variantSourceSha256.authored, digest)
+  for (const key of ['before', 'first', 'second', 'samples']) assert.equal(JSON.stringify(output[key]).includes('sample'), false)
+  const summary = { variantSourceSha256: { authored: digest }, records: [{ value: input }] }
+  assert.deepEqual(writingDiagnosticEvidence(summary), summary)
 })

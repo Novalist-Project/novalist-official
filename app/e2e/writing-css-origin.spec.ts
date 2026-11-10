@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { writeFile } from 'node:fs/promises'
 import { launchWriting } from './fixtures/writingHarness'
 import { writingProvenance } from './fixtures/writingProvenance'
-import { writingDiagnosticEvidence } from './fixtures/writingDiagnosticEvidence'
+import { writingDiagnosticEvidence } from './fixtures/writingDiagnosticEvidence.mts'
 
 declare global {
   interface Window {
