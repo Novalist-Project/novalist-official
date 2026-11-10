@@ -33,12 +33,13 @@ for (const change of ['remove', 'reorder', 'partial-remove'] as const) {
       await h.frames()[0].evaluate(change => {
         const append = Element.prototype.append
         Element.prototype.append = function (...nodes) {
-          if (change === 'partial-remove' && this.classList.contains('nv-page') && nodes.some(node => node instanceof Element && node.matches('p'))) {
+          const contentOwner = this.classList.contains('nv-page') || (this.hasAttribute('data-writing-fragment') && this.parentElement?.classList.contains('nv-page'))
+          if (change === 'partial-remove' && contentOwner && nodes.some(node => node instanceof Element && node.matches('p'))) {
             (nodes[0] as Element).remove()
             throw new Error('Synthetic same-node mutation')
           }
           append.apply(this, nodes)
-          if (!this.classList.contains('nv-page') || !nodes.some(node => node instanceof Element && node.matches('p'))) return
+          if (!contentOwner || !nodes.some(node => node instanceof Element && node.matches('p')) || (change === 'reorder' && this.childNodes.length < 2)) return
           if (change === 'remove') (nodes[0] as Element).remove()
           else this.prepend(nodes.at(-1) as Node)
           throw new Error('Synthetic same-node mutation')
@@ -196,7 +197,7 @@ for (const direction of ['forward', 'backward', 'caret'] as const) {
       expect(final.transactions - work.transactions).toBe(0)
       expect(final.reads).toEqual(work.reads)
       expect(await h.page.evaluate(() => Array.from(document.querySelectorAll('iframe'), frame => frame.contentWindow!.writingCaptureTelemetry!.sceneIds.length))).toEqual(serialized)
-      expect(await h.page.evaluate(() => Array.from(document.querySelectorAll('iframe')).every((frame, pane) => Array.from(frame.contentDocument!.querySelectorAll('[data-scene-id]')).every((root, scene) => root === window.writingOwnerNodes[pane][scene] && root.isConnected)))).toBe(true)
+      expect(await h.page.evaluate(() => Array.from(document.querySelectorAll('iframe')).every((frame, pane) => window.writingOwnerNodes[pane].length === window.writingPanes[pane].sceneCount() && window.writingOwnerNodes[pane].every(root => root.isConnected && frame.contentDocument!.querySelector(`[data-scene-id="${root.dataset.sceneId}"]`) === root)))).toBe(true)
       await h.page.evaluate(() => window.writingPanes[0].select({ scene: 1, offset: 2 }, { scene: 1, offset: 2 }))
       const inputStart = await h.page.evaluate(() => structuredClone(window.writingWork))
       await h.page.keyboard.insertText('Q')
@@ -238,10 +239,19 @@ for (const order of ['edit-layout', 'layout-edit', 'mixed', 'throw', 'compositio
         edit()
         if (order === 'throw') {
           const block = root.querySelector('p')!
-          Object.defineProperty(block, 'offsetHeight', { configurable: true, get() { throw new Error('Synthetic layout failure') } })
+          const range = (editor as unknown as { Range: typeof Range }).Range.prototype
+          const measure = range.getClientRects
+          let threw = false
+          if (root.hasAttribute('data-writing-fragment')) range.getClientRects = function () {
+            if (this.startContainer.childNodes[this.startOffset] === block) throw new Error('Synthetic layout failure')
+            return measure.call(this)
+          }
+          else Object.defineProperty(block, 'offsetHeight', { configurable: true, get() { throw new Error('Synthetic layout failure') } })
           try { editor.setPageView(true) } catch (error) {
             if (!(error instanceof Error) || error.message !== 'Synthetic layout failure') throw error
-          } finally { delete (block as unknown as { offsetHeight?: number }).offsetHeight }
+            threw = true
+          } finally { range.getClientRects = measure; delete (block as unknown as { offsetHeight?: number }).offsetHeight }
+          if (!threw) throw new Error('The layout failure probe did not execute')
         } else if (order !== 'layout-edit') editor.setPageView(true)
         if (order === 'mixed') { root.querySelector('p')!.firstChild!.textContent = 'edited delta'; editor.setPageView(false); editor.setPageView(true) }
         if (order === 'composition') {
@@ -387,7 +397,8 @@ for (const container of ['section', 'editor'] as const) {
       await h.page.evaluate(container => {
         const root = document.querySelector('iframe')!.contentDocument!.getElementById('editor')!
         const section = root.querySelector('[data-scene-id="scene-b"]')!
-        root.ownerDocument.getSelection()!.setBaseAndExtent(container === 'editor' ? root : section, container === 'editor' ? 1 : 0, container === 'editor' ? root : section, container === 'editor' ? 1 : 0)
+        const offset = container === 'editor' ? Array.from(root.childNodes).indexOf(section) : 0
+        root.ownerDocument.getSelection()!.setBaseAndExtent(container === 'editor' ? root : section, offset, container === 'editor' ? root : section, offset)
       }, container)
       expect(await h.page.evaluate(() => window.writingPanes[0].activeScene())).toBe('scene-b')
       await h.frames()[0].evaluate(() => {

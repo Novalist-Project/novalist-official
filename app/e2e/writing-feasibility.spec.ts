@@ -123,7 +123,7 @@ test('experiment: page view paginates paragraphs inside a long scene', async () 
       editor.setPageView(true)
       const paragraphs = Array.from(document.querySelectorAll('[data-scene-id] p'))
       const pages = new Set(paragraphs.map(paragraph => paragraph.closest('.nv-page')))
-      return { pages: pages.size, sceneRoots: document.querySelectorAll('[data-scene-id]').length }
+      return { pages: pages.size, sceneRoots: window.parent.writingPanes[0].sceneCount() }
     })
     expect(result.sceneRoots).toBe(2)
     expect(result.pages).toBeGreaterThan(2)
@@ -175,17 +175,26 @@ test('experiment: backward keyboard selection survives scope round trip and redo
     const before = await h.frames()[0].evaluate(() => window.getSelection()!.toString())
     expect(before).toContain('bravo')
     expect(before).toContain('charlie')
-    const result = await h.page.evaluate(() => {
+    const endpoints = await h.page.evaluateHandle(() => {
+      const selection = document.querySelector('iframe')!.contentWindow!.getSelection()!
+      return { anchor: selection.anchorNode!, anchorOffset: selection.anchorOffset, focus: selection.focusNode!, focusOffset: selection.focusOffset }
+    })
+    const result = await h.page.evaluate(endpoints => {
       const pane = window.writingPanes[0]
       pane.scope([0]); pane.scope([0, 1])
-      const selection = document.querySelector('iframe')!.contentWindow!.getSelection()!.toString()
+      const selected = document.querySelector('iframe')!.contentWindow!.getSelection()!
+      const selection = selected.toString()
+      const exactEndpoints = selected.anchorNode === endpoints.anchor && selected.anchorOffset === endpoints.anchorOffset && selected.focusNode === endpoints.focus && selected.focusOffset === endpoints.focusOffset
+      const connected = endpoints.anchor.isConnected && endpoints.focus.isConnected
       pane.command('toggleItalic')
       pane.undo()
       const undone = pane.serialize()
       pane.redo()
-      return { selection, undone, redone: pane.serialize() }
-    })
+      return { selection, exactEndpoints, connected, undone, redone: pane.serialize() }
+    }, endpoints)
+    await endpoints.dispose()
     expect(result.selection).toBe(before)
+    expect(result.exactEndpoints && result.connected).toBe(true)
     expect(result.undone.map(scene => scene.html)).toEqual(['<p>alpha bravo</p>', '<p>charlie delta</p>'])
     expect(result.redone.every(scene => scene.html.includes('<i>'))).toBe(true)
   } finally { await h.close() }
@@ -371,12 +380,16 @@ test('experiment: composition pins its scene and defers a projection change unti
     await session.send('Input.imeSetComposition', { text: '漢', selectionStart: 1, selectionEnd: 1 })
     const pinned = await h.page.evaluate(() => {
       window.writingPanes[0].scope([1])
-      return document.querySelector('iframe')!.contentDocument!.querySelector<HTMLElement>('[data-scene-id="scene-a"]')!.hidden
+      return document.querySelector('iframe')!.contentDocument!.querySelector<HTMLElement>('[data-scene-id="scene-a"]')!.getClientRects().length === 0
     })
     expect(pinned).toBe(false)
     await session.send('Input.insertText', { text: '漢字' })
     await expect.poll(() => h.page.evaluate(() => window.writingPanes[0].serialize()[0].text)).toBe('alpha漢字 bravo')
-    await expect.poll(() => h.page.evaluate(() => Array.from(document.querySelector('iframe')!.contentDocument!.querySelectorAll<HTMLElement>('[data-scene-id]'), scene => scene.hidden))).toEqual([true, false])
+    await expect.poll(() => h.page.evaluate(() => {
+      const scenes = document.querySelector('iframe')!.contentDocument!.querySelectorAll<HTMLElement>('[data-scene-id]')
+      return Array.from(scenes, scene => ({ id: scene.dataset.sceneId, hidden: scene.getClientRects().length === 0, connected: scene.isConnected }))
+        .sort((a, b) => a.id!.localeCompare(b.id!))
+    })).toEqual([{ id: 'scene-a', hidden: true, connected: true }, { id: 'scene-b', hidden: false, connected: true }])
     await h.frames()[0].evaluate(() => (window as unknown as EditorWindow).flushPendingContentChange())
     await expect.poll(() => h.page.evaluate(() => window.writingPublications)).toEqual([{ sceneId: 'scene-a', html: '<p>alpha漢字 bravo</p>' }])
     await session.detach()

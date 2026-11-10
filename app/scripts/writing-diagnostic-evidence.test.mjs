@@ -26,3 +26,23 @@ test('diagnostic evidence preserves metadata including authored source digests',
   const summary = { variantSourceSha256: { authored: digest }, records: [{ value: input }] }
   assert.deepEqual(writingDiagnosticEvidence(summary), summary)
 })
+
+test('adapter after, undo, redo and publication payloads cannot bypass authored-text redaction', () => {
+  const prose = 'synthetic artifact payload'
+  const input = { after: [{ output: [{ html: prose, text: prose }], deltas: [[{ insert: prose }]] }],
+    undone: [{ html: prose }], redone: [{ text: prose }], publications: [{ plainText: prose, html: prose }] }
+  const result = writingDiagnosticEvidence(input)
+  assert.equal(JSON.stringify(result).includes(prose), false)
+  assert.equal(result.after[0].output[0].htmlEvidence.characters, prose.length)
+  assert.equal(result.publications[0].plainTextEvidence.characters, prose.length)
+})
+
+test('rich path attribute values are content evidence while opaque IDs and attribute names survive', () => {
+  const attributes = { title: 'synthetic authored title', style: 'display:inline' }
+  const output = writingDiagnosticEvidence({ result: { paths: [{ id: 'opaque-id', tag: 'p', attributes }], shape: { attributes: ['title', 'style'] } }, provenance: { attributes } })
+  assert.equal(JSON.stringify(output.result).includes(attributes.title), false)
+  assert.equal(output.result.paths[0].id, 'opaque-id')
+  assert.equal(output.result.paths[0].attributesEvidence.sha256, createHash('sha256').update(JSON.stringify(attributes)).digest('hex'))
+  assert.deepEqual(output.result.shape.attributes, ['title', 'style'])
+  assert.deepEqual(output.provenance.attributes, attributes)
+})

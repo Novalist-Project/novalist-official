@@ -3,7 +3,7 @@ import type { WritingPane } from './writingContract'
 import type { SceneMarkup } from '../../src/renderer/src/collaboration/sceneMarkup'
 
 interface ProbePane extends WritingPane {
-  views: { markup: SceneMarkup; state: { doc: Y.Doc; text: Y.Text } }[]
+  views: { root: HTMLElement; markup: SceneMarkup; state: { doc: Y.Doc; text: Y.Text } }[]
   history: { capture(views: unknown, indices: number[]): void }
   selection(): unknown
   restore(value: unknown): void
@@ -18,7 +18,7 @@ declare global {
 
 export function installPresentationProbe(): void {
   const panes = window.writingPanes as unknown as ProbePane[]
-  window.writingOwnerNodes = Array.from(document.querySelectorAll('iframe'), frame => Array.from(frame.contentDocument!.querySelectorAll<HTMLElement>('[data-scene-id]')))
+  window.writingOwnerNodes = panes.map(pane => pane.views.map(view => view.root))
   window.writingWork = { captures: 0, reads: panes.map(() => 0), readsByScene: panes.map(pane => pane.views.map(() => 0)), snapshots: panes.map(() => 0), restores: panes.map(() => 0), transactions: 0, changed: 0 }
   const history = panes[0].history
   const capture = history.capture.bind(history)

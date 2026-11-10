@@ -11,6 +11,7 @@ import { closeTestApp } from '../harness'
 import { scopeEditorSource } from './writingEngineSource'
 import { createLayoutTelemetry } from './writingLayoutTelemetry'
 import { profileWritingSource, layoutSourceNames } from './writingLayoutSource'
+import { fragmentSceneMarkupSource } from './writingSceneMarkupSource'
 
 export type WritingMode = 'original' | 'experiment'
 export interface WritingHarness {
@@ -27,6 +28,8 @@ export async function launchWriting(mode: WritingMode, paneCount = 1, profiling 
   let page: Page
   const optimized = process.env.NOVALIST_WRITING_OPTIMIZE !== '0'
   const scoped = mode === 'experiment' && optimized && process.env.NOVALIST_WRITING_SCOPED !== '0'
+  const fragments = mode === 'experiment' && process.env.NOVALIST_WRITING_FRAGMENTS === '1'
+  if (fragments && !scoped) throw new Error('Fragment adapter requires the scoped experiment route.')
   const close = async (): Promise<void> => {
     try {
       if (electron) await closeTestApp(electron)
@@ -63,17 +66,31 @@ export async function launchWriting(mode: WritingMode, paneCount = 1, profiling 
     const file = resolve(root, `.${pathname}`)
     if (!file.startsWith(root + sep)) throw new Error('Asset outside the editor fixture.')
     const body = await readFile(file)
-    let served: string | Buffer = scoped && name.endsWith('.js') ? scopeEditorSource(name, body.toString('utf8')) : body
+    let served: string | Buffer = scoped && name.endsWith('.js') ? scopeEditorSource(name, body.toString('utf8'), fragments) : body
+    if (fragments && name === 'editor.html') {
+      served = body.toString('utf8')
+      for (const selector of ['body.page-view .nv-page > p', 'body.dim-others #editor > .nv-page > *', 'body.dim-others #editor > .nv-page > .nv-focus-block']) {
+        if (served.split(selector + ' {').length !== 2) throw new Error('The fragment paper CSS seam no longer matches its exact source.')
+        served = served.replace(selector + ' {', selector + ', ' + selector.replace('.nv-page > ', '.nv-page > [data-writing-fragment] > ') + ' {')
+      }
+    }
     if (profiling && name.endsWith('.js')) served = profileWritingSource(name, served.toString())
     await route.fulfill({ contentType, body: served })
   })
   await page.goto('http://127.0.0.1:38917/harness')
   if (mode === 'experiment') {
     const bundle = await build({ entryPoints: [resolve('e2e/fixtures/writingExperiment.ts')], bundle: true, write: false, format: 'iife', platform: 'browser',
-      plugins: profiling ? [{ name: 'writing-layout-profile', setup(builder) {
-        builder.onLoad({ filter: /\.ts$/ }, async ({ path }) => layoutSourceNames.includes(basename(path))
-          ? { contents: profileWritingSource(basename(path), await readFile(path, 'utf8')), loader: 'ts' } : undefined)
-      } }] : [] })
+      plugins: [{ name: 'writing-source-seams', setup(builder) {
+        builder.onLoad({ filter: /\.ts$/ }, async ({ path }) => {
+          const markup = fragments && path === resolve('src/renderer/src/collaboration/sceneMarkup.ts')
+          const profileSource = profiling && layoutSourceNames.includes(basename(path))
+          if (!markup && !profileSource) return undefined
+          let contents = await readFile(path, 'utf8')
+          if (markup) contents = fragmentSceneMarkupSource(contents)
+          if (profileSource) contents = profileWritingSource(basename(path), contents)
+          return { contents, loader: 'ts' }
+        })
+      } }] })
     await page.addScriptTag({ content: bundle.outputFiles[0].text })
   }
   const frames = (): Frame[] => page.frames().filter(frame => frame !== page.mainFrame())
@@ -94,7 +111,7 @@ export async function launchWriting(mode: WritingMode, paneCount = 1, profiling 
         const editor = frame.contentWindow as EditorWindow | null
         return frame.contentDocument?.readyState === 'complete' && typeof editor?.setContent === 'function'
       }).length === count, count)
-      if (mode === 'experiment') await page.evaluate(({ book, optimized, scoped }) => window.installWriting(book, optimized, scoped), { book, optimized, scoped })
+      if (mode === 'experiment') await page.evaluate(({ book, optimized, scoped, fragments }) => window.installWriting(book, optimized, scoped, fragments), { book, optimized, scoped, fragments })
       else for (const [index, frame] of frames().entries()) await frame.evaluate(scene => (window as unknown as EditorWindow).setContent(scene.html), book.scenes[index % book.scenes.length])
     },
     close

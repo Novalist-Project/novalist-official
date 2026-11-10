@@ -22,6 +22,6 @@ declare global {
   interface Window {
     writingPanes: WritingPane[]
     writingPublications: { sceneId: string; html: string }[]
-    installWriting(book: FixtureBook, optimized: boolean, scoped: boolean): void
+    installWriting(book: FixtureBook, optimized: boolean, scoped: boolean, fragments?: boolean): void
   }
 }

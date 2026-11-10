@@ -1,14 +1,31 @@
 import type { Page } from '@playwright/test'
 import './writingContract'
+import type { WritingPane } from './writingContract'
+import type { SceneProjection, SceneSurface } from './writingSceneSurface'
+
+interface SnapshotPane extends WritingPane { views: { root: HTMLElement; surface?: SceneSurface }[]; projection?: SceneProjection }
 
 export async function snapshotWriting(page: Page) {
   return page.evaluate(() => ({
     panes: window.writingPanes.map((pane, index) => {
+      const projected = pane as SnapshotPane
       const scenes = pane.serialize()
       const data = pane.inspect()
       const frameDocument = document.querySelectorAll('iframe')[index].contentDocument!
       const selection = frameDocument.getSelection()!
       const point = (node: Node | null, offset: number) => {
+        if (projected.projection) {
+          const resolved = projected.projection.locate(node, offset)
+          if (!resolved) return null
+          let length = 0
+          for (const fragment of resolved.scene.fragments) {
+            const range = frameDocument.createRange()
+            range.selectNodeContents(fragment)
+            if (fragment.contains(resolved.node)) { range.setEnd(resolved.node, resolved.offset); return { sceneId: resolved.scene.sceneId, offset: length + range.toString().length } }
+            length += range.toString().length
+          }
+          return null
+        }
         const element = node?.nodeType === 1 ? node as Element : node?.parentElement
         const root = element?.closest<HTMLElement>('[data-scene-id]')
         if (!root || !node) return null
@@ -28,7 +45,7 @@ export async function snapshotWriting(page: Page) {
         })
       })
       return { scenes, deltas, undoGroups: data.undoGroups, redoGroups: data.redoGroups,
-        owners: Array.from(frameDocument.querySelectorAll<HTMLElement>('[data-scene-id]'), root => ({ id: root.dataset.sceneId, connected: root.isConnected })),
+        owners: projected.views.map(view => ({ id: view.root.dataset.sceneId, connected: (view.surface?.fragments ?? [view.root]).every(fragment => fragment.isConnected) })),
         selection: { anchor: point(selection.anchorNode, selection.anchorOffset), focus: point(selection.focusNode, selection.focusOffset), text: selection.toString() } }
     }),
     publications: window.writingPublications ?? []

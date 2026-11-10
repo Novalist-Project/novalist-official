@@ -44,6 +44,11 @@ export class WritingPresentation {
     return observer
   }
 
+  dispose(): void {
+    for (const observer of this.observers.keys()) observer.disconnect()
+    this.observers.clear()
+  }
+
   private move(expected: Change[], operation: () => void): void {
     for (const [observer, consume] of this.observers) consume(contentRecords(observer.takeRecords()))
     try { operation() }
@@ -77,6 +82,11 @@ export class WritingPresentation {
 
   append(parent: HTMLElement, ...nodes: Node[]): void {
     this.move([...removals(nodes), { target: parent, added: nodes, removed: [] }], () => parent.append(...nodes))
+  }
+
+  insertBefore(parent: HTMLElement, node: Node, next: Node | null): void {
+    if (node === next || (node.parentNode === parent && node.nextSibling === next)) return
+    this.move([...removals([node]), { target: parent, added: [node], removed: [] }], () => parent.insertBefore(node, next))
   }
 
   unwrap(page: Element): void {
