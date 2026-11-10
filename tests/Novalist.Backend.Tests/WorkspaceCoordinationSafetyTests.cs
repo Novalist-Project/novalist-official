@@ -24,6 +24,8 @@ public sealed class WorkspaceCoordinationSafetyTests
             await Assert.ThrowsAsync<InvalidOperationException>(() => coordinator.RunWritingAsync(() => Task.FromResult(0), CancellationToken.None));
             await gate.WaitAsync();
             var lease = new WorkspaceGateLease(gate);
+            using (WorkspaceRequestContext.Enter(new("1", 0, null), lease))
+                await Assert.ThrowsAsync<InvalidOperationException>(() => coordinator.RunWritingAsync(() => Task.FromResult(0), CancellationToken.None));
             using (WorkspaceRequestContext.Enter(new("1", 0, token), lease))
                 flushes += await coordinator.RunWritingAsync(() => Task.FromResult(1), CancellationToken.None);
             lease.Active = false;
