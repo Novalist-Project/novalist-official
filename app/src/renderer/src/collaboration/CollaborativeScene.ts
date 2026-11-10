@@ -5,11 +5,13 @@ import { SceneMarkup } from './sceneMarkup'
 import { validateSceneUpdate } from './validateSceneUpdate'
 import { SceneUpdateInbox } from './SceneUpdateInbox'
 import { RemoteSelections, type SharedSelection, type ParticipantSelection } from './remoteSelections'
+import type { SharedSceneSession } from './SharedSceneSession'
 
 interface SceneOptions {
   initialState?: Uint8Array
   onUpdate(update: Uint8Array): void
   onError(error: Error): void
+  owner?: SharedSceneSession
 }
 
 interface SceneSelection {
@@ -18,8 +20,8 @@ interface SceneSelection {
 }
 
 export class CollaborativeScene {
-  private readonly doc = new Y.Doc()
-  private readonly prose = this.doc.getText('prose')
+  private readonly doc: Y.Doc
+  private readonly prose: Y.Text
   private readonly root: HTMLElement
   private readonly observer: MutationObserver
   private readonly history: Y.UndoManager
@@ -31,34 +33,52 @@ export class CollaborativeScene {
   private compositionTimer: ReturnType<typeof setTimeout> | undefined
   private pending: Uint8Array[] = []
   private pendingBytes = 0
+  private unbind: (() => void) | undefined
 
   constructor(private readonly editor: RichEditingSurface, private readonly options: SceneOptions) {
     const root = editor.root
     const view = root.ownerDocument.defaultView
     if (!view) throw new Error('The prose editor is not ready.')
     this.root = root
+    this.doc = options.owner?.doc ?? new Y.Doc()
+    this.prose = this.doc.getText('prose')
     this.markup = new SceneMarkup(editor, root)
     this.updates = new SceneUpdateInbox(this.doc, this.markup)
-    if (options.initialState) {
+    if (options.owner) {
+      this.render()
+    } else if (options.initialState) {
       validateSceneUpdate(this.doc, options.initialState, this.markup, true)
       Y.applyUpdate(this.doc, options.initialState)
       this.render()
     } else {
       this.capture()
     }
-    this.history = new Y.UndoManager(this.prose, { trackedOrigins: new Set([this]) })
+    this.history = options.owner?.history ?? new Y.UndoManager(this.prose, { trackedOrigins: new Set([this]) })
     this.presence = new RemoteSelections(view, selection => this.selectionRange(selection))
     this.doc.on('update', this.updated)
-    this.observer = new MutationObserver(() => this.capture())
+    this.observer = new MutationObserver(() => { if (!editor.managedTransactions) this.capture() })
     this.observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true })
     root.addEventListener('keydown', this.onKeyDown, true)
     root.addEventListener('beforeinput', this.onBeforeInput, true)
     root.addEventListener('compositionstart', this.onCompositionStart)
     root.addEventListener('compositionend', this.onCompositionEnd)
+    root.addEventListener('input', this.onInput)
+    this.unbind = options.owner?.bind({ capture: () => this.capture(), isComposing: () => this.composing,
+      prepare: html => this.editor.getContent() === html ? this.markup.read() : undefined, assertReady: () => {
+      if (this.composing) throw new Error('Confirm the composition before changing the shared scene.')
+    }, render: () => {
+      if (this.applying || this.composing) return
+      const selection = this.selection()
+      this.render()
+      if (selection) this.restoreSelection(selection)
+      this.editor.flushPendingContentChange()
+    } })
   }
 
+  private readonly onInput = (): void => { if (!this.editor.managedTransactions) this.capture() }
+
   private readonly updated = (update: Uint8Array, origin: unknown): void => {
-    if (origin === this || origin === this.history) this.options.onUpdate(update)
+    if (!this.options.owner && (origin === this || origin === this.history)) this.options.onUpdate(update)
   }
 
   private readonly onCompositionStart = (): void => {
@@ -77,10 +97,12 @@ export class CollaborativeScene {
         try { this.receive(update) }
         catch { this.options.onError(new Error('An invalid shared edit was rejected after composition.')) }
       }
+      this.options.owner?.drainRemoteUpdates()
     }, 0)
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (this.editor.managedTransactions) return
     if (this.composing || event.isComposing || !(event.ctrlKey || event.metaKey) || event.altKey) return
     const key = event.key.toLowerCase()
     if (key !== 'z' && key !== 'y') return
@@ -90,6 +112,7 @@ export class CollaborativeScene {
   }
 
   private readonly onBeforeInput = (event: InputEvent): void => {
+    if (this.editor.managedTransactions) return
     if (event.inputType !== 'historyUndo' && event.inputType !== 'historyRedo') return
     event.preventDefault()
     event.stopImmediatePropagation()
@@ -108,9 +131,19 @@ export class CollaborativeScene {
 
   capture(): void {
     if (this.applying || this.composing) return
-    this.doc.transact(() => {
-      updateRichText(this.prose, this.markup.read())
-    }, this)
+    if (this.editor.managedTransactions && this.options.owner) {
+      if (this.editor.getContent() === this.options.owner.html) return
+      if (!this.editor.captureWritingTransaction) throw new Error('Capture the writing transaction before saving shared prose.')
+      this.editor.captureWritingTransaction()
+      if (this.editor.getContent() !== this.options.owner.html) throw new Error('Shared prose still has an uncaptured writing transaction.')
+      return
+    }
+    this.applying = true
+    try {
+      const runs = this.markup.read()
+      if (this.options.owner) this.options.owner.transact(prose => updateRichText(prose, runs))
+      else this.doc.transact(() => { updateRichText(this.prose, runs) }, this)
+    } finally { this.applying = false }
     this.presence?.render()
   }
 
@@ -167,6 +200,7 @@ export class CollaborativeScene {
       this.pendingBytes += update.byteLength
       return
     }
+    if (this.options.owner) { this.options.owner.receive(update); return }
     this.capture()
     const selection = this.selection()
     let changed = false
@@ -226,10 +260,12 @@ export class CollaborativeScene {
     this.root.removeEventListener('beforeinput', this.onBeforeInput, true)
     this.root.removeEventListener('compositionstart', this.onCompositionStart)
     this.root.removeEventListener('compositionend', this.onCompositionEnd)
+    this.root.removeEventListener('input', this.onInput)
     clearTimeout(this.compositionTimer)
-    this.history.destroy()
+    this.unbind?.()
+    if (!this.options.owner) this.history.destroy()
     this.presence.destroy()
     this.doc.off('update', this.updated)
-    this.doc.destroy()
+    if (!this.options.owner) this.doc.destroy()
   }
 }

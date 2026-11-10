@@ -51,8 +51,20 @@ export interface SceneChange {
   afterHtml: string
 }
 
+export interface WritingComment {
+  id: string
+  anchorText: string
+  text: string
+  resolved: boolean
+  createdAt?: string
+  author?: string | null
+  isTodo?: boolean
+  verdict?: string | null
+  replies?: { id: string; author: string; text: string; createdAt: string }[] | null
+}
+
 export interface WritingAnnotations {
-  comments: { id: string; anchorText: string; text: string; resolved: boolean }[]
+  comments: WritingComment[]
   footnotes: { id: string; number: number; text: string }[]
 }
 

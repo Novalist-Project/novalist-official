@@ -46,11 +46,22 @@ function sameAnnotations(a: WritingAnnotations, b: WritingAnnotations): boolean 
     a.comments.every((comment, index) => {
       const other = b.comments[index]
       return comment.id === other.id && comment.anchorText === other.anchorText &&
-        comment.text === other.text && comment.resolved === other.resolved
+        comment.text === other.text && comment.resolved === other.resolved &&
+        comment.createdAt === other.createdAt && comment.author === other.author &&
+        comment.isTodo === other.isTodo && comment.verdict === other.verdict &&
+        sameReplies(comment.replies, other.replies)
     }) && a.footnotes.every((footnote, index) => {
       const other = b.footnotes[index]
       return footnote.id === other.id && footnote.number === other.number && footnote.text === other.text
     })
+}
+
+function sameReplies(a: WritingAnnotations['comments'][number]['replies'], b: WritingAnnotations['comments'][number]['replies']): boolean {
+  if (!a || !b) return a === b
+  return a.length === b.length && a.every((reply, index) => {
+    const other = b[index]
+    return reply.id === other.id && reply.author === other.author && reply.text === other.text && reply.createdAt === other.createdAt
+  })
 }
 
 /** Retains canonical HTML independently of projections and mounted editor frames. */

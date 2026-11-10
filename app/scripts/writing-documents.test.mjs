@@ -215,6 +215,30 @@ test('annotation validation ignores object key insertion order and rejects dupli
   await owner.close()
 })
 
+test('annotation concurrency includes provenance and reply records', async () => {
+  const comment = { id: 'comment', anchorText: 'Original', text: 'Review', resolved: false,
+    author: 'Writer', createdAt: '2026-01-02T03:04:05Z', isTodo: true, verdict: 'accepted',
+    replies: [{ id: 'reply', author: 'Editor', text: 'Reply', createdAt: '2026-01-03T03:04:05Z' }] }
+  const before = { comments: [comment], footnotes: [] }
+  const { owner, commits } = await registry({ transport: { read: async () => ({ ...snapshot, annotations: before }) } })
+  const original = await owner.read(ref)
+  for (const changed of [{ author: 'Another' }, { createdAt: '2026-02-01T00:00:00Z' },
+    { isTodo: false }, { verdict: null }, { replies: null },
+    { replies: [{ ...comment.replies[0], text: 'Changed reply' }] }]) {
+    assert.throws(() => owner.apply({ ...transaction(original), changes: [], annotationChanges: [{ ref,
+      before: { comments: [{ ...comment, ...changed }], footnotes: [] }, after: { comments: [], footnotes: [] }
+    }] }), /annotation/)
+  }
+  const reorderedReply = { createdAt: comment.replies[0].createdAt, text: 'Reply', author: 'Editor', id: 'reply' }
+  owner.apply({ ...transaction(original), changes: [], annotationChanges: [{ ref,
+    before: { comments: [{ ...comment, replies: [reorderedReply] }], footnotes: [] },
+    after: { comments: [{ ...comment, resolved: true }], footnotes: [] }
+  }] })
+  await owner.flush()
+  assert.deepEqual(commits[0].annotationChanges[0].after.comments[0].replies, comment.replies)
+  await owner.close()
+})
+
 test('incomplete acknowledgements and conflicts retain the document for explicit retry', async () => {
   for (const result of [{ status: 'committed', operationId: 'partial', hashes: [] }, { status: 'conflict', conflicts: [{ ref, hash: 'changed-elsewhere' }] }]) {
     let fail = true
