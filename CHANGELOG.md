@@ -21,7 +21,9 @@ could encounter in a previously released version.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Quick edit** — choose paragraph styles beside selected text or at the caret, with mixed-style indicators and keyboard access from the command palette. The fixed writing toolbar remains available.
 
 ---
 

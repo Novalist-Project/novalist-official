@@ -133,11 +133,12 @@ function getParagraphStyle() {
         return '';
     };
     const first = styleOf(blocks[0]);
-    return blocks.every((b) => styleOf(b) === first) ? first : '';
+    return blocks.every((b) => styleOf(b) === first) ? first : 'mixed';
 }
 
 /** Applies a named paragraph style to the selection; '' clears it. */
 function setParagraphStyle(style) {
+    if (!['', 'heading', 'subheading', 'blockquote', 'poetry'].includes(style)) return;
     window.NovalistEditorState.editor.focus({ preventScroll: true });
     const blocks = selectedBlocks();
     if (blocks.length === 0) return;

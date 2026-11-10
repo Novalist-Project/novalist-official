@@ -50,6 +50,23 @@ function entityContextMenuHtml(hasSelection) {
     // It was a button on the editor toolbar, where it appeared and disappeared
     // as the caret moved past names.
     // placement-container: contextMenu
+    html += '<div class="cm-item" data-command="editor.quickEdit" data-action="quickEdit"><span>'
+        + window.escapeHtml(window.NovalistEditorState.contextMenuLabels.quickEdit || 'Quick edit') + '</span></div>';
+    const labels = window.NovalistEditorState.contextMenuLabels;
+    html += window.submenu(labels.paragraphStyle || 'Paragraph style', [
+        { action: 'paragraphStyle:', command: 'paragraph.style.body', label: labels.style_body || 'Body' },
+        { action: 'paragraphStyle:heading', command: 'paragraph.style.heading', label: labels.style_heading || 'Heading' },
+        { action: 'paragraphStyle:subheading', command: 'paragraph.style.subheading', label: labels.style_subheading || 'Subheading' },
+        { action: 'paragraphStyle:blockquote', command: 'paragraph.style.blockquote', label: labels.style_blockquote || 'Blockquote' },
+        { action: 'paragraphStyle:poetry', command: 'paragraph.style.poetry', label: labels.style_poetry || 'Verse' }
+    ], hasSelection);
+    if (window.writingStructureEnabled) {
+        html += window.submenu(labels.insertStructure || 'Insert structure', [
+            { action: 'writing:sceneBreak', command: 'writing.sceneBreak', label: labels.sceneBreak || 'Scene break' },
+            { action: 'writing:chapterHeading', command: 'writing.chapterHeading', label: labels.chapterHeading || 'Chapter heading' },
+            { action: 'writing:insertChapter', command: 'writing.insertChapter', label: labels.insertChapter || 'New chapter' }
+        ], hasSelection);
+    }
     if (window.findEntityAtCaret()) {
         html += '<div class="cm-separator"></div>';
         html += '<div class="cm-item" data-command="caret.peekEntity" data-action="peekEntity"><span>' + window.escapeHtml(window.NovalistEditorState.contextMenuLabels.peekEntity || 'Peek at entity under caret') + '</span><span class="cm-shortcut">Ctrl+Shift+E</span></div>';

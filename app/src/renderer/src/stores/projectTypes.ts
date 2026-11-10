@@ -1,6 +1,8 @@
 import type { WorkspaceSnapshot } from '../../../shared/workspaceProtocol'
 import type { SharedSceneIdentity } from '../../../shared/sharedScene'
 import type { SharedEntityFields } from '../collaboration/FocusedField'
+import type { WritingContext, WritingScope } from '../views/editor/writingTypes'
+import type { WritingDocumentRegistry } from './writingDocuments'
 
 export interface SceneDto {
   id: string
@@ -23,6 +25,8 @@ export interface SceneDto {
   plotlineColors: string[]
   /** The same threads by id, so the binder can narrow to one of them. */
   plotlineIds: string[]
+  cast?: string[]
+  pov?: string | null
 }
 
 export interface ChapterDto {
@@ -83,6 +87,7 @@ export interface SceneTabRef {
  * costs nothing.
  */
 export interface EditorPaneState {
+  writingScope?: WritingScope
   shared?: SharedSceneIdentity | null
   collaborationError?: boolean
   chapterGuid: string | null
@@ -114,6 +119,7 @@ export interface ProjectState {
   workspaceRecoveryError: string | null
   workspaceTransitionToken: string | null
   activeDraftId: string | null
+  getWritingRegistry(context?: WritingContext): WritingDocumentRegistry | null
   applyWorkspaceSnapshot(snapshot: WorkspaceSnapshot, resetEditors?: boolean): void
   refreshWorkspaceEditors(preserveDirty?: boolean): Promise<void>
   projectName: string | null

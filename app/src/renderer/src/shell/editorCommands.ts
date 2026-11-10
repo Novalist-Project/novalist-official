@@ -11,8 +11,20 @@ const PARAGRAPH_STYLE_COMMANDS: CommandDef[] = PARAGRAPH_STYLES.map((style) => (
   labelKey: `blockStyle.${style || 'body'}`,
   categoryKey: 'hotkeys.category.editor',
   scope: 'paragraph' as const,
+  transientHomes: ['selectionToolbar', 'contextMenu'],
   available: editorOpen,
   run: inEditor((editor) => editor.setParagraphStyle(style))
+}))
+
+const WRITING_STRUCTURE_ACTIONS = ['sceneBreak', 'chapterHeading', 'insertChapter'] as const
+const WRITING_STRUCTURE_COMMANDS: CommandDef[] = WRITING_STRUCTURE_ACTIONS.map((action) => ({
+  id: `writing.${action}`,
+  labelKey: `writing.${action}`,
+  categoryKey: 'hotkeys.category.scenes',
+  scope: 'caret' as const,
+  transientHomes: ['selectionToolbar'],
+  available: () => editorOpen() && useEditorBridge.getState().editor?.writingStructureEnabled === true,
+  run: inEditor((editor) => editor.requestWritingStructure(action))
 }))
 
 export const EDITOR_COMMANDS: CommandDef[] = [
@@ -142,6 +154,15 @@ export const EDITOR_COMMANDS: CommandDef[] = [
   },
 
   /* ── Caret: the editor's context menu ───────────────────────────────── */
+  {
+    id: 'editor.quickEdit',
+    labelKey: 'writing.quickEdit',
+    categoryKey: 'hotkeys.category.editor',
+    scope: 'caret',
+    available: editorOpen,
+    run: inEditor((editor) => editor.openQuickEdit())
+  },
+  ...WRITING_STRUCTURE_COMMANDS,
   {
     id: 'caret.peekEntity',
     labelKey: 'blockStyle.peekEntity',

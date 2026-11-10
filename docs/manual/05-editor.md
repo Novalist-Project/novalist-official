@@ -4,6 +4,8 @@ The Editor is where you write. It is a WYSIWYG rich-text editor. Each editor pan
 
 Shortcuts below are written with `Ctrl`; on macOS use `Cmd`.
 
+Paragraph styles are also available in the floating **Quick edit** toolbar beside selected text. Choose Body, Heading, Subheading, Blockquote, or Verse without losing the selection. A selection containing different paragraph styles shows **Mixed styles**. At a lone caret or empty paragraph, use **Quick edit** in the context menu or command palette; the style picker receives keyboard focus, and `Escape` returns focus to the text. These styles format prose; they do not create scenes or chapters.
+
 ![A scene open in the editor with the Context inspector](images/editor.png)
 
 ## Opening a scene

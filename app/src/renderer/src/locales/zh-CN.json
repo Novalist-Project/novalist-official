@@ -3272,6 +3272,14 @@
     "decideLater": "稍后决定",
     "save": "保存此版本"
   },
+  "writing": {
+    "quickEdit": "快速编辑",
+    "mixedStyles": "混合样式",
+    "insertStructure": "插入结构",
+    "sceneBreak": "场景分隔",
+    "chapterHeading": "章节标题",
+    "insertChapter": "新建章节"
+  },
   "blockStyle": {
     "label": "段落样式",
     "body": "正文",

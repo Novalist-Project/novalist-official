@@ -74,6 +74,7 @@ Every other view — Wiki, Maps, Languages, Gallery, Dialogue, Planning board, S
 | Underline | `Ctrl+U` |
 | Strikethrough, Highlight, Link, Footnote | *(unbound)* |
 | Paragraph styles, lists, alignment | *(unbound)* |
+| Quick edit (open the paragraph-style picker at the caret) | *(unbound)* |
 | Scene snapshots, Suggest edits, Read aloud, and the writing options | *(unbound)* |
 
 **Comment** and **Peek at entity under caret** both need something to act on — a selection, and a linked Codex name under the caret — and do nothing without it.

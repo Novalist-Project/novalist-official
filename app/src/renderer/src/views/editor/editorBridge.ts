@@ -143,6 +143,9 @@ export interface EditorWindow extends Window {
   alignJustify(): void
   /** Applies a named paragraph style (`nv-style-<id>`) to the selection; '' clears it. */
   setParagraphStyle(style: string): void
+  openQuickEdit(): void
+  writingStructureEnabled?: boolean
+  requestWritingStructure(command: 'sceneBreak' | 'chapterHeading' | 'insertChapter'): void
   toggleBulletList(): void
   toggleNumberList(): void
   /** Opens focus peek for the entity under the collapsed caret, if any. */

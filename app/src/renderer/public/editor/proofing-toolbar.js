@@ -86,7 +86,9 @@ function scrollToNextIssue(type) {
     }
 }
 
-function updateFloatingToolbar() {
+function updateFloatingToolbar(allowCaret = false) {
+    const toolbar = window.NovalistEditorState.floatingToolbar;
+    if (toolbar.contains(document.activeElement)) return;
     // Right-clicking a word selects it so the menu can offer spellings for it,
     // and that selection used to raise the format bar on top of the very menu
     // the click had just opened - the bar sits a layer above it. The menu is
@@ -96,12 +98,18 @@ function updateFloatingToolbar() {
         return;
     }
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || sel.toString().trim() === '') {
+    if (!sel || !sel.rangeCount || !window.captureQuickEditSelection()
+        || window.NovalistEditorState.quickEditDismissed
+        || (!allowCaret && (sel.isCollapsed || sel.toString().trim() === ''))) {
         window.NovalistEditorState.floatingToolbar.classList.remove('visible');
         return;
     }
     const range = sel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
+    let rect = range.getBoundingClientRect();
+    if (allowCaret && rect.width === 0 && rect.height === 0) {
+        const block = window.blockOf(range.startContainer);
+        if (block) rect = block.getBoundingClientRect();
+    }
     if (rect.width === 0 && rect.height === 0) {
         window.NovalistEditorState.floatingToolbar.classList.remove('visible');
         return;
@@ -113,15 +121,16 @@ function updateFloatingToolbar() {
     document.getElementById('ft-strike').classList.toggle('active', document.queryCommandState('strikeThrough'));
     document.getElementById('ft-highlight').classList.toggle('active',
         !!window.highlightAncestor(window.getSelection() && window.getSelection().anchorNode));
+    document.getElementById('ft-style').value = window.getParagraphStyle();
 
     window.NovalistEditorState.floatingToolbar.classList.add('visible');
     const tbWidth = window.NovalistEditorState.floatingToolbar.offsetWidth || 220;
     const tbHeight = window.NovalistEditorState.floatingToolbar.offsetHeight || 34;
     let x = rect.left + rect.width / 2 - tbWidth / 2;
     let y = rect.top - tbHeight - 8;
-    if (x < 4) x = 4;
-    if (x + tbWidth > window.innerWidth - 4) x = window.innerWidth - tbWidth - 4;
     if (y < 4) y = rect.bottom + 8;
+    x = Math.max(4, Math.min(x, window.innerWidth - tbWidth - 4));
+    y = Math.max(4, Math.min(y, window.innerHeight - tbHeight - 4));
     window.NovalistEditorState.floatingToolbar.style.left = x + 'px';
     window.NovalistEditorState.floatingToolbar.style.top = y + 'px';
 }

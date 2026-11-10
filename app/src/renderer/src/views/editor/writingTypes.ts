@@ -15,6 +15,12 @@ export interface WritingContext {
   readonly draftId: string
 }
 
+export interface WritingActivation {
+  sourceId: string
+  focusGeneration: number
+  activationGeneration: number
+}
+
 export type WritingScope = 'scene' | 'chapter' | 'manuscript'
 export type WritingFilter = ProjectFilter
 
@@ -90,6 +96,7 @@ export interface WritingRegistry {
 export interface HistoryResult {
   status: 'applied' | 'blocked'
   reason?: string
+  selection?: WritingSelection | null
 }
 
 export type HistoryInverse =

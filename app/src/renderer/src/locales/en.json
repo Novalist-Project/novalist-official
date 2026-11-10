@@ -3230,6 +3230,14 @@
     "decideLater": "Decide later",
     "save": "Save this version"
   },
+  "writing": {
+    "quickEdit": "Quick edit",
+    "mixedStyles": "Mixed styles",
+    "insertStructure": "Insert structure",
+    "sceneBreak": "Scene break",
+    "chapterHeading": "Chapter heading",
+    "insertChapter": "New chapter"
+  },
   "blockStyle": {
     "label": "Paragraph style",
     "body": "Body",

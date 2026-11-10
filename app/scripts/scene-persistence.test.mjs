@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { loadRendererSource } from './renderer-source-loader.mjs'
+import * as pendingWrites from '../src/renderer/src/stores/pendingWrites.ts'
+
+const writingDocuments = loadRendererSource('src/stores/writingDocuments.ts', {
+  './pendingWrites': pendingWrites
+}, { crypto, structuredClone })
 
 const turn = () => new Promise((resolve) => setImmediate(resolve))
 const editor = (html, hash = 'hash-0') => ({ chapterGuid: 'c', sceneId: 's', html, plainText: html, hash, isDirty: true, tabs: [{ chapterGuid: 'c', sceneId: 's' }] })
@@ -48,11 +53,27 @@ function fixture(isMobile = false) {
     '../rpc/client': { rpc }, './shellStore': { useShellStore: { getState: () => shell }, paneLeaves: () => [] },
     './projectStore': helpers, './projectPersistence': persistence, './sceneWriteQueue': queue,
     './pendingWrites': { capturePendingWrites() {} }, './projectSceneActions': { runSceneContext: (fn) => fn() },
-    '../mobile/recovery': recovery, '../rpc/backgroundReads': background
+    '../mobile/recovery': recovery, '../rpc/backgroundReads': background,
+    './writingDocuments': writingDocuments
   }, { window: { novalist: { isMobile } } }).createProjectEditorActions(store.setState, store.getState)
   store.setState(actions)
   return { store, shell, rpc, persistence, timers, requests, background, queue, disk: () => disk, readJournal: journal.readRecoveryJournal }
 }
+
+test('writing registry store action captures one immutable context for all projections', async () => {
+  const f = fixture()
+  const owner = f.store.getState().getWritingRegistry()
+  assert.equal(owner, f.store.getState().getWritingRegistry())
+  assert.equal(owner.context.workspaceEpoch, 1)
+  assert.equal(owner.context.workspaceId, '/synthetic/project')
+  f.store.setState({ workspaceEpoch: 2, activeDraftId: 'next-draft' })
+  await assert.rejects(owner.read({ bookId: 'book', draftId: 'draft', chapterGuid: 'c', sceneId: 's' }), /context/)
+  const next = f.store.getState().getWritingRegistry()
+  assert.notEqual(next, owner)
+  assert.equal(next.context.draftId, 'next-draft')
+  await owner.close()
+  await next.close()
+})
 
 test('mobile navigation and saves cancel background scans before queuing file requests', async () => {
   const f = fixture(true)

@@ -3238,6 +3238,14 @@
     "decideLater": "Später entscheiden",
     "save": "Diese Fassung speichern"
   },
+  "writing": {
+    "quickEdit": "Schnellbearbeitung",
+    "mixedStyles": "Gemischte Stile",
+    "insertStructure": "Struktur einfügen",
+    "sceneBreak": "Szenenumbruch",
+    "chapterHeading": "Kapitelüberschrift",
+    "insertChapter": "Neues Kapitel"
+  },
   "blockStyle": {
     "label": "Absatzformat",
     "body": "Fließtext",

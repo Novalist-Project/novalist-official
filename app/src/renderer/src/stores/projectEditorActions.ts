@@ -9,8 +9,21 @@ import { enqueueSceneWrite } from './sceneWriteQueue'
 import { retainMobileSceneRecovery } from '../mobile/recovery'
 import { cancelBackgroundReads } from '../rpc/backgroundReads'
 import type { SharedSceneIdentity } from '../../../shared/sharedScene'
+import { getWritingDocumentRegistry } from './writingDocuments'
 
-export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn' | 'openSceneInSplit' | 'resolveSceneConflict' | 'dismissSceneConflict' | 'closeTab' | 'moveTabToOtherPane' | 'onEditorContentChanged' | 'syncEditorPanes' | 'flushPane' | 'flushPendingSave' | 'applyManuscriptSceneWrite'> = (set, get) => ({
+export const createProjectEditorActions: ProjectSlice<'getWritingRegistry' | 'openScene' | 'openSceneIn' | 'openSceneInSplit' | 'resolveSceneConflict' | 'dismissSceneConflict' | 'closeTab' | 'moveTabToOtherPane' | 'onEditorContentChanged' | 'syncEditorPanes' | 'flushPane' | 'flushPendingSave' | 'applyManuscriptSceneWrite'> = (set, get) => ({
+  getWritingRegistry: (context) => {
+    const state = get()
+    if (!state.projectPath || !state.activeBookId || !state.activeDraftId) return null
+    const captured = context ?? { workspaceId: state.projectPath, workspaceEpoch: state.workspaceEpoch,
+      bookId: state.activeBookId, draftId: state.activeDraftId }
+    if (captured.workspaceId !== state.projectPath || captured.workspaceEpoch !== state.workspaceEpoch) return null
+    return getWritingDocumentRegistry({ context: captured, isCurrent: (owner) => {
+      const current = get()
+      return current.projectPath === owner.workspaceId && current.workspaceEpoch === owner.workspaceEpoch
+    } })
+  },
+
   openScene: async (chapterGuid, sceneId) => {
     await get().openSceneIn(targetEditorPane(), chapterGuid, sceneId)
   },

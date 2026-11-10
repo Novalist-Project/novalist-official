@@ -153,6 +153,7 @@ export function EditorToolbar({ formatting, speaking, active }: EditorToolbarPro
             runCommand(`paragraph.style.${event.target.value || 'body'}`)
           }
         >
+          <option value="mixed" disabled>{t('writing.mixedStyles')}</option>
           {PARAGRAPH_STYLES.map((style) => (
             <option key={style || 'body'} value={style}>
               {t(`blockStyle.${style || 'body'}`)}

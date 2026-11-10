@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { enterWriting, launchApp, seedBook } from './harness'
+import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 
 async function closeTourIfOffered(page: import('@playwright/test').Page): Promise<void> {
   const tour = page.locator('.tour-card')
@@ -239,7 +240,7 @@ async function selectInProse(
   )
 }
 
-test('one command, one home: the writing bar holds still while a selection is made', async () => {
+test('the writing bar holds still while a selection is made', async () => {
   test.setTimeout(180_000)
   const h = await launchApp('nl-writing-context-')
   const book = await seedBook(h, { One: ['A'] })
@@ -319,4 +320,61 @@ test('one command, one home: the writing bar holds still while a selection is ma
   expect(progress).toContain('"focus-peek":"completed"')
 
   await h.close()
+})
+
+test('quick edit preserves backward selection and works at an empty caret', async () => {
+  test.setTimeout(120_000)
+  const h = await launchApp('nl-writing-quick-edit-')
+  try {
+    const book = await seedBook(h, { Opening: ['First'] })
+    await closeTourIfOffered(h.page)
+    const chapter = book.chapters[0]
+    const scene = chapter.scenes[0]
+    await h.rpc('scenes/write', [chapter.guid, scene.id, '<p>Quiet rain over the harbor.</p><p><br></p>', 'Quiet rain over the harbor.'])
+    await h.page.evaluate(({ chapterGuid, sceneId }) =>
+      window.novalistStores.project.getState().openScene(chapterGuid, sceneId),
+    { chapterGuid: chapter.guid, sceneId: scene.id })
+    const frame = h.page.frameLocator('.editor-frame')
+    const editor = frame.locator('#editor')
+    await expect(editor).toContainText('Quiet rain')
+    await editor.evaluate(root => {
+      const text = root.querySelector('p')!.firstChild!
+      window.getSelection()!.setBaseAndExtent(text, 10, text, 6)
+      root.dispatchEvent(new Event('selectionchange', { bubbles: true }))
+    })
+    const picker = frame.locator('#ft-style')
+    await expect(picker).toBeVisible()
+    await picker.selectOption('heading')
+    await expect(editor.locator('p').first()).toHaveClass('nv-style-heading')
+    expect(await editor.evaluate(() => {
+      const selection = window.getSelection()!
+      return [selection.anchorOffset, selection.focusOffset, selection.toString()]
+    })).toEqual([10, 6, 'rain'])
+    expect((await h.rpc<{ chapters: { scenes: unknown[] }[] }>('project/getState')).chapters[0].scenes).toHaveLength(1)
+
+    await h.page.setViewportSize({ width: 800, height: 650 })
+    await editor.evaluate(root => {
+      const paragraph = root.querySelector('p:last-child')!
+      const selection = window.getSelection()!
+      selection.setBaseAndExtent(paragraph, 0, paragraph, 0)
+      const editorWindow = window as unknown as EditorWindow
+      editorWindow.openQuickEdit()
+    })
+    await expect(picker).toBeFocused()
+    await expect(picker).toHaveValue('')
+    await picker.press('ArrowDown')
+    await picker.press('Enter')
+    await expect(editor.locator('p').last()).toHaveClass('nv-style-heading')
+    const withinViewport = await picker.evaluate(element => {
+      const toolbar = element.parentElement!.getBoundingClientRect()
+      return toolbar.left >= 0 && toolbar.top >= 0 && toolbar.right <= window.innerWidth && toolbar.bottom <= window.innerHeight
+    })
+    expect(withinViewport).toBe(true)
+    await editor.evaluate(() => (window as unknown as EditorWindow).openQuickEdit())
+    await picker.press('Escape')
+    await expect(frame.locator('#floating-toolbar')).toBeHidden()
+    await expect(editor).toBeFocused()
+  } finally {
+    await h.close()
+  }
 })

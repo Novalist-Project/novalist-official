@@ -82,6 +82,7 @@ class Command:
     home: str
     declared_home: bool = False
     containers: set[str] = field(default_factory=set)
+    transient_homes: set[str] = field(default_factory=set)
 
 
 def fail(problems: list[str]) -> int:
@@ -136,12 +137,34 @@ def parse_registry(sources: list[str], default_home: dict[str, str]) -> list[Com
         commands.append(
             Command(f"nav.{view}", "application", default_home["application"])
         )
-    for style in string_list(source, "PARAGRAPH_STYLES"):
-        name = style or "body"
-        commands.append(
-            Command(f"paragraph.style.{name}", "paragraph", default_home["paragraph"])
+    commands.extend(
+        parse_family(
+            source, "PARAGRAPH_STYLES", "paragraph.style", "paragraph", default_home
+        )
+    )
+    if "const WRITING_STRUCTURE_ACTIONS" in source:
+        commands.extend(
+            parse_family(
+                source, "WRITING_STRUCTURE_ACTIONS", "writing", "caret", default_home
+            )
         )
     return commands
+
+
+def parse_family(
+    source: str, name: str, prefix: str, scope: str, default_home: dict[str, str]
+) -> list[Command]:
+    family = re.search(rf"{name}\.map\(.*?\(\{{(.*?)\}}\)\)", source, re.DOTALL)
+    transient = transient_homes(family.group(1) if family else "")
+    return [
+        Command(
+            f"{prefix}.{item or 'body'}",
+            scope,
+            default_home[scope],
+            transient_homes=transient.copy(),
+        )
+        for item in string_list(source, name)
+    ]
 
 
 def parse_static_commands(source: str, default_home: dict[str, str]) -> list[Command]:
@@ -164,6 +187,8 @@ def parse_static_commands(source: str, default_home: dict[str, str]) -> list[Com
         home = re.match(r"\s*home: '(\w+)'", line)
         if home:
             current["home"] = home.group(1)
+        if "transientHomes:" in line:
+            current["transientHomes"] = line
     if current:
         commands.append(build(current, default_home))
 
@@ -176,8 +201,32 @@ def build(record: dict[str, str], default_home: dict[str, str]) -> Command:
         raise SystemExit(f"placement-doctor: {record['id']} has no readable scope")
     declared = "home" in record
     return Command(
-        record["id"], scope, record.get("home", default_home[scope]), declared
+        record["id"],
+        scope,
+        record.get("home", default_home[scope]),
+        declared,
+        transient_homes=transient_homes(record.get("transientHomes", "")),
     )
+
+
+def transient_homes(source: str) -> set[str]:
+    match = re.search(r"transientHomes:\s*\[([^]]*)\]", source)
+    return set(LITERAL.findall(match.group(1))) if match else set()
+
+
+def placement_problems(command: Command) -> list[str]:
+    problems: list[str] = []
+    invalid = command.transient_homes - {"selectionToolbar", "contextMenu"}
+    if invalid or command.home in command.transient_homes:
+        problems.append(f"{command.id} declares an invalid transient home")
+    if command.home not in command.containers:
+        problems.append(f"{command.id} has no persistent home in {command.home}")
+    unexpected = command.containers - command.transient_homes - {command.home}
+    if unexpected:
+        problems.append(
+            f"{command.id} has undeclared additional homes: {', '.join(sorted(unexpected))}"
+        )
+    return problems
 
 
 def string_list(source: str, name: str) -> list[str]:
@@ -252,20 +301,7 @@ def main() -> int:
             command.containers |= containers
 
     for command in commands:
-        if not command.containers:
-            problems.append(
-                f"{command.id} ({command.scope}) has no persistent home: "
-                f"nothing renders it, and its scope puts it in {command.home}"
-            )
-        elif len(command.containers) > 1:
-            where = ", ".join(sorted(command.containers))
-            problems.append(f"{command.id} has more than one persistent home: {where}")
-        elif next(iter(command.containers)) != command.home:
-            found = next(iter(command.containers))
-            problems.append(
-                f"{command.id} ({command.scope}) is rendered in {found} "
-                f"but its declared home is {command.home}"
-            )
+        problems.extend(placement_problems(command))
 
     if problems:
         print("placement-doctor: the placement law is broken.\n")
