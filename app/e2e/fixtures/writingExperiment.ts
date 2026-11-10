@@ -7,7 +7,7 @@ import type { WritingCommand, WritingPane, WritingPoint } from './writingContrac
 import { applySimpleInsertion } from './writingIncremental'
 import { installScenePagination } from './writingPageLayout'
 import { installSceneCapture, type CaptureTelemetry } from './writingSceneCapture'
-import { authoredClass, contentRecords, scenePoint, WritingPresentation } from './writingPresentation'
+import { authoredClass, clearWritingSpacing, contentRecords, scenePoint, WritingPresentation, writingSpacingAttributes } from './writingPresentation'
 import type { WritingViewport } from './writingViewport'
 
 interface SceneDocument { doc: Y.Doc; text: Y.Text; history: Y.UndoManager }
@@ -35,6 +35,7 @@ class ExperimentMarkup extends SceneMarkup {
       if (!run.attributes?.block) return run
       const blocks: { attributes: Record<string, string> }[] = JSON.parse(run.attributes.block)
       for (const block of blocks) {
+        for (const name of writingSpacingAttributes) delete block.attributes[name]
         if (!('class' in block.attributes)) continue
         const value = authoredClass(block.attributes.class)
         if (value) block.attributes.class = value
@@ -79,6 +80,7 @@ class CompoundHistory {
 }
 
 class ExperimentPane implements WritingPane {
+  private readonly presentation = new WritingPresentation()
   private readonly root: HTMLElement
   private readonly views: SceneView[]
   private readonly observer: MutationObserver
@@ -95,7 +97,7 @@ class ExperimentPane implements WritingPane {
   constructor(private readonly editor: ExperimentEditor, private readonly book: FixtureBook, private readonly history: CompoundHistory, optimized: boolean, scoped: boolean) {
     this.root = editor.document.getElementById('editor')!
     this.root.replaceChildren()
-    const presentation = new WritingPresentation()
+    const presentation = this.presentation
     this.views = book.scenes.map((scene, index) => {
       const root = editor.document.createElement('section')
       root.dataset.sceneId = scene.id
@@ -334,6 +336,7 @@ class ExperimentPane implements WritingPane {
     event.clipboardData.setData('text/plain', ranges.map(({ range }) => range.toString()).join('\n'))
     const container = this.editor.document.createElement('div')
     for (const { range } of ranges) container.append(range.cloneContents())
+    clearWritingSpacing(container)
     event.clipboardData.setData('text/html', container.innerHTML)
   }
 
@@ -380,6 +383,7 @@ class ExperimentPane implements WritingPane {
     return this.views.map((view, index) => {
       if (!view.root.isConnected || !this.root.contains(view.root) || view.root.dataset.sceneId !== this.book.scenes[index].id) throw new Error('A live scene owner was detached or replaced.')
       const clone = view.root.cloneNode(true) as HTMLElement
+      clearWritingSpacing(clone)
       clone.querySelectorAll('.nv-focus-block').forEach(node => node.classList.remove('nv-focus-block'))
       clone.querySelectorAll('[class=""]').forEach(node => node.removeAttribute('class'))
       clone.querySelectorAll('.nv-page').forEach(page => page.replaceWith(...page.childNodes))

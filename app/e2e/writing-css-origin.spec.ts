@@ -10,6 +10,7 @@ declare global {
       insert(pane: number, marginBottom: number): void
       remove(pane: number): void
       fixed(pane: number, enabled: boolean, marginBottom: number): { owner: number; installations: number }
+      flow(pane: number, enabled: boolean): { owner: number; installations: number }
     }
   }
 }

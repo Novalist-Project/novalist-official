@@ -1,12 +1,13 @@
 import { installWritingViewport } from './writingViewport'
 import { createHash } from 'node:crypto'
+import { writingSpacingAttributes } from './writingPresentation'
 
 export function scopeEditorSource(name: string, source: string): string {
   source = source.replaceAll('\r\n', '\n')
   const changes: Record<string, [string, string][]> = {
     'content-input.js': [
       ['function getCleanContentHtml() {', 'function getCleanContentHtml(root = window.NovalistEditorState.editor) {'],
-      ['const clone = window.NovalistEditorState.editor.cloneNode(true);', 'const clone = root.cloneNode(true);']
+      ['const clone = window.NovalistEditorState.editor.cloneNode(true);', `const clone = root.cloneNode(true); for (const name of ${JSON.stringify(writingSpacingAttributes)}) clone.querySelectorAll('[' + name + ']').forEach(node => node.removeAttribute(name));`]
     ],
     'grammar-highlights.js': [
       ['function buildGrammarPlainTextMap() {', 'function buildGrammarPlainTextMap(root = window.NovalistEditorState.editor) {'],

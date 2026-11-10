@@ -1,5 +1,21 @@
 type Consume = (records: MutationRecord[]) => void
 interface ChildChange { target: Node; added: Node[]; removed: Node[] }
+interface AttributeChange { target: Element; name: string; before: string | null; after: string | null }
+type Change = ChildChange | AttributeChange
+
+export const writingSpacingAttributes = ['data-writing-flow-before', 'data-writing-flow-after'] as const
+
+export function clearWritingSpacing(root: ParentNode): void {
+  for (const name of writingSpacingAttributes) root.querySelectorAll(`[${name}]`).forEach(node => node.removeAttribute(name))
+}
+
+function matches(record: MutationRecord, change: Change, records: MutationRecord[], index: number): boolean {
+  if (record.target !== change.target) return false
+  if ('added' in change) return record.type === 'childList' && sameNodes(record.addedNodes, change.added) && sameNodes(record.removedNodes, change.removed)
+  if (record.type !== 'attributes' || record.attributeName !== change.name || record.oldValue !== change.before) return false
+  const later = records.slice(index + 1).find(item => item.type === 'attributes' && item.target === record.target && item.attributeName === change.name)
+  return (later ? later.oldValue : change.target.getAttribute(change.name)) === change.after
+}
 
 function removals(nodes: Node[]): ChildChange[] {
   return nodes.flatMap(node => node.parentNode ? [{ target: node.parentNode, added: [], removed: [node] }] : [])
@@ -28,23 +44,35 @@ export class WritingPresentation {
     return observer
   }
 
-  private move(expected: ChildChange[], operation: () => void): void {
+  private move(expected: Change[], operation: () => void): void {
     for (const [observer, consume] of this.observers) consume(contentRecords(observer.takeRecords()))
     try { operation() }
     finally {
       for (const [observer, consume] of this.observers) {
         let next = 0
         const records = contentRecords(observer.takeRecords())
-        const authored = records.filter(record => {
+        const authored = records.filter((record, index) => {
           const change = expected[next]
-          if (record.type !== 'childList' || !change || record.target !== change.target ||
-            !sameNodes(record.addedNodes, change.added) || !sameNodes(record.removedNodes, change.removed)) return true
+          if (!change || !matches(record, change, records, index)) return true
           next++
           return false
         })
         consume(next === expected.length ? authored : records)
       }
     }
+  }
+
+  spacing(target: Element, edge: 'before' | 'after', value: number | null): void {
+    if (edge !== 'before' && edge !== 'after') throw new Error('Invalid presentation edge.')
+    if (value !== null && !Number.isFinite(value)) throw new Error('Invalid presentation spacing.')
+    const name = edge === 'before' ? writingSpacingAttributes[0] : writingSpacingAttributes[1]
+    const before = target.getAttribute(name)
+    const after = value === null ? null : String(value)
+    if (before === after) return
+    this.move([{ target, name, before, after }], () => {
+      if (after === null) target.removeAttribute(name)
+      else target.setAttribute(name, after)
+    })
   }
 
   append(parent: HTMLElement, ...nodes: Node[]): void {
