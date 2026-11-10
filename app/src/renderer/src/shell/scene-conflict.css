@@ -33,6 +33,12 @@
   grid-template-columns: 1fr 1fr;
 }
 
+.scene-conflict-pending {
+  max-height: 52vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
 .scene-conflict-cell {
   background: none;
   border: 1px solid transparent;

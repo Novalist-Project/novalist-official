@@ -29,6 +29,8 @@ test('real project renders binder and scene content', async () => {
 
   const app = await electron.launch({ args: ['out/main/index.js', `--user-data-dir=${join(env.NOVALIST_SETTINGS_DIR, 'profile')}`], env })
   const page = await app.firstWindow()
+  const rendererErrorNames: string[] = []
+  page.on('pageerror', error => rendererErrorNames.push(error.name))
   await waitForAppReady(page)
 
   await evaluateWhenReady(page, async (root) => {
@@ -264,9 +266,18 @@ test('real project renders binder and scene content', async () => {
   const wordsMetric = await page.locator('.dashboard-metric-value').first().innerText()
   expect(Number(wordsMetric.replace(/[^0-9]/g, ''))).toBeGreaterThan(1000)
 
-  // Manuscript: corkboard cards and outliner rows render from real scenes.
-  await page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
-  await expect(page.locator('.editor-frame')).toBeVisible({ timeout: 15_000 })
+  // Structure: corkboard cards and outliner rows render from real scenes.
+  await page.evaluate(() => window.novalistStores.shell.getState().setMainView('structure'))
+  await expect.poll(async () => ({
+    ...await page.evaluate(() => ({
+      view: window.novalistStores.shell.getState().mainView,
+      navigationBlocked: !!window.novalistStores.shell.getState().pendingLeave,
+      planningMounted: !!document.querySelector('.planning-view')
+    })),
+    rendererErrorNames
+  }), { timeout: 15_000 }).toEqual({
+    view: 'structure', navigationBlocked: false, planningMounted: true, rendererErrorNames: []
+  })
   await page.locator('.manuscript-modes button').nth(1).click()
   await expect.poll(() => page.locator('.corkboard-card').count(), { timeout: 15_000 }).toBeGreaterThan(5)
   await page.locator('.manuscript-modes button').nth(2).click()

@@ -1,6 +1,7 @@
 'use strict';
 
 function showGrammarPopup(issueIndex, x, y) {
+    window.cancelProofingNavigation?.();
     const issue = window.NovalistEditorState.grammarIssues[issueIndex];
     if (!issue) return;
     window.NovalistEditorState.grammarPopup.dataset.issueIndex = issueIndex;
@@ -25,7 +26,7 @@ function showGrammarPopup(issueIndex, x, y) {
     }
 
     if (issue.type === 'spelling') {
-        const spans = window.NovalistEditorState.editor.querySelectorAll('[data-issue-index="' + issueIndex + '"]');
+        const spans = window.getWritingServiceRoot().querySelectorAll('[data-issue-index="' + issueIndex + '"]');
         if (spans.length > 0) {
             const word = issue.text || '';
             if (word.trim().length > 0) {
@@ -53,7 +54,8 @@ function showGrammarPopup(issueIndex, x, y) {
     }
 }
 
-function hideGrammarPopup() {
+function hideGrammarPopup(preserveNavigation = false) {
+    if (!preserveNavigation) window.cancelProofingNavigation?.();
     window.NovalistEditorState.grammarPopup.classList.remove('visible');
     delete window.NovalistEditorState.grammarPopup.dataset.issueIndex;
 }
@@ -110,7 +112,7 @@ function applyGrammarSuggestion(issueIndex, replacement) {
         requestGrammarCheck();
         return;
     }
-    const spans = window.NovalistEditorState.editor.querySelectorAll('[data-issue-index="' + issueIndex + '"]');
+    const spans = window.getWritingServiceRoot().querySelectorAll('[data-issue-index="' + issueIndex + '"]');
 
     // Strip grammar-issue classes and attributes first so the browser does not
     // preserve the underline style when replacing the elements via insertText.
@@ -128,7 +130,7 @@ function applyGrammarSuggestion(issueIndex, replacement) {
     // Remove the issue from the list. The input event fired by execCommand
     // takes care of the contentChanged notification and the grammar recheck.
     window.NovalistEditorState.grammarIssues.splice(issueIndex, 1);
-    for (const mark of window.NovalistEditorState.editor.querySelectorAll('.grammar-issue')) {
+    for (const mark of window.getWritingServiceRoot().querySelectorAll('.grammar-issue')) {
         const index = Number(mark.dataset.issueIndex);
         if (index > issueIndex) mark.dataset.issueIndex = index - 1;
     }
@@ -136,7 +138,7 @@ function applyGrammarSuggestion(issueIndex, replacement) {
 }
 
 function grammarIssueRange(issueIndex) {
-    const spans = window.NovalistEditorState.editor.querySelectorAll('.grammar-issue[data-issue-index="' + issueIndex + '"]');
+    const spans = window.getWritingServiceRoot().querySelectorAll('.grammar-issue[data-issue-index="' + issueIndex + '"]');
     if (!spans.length) return null;
     const range = document.createRange();
     range.setStartBefore(spans[0]);

@@ -134,13 +134,25 @@ test('close flushes all windows before backup and accepts only owner-matched rep
   await tick()
   assert.equal(sent[2].stage, 'backup')
   close.acknowledge(1, sent[2].token, true)
-  await operation
+  await tick()
+  assert.deepEqual(sent.slice(3).map(item => item.stage), ['release', 'release'])
+  for (const item of sent.slice(3)) close.acknowledge(item.owner, item.token, true)
+  const prepared = await operation
+  assert.equal(sent.some(item => item.stage === 'commit'), false)
+  const committed = prepared.commit()
+  await tick()
+  assert.deepEqual(sent.slice(5).map(item => item.stage), ['commit', 'commit'])
+  for (const item of sent.slice(5)) close.acknowledge(item.owner, item.token, true)
+  await committed
 })
 
 test('failed close resumes every window and focuses the failed owner', async () => {
   const close = new WindowCloseCoordinator(1000)
   const sent = [], focused = []
-  for (const owner of [1, 2]) close.register(owner, { send(token, stage) { sent.push({ owner, token, stage }) }, focus() { focused.push(owner) } })
+  for (const owner of [1, 2]) close.register(owner, { send(token, stage) {
+    sent.push({ owner, token, stage })
+    if (stage === 'abort') queueMicrotask(() => close.acknowledge(owner, token, true))
+  }, focus() { focused.push(owner) } })
   const operation = close.prepare([1, 2], 1)
   const rejected = assert.rejects(operation, /could not save/)
   close.acknowledge(1, sent[0].token, true)
@@ -157,26 +169,79 @@ test('renderer crash resolves its impossible close wait without skipping other w
   const operation = close.prepare([1, 2], 1)
   close.remove(1)
   close.acknowledge(2, sent[1].token, true)
-  await operation
-  assert.equal(sent.length, 2)
+  await tick()
+  assert.equal(sent[2].stage, 'release')
+  close.acknowledge(2, sent[2].token, true)
+  const committed = (await operation).commit()
+  await tick()
+  assert.equal(sent[3].stage, 'commit')
+  close.acknowledge(2, sent[3].token, true)
+  await committed
+  assert.equal(sent.length, 4)
 })
 
-test('global quit queued behind detached close gets a new complete preflight', async () => {
+test('global quit waits for the held preparation and excludes already committed owners from its new preflight', async () => {
   const close = new WindowCloseCoordinator(1000)
   const sent = []
   for (const owner of [1, 2]) close.register(owner, { send(token, stage) { sent.push({ owner, token, stage }) }, focus() {} })
   const detached = close.prepare([2])
   const global = close.prepare([1, 2], 1)
   close.acknowledge(2, sent[0].token, true)
-  await detached
   await tick()
-  assert.deepEqual(sent.map(item => [item.owner, item.stage]), [[2, 'flush'], [1, 'flush'], [2, 'flush']])
-  close.acknowledge(1, sent[1].token, true)
+  assert.equal(sent[1].stage, 'release')
+  close.acknowledge(2, sent[1].token, true)
+  const prepared = await detached
+  await tick()
+  assert.equal(sent.length, 2)
+  const committed = prepared.commit()
+  await tick()
   close.acknowledge(2, sent[2].token, true)
+  await committed
   await tick()
-  assert.equal(sent[3].stage, 'backup')
+  assert.deepEqual(sent.map(item => [item.owner, item.stage]), [[2, 'flush'], [2, 'release'], [2, 'commit'], [1, 'flush']])
   close.acknowledge(1, sent[3].token, true)
-  await global
+  await tick()
+  assert.equal(sent[4].stage, 'backup')
+  close.acknowledge(1, sent[4].token, true)
+  await tick()
+  close.acknowledge(1, sent[5].token, true)
+  const globalCommit = (await global).commit()
+  await tick()
+  close.acknowledge(1, sent[6].token, true)
+  await globalCommit
+})
+
+test('committed cleanup refusal, timeout and disconnect never resume disposed owners', async () => {
+  for (const failure of ['refused', 'timeout', 'disconnected']) {
+    const diagnostics = [], stages = []
+    const close = new WindowCloseCoordinator(15, () => diagnostics.push('cleanup-not-acknowledged'))
+    for (const owner of [1, 2]) close.register(owner, { send(token, stage) {
+      stages.push([owner, stage])
+      if (owner === 2 && stage === 'commit') {
+        if (failure === 'refused') queueMicrotask(() => close.acknowledge(owner, token, false))
+        if (failure === 'disconnected') queueMicrotask(() => close.remove(owner))
+      } else queueMicrotask(() => close.acknowledge(owner, token, true))
+    }, focus() {} })
+    const prepared = await close.prepare([1, 2], 1)
+    await prepared.commit()
+    await prepared.abort()
+    assert.equal(stages.some(([, stage]) => stage === 'abort'), false)
+    assert.deepEqual(stages.filter(([, stage]) => stage === 'commit'), [[1, 'commit'], [2, 'commit']])
+    assert.deepEqual(diagnostics, ['cleanup-not-acknowledged'])
+  }
+})
+
+test('backup veto never releases owners and release failure vetoes close', async () => {
+  for (const failingStage of ['backup', 'release']) {
+    const close = new WindowCloseCoordinator(1000)
+    const stages = []
+    close.register(1, { send(token, stage) {
+      stages.push(stage)
+      queueMicrotask(() => close.acknowledge(1, token, stage !== failingStage))
+    }, focus() {} })
+    await assert.rejects(close.prepare([1], 1), /could not save/)
+    assert.deepEqual(stages, failingStage === 'backup' ? ['flush', 'backup', 'abort'] : ['flush', 'backup', 'release', 'abort'])
+  }
 })
 
 test('window joining during prepare receives no stale bootstrap snapshot', async () => {

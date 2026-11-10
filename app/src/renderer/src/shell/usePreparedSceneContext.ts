@@ -1,9 +1,10 @@
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import { useManuscriptStore } from '../stores/manuscriptStore'
 import { useShellStore } from '../stores/shellStore'
 import { useSharedProjectRevision } from '../collaboration/sharedProjectNotifications'
 import { cancelPendingSceneContext, prepareSceneContext, readSceneContext, sceneContextScope, selectSceneContext, subscribeSceneContext } from './sceneContextData'
+import { writingSceneContextSource } from './writingSceneContext'
 
 function isManuscriptView(): boolean {
   const shell = useShellStore.getState()
@@ -15,11 +16,21 @@ export function currentSceneContextScope(chapterGuid?: string, sceneId?: string)
   const state = useProjectStore.getState()
   const chapter = chapterGuid ?? state.openChapterGuid
   const scene = sceneId ?? state.openSceneId
-  const html = isManuscriptView()
+  const html = !window.novalist.isMobile ? writingSceneContextSource(useProjectStore.getState, chapter, scene).read() : isManuscriptView()
     ? useManuscriptStore.getState().sections.find(section => section.chapterGuid === chapter)
       ?.scenes.find(candidate => candidate.sceneId === scene)?.html ?? null
     : undefined
   return sceneContextScope(state, chapter, scene, html, useSharedProjectRevision.getState())
+}
+
+export function useWritingSceneHtml(chapterGuid?: string | null, sceneId?: string | null) {
+  const chapter = useProjectStore(state => chapterGuid ?? state.openChapterGuid)
+  const scene = useProjectStore(state => sceneId ?? state.openSceneId)
+  const identity = useProjectStore(state => JSON.stringify([state.projectPath, state.activeBookId,
+    state.activeDraftId, state.workspaceEpoch, state.isLoaded, state.closingProject,
+    state.workspaceSuspended, state.workspaceBusy, state.openChapterGuid, state.openSceneId]))
+  const source = useMemo(() => writingSceneContextSource(useProjectStore.getState, chapter, scene), [identity, chapter, scene])
+  return useSyncExternalStore(source.subscribe, source.read)
 }
 
 export function useSceneContext(chapterGuid?: string, sceneId?: string, immediate = true) {
@@ -30,6 +41,7 @@ export function useSceneContext(chapterGuid?: string, sceneId?: string, immediat
     state.mainView === 'manuscript')
   const chapter = useProjectStore(state => chapterGuid ?? state.openChapterGuid)
   const scene = useProjectStore(state => sceneId ?? state.openSceneId)
+  const writingHtml = useWritingSceneHtml(chapter, scene)
   const manuscriptHtml = useManuscriptStore(state => manuscript
     ? state.sections.find(section => section.chapterGuid === chapter)
       ?.scenes.find(candidate => candidate.sceneId === scene)?.html ?? null
@@ -37,7 +49,7 @@ export function useSceneContext(chapterGuid?: string, sceneId?: string, immediat
   // Subscribe to primitive values: creating a new object in a Zustand selector
   // would make useSyncExternalStore repeatedly render an unchanged selection.
   const key = useProjectStore(state => sceneContextScope(state, chapter, scene,
-    manuscript ? manuscriptHtml : undefined, sharedRevision)?.key ?? null)
+    !window.novalist.isMobile ? writingHtml : manuscript ? manuscriptHtml : undefined, sharedRevision)?.key ?? null)
   const scope = currentSceneContextScope(chapterGuid, sceneId)
   const snapshot = useSyncExternalStore(subscribeSceneContext, readSceneContext)
   useEffect(() => {

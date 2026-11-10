@@ -83,7 +83,7 @@ export function installScenePagination(editor: PageEditor, presentation: Writing
       preserveSelection(editor, () => unwrapPages(root, presentation))
     }
   }
-  editor.repaginatePageView = paginate
+  editor.repaginatePageView = () => paginate()
   editor.schedulePageViewRepaginate = () => {
     if (pending || !enabled) return
     pending = true

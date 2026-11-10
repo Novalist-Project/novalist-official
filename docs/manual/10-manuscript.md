@@ -1,20 +1,20 @@
-# Manuscript view
+# Manuscript writing and Structure planning
 
-The Manuscript view stitches every scene of your book into a single continuous document. It is the closest you get to reading the manuscript the way a reader would — without exporting.
+On desktop, **Write → Manuscript** presents the active book and draft as one continuous, editable document. Each writing pane can independently narrow to **Chapter** or **Scene** scope.
 
-It has four display modes: **Manuscript**, **Corkboard**, **Outliner**, and **Board**.
+Planning lives in **Plan → Structure**, with **Structure**, **Corkboard**, **Outliner**, and **Board** modes. iPhone and iPad retain the existing Manuscript view and its planning modes.
 
 ![The Manuscript corkboard](images/manuscript.png)
 
-## Opening the Manuscript view
+## Opening Manuscript scope
 
-Open it from the **Write** mode (**Manuscript**, under **Drafting** in the mode panel), from the **Go** menu or command palette, or with `Ctrl+5` (macOS uses Cmd).
+Choose **Write**, then **Manuscript** in the scope selector. The **Manuscript** command in Go or the command palette, and `Ctrl+5` (Cmd on macOS), select this same scope. Saved pane and workspace layouts retain each writing pane's scope; detached writing windows carry it with them.
 
 ## The toolbar
 
-A mode switch toggles between **Manuscript**, **Corkboard**, **Outliner**, and **Board**. The choice is kept while the app is running.
+In Plan, the mode switch selects **Structure**, **Corkboard**, **Outliner**, or **Board**. In Write, the scope selector chooses how much prose the pane displays.
 
-Open **Filter** above the toolbar to narrow any of the four modes:
+Open **Filter** to narrow the writing and planning views:
 
 - **Scene stage** selects each scene's own revision stage, including stages you configured for the book. Scenes in the same chapter can have different stages.
 - **Character**, **Place**, and **Thread** narrow by the scene's cast, viewpoint, and plotlines.
@@ -23,26 +23,37 @@ Filters combine, so selecting a scene stage and a character includes only scenes
 
 Older presets that explicitly filtered chapter status keep that restriction. It appears as **Legacy chapter status** with a remove button. Clear it to filter only by scene stage; new filters have no chapter-status picker.
 
-Changing filters saves pending Manuscript edits before refreshing the scene set. If saving fails, your current prose stays visible and the error is reported. A selected Smart List with no matches shows an empty result; clear the list selection to return to the book.
+Changing the displayed run retains pending prose and undo history. Selected scenes take precedence over ordinary filters; a Smart List or selection with no matching scenes stays empty. A limited run is labelled in Write. **Show whole manuscript** clears the run and filters and selects Manuscript scope.
 
 ## Manuscript mode
 
-The default mode. All chapters and scenes render top-to-bottom as one scrollable document:
+The default writing scope displays chapters and scenes in reading order:
 
-- **Act headers** appear above the first chapter of each act.
 - **Chapter headings** show the chapter title.
-- Each scene has a small header with its **title** and a live **word count**. Click the scene title to open that scene in the Editor view.
+- Each scene has a live **word count** and a **synopsis** below it in the margin. Synopses start collapsed, remember their expansion locally, and can all be hidden or shown from the writing toolbar. Scene titles remain in the binder, tabs, inspector, and Plan.
 - The scene prose itself is **editable in place**. Type directly into the manuscript; changes save automatically after a short pause, exactly like the editor.
 
-A footer at the end of the document totals what is currently visible (respecting the active filters): word count, scene count, and estimated reading time.
-
-Use this mode for read-throughs and light line edits without leaving the flow of the book.
+Select, copy, format, or delete across scene boundaries and undo without leaving the flow of the book. Changing scope preserves the current documents and history.
 
 The column follows **Settings → Editor → Book Page Width**, including the selected page format, custom text width and book font. With Book Page Width off, it fills the available pane and uses your editor font. Changes apply while the manuscript is open. Hold `Ctrl` and scroll the mouse wheel to zoom the text and column together, preserving line breaks. Zoom is shared with the scene editor for the current session and leaves font and page settings unchanged. An enlarged column can be scrolled horizontally.
 
 Zoom follows the caret and keeps it visible. With **Typewriter Scrolling** enabled, zoom places it at the selected top, middle or bottom position; otherwise it preserves its vertical screen position where scrolling allows.
 
+## Structure mode
+
+Open **Plan → Structure** to arrange the book's acts, chapters, and scenes. Edit a chapter summary below its heading, or a scene synopsis below its card. Click a scene title to continue writing it.
+
+Use **New act** to create an ordered chapter group, including an empty group you will fill later. Drag a chapter into an act to assign it; moving an act moves its chapters together. **Rename act** retains its chapter assignments and existing targets and dates. **Remove act** keeps its chapters in place as unassigned chapters.
+
+The desktop chapter dialog selects from these acts. Changing a chapter's act moves it into that group; clearing the assignment places it outside its former group without splitting that act. Dragging a chapter in the Binder adopts the destination chapter's act. These moves share the same undo history as Structure.
+
+Drag scenes or chapters to change their reading order. Check several cards to move them together. Every card also has a **Move** control: choose the destination and whether to place the selection before, after, or inside it. This offers the same moves with the keyboard. **Undo** and **Redo** use the writing session's history, including structural changes made in Write.
+
+**New scene** adds a scene to the chosen chapter. **Insert chapter** creates a named chapter with one empty scene. When an older project contains incompatible act assignments, **Review act grouping** shows the existing and proposed chapter order before applying any regrouping.
+
 ## Corkboard mode
+
+Open **Plan → Structure → Corkboard** for these cards.
 
 Each scene becomes a card on a board, grouped under its chapter title. Each card shows:
 
@@ -114,7 +125,7 @@ Manuscript mode normally stitches the whole book (or scenes matching the active 
 
 This is how you read one POV's thread end to end, or the scenes a [Smart List](16-smart-lists.md) found, and hear whether the run holds together. Shared filters are ignored while a chosen set is being read — you picked the scenes, so they are the scenes.
 
-The toolbar shows how many scenes are being read and a **Show the whole book** button to leave.
+The toolbar labels the limited scene run and provides **Show whole manuscript** to leave it.
 
 ## Board mode
 

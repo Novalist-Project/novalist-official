@@ -10,7 +10,7 @@ const Y = require('yjs')
 const result = await build({ stdin: { contents: "export * from './src/renderer/src/collaboration/SharedWritingHistory'; export * from './src/renderer/src/collaboration/SharedSceneSession'; export * from './src/renderer/src/collaboration/SharedEditorSession'; export * from './src/renderer/src/stores/writingHistory'; export * from './src/renderer/src/stores/writingDocuments'; export * from './src/shared/ProseDocumentHost'; export * from './src/renderer/src/collaboration/sharedWritingSelection'; export * from './src/renderer/src/views/editor/writingTextMapping'", resolveDir: fileURLToPath(new URL('..', import.meta.url)) }, bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external', loader: { '.css': 'text' } })
 const module = { exports: {} }
 new Function('require', 'module', 'exports', result.outputFiles[0].text)(require, module, module.exports)
-const { SharedWritingHistory, SharedSceneSession, SharedEditorSession, WritingDocumentRegistry, acceptSharedWritingTransaction, getWritingHistory, ProseDocumentHost, retainSharedWritingSelection, writingTextMapping } = module.exports
+const { SharedWritingHistory, SharedSceneSession, SharedEditorSession, WritingDocumentRegistry, acceptSharedWritingTransaction, acceptSharedWritingBatch, getWritingHistory, ProseDocumentHost, retainSharedWritingSelection, writingTextMapping, sceneRefKey } = module.exports
 
 function fixture(t) {
   const dom = new JSDOM('<div id="one"></div><div id="two"></div>')
@@ -80,6 +80,27 @@ test('retained document history and failed sends survive binding detach and remo
   await next.flush()
   next.detach()
   assert.equal(shared.server.getText('prose').toString(), 'Original\n')
+})
+
+test('idle shared backend reconnection retains local undo and merges peer state', async t => {
+  const f = fixture(t)
+  const shared = f.create('Original')
+  const history = new SharedWritingHistory()
+  history.begin('local', 'writer')
+  history.capture('one', { session: shared.owner, apply: prose => prose.insert(8, ' local') })
+  history.commit('local')
+  await shared.owner.flush()
+  shared.server.getText('prose').insert(0, 'Peer ')
+  let writes = 0
+  shared.owner.rebindConnection({ ...shared.connection, write: async update => {
+    writes++
+    Y.applyUpdate(shared.server, update)
+  } }, Y.encodeStateAsUpdate(shared.server))
+  assert.equal(shared.owner.prose.toString(), 'Peer Original local\n')
+  assert.equal((await history.undo('local')).status, 'applied')
+  await shared.owner.flush()
+  assert.equal(shared.server.getText('prose').toString(), 'Peer Original\n')
+  assert.ok(writes > 0)
 })
 
 test('composition pins shared binding and blocks grouped undo before any scene changes', async t => {
@@ -264,4 +285,32 @@ test('one canonical UTF16 mapping covers empty paragraphs, BR, headings, surroga
   }
   await owner.close()
   host.dispose()
+})
+
+test('multi-book shared history keys identical scene ids by complete reference', async t => {
+  const f = fixture(t)
+  const shared = [f.create('First'), f.create('Second')]
+  const refs = ['first-book', 'second-book'].map(bookId => ({ bookId, draftId: 'draft', chapterGuid: 'chapter', sceneId: 'same-id' }))
+  const registries = refs.map((reference, index) => new WritingDocumentRegistry({
+    context: { workspaceId: 'workspace', workspaceEpoch: 1, bookId: reference.bookId, draftId: 'draft' }, isCurrent: () => true,
+    transport: { read: async () => ({ html: shared[index].owner.html, hash: 'hash', shared: { sessionId: 'session', itemId: reference.bookId, state: '' } }),
+      activate: async () => true, commit: async () => assert.fail('shared prose cannot use local-file commit') }
+  }))
+  await Promise.all(registries.map((registry, index) => registry.read(refs[index])))
+  const sessions = new Map(shared.map((value, index) => [sceneRefKey(refs[index]), value.owner]))
+  const history = new SharedWritingHistory()
+  acceptSharedWritingBatch(registries[0], registries.map((registry, index) => ({ registry, transaction: {
+    id: 'both-books', context: registry.context, origin: 'writer', kind: 'replace', annotationChanges: [], beforeSelection: null, afterSelection: null,
+    changes: [{ ref: refs[index], expectedRevision: 0, beforeHtml: shared[index].owner.html, afterHtml: shared[index].owner.html.replace('</p>', ' local</p>') }]
+  } })), history, sessions)
+  assert.equal(shared[0].owner.html, '<p>First local</p>')
+  assert.equal(shared[1].owner.html, '<p>Second local</p>')
+  await Promise.all(shared.map(value => value.owner.flush()))
+  shared[1].server.getText('prose').insert(0, 'Peer ')
+  shared[1].owner.receive(Y.encodeStateAsUpdate(shared[1].server))
+  assert.equal((await getWritingHistory(registries[0]).undo()).status, 'applied')
+  assert.equal(shared[0].owner.html, '<p>First</p>')
+  assert.equal(shared[1].owner.html, '<p>Peer Second</p>')
+  await Promise.all(registries.map(registry => registry.close()))
+  history.dispose()
 })

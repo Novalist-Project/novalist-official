@@ -70,9 +70,9 @@ test('Outliner keeps editable columns separate while saving field changes', asyn
     await dismissTour(h.page)
     await resizeWindow(h, 1280, 900)
     await h.page.evaluate(() => {
-      window.novalistStores.shell.getState().setMainView('manuscript')
-      window.novalistStores.manuscript.getState().setMode('outliner')
+      window.novalistStores.shell.getState().setMainView('structure')
     })
+    await h.page.locator('.manuscript-modes').getByRole('button', { name: 'Outliner', exact: true }).click()
     const row = h.page.locator('.outliner-row:not(.outliner-head)').first()
     await expect(row).toBeVisible()
     expect(

@@ -1,7 +1,8 @@
 'use strict';
 
 window.scrollToFootnoteById = function (footnoteId) {
-    var node = window.NovalistEditorState.editor.querySelector('sup.nv-fn[data-fn-id="' + footnoteId + '"]');
+    var root = window.getWritingServiceRoot();
+    var node = Array.from(root.querySelectorAll('sup.nv-fn[data-fn-id]')).find(note => note.dataset.fnId === footnoteId);
     if (!node) return;
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
     var prev = node.style.background;
@@ -10,20 +11,21 @@ window.scrollToFootnoteById = function (footnoteId) {
 };
 
 window.removeFootnoteById = function (footnoteId) {
-    var nodes = window.NovalistEditorState.editor.querySelectorAll('sup.nv-fn[data-fn-id="' + footnoteId + '"]');
+    var root = window.getWritingServiceRoot();
+    var nodes = Array.from(root.querySelectorAll('sup.nv-fn[data-fn-id]')).filter(note => note.dataset.fnId === footnoteId);
     nodes.forEach(function (n) { n.remove(); });
     var ids = window.renumberFootnotes();
     try { window.NovalistEditorState.editor.dispatchEvent(new Event('input', { bubbles: true })); } catch (error) { console.warn("editor: operation failed", error instanceof Error ? error.name : typeof error); }
     // Taking one out moves every marker after it up a number, so the list is
     // reported again rather than only the removal.
-    window.sendMessage({ type: 'footnotesRenumbered', ids: ids });
+    window.sendMessage({ type: 'footnotesRenumbered', ids: ids, sceneId: root.dataset.writingScene });
 };
 
 window.NovalistEditorState.editor.addEventListener('click', function (e) {
     var target = e.target;
     if (target && target.classList && target.classList.contains('nv-fn')) {
         var id = target.getAttribute('data-fn-id');
-        if (id) window.sendMessage({ type: 'footnoteClicked', footnoteId: id });
+        if (id) window.sendMessage({ type: 'footnoteClicked', footnoteId: id, sceneId: window.writingSceneOf(target)?.dataset.writingScene });
     }
 });
 

@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { launchApp, resizeWindow, seedBook } from './harness'
+import { enterWriting, launchApp, resizeWindow, seedBook } from './harness'
 
 for (const pageView of [false, true]) {
-  test(`first scene fits the available width once and preserves manual zoom, page view=${pageView}`, async () => {
+  test(`first scene uses its presentation scale once and preserves manual zoom, page view=${pageView}`, async () => {
     const h = await launchApp('nl-initial-zoom-')
     try {
-      await seedBook(h, { One: ['Opening', 'Next scene'] })
+      await h.page.evaluate(enabled => window.novalistStores.settings.getState().update('global', { pageViewEnabled: enabled }), pageView)
+      await seedBook(h, { One: ['Opening', 'Next scene'] }, 'Spec', false)
       await resizeWindow(h, 1500, 900)
       await h.page.evaluate(async (pages) => {
         await window.novalistStores.settings.getState().update('global', {
@@ -14,13 +15,15 @@ for (const pageView of [false, true]) {
           spellCheckEnabled: false, grammarCheckEnabled: false
         })
       }, pageView)
+      await enterWriting(h.page)
       await h.page.locator('.binder-scene-row').first().click()
       const frame = h.page.frameLocator('iframe[title="editor"]')
       const editor = frame.locator('#editor')
+      if (pageView) await expect(frame.locator('body')).toHaveClass(/\bpage-view\b/)
+      else await expect(frame.locator('body')).not.toHaveClass(/\bpage-view\b/)
       const scale = () => editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))
-      await expect.poll(scale).toBeGreaterThan(1)
-      await expect.poll(() => frame.locator(pageView ? '.nv-page' : '#editor-wrapper').first().evaluate(element =>
-        element.getBoundingClientRect().width / window.innerWidth)).toBeGreaterThan(0.9)
+      await expect.poll(scale).toBe(1.3)
+      await expect.poll(() => frame.locator('[data-writing-scene]').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeCloseTo(22.1, 1)
       expect(await frame.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
       const fitted = await scale()
       await editor.hover()

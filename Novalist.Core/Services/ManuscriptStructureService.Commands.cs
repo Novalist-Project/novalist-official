@@ -23,6 +23,7 @@ public sealed partial class ManuscriptStructureService
         var chapter = await staged.CreateChapterAsync(command.Title.Trim(), insertAtOrder: index + 1);
         chapter.Act = RequireAct(staged, command.ActName);
         var scene = await staged.CreateSceneAsync(chapter.Guid, command.Title.Trim());
+        if (command.DateRange is not null) await staged.SetChapterDateRangeAsync(chapter.Guid, command.DateRange);
         await staged.SaveProjectAsync();
         return Reference(staged, chapter.Guid, scene.Id);
     }

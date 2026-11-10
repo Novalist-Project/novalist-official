@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test'
 import { join } from 'node:path'
-import { dismissTour, launchApp, seedBook, type Harness } from './harness'
+import { dismissTour, enterWriting, launchApp, seedBook, type Harness } from './harness'
 
 test('scene metadata keeps focus locks across inspector and outliner controls', async () => {
   const participants: Harness[] = []
   try {
     const owner = await launchApp('nl-scene-metadata-owner-')
     participants.push(owner)
-    const state = await seedBook(owner, { Opening: ['Arrival'] })
+    const state = await seedBook(owner, { Opening: ['Arrival'] }, 'Spec', false)
     await dismissTour(owner.page)
     const chapter = state.chapters.find(chapter => chapter.title === 'Opening')!
     const scene = chapter.scenes[0]
@@ -22,6 +22,7 @@ test('scene metadata keeps focus locks across inspector and outliner controls', 
     await dismissTour(guest.page)
     await guest.rpc('collaboration/peer/join', [link, join(guest.workDir, 'Joined'), 'Guest'])
     for (const h of participants) {
+      await enterWriting(h.page)
       await h.page.evaluate(() => document.querySelector<HTMLButtonElement>('[data-collaboration-trigger][aria-expanded="false"]')?.click())
       await expect(h.page.getByText('Connected to the shared project.', { exact: true })).toBeVisible()
       await h.page.evaluate(async ({ chapter, scene }) => {
@@ -120,7 +121,7 @@ test('scene metadata keeps focus locks across inspector and outliner controls', 
     await ownerWeather.blur()
     await expect(guestWeather).toHaveValue('Sun')
     for (const h of participants) {
-      await h.page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
+      await h.page.evaluate(() => window.novalistStores.shell.getState().setMainView('structure'))
       await h.page.getByRole('button', { name: 'Outliner', exact: true }).click()
     }
     const ownerTarget = owner.page.locator('.outliner-target').first()

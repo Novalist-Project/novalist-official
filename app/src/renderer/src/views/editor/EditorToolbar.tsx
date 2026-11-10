@@ -9,6 +9,7 @@ import {
   ListOrdered,
   Mic,
   PenLine,
+  Plus,
   Settings2,
   Square,
   Volume2
@@ -22,6 +23,7 @@ import { useShellStore } from '../../stores/shellStore'
 import { DictationBar } from '../../dictation/DictationBar'
 import { useDictation } from '../../dictation/dictationStore'
 import { dismissOnAndroidBack } from '../../mobile/backEvents'
+import type { WritingFrameAdapter } from './writingFrameAdapter'
 
 export interface FormattingState {
   bold: boolean
@@ -45,6 +47,7 @@ interface EditorToolbarProps {
   /** True while the scene is being read back, so the bar offers Stop. */
   speaking: boolean
   active: boolean
+  writing?: WritingFrameAdapter
 }
 
 /**
@@ -65,7 +68,7 @@ interface EditorToolbarProps {
 // placement-container: viewBar
 const PARAGRAPH_STYLES = ['', 'heading', 'subheading', 'blockquote', 'poetry'] as const
 
-function useEditorToolbar(formatting: FormattingState) {
+function useEditorToolbar(formatting: FormattingState, writing?: WritingFrameAdapter) {
   const { t } = useTranslation()
   const [optionsOpen, setOptionsOpen] = useState(false)
   const recording = useDictation((s) => s.recording || s.starting)
@@ -126,8 +129,8 @@ function useEditorToolbar(formatting: FormattingState) {
     <label key={option.setting} data-command={option.command}>
       <input
         type="checkbox"
-        checked={(effective as Record<string, unknown> | undefined)?.[option.setting] === true}
-        onChange={() => runCommand(option.command)}
+        checked={option.setting === 'pageViewEnabled' && writing ? writing.pageViewEnabled : (effective as Record<string, unknown> | undefined)?.[option.setting] === true}
+        onChange={() => option.setting === 'pageViewEnabled' && writing ? writing.changePageView?.(!writing.pageViewEnabled) : runCommand(option.command)}
       />
       {option.icon}
       {t(option.labelKey)}
@@ -137,8 +140,8 @@ function useEditorToolbar(formatting: FormattingState) {
   return { t, buttons, recording, suggesting, optionsOpen, setOptionsOpen, option }
 }
 
-export function EditorToolbar({ formatting, speaking, active }: EditorToolbarProps): React.JSX.Element {
-  const { t, buttons, recording, suggesting, optionsOpen, setOptionsOpen, option } = useEditorToolbar(formatting)
+export function EditorToolbar({ formatting, speaking, active, writing }: EditorToolbarProps): React.JSX.Element {
+  const { t, buttons, recording, suggesting, optionsOpen, setOptionsOpen, option } = useEditorToolbar(formatting, writing)
 
   return (
     <div className="editor-toolbar">
@@ -160,6 +163,16 @@ export function EditorToolbar({ formatting, speaking, active }: EditorToolbarPro
             </option>
           ))}
         </select>
+        {writing && <>
+          <button type="button" className="writing-structure-action" data-command="writing.sceneBreak" onMouseDown={event => event.preventDefault()}
+            onClick={() => writing.requestStructure?.('sceneBreak')}>
+            <Plus size={14} />{t('unifiedWriting.scene')}
+          </button>
+          <button type="button" className="writing-structure-action" data-command="writing.chapterHeading" onMouseDown={event => event.preventDefault()}
+            onClick={() => writing.requestStructure?.('chapterHeading')}>
+            <Plus size={14} />{t('unifiedWriting.chapter')}
+          </button>
+        </>}
         {buttons.map(({ command, labelKey, active, icon: Icon }) => (
           <button
             type="button"

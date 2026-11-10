@@ -37,13 +37,8 @@ test('hard-to-read marks survive the prose being re-laid-out', async () => {
   await dismissTour(h.page)
   await seedBook(h, { 'Chapter One': ['Scene One'] })
 
-  // Page view is what re-wraps the paragraphs, and it is the default; asked for
-  // explicitly so the spec does not rest on that staying true.
-  await h.page.evaluate(async () => {
-    await window.novalistStores.settings.getState().update('global', { pageViewEnabled: true })
-  })
-
   await h.page.locator('.binder-scene-row').first().click()
+  await h.page.getByRole('button', { name: 'Page view', exact: true }).click()
   const editor = h.page.frameLocator('.editor-frame').locator('#editor')
   await expect(editor).toBeVisible({ timeout: 30_000 })
 

@@ -1,6 +1,6 @@
 # Find & Replace
 
-Find & Replace lets you search across one scene, one chapter, the active book, or the whole project. It supports plain text, whole-word, case-sensitive, and regular-expression matching, and can replace matches in bulk — with automatic snapshots taken first.
+Desktop Find & Replace starts with the current writing view and can widen to one scene, one chapter, the active book, or the whole project. It includes unsaved and offscreen prose and supports plain text, whole-word, case-sensitive, and regular-expression matching.
 
 ## Opening Find & Replace
 
@@ -13,7 +13,7 @@ The Find and Replace dialog opens in-window.
 ## Fields
 
 - **Find** — the pattern to search for. If **Regex** is on, this is a regular expression; otherwise it's a literal string.
-- **Replace** — the replacement string. If regex is on, you can use capture-group back-references (`$1`, `$2`, etc.).
+- **Replace** — literal replacement text. Even with Regex on, `$1` is inserted as those two characters rather than expanded as a capture group.
 - **Match case** — case-sensitive search when on.
 - **Whole word** — only match whole words.
 - **Regex** — treat the find pattern as a regex.
@@ -24,12 +24,13 @@ The Find and Replace dialog opens in-window.
 
 A scope selector next to the options picks the search range:
 
+- **Current writing view** — the active pane's scope, including its selected or filtered scene run.
 - **Current scene** — only the scene currently open in the editor.
 - **Current chapter** — every scene in the chapter the open scene belongs to.
 - **Active book** — every scene in the active book.
 - **Whole project** — every scene in every book.
 
-The default is **Active book**.
+The desktop default is **Current writing view**. iPhone and iPad retain their existing search interface, which defaults to Active book.
 
 ## Performing a search
 
@@ -39,11 +40,13 @@ Click **Find** or press `Enter`. The result list shows every match with:
 - A **label** — Synopsis, Notes, Comment or Codex — when the match is not in the prose.
 - A **snippet** of surrounding text with the match highlighted.
 
-Click a result to close the dialog and open that scene in the editor. A Codex result reports where the entry is rather than opening a scene — open the entry from the Codex or the Wiki.
+Click a prose result to reveal and select its exact text in the editor. **Previous** and **Next** navigate matches. A match stays within one scene; it never spans a scene boundary. A Codex result reports where the entry is rather than opening a scene — open the entry from the Codex or the Wiki.
 
 ## Replacing
 
-Click **Replace All** to replace every match in the selected scope. With **Synopses, notes and comments** on, a replace also rewrites synopses and notes. Comments are left alone — a comment is a conversation, and rewriting someone's words in it is not a search-and-replace decision. Before any scene is modified, an **automatic snapshot** of that scene is taken, so a bad Replace All can always be undone by restoring the snapshot from the **Scene snapshots** dialog on the writing bar. After the run, the dialog reports how many occurrences were replaced, and the open scene reloads with the new content.
+Choose **Replace current** for the selected prose match or **Replace All** for all prose matches in the selected scope. Replace All is one undoable action, including across scenes and books. Formatting and scene boundaries are preserved. If the text changed after the search, search again before replacing; a failed save remains available through **Retry replacement**.
+
+**Replace notes and synopses** is a separate action for those fields. Comments and Codex entries are search-only. Notes and synopsis replacements use their existing snapshot recovery rather than the prose editor's undo history.
 
 ## Regex notes
 
@@ -51,20 +54,20 @@ Click **Replace All** to replace every match in the selected scope. With **Synop
 - Use `(?i)` inline for case-insensitive within the pattern.
 - Use `\b` for word boundaries (or just toggle **Whole word**).
 - Multi-line patterns: set `(?s)` to make `.` match newlines.
-- Back-references in the replacement use `$1`, `$2`, etc.
+- Replacement text is literal; capture groups can match text but do not expand in the replacement.
 
 Common patterns:
 
 - Find any "very + adjective" cliche: `\bvery (\w+)`.
-- Add a comma before "but" / "and" between clauses (style-dependent, audit replacements): `([a-z]) (but|and) ` → `$1, $2 `.
+- Find a past-tense construction for review: `\bwas\s+\w+ing\b`.
 
 ## Limitations
 
 - Find searches **scene content**, and — when the matching options are on — synopses, notes, comments, and Codex entries. Markup tags themselves are not searched.
 - Find does not search custom properties or research notes. Those are accessible via their own views, and by Quick Open.
 - **Codex matches are reported, never replaced.** Renaming a Codex entry has its own command, which carries the change through every reference to it; a blind replace here would not.
-- Replace All takes one snapshot per modified scene, so a project-wide replace can produce many snapshots.
-- **Whole project** opens each book in turn to read it, and puts you back in the book you started in when it finishes. On a large multi-book project that takes a moment; a search of the active book does not.
+- Desktop prose Replace All is one undoable writing action. Replacement of notes or synopses takes scene snapshots separately; those runs can produce many snapshots.
+- **Whole project** reads each book's active draft without switching the active book. Opening a result in another book navigates there explicitly.
 
 ## Tips
 
@@ -95,13 +98,13 @@ If you have unticked **Replace quotes and dashes as I type** in Settings → Wri
 
 **Show me what would change** reports how many scenes the pass would rewrite and names them, without changing anything. Use it first — this is not something to find out about afterwards.
 
-**Clean up** runs the pass and takes a snapshot of every scene before it changes it, the same as Replace All. If a rule did something you did not want, the previous version is in [Snapshots](17-snapshots.md).
+**Clean up** runs the pass and takes a snapshot of every scene before it changes it. If a rule did something you did not want, the previous version is in [Snapshots](17-snapshots.md).
 
 By default the pass covers the whole book. With a chapter open you can narrow it to that chapter instead.
 
 ## Where to go next
 
 - [Editor](05-editor.md) — for live editing of the matches.
-- [Snapshots](17-snapshots.md) — recover if a replace went wrong.
+- [Snapshots](17-snapshots.md) — recover notes, synopsis or cleanup changes, or restore a manually saved version.
 - [Smart Lists](16-smart-lists.md) — find scenes by metadata rather than content.
 - [Quick Open](31-quick-open.md) — search Codex entries, notes, comments, and research too, not just scene prose.

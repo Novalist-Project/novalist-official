@@ -23,7 +23,10 @@ test('a real extension menu action shows progress, cancels, and displays its res
     expect(await h.rpc('extensions/load')).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'test.throwing', loadError: null })
     ]))
-    await seedBook(h, { One: ['A'] })
+    expect(await h.rpc('extensions/inlineActions')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'test.define', label: 'Define', group: 'Look up' })
+    ]))
+    await seedBook(h, { One: ['A'] }, 'Spec', false)
     await dismissTour(h.page)
     await h.page.evaluate(async () => {
       await window.novalistStores.extensions.getState().refreshContributions()
@@ -32,14 +35,23 @@ test('a real extension menu action shows progress, cancels, and displays its res
       await state.openScene(chapter.guid, chapter.scenes[0].id)
     })
     const frame = h.page.frameLocator('.editor-frame')
-    const editor = frame.locator('#editor')
+    const editor = frame.locator('[data-writing-scene]')
     await expect(editor).toBeVisible()
     await editor.click()
-    await editor.pressSequentially('happy')
+    await h.page.keyboard.type('happy')
+    await expect(editor).toHaveText('happy')
     const invoke = async (): Promise<void> => {
-      await editor.click()
-      await editor.press('ControlOrMeta+a')
-      await editor.click({ button: 'right' })
+      await editor.evaluate(element => {
+        const document = element.ownerDocument
+        document.getElementById('editor')!.focus()
+        const range = document.createRange()
+        range.selectNodeContents(element.querySelector('p')!)
+        const selection = document.getSelection()!
+        selection.removeAllRanges()
+        selection.addRange(range)
+      })
+      expect(await editor.evaluate(element => element.ownerDocument.getSelection()?.toString())).toBe('happy')
+      await editor.locator('p').click({ button: 'right', position: { x: 8, y: 8 } })
       const lookup = frame.locator('#context-menu .cm-parent', { hasText: 'Look up' })
       await lookup.hover()
       await lookup.getByText('Define', { exact: true }).click()

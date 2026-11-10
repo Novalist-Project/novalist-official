@@ -18,7 +18,7 @@ internal sealed class CollaborationDocumentPeer
 
     [JsonRpcMethod("collaboration/documents")]
     public async Task<object?> Documents(string action, JsonElement command = default, Guid? id = null,
-        string? entityId = null, string? oldName = null, string? newName = null, CancellationToken cancellationToken = default, Guid sessionId = default)
+        string? entityId = null, string? oldName = null, string? newName = null, Guid sessionId = default, CancellationToken cancellationToken = default)
     {
         if (action == "rename")
         {

@@ -114,8 +114,33 @@ class CompoundWritingCommit {
   private readonly releases = new Map<WritingDocumentRegistry, () => void>()
   private pending: { request: WritingCommitRequest; parts: Map<WritingDocumentRegistry, WritingCommitRequest> } | null = null
   private inFlight: Promise<void> | null = null
+  private conflicted = false
+  private resolving: Promise<void> | null = null
 
   constructor(private readonly transport: CommitTransport) {}
+
+  async prepareConflictResolution(): Promise<(resolved: boolean) => void> {
+    if (this.inFlight) await Promise.allSettled([this.inFlight])
+    if (this.resolving) throw new Error('Another compound conflict is being resolved.')
+    if (this.pending && !this.conflicted) throw new Error('Resolve the unknown pending compound commit first.')
+    let finish!: () => void
+    this.resolving = new Promise<void>(resolve => { finish = resolve })
+    return resolved => {
+      if (resolved) { this.pending = null; this.conflicted = false }
+      this.resolving = null
+      finish()
+    }
+  }
+
+  async prepareRecovery(): Promise<(epoch: number) => void> {
+    if (this.inFlight) await Promise.allSettled([this.inFlight])
+    return epoch => {
+      if (this.inFlight) throw new Error('The compound writing commit is still running.')
+      if (!this.pending) return
+      this.pending.request = { ...this.pending.request, expectedEpoch: epoch }
+      for (const [registry, request] of this.pending.parts) this.pending.parts.set(registry, { ...request, expectedEpoch: epoch })
+    }
+  }
 
   add(registries: readonly WritingDocumentRegistry[]): void {
     if (this.inFlight && registries.some(registry => !this.releases.has(registry))) {
@@ -142,6 +167,7 @@ class CompoundWritingCommit {
   }
 
   flush(): Promise<void> {
+    if (this.resolving) return this.resolving.then(() => this.flush())
     if (this.inFlight) return this.inFlight
     const writing = this.write()
     this.inFlight = writing
@@ -166,8 +192,12 @@ class CompoundWritingCommit {
         return
       }
       this.pending = pending
+      this.conflicted = false
       const result = await this.transport(structuredClone(pending.request))
-      if (result.status !== 'committed') throw new WritingCommitError(result)
+      if (result.status !== 'committed') {
+        this.conflicted = result.status === 'conflict'
+        throw new WritingCommitError(result)
+      }
       const hashes = new Set(result.hashes.map(entry => sceneRefKey(entry.ref)))
       if ([...pending.request.changes, ...pending.request.annotationChanges].some(change => !hashes.has(sceneRefKey(change.ref)))) {
         throw new Error('Writing commit acknowledgement is incomplete.')

@@ -6,6 +6,7 @@ import { type MainView, useShellStore } from '../stores/shellStore'
 const ActionTarget = createContext<HTMLElement | null>(null)
 const headings: Partial<Record<MainView, [string, string]>> = {
   manuscript: ['shell.view.manuscript', 'desktopRefresh.views.manuscript'],
+  structure: ['structure.title', 'structure.introduction'],
   drafts: ['shell.view.drafts', 'desktopRefresh.views.drafts'],
   narration: ['shell.view.narration', 'desktopRefresh.views.narration'],
   timeline: ['shell.view.timeline', 'desktopRefresh.views.timeline'],

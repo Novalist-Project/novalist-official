@@ -51,7 +51,7 @@ export function BinderDialogs({ state }: { state: BinderState }): React.JSX.Elem
           onClose={() => setAddSceneChapter(null)}
         />
       )}</MotionPresence>
-      <MotionPresence disabled={suspendMotion}>{pending?.kind === 'editChapter' &&
+      <MotionPresence disabled={suspendMotion}>{(pending?.kind === 'editChapter' || pending?.kind === 'setAct' && !state.isMobile) &&
         chapters.some((c) => c.guid === pending.chapterGuid) && (
           <ChapterDialog
             chapter={chapters.find((c) => c.guid === pending.chapterGuid)}
@@ -116,7 +116,7 @@ export function BinderDialogs({ state }: { state: BinderState }): React.JSX.Elem
           }}
         />
       )}</MotionPresence>
-      <MotionPresence disabled={suspendMotion}>{(pending?.kind === 'chapterDescription' || pending?.kind === 'setAct') && (
+      <MotionPresence disabled={suspendMotion}>{(pending?.kind === 'chapterDescription' || pending?.kind === 'setAct' && state.isMobile) && (
         <InputDialog
           title={t(pending.kind === 'chapterDescription' ? 'explorer.chapterDescription' : 'explorer.renameAct')}
           placeholder={pending.current}

@@ -24,7 +24,7 @@ public sealed record SplitChapterCommand(SceneRef Ref, string Title, string Befo
 {
     public SharedSplitPreparation? SharedSplit { get; init; }
 }
-public sealed record InsertChapterCommand(string Title, string? BeforeChapterGuid, string? ActName) : StructureCommand;
+public sealed record InsertChapterCommand(string Title, string? BeforeChapterGuid, string? ActName, StoryDateRange? DateRange = null) : StructureCommand;
 public sealed record InsertSceneCommand(string ChapterGuid, string Title, string? BeforeSceneId) : StructureCommand;
 public sealed record MoveScenesCommand(string[] SceneIds, string TargetChapterGuid, string? BeforeSceneId) : StructureCommand;
 public sealed record MoveChaptersCommand(string[] ChapterGuids, string? BeforeChapterGuid, string? TargetActName) : StructureCommand;

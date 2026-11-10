@@ -10,7 +10,8 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
-import { launchApp, seedBook, type Harness } from './harness'
+import { enterWriting, launchApp, seedBook, type Harness } from './harness'
+import { replaceWritingScene } from './writingTestActions'
 import { buildLinuxUpdateScript } from '../src/main/linuxAppImageUpdater'
 
 // Release discovery only offers installers matching the running platform.
@@ -273,20 +274,18 @@ test('update button flushes live prose before acknowledging quit', async () => {
   const assetName = `novalist-update-save-${Date.now()}.${installerExtension}`
 
   try {
-    const book = await seedBook(h, { One: ['A'] })
+    const book = await seedBook(h, { One: ['A'] }, 'Spec', false)
     const chapter = book.chapters[0]
     const scene = chapter.scenes[0]
     await h.rpc('scenes/write', [chapter.guid, scene.id, '<p>Before.</p>', 'Before.'])
+    await enterWriting(h.page)
     await h.page.locator('.binder-scene-row').click()
     const editor = h.page.frameLocator('.editor-frame').locator('#editor')
     await expect(editor).toBeVisible({ timeout: 30_000 })
 
-    // Leave this inside the two-second project-store debounce. A cached update
+    // Leave this inside the two-second writing autosave. A cached update
     // used to close the backend before this write had a chance to run.
-    await editor.evaluate((node) => {
-      node.innerHTML = '<p>Words immediately before updating.</p>'
-      node.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }))
-    })
+    await replaceWritingScene(h.page, scene.id, '<p>Words immediately before updating.</p>')
 
     await installUpdateProbe(h, assetName)
     await openUpdateDialog(h)
@@ -369,18 +368,9 @@ test('download allows writing, then installation locks and flushes pending edits
 
     // Simulates background/forwarded editor work that lands after the first
     // preflight. The second preflight must still capture it before quitting.
-    await h.page.evaluate(() => {
-      const store = window.novalistStores.project.getState()
-      const pane = store.activeEditorPaneId
-      if (!pane) throw new Error('No active editor pane')
-      store.onEditorContentChanged(
-        pane,
-        '<p>Words written while the update downloaded.</p>',
-        'Words written while the update downloaded.'
-      )
-    })
+    await replaceWritingScene(h.page, scene.id, '<p>Words written while the update downloaded.</p>')
     await expect
-      .poll(() => h.page.evaluate(() => window.novalistStores.project.getState().isDirty))
+      .poll(() => h.page.evaluate(() => window.novalistStores.project.getState().getWritingRegistry()?.isDirty))
       .toBe(true)
 
     await h.app.evaluate(() => {
@@ -517,10 +507,7 @@ test('update stays open when the final scene save finds a conflict', async () =>
       '<p>Words from the other machine.</p>',
       'Words from the other machine.'
     ])
-    await editor.evaluate((node) => {
-      node.innerHTML = '<p>My unresolved words.</p>'
-      node.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }))
-    })
+    await replaceWritingScene(h.page, scene.id, '<p>My unresolved words.</p>')
 
     await installUpdateProbe(h, assetName)
     await openUpdateDialog(h)
@@ -528,7 +515,7 @@ test('update stays open when the final scene save finds a conflict', async () =>
     await download.click()
     await h.page.getByRole('button', { name: 'Install and restart' }).click()
 
-    await expect(h.page.getByRole('alert')).toContainText('unresolved save conflict')
+    await expect(h.page.locator('.update-error')).toHaveText('This scene changed elsewhere. Review the newer version before saving.')
     await expect(h.page.getByRole('button', { name: 'Install and restart' })).toBeEnabled()
     const probe = await h.app.evaluate(() => {
       const root = globalThis as typeof globalThis & { __updateProbe: UpdateProbe }

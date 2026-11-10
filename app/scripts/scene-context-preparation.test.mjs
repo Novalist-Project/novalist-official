@@ -8,11 +8,14 @@ const initial = () => ({ isLoaded: true, closingProject: false, workspaceSuspend
   openChapterGuid: 'chapter', openSceneId: 'scene', sceneHashes: { scene: 'saved-1' },
   activeEditorPaneId: 'editor', editors: { editor: { chapterGuid: 'chapter', sceneId: 'scene', html: '<p>Saved</p>' } } })
 
-function fixture({ ignoreAbort = false } = {}) {
+function fixture({ ignoreAbort = false, isMobile = true } = {}) {
   const calls = [], timers = [], effects = [], completed = []
   let state = initial()
   let manuscript = { sections: [] }
   let sharedRevision = 0
+  let writingHtml = '<p>Canonical unsaved prose</p>'
+  state.getWritingRegistry = () => ({ context: { bookId: 'book', draftId: 'draft' },
+    getSnapshot: () => ({ html: writingHtml }), subscribe: () => () => {} })
   let previousEffects = []
   let shell = { mainView: 'write', mobileLayout: 'phone', mobileTab: 'manuscript' }
   const background = loadRendererSource('src/rpc/backgroundReads.ts', {}, { window: { novalist: { isMobile: true } } })
@@ -26,8 +29,11 @@ function fixture({ ignoreAbort = false } = {}) {
   }, { AbortController })
   const hooks = loadRendererSource('src/shell/usePreparedSceneContext.ts', {
     './sceneContextData': data,
+    './writingSceneContext': loadRendererSource('src/shell/writingSceneContext.ts', {
+      '../collaboration/sharedWritingSessions': { findSharedWritingSession: () => undefined, getSharedWritingSession: () => undefined }
+    }, { window: { novalist: { isMobile } } }),
     '../collaboration/sharedProjectNotifications': { useSharedProjectRevision: Object.assign(() => sharedRevision, { getState: () => sharedRevision }) },
-    react: { useEffect: (effect, deps) => effects.push({ effect, deps }), useSyncExternalStore: (_subscribe, read) => read() },
+    react: { useEffect: (effect, deps) => effects.push({ effect, deps }), useMemo: create => create(), useSyncExternalStore: (_subscribe, read) => read() },
     '../stores/shellStore': { useShellStore: Object.assign(select => select(shell), { getState: () => shell }) },
     '../stores/manuscriptStore': { useManuscriptStore: Object.assign(select => select(manuscript), { getState: () => manuscript }) },
     '../stores/projectStore': { useProjectStore: Object.assign(select => select(state), { getState: () => state }) }
@@ -35,11 +41,12 @@ function fixture({ ignoreAbort = false } = {}) {
     const timer = { delay, cancelled: false, fn() { if (!timer.cancelled) fn() } }
     timers.push(timer)
     return timer
-  }, clearTimeout(timer) { timer.cancelled = true }, window: { novalist: { isMobile: true } } })
+  }, clearTimeout(timer) { timer.cancelled = true }, window: { novalist: { isMobile } } })
   return { data, hooks, calls, timers, effects, background, state: () => state,
     complete: method => completed.forEach(listener => listener(method)),
     setState: patch => { state = { ...state, ...patch } },
     setSharedRevision: revision => { sharedRevision = revision },
+    setWritingHtml: html => { writingHtml = html },
     setShell: patch => { shell = { ...shell, ...patch } },
     edit: html => { state = { ...state, editors: { ...state.editors, editor: { ...state.editors.editor, html } } } },
     setManuscript: html => { manuscript = { sections: [{ chapterGuid: 'chapter', scenes: [{ sceneId: 'scene', html }] }] } },
@@ -56,6 +63,21 @@ function fixture({ ignoreAbort = false } = {}) {
     } }
 
 }
+
+test('desktop context follows canonical unsaved prose instead of the legacy editor cache', async () => {
+  const f = fixture({ isMobile: false })
+  f.render()
+  f.timers.at(-1).fn()
+  assert.equal(f.calls[0].params[2], '<p>Canonical unsaved prose</p>')
+  f.calls[0].resolve({ analysis: { wordCount: 3 } })
+  await turn()
+  f.setWritingHtml('')
+  f.render()
+  f.timers.at(-1).fn()
+  assert.equal(f.calls[1].params[2], '', 'clearing canonical prose must not reuse saved or legacy HTML')
+  f.calls[1].resolve({ analysis: { wordCount: 0 } })
+  await turn()
+})
 
 test('the hidden inspector prepares current context and shares one complete result with its consumer', async () => {
   const f = fixture()

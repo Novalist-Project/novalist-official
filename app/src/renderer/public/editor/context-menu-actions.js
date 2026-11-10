@@ -159,6 +159,10 @@ function applyContextAction(action) {
             // Acts on the caret captured when the menu opened, since opening it
             // moved focus out of the editor.
             restoreContextMenuSelection();
+            if (window.NovalistWritingDocument?.enabled) {
+                window.requestWritingStructure('sceneBreak');
+                break;
+            }
             const halves = window.splitAtCaret();
             if (!halves) break;
             const parsed = JSON.parse(halves);

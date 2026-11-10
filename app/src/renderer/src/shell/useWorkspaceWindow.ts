@@ -8,11 +8,16 @@ import { hasPendingManuscriptWrites, resetManuscriptWorkspace, useManuscriptStor
 import { useCodexStore } from '../stores/codexStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useHostBridgeStore } from '../stores/hostBridgeStore'
-import { hasWorkspaceDialogDraft } from './useWorkspaceDialogGuard'
+import { hasWorkspaceDialogDraft, revealWorkspaceDialogDraft } from './useWorkspaceDialogGuard'
 import { clearCloseBackupHandledForQuit, createCloseBackup, markCloseBackupHandledForQuit } from './useBackupScheduler'
 import { captureMobileRecovery, clearAcknowledgedRecovery, restoreMobileRecovery, reportRecoveryError } from '../mobile/recovery'
 import { setHotkeysEnabled } from './hotkeys'
 import { useHostedSessionStore } from '../collaboration/hostedSessionStore'
+import { captureWritingWorkspaceHistory } from '../stores/writingWorkspaceHistory'
+import { prepareWritingWorkspaceClose } from '../stores/writingWorkspaceLifecycle'
+import { getWritingWorkspaceRegistries } from '../stores/writingDocuments'
+import { rebaseWritingSearchLeases, validateWritingSearchRecovery } from '../views/editor/writingSearchLease'
+import { prepareWritingWorkspaceRecovery } from '../stores/writingWorkspaceRecovery'
 
 export type WindowCloseStage = 'flush' | 'backup'
 
@@ -47,12 +52,25 @@ export async function loadWorkspaceSnapshot(): Promise<void> {
   const previous = useProjectStore.getState()
   if (previous.workspaceTransitionToken || (previous.workspaceBusy && !previous.workspaceRecovering)) return
   const sameScope = previous.projectPath === snapshot.state.projectPath && previous.activeBookId === snapshot.state.activeBookId && previous.activeDraftId === snapshot.draftId
-  if (previous.workspaceRecovering && !sameScope && (previous.isDirty || Object.values(previous.dirtyMap).some(Boolean) || hasPendingManuscriptWrites())) {
+  const writingDirty = previous.projectPath && getWritingWorkspaceRegistries(previous.projectPath).some(registry => registry.isDirty)
+  if (previous.workspaceRecovering && !sameScope && (writingDirty || previous.isDirty || Object.values(previous.dirtyMap).some(Boolean) || hasPendingManuscriptWrites())) {
     const message = 'The previous workspace could not be restored. Your pending edits remain in their windows.'
     useProjectStore.setState({ workspaceRecoveryError: message })
     throw new Error(message)
   }
-  useProjectStore.getState().applyWorkspaceSnapshot(snapshot)
+  const writingContext = { workspaceId: snapshot.state.projectPath ?? '', workspaceEpoch: snapshot.epoch }
+  if (previous.workspaceRecovering) flushSync(() => useProjectStore.setState({ workspaceSuspended: true }))
+  let writingRecovery: Awaited<ReturnType<typeof prepareWritingWorkspaceRecovery>> | null = null
+  try {
+    if (previous.workspaceRecovering && sameScope && previous.projectPath) writingRecovery = await prepareWritingWorkspaceRecovery(previous.projectPath)
+    validateWritingSearchRecovery(writingContext)
+    useProjectStore.getState().applyWorkspaceSnapshot(snapshot)
+    rebaseWritingSearchLeases(writingContext)
+    await writingRecovery?.resume(writingContext)
+  } catch (error) {
+    useProjectStore.setState({ workspaceRecoveryError: String(error) })
+    throw error
+  } finally { writingRecovery?.release() }
   if (!sameScope) resetManuscriptWorkspace()
   if (previous.workspaceRecovering) {
     try {
@@ -115,6 +133,9 @@ export function useWorkspaceWindow(): WindowCloseStage | null {
   useEffect(() => {
     let workspaceToken: string | null = null
     let workspaceReason = ''
+    let writingHistory: ReturnType<typeof captureWritingWorkspaceHistory> | null = null
+    let releaseWorkspace: (() => void) | null = null
+    let releaseWindow: (() => void) | null = null
     let closing = false
     const lock = (stage?: WindowCloseStage): void => {
       setHotkeysEnabled(false)
@@ -134,7 +155,7 @@ export function useWorkspaceWindow(): WindowCloseStage | null {
     const stopWorkspace = window.novalist.onWorkspaceEvent?.(async (event) => {
       if (event.phase === 'prepare') {
         if ((closing && event.preparation.reason !== 'collaboration/end') || workspaceToken) throw new Error(i18n.t('update.workspaceBusy'))
-        if (hasWorkspaceDialogDraft()) throw new Error(i18n.t('update.workspaceBusy'))
+        if (hasWorkspaceDialogDraft()) throw new Error(revealWorkspaceDialogDraft() ?? i18n.t('update.workspaceBusy'))
         workspaceToken = event.preparation.token
         workspaceReason = event.preparation.reason
         if (workspaceReason === 'collaboration/hostSync') {
@@ -142,7 +163,13 @@ export function useWorkspaceWindow(): WindowCloseStage | null {
         }
         useProjectStore.setState({ workspaceTransitionToken: workspaceToken })
         lock()
-        try { await suspendWorkspace() } catch (error) { failWindowOperation(error) }
+        try {
+          await suspendWorkspace()
+          const registry = useProjectStore.getState().getWritingRegistry()
+          writingHistory = registry && (workspaceReason.startsWith('writing/') || workspaceReason === 'review/applyComments')
+            ? captureWritingWorkspaceHistory(registry.context) : null
+          releaseWorkspace = registry && !writingHistory ? await prepareWritingWorkspaceClose(registry.context) : null
+        } catch (error) { failWindowOperation(error) }
       } else if (event.phase === 'changed') {
         // Keep surfaces unmounted and input frozen through the apply ACK.
         // Data hydration happens only after main has advanced our wire epoch.
@@ -151,13 +178,20 @@ export function useWorkspaceWindow(): WindowCloseStage | null {
             ['backup/restore', 'project/open', 'project/create', 'project/close', 'backup/restoreAsNewProject'].includes(workspaceReason))
           resetManuscriptWorkspace()
         })
+        releaseWorkspace?.()
+        releaseWorkspace = null
       } else if (event.token === workspaceToken) {
         if (event.phase === 'resumed' && !closing) {
+          const project = useProjectStore.getState()
+          const registry = project.getWritingRegistry()
+          if (writingHistory && registry) await writingHistory.resume(registry.context, project.chapters, project.getWritingRegistry)
           await useProjectStore.getState().refreshWorkspaceEditors()
           if (!useProjectStore.getState().isLoaded) await prepareProjectLibrary()
         }
         if (event.token !== workspaceToken) return
         workspaceToken = null
+        writingHistory = null
+        releaseWorkspace = null
         useHostedSessionStore.setState({ hostSynchronizing: false, cancelling: false })
         useProjectStore.setState({ workspaceTransitionToken: null })
         resume()
@@ -165,21 +199,32 @@ export function useWorkspaceWindow(): WindowCloseStage | null {
       }
     })
     const stopClose = window.novalist.onBeforeClose?.(async (stage) => {
+      if (stage === 'commit') {
+        releaseWindow?.()
+        releaseWindow = null
+        return
+      }
       if (stage === 'abort') {
         closing = false
+        releaseWindow = null
         flushSync(() => setCloseStage(null))
         clearCloseBackupHandledForQuit()
         resume()
         return
       }
       try {
-        if (workspaceToken || hasWorkspaceDialogDraft() || useProjectStore.getState().workspaceRecovering || useProjectStore.getState().changingSceneStructure || useProjectStore.getState().closingProject) {
+        if (hasWorkspaceDialogDraft()) throw new Error(revealWorkspaceDialogDraft() ?? i18n.t('update.workspaceBusy'))
+        if (workspaceToken || useProjectStore.getState().workspaceRecovering || useProjectStore.getState().changingSceneStructure || useProjectStore.getState().closingProject) {
           throw new Error(i18n.t('update.workspaceBusy'))
         }
         closing = true
-        lock(stage)
-        if (stage === 'flush') await suspendWorkspace()
-        else {
+        lock(stage === 'release' ? 'flush' : stage)
+        if (stage === 'flush') {
+          await suspendWorkspace()
+        } else if (stage === 'release') {
+          const registry = useProjectStore.getState().getWritingRegistry()
+          releaseWindow = registry ? await prepareWritingWorkspaceClose(registry.context) : null
+        } else {
           await createCloseBackup()
           await flushWindowWrites()
           await rpc.request('collaboration/end')

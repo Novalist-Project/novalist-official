@@ -6,14 +6,14 @@ test('editor context menus fade both ways and reduced motion removes the delay',
   const h = await launchApp('nl-editor-motion-')
   try {
     await h.page.emulateMedia({ reducedMotion: 'no-preference' })
-    const book = await seedBook(h, { Opening: ['Arrival'] })
+    const book = await seedBook(h, { Opening: ['Arrival'] }, 'Spec', false)
     await dismissTour(h.page)
     const chapter = book.chapters[0]
     const scene = chapter.scenes[0]
     await h.rpc('scenes/write', [chapter.guid, scene.id, '<p>The lantern lights the room.</p>', 'The lantern lights the room.'])
     await h.page.evaluate(({ chapterGuid, sceneId }) => window.novalistStores.project.getState().openScene(chapterGuid, sceneId), { chapterGuid: chapter.guid, sceneId: scene.id })
     const frame = h.page.frameLocator('.editor-frame')
-    const editor = frame.locator('#editor')
+    const editor = frame.locator(`[data-writing-scene="${scene.id}"]`)
     const menu = frame.locator('#context-menu')
     await expect(editor).toHaveText('The lantern lights the room.')
     const editorFrame = await (await h.page.locator('.editor-frame').elementHandle())?.contentFrame()
@@ -93,7 +93,7 @@ test('scene navigation fades the retained editor while typing and saving stay im
   const h = await launchApp('nl-scene-motion-')
   try {
     await h.page.emulateMedia({ reducedMotion: 'no-preference' })
-    const book = await seedBook(h, { Opening: ['Arrival', 'Departure'] })
+    const book = await seedBook(h, { Opening: ['Arrival', 'Departure'] }, 'Spec', false)
     await dismissTour(h.page)
     const chapter = book.chapters[0]
     const [arrival, departure] = chapter.scenes
@@ -101,11 +101,13 @@ test('scene navigation fades the retained editor while typing and saving stay im
       await h.rpc('scenes/write', [chapter.guid, scene.id, `<p>${scene.title} begins.</p>`, `${scene.title} begins.`])
     }
     await h.page.evaluate(({ chapterGuid, sceneId }) => window.novalistStores.project.getState().openScene(chapterGuid, sceneId), { chapterGuid: chapter.guid, sceneId: arrival.id })
+    await h.page.locator('.writing-scope-segments').getByRole('button', { name: 'Scene', exact: true }).click()
     const iframe = h.page.locator('.editor-frame')
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const root = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await expect(editor).toHaveText('Arrival begins.')
     const originalFrame = await iframe.evaluateHandle(element => element)
-    const originalEditor = await editor.evaluateHandle(element => element)
+    const originalEditor = await root.evaluateHandle(element => element)
     await expect.poll(() => iframe.evaluate(element => element.getAnimations().length)).toBe(0)
     const motion = await holdMotion(h.page, '.editor-frame')
 
@@ -123,7 +125,7 @@ test('scene navigation fades the retained editor while typing and saving stay im
     await h.page.evaluate(() => window.novalistStores.project.getState().flushPendingSave())
     await expect.poll(async () => (await h.rpc<{ html: string }>('scenes/read', [chapter.guid, departure.id])).html).toContain('More.')
     expect(await motion.evaluate(control => control.details())).toEqual([])
-    expect(await editor.evaluate(element => element.ownerDocument.activeElement === element)).toBe(true)
+    expect(await root.evaluate(element => element.ownerDocument.activeElement === element)).toBe(true)
     await h.page.evaluate(({ chapterGuid, sceneId }) => window.novalistStores.project.getState().openScene(chapterGuid, sceneId), { chapterGuid: chapter.guid, sceneId: departure.id })
     expect(await motion.evaluate(control => control.details())).toEqual([])
     await motion.evaluate(control => control.stop())

@@ -1,40 +1,49 @@
 # Editor
 
-The Editor is where you write. It is a WYSIWYG rich-text editor. Each editor pane keeps a strip of open scene tabs, and the main area can be split so several scenes sit side by side. The writing engine is the same proven one as in earlier Novalist versions — typewriter scrolling, page view, comments, and footnotes all behave identically; only the shell around it is new.
+The desktop Editor is one continuous rich-text writing surface with **Scene**, **Chapter**, and **Manuscript** scopes. Each pane remembers its own scope; new panes start in Manuscript, which covers the active book and draft. Split the main area to keep different scopes or places side by side. Scene files remain separate, and comments, footnotes, page view, and typewriter scrolling remain available.
 
 Shortcuts below are written with `Ctrl`; on macOS use `Cmd`.
 
+The scope buttons sit above the writing toolbar. Manuscript opens as a continuous document with the book title, draft, act names, and chapter headings. Beside each scene, a compact rail shows its number, editable name and stage, word count, and an optional collapsed **Synopsis**. Click a scene, chapter, or act name to rename it; Enter or Save commits, and Escape or Cancel discards the draft. The rail stays visible while scrolling through its scene. **Focus scene** isolates that scene and reveals the caret if it was inside it, or the scene's beginning otherwise. **Manuscript** returns to the full document. Scene names stay outside the prose. **Page view** on the scope bar and in Editor settings controls the same saved setting, including project overrides. **+ Scene** and **+ Chapter** beside the paragraph-style selector create structure at the caret.
+
 Paragraph styles are also available in the floating **Quick edit** toolbar beside selected text. Choose Body, Heading, Subheading, Blockquote, or Verse without losing the selection. A selection containing different paragraph styles shows **Mixed styles**. At a lone caret or empty paragraph, use **Quick edit** in the context menu or command palette; the style picker receives keyboard focus, and `Escape` returns focus to the text. These styles format prose; they do not create scenes or chapters.
+
+Opening a name field without changing it does not block other work. If an unfinished rename prevents a structural action or closing the app, Novalist brings that field into view and asks you to **Save** or **Cancel** it. Cancel discards only the name draft; your prose stays intact.
 
 ![A scene open in the editor with the Context inspector](images/editor.png)
 
 ## Opening a scene
 
-Click any scene in the **binder**. The main area switches to the Editor view and loads the scene; the open scene is highlighted in the binder, it is added to the pane's tab strip, and its statistics appear in the [status bar](#status-bar-statistics).
+Click any scene in the **binder**. The main area switches to Write and reveals that scene in the same editor, preserving the pane's scope. It is highlighted in the binder; desktop scene navigation does not create tabs. If the scene lies outside a selected or filtered run, navigation clears that restriction so the destination is visible.
 
-The Editor is the first entry in the **Write** mode's panel, and `Ctrl+1` goes there — but with no scene chosen there is nothing to write in, so opening one from the binder is the usual way in.
+The Editor is the first entry in **Write**; `Ctrl+1` returns to its remembered scope. **Manuscript** in the Go menu or `Ctrl+5` opens Write in Manuscript scope. Use the scope selector to focus on the active scene or chapter without discarding edits or undo history. In an empty book, use **New chapter** to begin. iPhone and iPad retain their existing scene-writing and Manuscript views.
 
-## Scene tabs
+Selecting, copying, formatting, and deleting prose can cross scene boundaries. Ordinary edits keep scene containers intact. Use **Scene break** or **Chapter heading** at a collapsed caret to create structure; paragraph styles only format text. Scene names remain in the information rail, navigation, and planning. The writing margin shows word counts and collapsible synopses, with a toolbar control for synopsis visibility.
 
-Each editor pane keeps the scenes you have opened as a **tab strip** across the top of the pane. Clicking another scene in the binder adds it as a new tab instead of replacing the current one, so you can keep several scenes open and jump between them.
+Each synopsis sits below its scene's word count and starts collapsed. When expanded, it grows with its text; long synopses scroll within the available pane height. Expansion is remembered locally for your project, book, draft, and scene. The synopsis visibility control hides or shows the margin's synopses together. Narrow panes put the scene information above its prose and open the synopsis in a popover.
 
-The strip appears once a pane has more than one scene open, or once a second editor pane is open (a lone editor on one scene keeps the clean, strip-free look). Each tab shows:
+## Creating scenes and chapters while writing
 
-- The scene title (falling back to the chapter title for an untitled scene).
-- A small **dirty dot** while the scene has unsaved edits, which clears once autosave flushes.
-- A **close** button (`×`).
+Place the caret where the new section should begin, with no text selected:
 
-Tab actions:
+- **Scene break** keeps the preceding prose in the current scene and moves the trailing prose into a new scene. Its generated title appears in navigation, while the original synopsis stays with the original scene.
+- **Chapter heading** starts a new chapter with the trailing prose and moves the current chapter's later scenes into it. The new chapter inherits the current act.
+- **Insert chapter** between chapters or at the end opens the **New chapter** prompt and creates a chapter with one empty scene. Check the displayed act destination before confirming. Cancel leaves the book unchanged. A filtered view does not offer an insertion button across a gap containing hidden chapters.
+- Inline **+ Scene** controls insert an empty scene at the displayed boundary. Inline **+ Chapter** between chapters inserts a fresh chapter with an empty scene. These controls also appear at the end of a writing scope when the corresponding boundary is available; filtered gaps do not offer ambiguous insertion targets.
 
-- **Click** a tab to switch the pane to that scene.
-- **Middle-click** a tab, or click its `×`, to close it. Closing the active tab activates its neighbour.
-- **Right-click** a tab for a small menu: **Close tab** and **Move to other pane** (hands the scene to the next editor pane, splitting the main area if there is not one yet).
+Each structural change is one undoable action. Heading and Subheading in the paragraph-style picker continue to format text without creating structure.
+
+## Moving through the manuscript
+
+Use the binder to jump between scenes in the current writing pane. Switching **Scene**, **Chapter**, or **Manuscript** preserves your place in the text, including the caret when it is visible. Scrolling elsewhere before switching uses the scene you are reading.
+
+Use **Open in split** in the binder to keep another place alongside the current one. Each writing pane has its own scope and position. Mobile retains its existing scene navigation.
 
 ## Auto-save
 
 Novalist saves automatically **two seconds** after the last keystroke. Pending changes are also flushed when you switch to another scene and when the app closes — there is no manual save step.
 
-Each split pane keeps its own unsaved buffer. If a save detects a conflicting version, navigation keeps your edits available until you resolve the conflict. Choosing either complete version preserves its rich-text structure.
+Desktop panes share the current scene documents, so changing scope or returning from Plan does not create a second copy of pending prose. If a save detects a conflicting version, navigation keeps your edits available until you resolve the conflict. Choosing either complete version preserves its rich-text structure.
 
 When you return to Novalist after editing scene files in another application, it checks the active book for changes. Clean scenes reload in the editor and Manuscript, and outline word counts update, including for unopened scenes. If you also have unsaved edits, Novalist keeps them and opens the conflict dialog so you can choose what to keep.
 
@@ -197,9 +206,9 @@ The main area is a tree of [panes](02-interface-overview.md#splitting-the-main-a
 Two ways in:
 
 - Right-click a scene in the binder and choose **Open in split** — the main area splits and the scene opens in the new pane.
-- Split the pane yourself (`Ctrl+Alt+Right`, `Ctrl+Alt+Down`, or the split buttons in the pane header). The new pane starts empty; click a scene in the binder and it opens there.
+- Split the pane yourself (`Ctrl+Alt+Right`, `Ctrl+Alt+Down`, or the split buttons in the pane header). The new writing pane starts in Manuscript scope; click a scene in the binder to jump there.
 
-Every editor pane is fully editable, auto-saves independently, and keeps its own [tab strip](#scene-tabs) of open scenes. **Move to other pane** on a tab hands a scene to the next editor pane, creating one if there is no second pane yet.
+Every editor pane is fully editable, auto-saves independently, and keeps its own writing scope and position. Choose a pane, then select a scene in the binder to navigate that pane.
 
 The inspector, status bar and find-and-replace follow the pane you are working in. The floating Scene Notes checklist follows the selected scene unless you turn off **Follow active scene**.
 
@@ -242,7 +251,7 @@ The card is enough to check a character's face, a relationship, or a location wi
 
 Right-click a red-underlined word for corrections, or for **Add to dictionary** to teach Novalist a name it keeps flagging. Words you add are stored with your settings rather than in the system dictionary, so they travel with you to another machine instead of having to be taught again. The list is shown under **Your dictionary** in the same settings section, where a word can also be removed.
 
-Novalist checks against the language you are writing in — your **Quote Style** language — not the language the menus are in, so a German novel written on an English install is checked in German. To check against more than one language at once, tick the ones you want under **Dictionaries**; leaving them all unticked follows the writing language.
+Novalist uses the resolved writing language from your proofing settings, independently of the menu language. **Dictionaries** selects the spelling languages; leaving them all unticked follows the **Quote Style** writing language. Dictionaries from one language also select that language for grammar checking and the editor's language attribute. Quote punctuation continues to follow its own preset.
 
 On macOS this is the system spell checker and is entirely local. On Windows and Linux the dictionary for a language is downloaded once, the first time it is used, and works offline from then on.
 
@@ -319,7 +328,7 @@ In [Settings](23-settings.md) → Editor:
 
 - **Typewriter Scrolling** keeps the active line at a fixed vertical position (top, middle, or bottom) so you never write at the bottom edge of the window.
 - **Page View** renders the editor as a book-style page (also toggleable under **Writing options** on the writing bar). Margins shrink when the writing pane is narrow or the text is enlarged, including when margin comments are visible, so the prose uses the available width.
-- **Book Page Width** constrains the text column to a printed page width, with selectable page formats or a custom text width, and **Book Font** / **Book Font Size** set the typeface for that mode. This applies to both the scene editor and Manuscript view. Turning it off restores the editor font and available column width; Page view keeps its paginated layout.
+- Enabling **Book Width** applies the selected format's text measure or custom text-block width and uses **Book Font** and **Book Font Size**, just as in the previous scene editor. Turning it off restores **Editor Font** and **Editor Font Size**. **Page view** retains the previous editor's paper proportions, margins, and page height, fitting within the writing pane. It is a writing aid, not an exact export preview.
 - **Book Paragraph Spacing** adds book-like vertical spacing.
 - **Font Family** and **Font Size** control the regular editing view. New projects start on Newsreader at 17px — the app's own text face, bundled so it is always available — but the field takes any family installed on your machine.
 
@@ -329,7 +338,7 @@ All of this is purely visual — it doesn't change what gets exported. For expor
 
 The editor participates fully in the app's keyboard shortcuts even while the caret is inside the text: a global gesture (for example the command palette, focus mode, or find & replace) fires whether or not the editor has focus, so you never have to click out of the page first. See [Hotkeys](26-hotkeys.md) for the full list.
 
-Hold `Ctrl` and scroll the mouse wheel over the page to **zoom** in either the scene editor or Manuscript view, from 50% to 300%. Text, images, spacing and column width scale together, preserving the characters on each line, including in Page view and with Book Page Width on or off. If the enlarged page exceeds the pane, scroll horizontally to reach its edges. The first scene you open after starting Novalist fits its page to the available writing width. This happens once per session; switching scenes, resizing the window and returning to the editor preserve any zoom you choose. Zoom is shared between the writing views for the current session; it does not change your editor font, book font or page-format settings.
+Hold `Ctrl` and scroll the mouse wheel over the desktop editor to **zoom the document text**, from 50% to 300%. Prose, book and chapter headings, and scene information grow together and reflow within the pane. The fixed toolbars keep their size. The caret stays visible, including with Typewriter Scrolling. On startup, Book Width or Page view fits the document to the available pane using the selected font. Smaller fonts receive enough zoom to display at roughly 22px or larger. Switching scenes, resizing the window and returning to the editor preserve any zoom you choose. Zoom is shared between writing panes for the current session and does not change saved font or print settings.
 
 Zoom keeps the caret visible horizontally and preserves its vertical screen position where scrolling allows. With **Typewriter Scrolling** enabled, it places the caret at your chosen top, middle or bottom position instead, including in Focus Mode. Normal scrolling remains under your control.
 
@@ -382,9 +391,9 @@ The highlight is painted without touching the document, so listening to a chapte
 
 **Settings → Focus** lets you choose the page and surround colours or add a background image. **Use theme colour** resets a colour, and **Remove background image** restores the surround colour. These preferences apply only in Focus Mode and never affect exports.
 
-`F11` fills the screen with the active page and hides the title and menu bars, navigation, scene tabs, pane headers and formatting tools. Other split panes keep their state. Reveal **Writing tools** at the top when needed; typing tucks the tools away again. Active writing-mode indicators remain visible. Zooming with `Ctrl` and the mouse wheel widens the page with the text, up to the available window width.
+`F11` fills the screen with the active page and hides the title and menu bars, navigation, pane headers and formatting tools. Other split panes keep their state. Reveal **Writing tools** at the top when needed; typing tucks the tools away again. Active writing-mode indicators remain visible. Zooming with `Ctrl` and the mouse wheel widens the page with the text, up to the available window width.
 
-The hover areas expand to fill the spare space beside the page on wider screens, and shrink as you zoom in. Side panels slide gently from their own edge; your system's reduced-motion preference disables the animation. Scene context is prepared while hidden and kept ready between reveals, including after saved edits, so opening it does not rebuild its contents.
+The hover areas fill the spare space beside the page on wider screens. Text zoom keeps the page and hover areas in place. Side panels slide gently from their own edge; your system's reduced-motion preference disables the animation. Scene context is prepared while hidden and kept ready between reveals, including after saved edits, so opening it does not rebuild its contents.
 
 Move the mouse to the left edge to reveal the binder, or to the right edge for the inspector. They open over the page without taking the caret away. Move back to the page and the panel retreats; a field you are editing stays open until you leave it. The binder (`Ctrl+Alt+B`) and inspector (`Ctrl+Alt+I`) can also be opened with their shortcuts or toolbar buttons. Scene Notes (`Ctrl+Shift+N`) opens a separate floating checklist that can stay visible while writing or on another monitor. Those panels stay open until you close them with `Escape`, the same shortcut, **Return to writing**, or a click outside. Panels never reduce the page width. Inline selection tools, linked entities and Focus Peek remain available.
 

@@ -21,7 +21,8 @@ namespace Novalist.Backend.Tests;
 /// host's decisions rather than about anybody's speech model. The encoder is
 /// faked too, because the case that matters most is the machine that has none.
 /// </summary>
-public sealed class AudiobookRpcTests : IDisposable
+[Collection("BackendStatics")]
+public sealed partial class AudiobookRpcTests : IDisposable
 {
     private readonly string _root;
     private readonly Workspace _workspace;

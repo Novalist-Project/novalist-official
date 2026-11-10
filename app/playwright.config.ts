@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test'
+import { writingResearchSpecs } from './e2e/fixtures/writingResearchSpecs'
 
 /**
  * The system clipboard is off limits for the whole run.
@@ -12,6 +13,7 @@ process.env.NOVALIST_NO_CLIPBOARD = '1'
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: writingResearchSpecs,
   globalSetup: require.resolve('./e2e/desktopSetup.ts'),
   timeout: 180_000,
   fullyParallel: false,

@@ -1,6 +1,6 @@
 # Snapshots
 
-A **snapshot** is a saved copy of a single scene at a point in time. Snapshots are created manually from the **Scene snapshots** button on the writing bar above the editor — and automatically by destructive operations such as Replace All and snapshot restores — so you can revert a scene to any previous state without affecting the rest of the project.
+A **snapshot** is a saved copy of a single scene at a point in time. Create one from the **Scene snapshots** button on the writing bar above the editor to preserve a version for later. Snapshot restores, manuscript cleanup, and replacement of notes or synopses also take automatic snapshots. Desktop prose Replace All instead creates one undoable writing action; it does not add a snapshot for every affected scene.
 
 A snapshot is of the scene in front of you, which is why the button sits on the [writing bar](05-editor.md#the-writing-bar) rather than on the main toolbar, where it used to be: the main toolbar is the open project's, and a snapshot is not a project-wide thing.
 
@@ -19,7 +19,7 @@ You can (and should) use both.
 
 Snapshots are not taken on every save. They are taken **manually** from the writing bar's Scene snapshots button and **automatically** by operations that would otherwise lose content:
 
-- **Replace All** in Find & Replace — every scene that is about to be modified gets an auto-snapshot first.
+- **Replacing notes or synopses**, and **Clean up the manuscript** — every affected scene gets an auto-snapshot first. The existing mobile Replace All also retains snapshot recovery.
 - **Restoring a snapshot** — the scene's current state is auto-snapshotted before the restore, so a restore is always reversible.
 
 Each snapshot stores the full scene content, the word count, and a timestamp. Snapshots are stored inside the book folder:
@@ -43,11 +43,11 @@ Click **Restore** on a row to replace the current scene content with that snapsh
 
 ## Pruning and disk usage
 
-Snapshots are small JSON files (typically a few KB each) but accumulate on long projects, especially from repeated Replace All operations. Use the pruning buttons in the dialog's **Whole project** scope to clear them out; there is no automatic pruning, because deciding a version is not worth keeping is the writer's call.
+Snapshots are small JSON files (typically a few KB each) but accumulate on long projects. Use the pruning buttons in the dialog's **Whole project** scope to clear them out; there is no automatic pruning, because deciding a version is not worth keeping is the writer's call.
 
 ### Clearing one Replace All
 
-A project-wide Replace All snapshots every scene it changes, which on a long book is hundreds at once — and those are the ones that pile up, not the ones you took deliberately.
+Older prose Replace All runs, mobile replacements, and replacements of notes or synopses can leave snapshots for many scenes at once. Desktop prose Replace All uses writing undo and creates no snapshot group to prune.
 
 Each run labels its own snapshots with the time it started, so the **Whole project** scope lists every run separately with the number it left behind. Clearing a run removes exactly those and leaves everything else alone, including the snapshots you took yourself and the snapshots from any other run.
 
@@ -81,6 +81,6 @@ Snapshots taken before this shipped hold only the prose. Restoring one of those 
 ## Where to go next
 
 - [Editor](05-editor.md#the-writing-bar) — the writing bar the Scene snapshots button sits on.
-- [Find & Replace](21-find-replace.md) — Replace All auto-snapshots every scene it changes.
+- [Find & Replace](21-find-replace.md) — undo desktop prose replacements, with separate snapshot recovery for notes and synopses.
 - [Backups](35-backups.md) — automatic whole-project archives, for when the problem is bigger than one scene.
 - [Git integration](18-git.md) — project-level version control complementing snapshots.

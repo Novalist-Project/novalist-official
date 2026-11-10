@@ -56,8 +56,8 @@ interface PeekState {
 
 /** Bring the first occurrence into view before measuring its viewport rectangle. */
 async function wordBox(page: Page, word: string, firstFragment = false): Promise<Box> {
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
-  await expect(editor.locator(':scope > .nv-page')).toHaveCount(1)
+  const editor = page.frameLocator('.editor-frame').locator('[data-writing-scene]')
+  await expect(editor.locator('.nv-page')).toHaveCount(1)
   // Settings refocus the editor; finish its scroll restore before revealing the word.
   await expect.poll(() => editor.evaluate(element =>
     (element.ownerDocument.defaultView as unknown as {
@@ -69,7 +69,7 @@ async function wordBox(page: Page, word: string, firstFragment = false): Promise
   if (!frame) throw new Error('the editor frame has no box')
   const inFrame = await page
     .frameLocator('.editor-frame')
-    .locator('#editor')
+    .locator('[data-writing-scene]')
     .evaluate((el, { needle, firstFragment }) => {
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
       let node = walker.nextNode()
@@ -216,10 +216,14 @@ async function seedNamedScene(h: Harness): Promise<Book> {
   }
   await page.evaluate(() => window.novalistStores.codex.getState().refresh())
 
+  await page.evaluate(() => {
+    const shell = window.novalistStores.shell.getState()
+    shell.setPaneWritingScope(shell.activePaneId, 'scene')
+  })
   await page.locator('.binder-scene-row').first().click()
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
+  const editor = page.frameLocator('.editor-frame').locator('[data-writing-scene]')
   await expect(editor).toBeVisible({ timeout: 30_000 })
-  await editor.click()
+  await editor.locator('p').first().click()
   await page.keyboard.type(`${NAME} stopped in the doorway and waited.`)
   await expect
     .poll(async () => (await editor.innerText()).includes(NAME), { timeout: 15_000 })

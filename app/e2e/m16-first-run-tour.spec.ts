@@ -64,7 +64,10 @@ test('the tour offers itself once and walks through real views', async () => {
     .poll(() => page.evaluate(() => window.novalistStores.shell.getState().mainView), {
       timeout: 10_000
     })
-    .toBe('manuscript')
+    .toBe('write')
+  await expect(page.locator('.writing-scope-segments').getByRole('button', { name: 'Manuscript', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('.tour-body')).toContainText('Arrange chapters and scenes in Plan → Structure.')
+  await expect(page.locator('.tour-task')).toContainText('Scene, Chapter, and Manuscript scopes')
 
   // Writing-only tasks explain their prerequisite instead of navigating to an
   // empty editor or pretending Focus Peek can be demonstrated without a scene.
@@ -72,7 +75,8 @@ test('the tour offers itself once and walks through real views', async () => {
   await expect(page.locator('.tour-task')).toContainText('Open a scene from the binder first')
   await expect
     .poll(() => page.evaluate(() => window.novalistStores.shell.getState().mainView))
-    .toBe('manuscript')
+    .toBe('write')
+  await expect(page.locator('.writing-scope-segments').getByRole('button', { name: 'Manuscript', exact: true })).toHaveAttribute('aria-pressed', 'true')
 
   // Skip is as reachable as Next, for somebody who already knows the app.
   await page.getByRole('button', { name: 'Skip' }).click()

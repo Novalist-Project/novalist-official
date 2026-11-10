@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { ScenePresenceBadge } from '../../collaboration/ScenePresenceBadge'
 import { useTranslation } from 'react-i18next'
 import { useManuscriptStore } from '../../stores/manuscriptStore'
+import type { PlanningSection } from '../../stores/planningTypes'
 import { useProjectStore } from '../../stores/projectStore'
 import { handleSceneClick, useSelectionStore } from '../../stores/selectionStore'
 import { useTargetStore } from '../../stores/targetStore'
@@ -17,11 +18,20 @@ import { EAGER_SECTIONS } from './ManuscriptFrame'
 
 const OUTLINER_ROW_HEIGHT = 34
 
-export function Outliner(): React.JSX.Element {
+interface OutlinerProps {
+  sections?: PlanningSection[]
+  onSetPov?: (chapterGuid: string, sceneId: string, value: string) => Promise<void>
+  onSetGoalOutcome?: (chapterGuid: string, sceneId: string, goal: string, outcome: string) => Promise<void>
+}
+
+export function Outliner({ sections: provided, onSetPov, onSetGoalOutcome }: OutlinerProps = {}): React.JSX.Element {
   const { t } = useTranslation()
-  const sections = useManuscriptStore((s) => s.sections)
-  const setPov = useManuscriptStore((s) => s.setPov)
-  const setGoalOutcome = useManuscriptStore((s) => s.setGoalOutcome)
+  const stored = useManuscriptStore((s) => s.sections)
+  const storedPov = useManuscriptStore((s) => s.setPov)
+  const storedGoalOutcome = useManuscriptStore((s) => s.setGoalOutcome)
+  const sections = provided ?? stored
+  const setPov = onSetPov ?? storedPov
+  const setGoalOutcome = onSetGoalOutcome ?? storedGoalOutcome
   const selectedIds = useSelectionStore((s) => s.sceneIds)
   const targets = useTargetStore((s) => s.targets)
   const definitions = useManuscriptPropsStore((s) => s.definitions)

@@ -165,7 +165,9 @@ function getCaretPosition() {
 
     const range = sel.getRangeAt(0);
     const preRange = range.cloneRange();
-    preRange.selectNodeContents(window.NovalistEditorState.editor);
+    const root = window.getWritingServiceRoot?.() || window.NovalistEditorState.editor;
+    if (!root.contains(range.startContainer)) return { line: 1, column: 1 };
+    preRange.selectNodeContents(root);
     preRange.setEnd(range.startContainer, range.startOffset);
     const textBefore = preRange.toString();
     const lines = textBefore.split('\n');

@@ -1,4 +1,21 @@
 {
+  "unifiedWriting": {
+    "write": "写作",
+    "sceneCount_one": "{{count}} 个场景",
+    "sceneCount_other": "{{count}} 个场景",
+    "chapterNumber": "第 {{number}} 章",
+    "sceneNumber": "场景 {{number}}",
+    "synopsis": "梗概",
+    "focusScene": "聚焦场景",
+    "metadataSaveFailed": "无法保存更改。草稿已保留在此，请重试。",
+    "finishMetadataEdit": "请先保存或取消此名称更改，再继续操作。",
+    "chapterActMoveHint": "更改幕会将本章移入所选分组。可在“规划 → 结构”中管理幕。",
+    "assignAct": "分配幕",
+    "limitedRun": "限定场景范围",
+    "scope": "范围", "scene": "场景", "chapter": "章节", "manuscript": "手稿",
+    "words": "{{count}} 字词", "showWhole": "显示完整手稿",
+    "empty": "此写作范围内没有场景。", "insertChapter": "插入章节"
+  },
   "collaboration": {
     "open": "协作",
     "sharing": "正在共享",
@@ -715,6 +732,8 @@
     "recovered": "已恢复"
   },
   "findReplace": {
+    "scopeProjection": "当前写作视图", "previous": "上一个", "next": "下一个", "replaceCurrent": "替换当前项",
+    "replaceNotes": "替换笔记和梗概", "retryReplacement": "重试替换",
     "failed": "搜索或替换失败：{{message}}",
     "title": "查找与替换",
     "find": "查找",
@@ -2790,6 +2809,7 @@
     "backendConnecting": "正在连接核心...",
     "viewPending": "此视图将在新界面的后续里程碑中提供。",
     "view": {
+      "structure": "结构",
       "write": "编辑器",
       "manuscript": "书稿",
       "dashboard": "仪表盘",
@@ -3262,6 +3282,7 @@
     "rescanned": "已重新扫描。新的主题、语言和词典现已可用。"
   },
   "conflict": {
+    "pendingResolution": "无法确认保存结果。请重试保存下方显示的版本。",
     "title": "该场景在其他地方被修改过",
     "explain": "您的版本和磁盘上的版本都有修改，共 {{count}} 处。目前尚未保存。请逐行选择您想保留的版本 — Novalist 不会自动合并您的文字，因为由两稿拼接而成的句子读起来两边都不像。",
     "mine": "您写的",
@@ -3273,6 +3294,29 @@
     "save": "保存此版本"
   },
   "writing": {
+    "conflict": "此场景已在别处更改。请先检查较新版本再保存。",
+    "saveFailed": "无法保存正文。编辑内容仍保留在窗口中，请重试。",
+    "commitFailed": "无法保存更改，请重试。",
+    "workspaceChanged": "工作区已更改。请在当前书籍中重试。",
+    "workspaceUnavailable": "请先打开一本书再编辑手稿。",
+    "documentUnavailable": "当前书籍中已没有此场景。",
+    "sceneUnavailable": "请先在编辑器中选择一个场景。",
+    "historyBlocked": "目前无法撤销此更改。",
+    "historyClosed": "本次写作会话已结束。",
+    "historyEmpty": "没有更多可撤销或重做的更改。",
+    "historyConflict": "相关内容已在别处更改。请先检查再撤销或重做。",
+    "structureWorkspaceChanged": "操作期间书籍已更改，请重试。",
+    "structureConflict": "手稿结构已更改。请检查当前顺序后重试。",
+    "structureRetry": "请先重试并完成待处理的结构更改。",
+    "structureCaret": "请将光标放在单个位置以创建场景分隔或章节。",
+    "structureFailed": "无法完成结构更改，请重试。",
+    "annotationConflict": "此批注或脚注已在别处更改。请先检查再保存。",
+    "annotationSaveFailed": "无法保存批注或脚注。编辑内容仍保留在窗口中。",
+    "annotationsUnavailable": "批注和脚注尚不可用，请重试。",
+    "annotationSceneUnavailable": "此批注或脚注所属的场景已不可用。",
+    "sharedAnnotationsFailed": "无法保存共享批注或脚注，请重试。",
+    "sharedUnavailable": "共享书籍未连接。请重新连接后重试。",
+    "sceneName": "场景 {{number}}",
     "quickEdit": "快速编辑",
     "mixedStyles": "混合样式",
     "insertStructure": "插入结构",
@@ -3392,6 +3436,14 @@
     "mergeWithNext": "与下一个合并：{{title}}"
   },
   "structure": {
+    "introduction": "按阅读顺序排列幕、章节和场景。在此编辑梗概，然后打开场景继续写作。",
+    "selectChapter": "选择{{title}}", "move": "移动", "newScene": "新建场景",
+    "chapterSummary": "章节梗概", "addChapterSummary": "添加章节梗概", "inactive": "未启用", "addSynopsis": "添加梗概",
+    "destination": "目标位置", "chooseDestination": "选择目标位置", "position": "位置", "inside": "内部", "before": "之前", "after": "之后",
+    "unassigned": "未分幕章节", "newAct": "新建幕", "chapters": "{{count}} 个章节", "renameAct": "重命名幕", "removeAct": "移除幕",
+    "removeActMessage": "移除此幕？其中的章节将保留在原位，并变为未分幕章节。",
+    "repairExplanation": "本书包含旧版的分幕设置，尚未形成有序分组。更改章节顺序前，请查看建议的分组方案。",
+    "reviewGrouping": "查看分幕方案", "currentOrder": "当前顺序", "proposedOrder": "建议顺序", "applyGrouping": "应用分组",
     "title": "结构",
     "none": "无结构",
     "pickOne": "选择一种故事结构，其每个节拍都会在此处列出，等待指向完成它的场景。",
@@ -3932,6 +3984,8 @@
     "manuscriptTitle": "稿件",
     "manuscriptBody": "书本身的四种视图：连续正文、索引卡、可直接输入的大纲，以及可拖动场景的看板。",
     "manuscriptTask": "切换到卡片或大纲，并在另一种视图中找到同一个场景。",
+    "desktopManuscriptBody": "在同一编辑器中连续书写当前书籍，也可以专注于某个章节或场景。前往“规划”→“结构”调整章节和场景的顺序。",
+    "desktopManuscriptTask": "从导航栏打开一个场景，尝试“场景”“章节”和“手稿”范围。空白书籍可以从“插入章节”开始。",
     "editorTitle": "写作视图",
     "editorBody": "每个场景都会在专注的编辑器中打开。暂停输入后 Novalist 会自动保存，无需记住保存按钮。",
     "editorTask": "从章节列表打开任意场景，并写下一句话。",

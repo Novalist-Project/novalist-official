@@ -35,6 +35,7 @@ export class SharedEditorSession {
     this.scene = new CollaborativeScene(editor, {
       initialState,
       owner,
+      onRendered: () => this.publish(),
       onUpdate: update => {
         this.pending.push(update.slice())
         this.publish()

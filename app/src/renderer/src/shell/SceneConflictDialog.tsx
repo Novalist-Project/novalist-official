@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { rpc } from '../rpc/client'
 import { useProjectStore } from '../stores/projectStore'
+import { stripHtml } from '../stores/projectPersistence'
 import { MotionPresence } from './MotionPresence'
 import { useDialogKeyboard } from './useDialogKeyboard'
 import './scene-conflict.css'
@@ -53,6 +54,10 @@ export function SceneConflictDialog(): React.JSX.Element | null {
       setPicks({})
       return
     }
+    if (conflict.writing?.resolution) {
+      setLoadedFor(conflict)
+      return
+    }
     void rpc
       .request<MergeRow[]>('scenes/mergeRows', [conflict.mine, conflict.theirs])
       .then((next) => {
@@ -72,8 +77,10 @@ export function SceneConflictDialog(): React.JSX.Element | null {
   }, [conflict, retry])
 
   if (!conflict) return <MotionPresence disabled={suspendMotion}>{null}</MotionPresence>
+  const pending = conflict.writing?.resolution
 
   const merged = (): string => {
+    if (pending) return pending.html
     if (rows.every((row, index) => row.state === 'equal' || picks[index] === 'mine')) return conflict.mine
     if (rows.every((row, index) => row.state === 'equal' || picks[index] === 'theirs')) return conflict.theirs
     const lines: string[] = []
@@ -113,11 +120,12 @@ export function SceneConflictDialog(): React.JSX.Element | null {
     <div className="dialog-overlay">
       <div {...keyboard} className="dialog-card scene-conflict-card" role="dialog" aria-modal="true" aria-label={t('conflict.title')}>
         <div className="dialog-title">{t('conflict.title')}</div>
-        <p className="dialog-message">{t('conflict.explain', { count: differing })}</p>
+        <p className="dialog-message">{pending ? t('conflict.pendingResolution') : t('conflict.explain', { count: differing })}</p>
         {loadedFor !== conflict && !error && <p role="status">{t('splash.loading')}</p>}
         {error && <p role="alert">{error}</p>}
         {error && loadedFor !== conflict && <button className="dialog-button" onClick={() => setRetry((value) => value + 1)}>{t('shell.retry')}</button>}
 
+        {pending ? <p className="scene-conflict-pending">{stripHtml(pending.html)}</p> : <>
         <div className="scene-conflict-actions">
           <button className="dialog-button" disabled={busy || loadedFor !== conflict} onClick={() => takeAll('mine')}>
             {t('conflict.takeAllMine')}
@@ -160,6 +168,8 @@ export function SceneConflictDialog(): React.JSX.Element | null {
           ))}
         </div>
 
+        </>}
+
         <p className="match-hint">{t('conflict.snapshotNote')}</p>
 
         <div className="dialog-actions">
@@ -167,7 +177,7 @@ export function SceneConflictDialog(): React.JSX.Element | null {
             {t('conflict.decideLater')}
           </button>
           <button className="dialog-button danger" disabled={busy || loadedFor !== conflict} onClick={() => void apply()}>
-            {t('conflict.save')}
+            {pending ? t('shell.retry') : t('conflict.save')}
           </button>
         </div>
       </div>

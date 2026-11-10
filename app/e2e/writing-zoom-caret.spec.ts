@@ -31,23 +31,27 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
     test(`${mode} zoom follows caret with typewriter=${anchor}`, async () => {
       const h = await launchApp('nl-zoom-caret-')
       try {
-        const book = await seedBook(h, { One: ['Opening'] })
+        await h.page.evaluate(enabled => window.novalistStores.settings.getState().update('global', { pageViewEnabled: enabled }), mode === 'pages' || mode === 'focus')
+        const book = await seedBook(h, { One: ['Opening'] }, 'Zoom caret fixture', false)
         const prose = 'A line of prose with varied words stretches across the writing page. '.repeat(3)
         await h.rpc('scenes/write', [book.chapters[0].guid, book.chapters[0].scenes[0].id,
           `<p>${prose}</p>`.repeat(50), prose.repeat(50)])
         await resizeWindow(h, 1300, 900)
-        await h.page.locator('.binder-scene-row').first().click()
+        await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), book.chapters[0])
         await h.page.evaluate(async ({ mode, anchor }) => {
           await window.novalistStores.settings.getState().update('global', {
             enableBookWidth: true, editorFontSize: 17, bookFontSize: 17,
             pageViewEnabled: mode === 'pages' || mode === 'focus', spellCheckEnabled: false, grammarCheckEnabled: false,
             typewriterScrollEnabled: anchor !== 'off', typewriterScrollAnchor: anchor
           })
-          window.novalistStores.shell.getState().setMainView(mode === 'manuscript' ? 'manuscript' : 'write')
+          const shell = window.novalistStores.shell.getState()
+          shell.setPaneWritingScope(shell.activePaneId, mode === 'manuscript' ? 'manuscript' : 'scene')
         }, { mode, anchor })
-        const frame = h.page.frameLocator(`iframe[title="${mode === 'manuscript' ? 'manuscript' : 'editor'}"]`)
-        const editor = frame.locator(mode === 'manuscript' ? '.scene-editor' : '#editor').first()
-        const scroller = frame.locator(mode === 'manuscript' ? '#manuscript-wrapper' : '#editor-wrapper')
+        const frame = h.page.frameLocator('iframe[title="editor"]')
+        const editor = frame.locator('[data-writing-scene]').first()
+        const scroller = frame.locator('#editor-wrapper')
+        if (mode === 'pages' || mode === 'focus') await expect(frame.locator('body')).toHaveClass(/\bpage-view\b/)
+        else await expect(frame.locator('body')).not.toHaveClass(/\bpage-view\b/)
         await expect(editor).toContainText(prose.trim())
         if (mode === 'focus') {
           await editor.click()
@@ -55,7 +59,7 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
           await expect(h.page.locator('.shell-focus')).toBeVisible()
         }
         if (mode === 'pages' || mode === 'focus') await expect(frame.locator('.nv-page').first()).toBeVisible()
-        await editor.focus()
+        await frame.locator('#editor').focus()
         await expect.poll(() => editor.evaluate(() => {
           const state = (window as Window & { NovalistEditorState?: { isFocusing: boolean } }).NovalistEditorState
           return state?.isFocusing ?? false
@@ -80,7 +84,7 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
           range.setStart(node, offset)
           range.collapse(true)
           window.getSelection()!.setPosition(node, offset)
-          const wrapper = document.querySelector('#editor-wrapper, #manuscript-wrapper')!
+          const wrapper = document.querySelector('#editor-wrapper')!
           wrapper.scrollTop += range.getBoundingClientRect().top - wrapper.getBoundingClientRect().top - 150
         })
         expect(Math.abs((await caretBounds(scroller)).y - 150)).toBeLessThan(2)

@@ -10,7 +10,7 @@ import type { EditorHandlerContext, EditorMessageHandlers } from './editorMessag
 import { syncSharedEditor } from '../../collaboration/sharedEditors'
 
 export function createEditorReadyMessages(context: EditorHandlerContext): EditorMessageHandlers {
-  const { editorRef, iframe, pane, i18n, loadingRef, lastReportedHtmlRef, loadAnnotations, applyFootnoteOrder, pushEntityNames, t } = context
+  const { editorRef, iframe, pane, loadingRef, lastReportedHtmlRef, loadAnnotations, applyFootnoteOrder, pushEntityNames, t } = context
   return {
     ready: () => {
       // Where a stored image path hangs off, so the frame can show one.
@@ -28,26 +28,26 @@ export function createEditorReadyMessages(context: EditorHandlerContext): Editor
           .register(live, editorPane(useProjectStore.getState(), pane).sceneId)
       }
       pushEditorTheme(live)
-      live.setLanguage(i18n.language.startsWith('de') ? 'de' : 'en')
       // Mobile: full-width text (no 18em comment gutter) + touch-sized toolbar.
       live.setMobile(window.novalist.isMobile === true)
       live.setProofingStatusHosted(window.novalist.isMobile !== true)
       // Content loads synchronously so typing can never race a deferred
       // setContent; the settings push is made non-destructive instead.
       const initialHtml = editorPane(useProjectStore.getState(), pane).html
-      if (initialHtml !== null) {
+      if (!context.writing && initialHtml !== null) {
         loadingRef.current = true
         live.setSceneContext(editorPane(useProjectStore.getState(), pane).sceneId ?? '')
         if (!syncSharedEditor(pane, live)) live.setContent(initialHtml)
         loadingRef.current = false
         lastReportedHtmlRef.current = live.getContent()
       }
-      const annotationsReady = loadAnnotations(live).then((loaded) => {
+      const annotationsReady = (context.writing ? Promise.resolve(false) : loadAnnotations(live)).then((loaded) => {
         if (!loaded) return
         const ids = live.footnoteOrder()
         if (ids.length > 0) applyFootnoteOrder(ids)
       })
       void pushEntityNames(live)
+      context.writing?.ready(live)
       const settings = useSettingsStore.getState()
       const applySettings = (): void => {
         if (editorRef.current !== live) return
@@ -63,7 +63,7 @@ export function createEditorReadyMessages(context: EditorHandlerContext): Editor
       }
       // Fit the first scene once the chosen font, paper and comment gutter
       // have arrived. Later navigation/resizes keep the writer's chosen zoom.
-      if (window.novalist.isMobile !== true && !useWritingZoomStore.getState().initialized) {
+      if (!context.writing && window.novalist.isMobile !== true && !useWritingZoomStore.getState().initialized) {
         void Promise.all([annotationsReady, settingsReady]).then(async () => {
           await live.document.fonts.ready
           await new Promise<void>(resolve => live.requestAnimationFrame(() => live.requestAnimationFrame(() => resolve())))

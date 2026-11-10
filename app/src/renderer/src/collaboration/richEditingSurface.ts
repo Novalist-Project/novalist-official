@@ -8,6 +8,7 @@ export interface RichEditingSurface extends MarkupEnvironment {
   flushPendingContentChange(): void
   managedTransactions?: boolean
   captureWritingTransaction?(): void
+  canRenderRevision?(revision: number): boolean
 }
 
 export function sharedWritingSceneSurface(editor: EditorWindow & {
@@ -17,9 +18,13 @@ export function sharedWritingSceneSurface(editor: EditorWindow & {
   const root = editor.getWritingSceneRoot(sceneId)
   if (!root) throw new Error('The shared writing scene is not mounted.')
   return { root, document: root.ownerDocument, managedTransactions: true, captureWritingTransaction,
+    canRenderRevision: revision => editor.canRenderWritingScene(sceneId, revision),
     sanitizeSceneFragment: html => editor.sanitizeSceneFragment(html),
     toDisplayImages: content => editor.toDisplayImages(content),
-    refreshLayout: () => editor.repaginatePageView(),
+    refreshLayout: () => {
+      editor.refreshSceneBreakClasses(root)
+      editor.schedulePageViewRepaginate(root)
+    },
     getContent: () => editor.serializeWritingScene(sceneId),
     getPlainText: () => root.textContent ?? '',
     flushPendingContentChange: () => editor.flushPendingContentChange() }

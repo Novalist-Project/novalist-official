@@ -5,6 +5,8 @@ import { join } from 'node:path'
 import { copyProject } from './copyProject'
 import { evaluateWhenReady, waitForAppReady } from './appReady'
 import { REAL_PROJECT } from './realProject'
+import { closeTestApp } from './harness'
+import { flushWriting } from './writingTestActions'
 
 /**
  * Deciding against a note, and having it still say so.
@@ -33,57 +35,61 @@ test('a note can be weighed or declined, and says which', async () => {
   env.NOVALIST_NO_SPLASH = '1'
 
   const app = await electron.launch({ args: ['out/main/index.js', `--user-data-dir=${join(env.NOVALIST_SETTINGS_DIR, 'profile')}`], env })
-  const page = await app.firstWindow()
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await waitForAppReady(page)
-  await evaluateWhenReady(page, async (root) => {
-    const state = await window.novalistRpc.request('project/open', [root])
-    window.novalistStores.project.getState().applyState(state as never)
-  }, projectCopy)
+  try {
+    const page = await app.firstWindow()
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await waitForAppReady(page)
+    await evaluateWhenReady(page, async (root) => {
+      const state = await window.novalistRpc.request('project/open', [root])
+      window.novalistStores.project.getState().applyState(state as never)
+    }, projectCopy)
 
-  const where = await page.evaluate(async () => {
-    const project = window.novalistStores.project.getState()
-    const chapter = project.chapters.find((c) => c.scenes.length > 0)!
-    const scene = chapter.scenes[0]
-    await project.openScene(chapter.guid, scene.id)
-    await window.novalistRpc.request('review/applyComments', [
-      chapter.guid,
-      scene.id,
-      [
-        { anchorText: '', text: 'The middle of this chapter drags badly.', author: 'Beta reader', kind: 'comment', date: '' },
-        { anchorText: '', text: 'Is the sister necessary at all?', author: 'Beta reader', kind: 'comment', date: '' }
-      ]
-    ])
-    return { chapterGuid: chapter.guid, sceneId: scene.id }
-  })
-  expect(where.sceneId).toBeTruthy()
+    const where = await page.evaluate(async () => {
+      const project = window.novalistStores.project.getState()
+      const chapter = project.chapters.find((c) => c.scenes.length > 0)!
+      const scene = chapter.scenes[0]
+      await project.openScene(chapter.guid, scene.id)
+      await window.novalistRpc.request('review/applyComments', [
+        chapter.guid,
+        scene.id,
+        [
+          { anchorText: '', text: 'The middle of this chapter drags badly.', author: 'Beta reader', kind: 'comment', date: '' },
+          { anchorText: '', text: 'Is the sister necessary at all?', author: 'Beta reader', kind: 'comment', date: '' }
+        ]
+      ])
+      return { chapterGuid: chapter.guid, sceneId: scene.id }
+    })
+    expect(where.sceneId).toBeTruthy()
 
-  await page.evaluate(() => window.novalistStores.shell.getState().setInspectorTab('inbox'))
-  const items = page.locator('.inbox-item')
-  // This runs against a copy of a real book, and a real book collects real
-  // notes. Counting them absolutely made the spec fail the day its author left
-  // a comment of their own, so the two notes put in above are counted against
-  // whatever was already there and acted on by name rather than by position.
-  await expect.poll(() => items.count(), { timeout: 30_000 }).toBeGreaterThanOrEqual(2)
-  const mine = page.locator('.inbox-item', { hasText: 'The middle of this chapter drags badly.' })
-  await expect(mine).toHaveCount(1, { timeout: 15_000 })
+    await page.evaluate(() => window.novalistStores.shell.getState().setInspectorTab('inbox'))
+    const items = page.locator('.inbox-item')
+    // This runs against a copy of a real book, and a real book collects real
+    // notes. Counting them absolutely made the spec fail the day its author left
+    // a comment of their own, so the two notes put in above are counted against
+    // whatever was already there and acted on by name rather than by position.
+    await expect.poll(() => items.count(), { timeout: 30_000 }).toBeGreaterThanOrEqual(2)
+    const mine = page.locator('.inbox-item', { hasText: 'The middle of this chapter drags badly.' })
+    await expect(mine).toHaveCount(1, { timeout: 15_000 })
 
-  // Weighing: a state to sit in, so the note stays where it can be seen.
-  await mine.locator('.inbox-verdict-btn').nth(1).click()
-  await expect(mine).toHaveCount(1, { timeout: 15_000 })
-  await expect(mine.locator('.inbox-verdict')).toBeVisible()
+    // Weighing: a state to sit in, so the note stays where it can be seen.
+    await mine.locator('.inbox-verdict-btn').nth(1).click()
+    await expect(mine).toHaveCount(1, { timeout: 15_000 })
+    await expect(mine.locator('.inbox-verdict')).toBeVisible()
 
-  // Declining: finished with, so it leaves the open list exactly as resolving
-  // does - but the reason is kept, which is the whole point.
-  await mine.locator('.inbox-verdict-btn').nth(2).click()
-  await expect(mine).toHaveCount(0, { timeout: 15_000 })
+    // Declining: finished with, so it leaves the open list exactly as resolving
+    // does - but the reason is kept, which is the whole point.
+    await mine.locator('.inbox-verdict-btn').nth(2).click()
+    await expect(mine).toHaveCount(0, { timeout: 15_000 })
 
-  const stored = (await page.evaluate(async () =>
-    window.novalistRpc.request('inbox/list', [true])
-  )) as { text: string; verdict: string; resolved: boolean }[]
-  const declined = stored.find((i) => i.text.includes('middle of this chapter'))!
-  expect(declined.verdict).toBe('declined')
-  expect(declined.resolved).toBe(true)
+    await flushWriting(page)
+    const stored = (await page.evaluate(async () =>
+      window.novalistRpc.request('inbox/list', [true])
+    )) as { text: string; verdict: string; resolved: boolean }[]
+    const declined = stored.find((i) => i.text.includes('middle of this chapter'))!
+    expect(declined.verdict).toBe('declined')
+    expect(declined.resolved).toBe(true)
 
-  await app.close()
+  } finally {
+    await closeTestApp(app)
+  }
 })

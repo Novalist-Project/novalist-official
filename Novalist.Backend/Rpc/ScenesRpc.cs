@@ -372,6 +372,7 @@ public sealed record MergeRowDto(string? Mine, string? Theirs, string State, str
 public sealed record SceneContentDto(string SceneId, string Html, string Hash, SharedSceneContentDto? Shared = null)
 {
     public WritingAnnotations? Annotations { get; init; }
+    public bool Missing { get; init; }
 }
 public sealed record SharedSceneContentDto(Guid SessionId, Guid ItemId, byte[] State, bool Presence = false);
 

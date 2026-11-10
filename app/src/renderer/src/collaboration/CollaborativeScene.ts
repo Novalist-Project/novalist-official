@@ -11,6 +11,7 @@ interface SceneOptions {
   initialState?: Uint8Array
   onUpdate(update: Uint8Array): void
   onError(error: Error): void
+  onRendered?(): void
   owner?: SharedSceneSession
 }
 
@@ -34,6 +35,7 @@ export class CollaborativeScene {
   private pending: Uint8Array[] = []
   private pendingBytes = 0
   private unbind: (() => void) | undefined
+  private editableBeforeReservation: string | null | undefined
 
   constructor(private readonly editor: RichEditingSurface, private readonly options: SceneOptions) {
     const root = editor.root
@@ -64,13 +66,26 @@ export class CollaborativeScene {
     root.addEventListener('compositionend', this.onCompositionEnd)
     root.addEventListener('input', this.onInput)
     this.unbind = options.owner?.bind({ capture: () => this.capture(), isComposing: () => this.composing,
+      setReadOnly: readOnly => {
+        if (readOnly && this.editableBeforeReservation === undefined) {
+          this.editableBeforeReservation = root.getAttribute('contenteditable')
+          root.setAttribute('contenteditable', 'false')
+        } else if (!readOnly && this.editableBeforeReservation !== undefined) {
+          if (this.editableBeforeReservation === null) root.removeAttribute('contenteditable')
+          else root.setAttribute('contenteditable', this.editableBeforeReservation)
+          this.editableBeforeReservation = undefined
+        }
+        this.observer?.takeRecords()
+      },
       prepare: html => this.editor.getContent() === html ? this.markup.read() : undefined, assertReady: () => {
       if (this.composing) throw new Error('Confirm the composition before changing the shared scene.')
     }, render: () => {
       if (this.applying || this.composing) return
+      if (this.options.owner && this.editor.canRenderRevision?.(this.options.owner.revision) === false) return
       const selection = this.selection()
       this.render()
       if (selection) this.restoreSelection(selection)
+      this.options.onRendered?.()
       this.editor.flushPendingContentChange()
     } })
   }

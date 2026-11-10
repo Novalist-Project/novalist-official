@@ -1,6 +1,12 @@
 # Unified writing feasibility gate
 
-Status: **BLOCKED for production integration**. This experiment does not authorize
+Historical experiment status: **BLOCKED for production integration**. The results
+below describe the test-only adapters investigated before the subsequent
+production implementation. They remain recorded as failures and limitations of
+those experiments. Current production verification is tracked separately in the
+[validation record](unified-writing-validation.md); its final acceptance is pending.
+
+This experiment did not authorize
 Task 2. The current engine can support a shared editable root, protected scene
 ownership, and grouped per-scene Yjs history, but this representation has not
 passed continuous pagination, the complete latency matrix, or the full parity
@@ -20,9 +26,10 @@ isolated desktop. The dedicated config uses `NOVALIST_WRITING_ENGINE=electron`
 for the small test-only Electron host and invokes the repository's desktop
 permission guard. It creates a temporary profile and closes its launched process
 through the existing teardown helper. It never opens the production application,
-reads a user's book, or accesses the system clipboard. Local Electron evidence
-is pending the controller's explicitly authorized run; no isolated CI result is
-claimed here.
+reads a user's book, or accesses the system clipboard. At the initial checkpoint,
+local Electron evidence was pending the explicitly authorized run. The later
+[native Electron confirmation](#native-electron-confirmation) records that run;
+no isolated CI result is claimed here.
 
 Controls: `NOVALIST_WRITING_OPTIMIZE=0` disables the incremental rendering,
 content-visibility, pagination and scoped-capture adapters.

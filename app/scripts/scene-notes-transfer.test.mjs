@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { loadRendererSource } from './renderer-source-loader.mjs'
+import { loadPaneSources } from './pane-source-loader.mjs'
 
 const turn = () => new Promise(resolve => setImmediate(resolve))
 function store(initial) {
@@ -13,7 +14,7 @@ function store(initial) {
   }, subscribe: listener => { listeners.add(listener); return () => listeners.delete(listener) } }
 }
 function harness(initialNative = {}, mainWindow = true) {
-  const panes = loadRendererSource('src/stores/shellPanes.ts', {}, { localStorage: { getItem: () => null } })
+  const { panes } = loadPaneSources({ localStorage: { getItem: () => null } })
   const first = panes.newLeaf('write')
   const shell = store({ panes: first, activePaneId: first.id, notesDockVisible: false })
   let native = { docked: false, visible: true, pinned: true, follow: true, context: null, ...initialNative }

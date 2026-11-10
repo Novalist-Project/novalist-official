@@ -199,6 +199,7 @@ public sealed class BackendHost : IDisposable, IAsyncDisposable
         rpc.AddLocalRpcTarget(new ExposeRpc(_workspace), targetOptions);
         rpc.AddLocalRpcTarget(new GitRpc(_workspace, _processRunner), targetOptions);
         rpc.AddLocalRpcTarget(new SearchRpc(_workspace), targetOptions);
+        rpc.AddLocalRpcTarget(new WritingSearchRpc(_workspace), targetOptions);
         rpc.AddLocalRpcTarget(new SnapshotsRpc(_workspace), targetOptions);
         rpc.AddLocalRpcTarget(new BackupRpc(_workspace), targetOptions);
         rpc.AddLocalRpcTarget(new DraftCompareRpc(_workspace), targetOptions);

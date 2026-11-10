@@ -16,7 +16,7 @@ The number keys switch the main area between views, in this order:
 | Dashboard | `Ctrl+D2` |
 | Timeline | `Ctrl+D3` |
 | Codex | `Ctrl+D4` |
-| Manuscript | `Ctrl+D5` |
+| Write in Manuscript scope | `Ctrl+D5` |
 | Calendar | `Ctrl+D6` |
 | Relationships | `Ctrl+D7` |
 | Plot Grid | `Ctrl+D8` |
@@ -28,7 +28,7 @@ One view outside that run has a gesture of its own, because the nine digits are 
 | --- | --- |
 | Narration | `Ctrl+Alt+R` |
 
-Every other view — Wiki, Maps, Languages, Gallery, Dialogue, Planning board, Series, Exposé, Style report, Export, Git, Extensions, Settings — is a command with no default gesture. Reach it from its mode in the [mode panel](02-interface-overview.md#the-mode-panel), from the **Go** menu, or from the palette; bind it yourself if you go there often.
+Every other view — Structure, Wiki, Maps, Languages, Gallery, Dialogue, Planning board, Series, Exposé, Style report, Export, Git, Extensions, Settings — is a command with no default gesture. Reach it from its mode in the [mode panel](02-interface-overview.md#the-mode-panel), from the **Go** menu, or from the palette; bind it yourself if you go there often. `Ctrl+D1` preserves the writing pane's current scope; `Ctrl+D5` explicitly selects Manuscript.
 
 ## Panels and panes
 
@@ -79,7 +79,7 @@ Every other view — Wiki, Maps, Languages, Gallery, Dialogue, Planning board, S
 
 **Comment** and **Peek at entity under caret** both need something to act on — a selection, and a linked Codex name under the caret — and do nothing without it.
 
-In the scene editor and Manuscript view, hold `Ctrl` while scrolling the mouse wheel to zoom text and column width together, preserving line breaks. Zoom follows the caret and honors the Typewriter Scrolling position when enabled. This mouse gesture uses `Ctrl` on every platform, works with Book Page Width on or off, and leaves font settings unchanged.
+In the desktop editor, hold `Ctrl` while scrolling the mouse wheel to enlarge or reduce prose, document headings, and scene information together. Text reflows within the pane; fixed toolbars keep their size. Zoom keeps the caret visible and honors the Typewriter Scrolling position when enabled. This mouse gesture uses `Ctrl` on every platform and leaves saved font settings unchanged.
 
 ## General
 

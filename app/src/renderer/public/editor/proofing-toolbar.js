@@ -70,20 +70,61 @@ function updateGrammarStatusBar() {
     }
 }
 
+let pendingProofingNavigation = null;
+
+function cancelProofingNavigation() {
+    if (!pendingProofingNavigation) return;
+    const cancel = pendingProofingNavigation;
+    pendingProofingNavigation = null;
+    cancel();
+}
+
+function openProofingIssueAfterScroll(target) {
+    const state = window.NovalistEditorState;
+    const index = Number(target.dataset.issueIndex);
+    const issue = state.grammarIssues[index];
+    const wrapper = state.wrapper;
+    const hasScrollEnd = 'onscrollend' in wrapper;
+    const interruptions = ['wheel', 'pointerdown', 'touchstart', 'keydown'];
+    let timer;
+
+    function cancel() {
+        clearTimeout(timer);
+        wrapper.removeEventListener('scroll', onScroll);
+        wrapper.removeEventListener('scrollend', finish);
+        for (const event of interruptions) document.removeEventListener(event, cancelProofingNavigation, true);
+    }
+
+    function finish() {
+        if (pendingProofingNavigation !== cancel) return;
+        cancelProofingNavigation();
+        if (!target.isConnected || !state.editor.contains(target)
+            || state.grammarIssues[index] !== issue || Number(target.dataset.issueIndex) !== index) return;
+        const rect = target.getBoundingClientRect();
+        window.showGrammarPopup(index, rect.left, rect.bottom);
+    }
+
+    function onScroll() {
+        clearTimeout(timer);
+        if (!hasScrollEnd) timer = setTimeout(finish, 150);
+    }
+
+    pendingProofingNavigation = cancel;
+    wrapper.addEventListener('scroll', onScroll);
+    if (hasScrollEnd) wrapper.addEventListener('scrollend', finish);
+    for (const event of interruptions) document.addEventListener(event, cancelProofingNavigation, true);
+    // An already visible target produces no scrollend event.
+    timer = setTimeout(finish, 150);
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function scrollToNextIssue(type) {
+    window.hideGrammarPopup();
     const selector = type === 'grammar'
         ? '.grammar-issue[data-issue-type="grammar"]'
         : '.grammar-issue[data-issue-type="spelling"], .grammar-issue[data-issue-type="style"]';
     const firstIssue = window.NovalistEditorState.editor.querySelector(selector);
-    if (firstIssue) {
-        firstIssue.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Wait briefly for scroll to finish, then open popup
-        setTimeout(() => {
-            const index = parseInt(firstIssue.getAttribute('data-issue-index'), 10);
-            const rect = firstIssue.getBoundingClientRect();
-            window.showGrammarPopup(index, rect.left, rect.bottom);
-        }, 150);
-    }
+    if (firstIssue) openProofingIssueAfterScroll(firstIssue);
 }
 
 function updateFloatingToolbar(allowCaret = false) {
@@ -139,6 +180,7 @@ Object.assign(window, {
     getProofingStatus,
     setProofingStatusHosted,
     updateGrammarStatusBar,
+    cancelProofingNavigation,
     scrollToNextIssue,
     updateFloatingToolbar
 });

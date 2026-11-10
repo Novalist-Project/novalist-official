@@ -10,12 +10,15 @@ test('focus keeps the page, caret and split layout while its tools are tucked aw
     await h.page.evaluate(async (chapter) => {
       const project = window.novalistStores.project.getState()
       await project.openScene(chapter.guid, chapter.scenes[0].id)
+      window.novalistStores.shell.getState().setPaneWritingScope(window.novalistStores.shell.getState().activePaneId, 'scene')
       await project.openSceneInSplit(chapter.guid, chapter.scenes[1].id)
+      window.novalistStores.shell.getState().setPaneWritingScope(window.novalistStores.shell.getState().activePaneId, 'scene')
     }, book.chapters[0])
     const frame = h.page.frameLocator('iframe.editor-frame').last()
     const editor = frame.locator('#editor')
-    await expect(editor).toBeVisible()
-    await editor.click()
+    const prose = frame.locator(`[data-writing-scene="${book.chapters[0].scenes[1].id}"]`)
+    await expect(prose).toBeVisible()
+    await prose.click()
     await h.page.keyboard.type('A quiet page')
     const paneTree = await h.page.evaluate(() => JSON.stringify(window.novalistStores.shell.getState().panes))
     // A property on the iframe proves it survives both focus and navigation.
@@ -26,7 +29,7 @@ test('focus keeps the page, caret and split layout while its tools are tucked aw
     await expect(h.page.locator('.pane-header:visible')).toHaveCount(0)
     await expect(h.page.locator('iframe.editor-frame:visible')).toHaveCount(1)
     await h.page.keyboard.type(' keeps its caret.')
-    await expect(editor).toHaveText('A quiet page keeps its caret.')
+    await expect(prose).toHaveText('A quiet page keeps its caret.')
     await h.page.evaluate(() => window.novalistStores.shell.getState().setSuggestionMode(true))
     await expect(h.page.locator('.editor-mode-bar:visible')).toHaveCount(1)
     await expect(h.page.locator('.editor-toolbar-primary:visible')).toHaveCount(0)
@@ -45,7 +48,7 @@ test('focus keeps the page, caret and split layout while its tools are tucked aw
     await expect(inspector).toHaveCount(0)
     await expect(editor).toBeFocused()
     await h.page.keyboard.type(' Still here.')
-    await expect(editor).toContainText('caret. Still here.')
+    await expect(prose).toContainText('caret. Still here.')
     await expect.poll(() => h.rpc<{ synopsis: string }>('scenes/getMeta', [book.chapters[0].guid, book.chapters[0].scenes[1].id]).then((s) => s.synopsis))
       .toBe('Keep the secret until the end.')
 
@@ -77,7 +80,7 @@ test('focus keeps the page, caret and split layout while its tools are tucked aw
     await expect(editor).toHaveAttribute('data-focus-probe', 'same-editor')
     await expect(editor).toBeFocused()
     await h.page.keyboard.type(' Back again.')
-    await expect(editor).toContainText('Still here. Back again.')
+    await expect(prose).toContainText('Still here. Back again.')
 
     await h.page.locator('.focus-reveal').click()
     // Finish the editor's pending notification after focus moved to the tools.

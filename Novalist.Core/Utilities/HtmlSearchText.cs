@@ -13,13 +13,15 @@ internal sealed class HtmlSearchText
     public HtmlSearchText(string html)
     {
         var visible = new StringBuilder();
+        var ignoredDepth = 0;
         foreach (Match token in Regex.Matches(html, """<(?:"[^"]*"|'[^']*'|[^'">])*>|[^<]+|<""",
             RegexOptions.NonBacktracking, TimeSpan.FromSeconds(2)))
         {
             var raw = token.Value;
             var markup = raw.StartsWith('<') && raw.Length > 1;
-            var text = markup
-                ? Regex.IsMatch(raw, @"^</p\s*>$|^<br\s*/?>$",
+            var hidden = IsHidden(raw, markup, ref ignoredDepth);
+            var text = hidden ? string.Empty : markup
+                ? Regex.IsMatch(raw, @"^</p\s*>$|^<br(?:\s|/?>)",
                     RegexOptions.IgnoreCase | RegexOptions.NonBacktracking, TimeSpan.FromSeconds(2)) ? "\n" : string.Empty
                 : WebUtility.HtmlDecode(raw);
             _parts.Add(new Part(raw, text, visible.Length, markup));
@@ -28,9 +30,31 @@ internal sealed class HtmlSearchText
         Text = visible.ToString();
     }
 
-    public (string Html, int Count) Replace(Regex regex, string replacement)
+    private static bool IsHidden(string raw, bool markup, ref int depth)
     {
-        var matches = regex.Matches(Text);
+        var hidden = depth > 0;
+        if (!markup) return hidden;
+        var tag = Regex.Match(raw, @"^<(?<close>/)?(?<name>[a-z][a-z0-9:-]*)", RegexOptions.IgnoreCase | RegexOptions.NonBacktracking,
+            TimeSpan.FromSeconds(2));
+        if (!tag.Success) return hidden;
+        if (tag.Groups["close"].Success)
+        {
+            if (depth > 0) depth--;
+            return hidden;
+        }
+        var attributes = Regex.Matches(raw[tag.Length..], """(?<name>[\w:-]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?""",
+            RegexOptions.NonBacktracking, TimeSpan.FromSeconds(2));
+        hidden |= attributes.Cast<Match>().Any(attribute => attribute.Groups["name"].Value.Equals("data-editor-chrome", StringComparison.OrdinalIgnoreCase));
+        var name = tag.Groups["name"].Value.ToLowerInvariant();
+        if (hidden && name is not ("area" or "base" or "br" or "col" or "embed" or "hr" or "img" or "input" or "link" or "meta" or "param" or "source" or "track" or "wbr")) depth++;
+        return hidden;
+    }
+
+    public (string Html, int Count) Replace(Regex regex, string replacement)
+        => Replace(regex.Matches(Text).Cast<Match>().ToArray(), replacement);
+
+    public (string Html, int Count) Replace(IReadOnlyList<Match> matches, string replacement)
+    {
         if (matches.Count == 0) return (string.Concat(_parts.Select(part => part.Raw)), 0);
         var output = new StringBuilder();
         var matchIndex = 0;
@@ -53,7 +77,7 @@ internal sealed class HtmlSearchText
         return (output.ToString(), matches.Count);
     }
 
-    private static string ReplacePart(Part part, MatchCollection matches, int firstMatch,
+    private static string ReplacePart(Part part, IReadOnlyList<Match> matches, int firstMatch,
         string replacement, ref int lastInserted)
     {
         var text = new StringBuilder();

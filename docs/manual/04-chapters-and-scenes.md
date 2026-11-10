@@ -2,7 +2,7 @@
 
 Chapters and scenes are how Novalist breaks a book into writable pieces. A book (more precisely, its active draft) has an ordered list of chapters; each chapter has an ordered list of scenes; each scene holds the actual prose.
 
-You spend most of your time looking at one scene in the editor and the full tree in the **binder** on the left.
+On desktop, the editor opens the full manuscript by default. Use **Scene** to focus on one scene, and the **binder** on the left to navigate the draft.
 
 ## The binder tree (Chapters tab)
 
@@ -15,8 +15,8 @@ The **Chapters** tab of the binder shows the active draft's structure as a tree:
 
 The tree supports:
 
-- **Drag to reorder** — drag a chapter onto another chapter to change chapter order. Drag a scene within its chapter to reorder it, or drop it onto another chapter (or one of that chapter's scenes) to move it there.
-- **Right-click context menus** — on chapters: **Rename Act**, **Rename Chapter**, **Delete**. On scenes: **Archive**, **Open in split**, **Rename**, **Delete**.
+- **Drag to reorder** — drag a chapter onto another chapter to change chapter order and adopt its act on desktop. Drag a scene within its chapter to reorder it, or drop it onto another chapter (or one of that chapter's scenes) to move it there. Desktop moves use the same undo history as the writing workspace.
+- **Right-click context menus** — on desktop chapters: **Assign act**, **Rename Chapter**, **Delete**. Mobile retains **Rename Act** and its text field. On scenes: **Archive**, **Open in split**, **Rename**, **Delete**.
 
 ## Chapters
 
@@ -24,7 +24,7 @@ A chapter has:
 
 - **Title** — shown everywhere.
 - **Order** — its position in the book; controlled by drag-and-drop.
-- **Act** — optional textual label (e.g. "Act 1"). Groups chapters under act headers in the binder and in the Timeline and Plot Grid.
+- **Act** — an optional chapter group (e.g. "Act 1"). On desktop, create acts in **Plan → Structure**, then select one in the chapter dialog. Changing the act moves the chapter into that consecutive group. Mobile retains its text field. Act headers also appear in the binder, Timeline, and Plot Grid.
 - **Date / date range** — in-world dates used by the [Timeline](12-timeline.md) and [Calendar](13-calendar.md).
 - **Folder name** — derived from the title at creation. Determines the on-disk folder for the chapter's scene files.
 
@@ -264,13 +264,15 @@ A typical novelist workflow with the five built-in scene stages:
 4. **Edited** — line edits, prose polish, copy-edits applied.
 5. **Final** — ready to export.
 
-The [Dashboard](11-dashboard.md) shows scenes at each stage. The [Manuscript](10-manuscript.md) view filter lets you read only scenes at a given stage, regardless of their chapter.
+The [Dashboard](11-dashboard.md) shows scenes at each stage. The [Write](10-manuscript.md) filter lets you read only scenes at a given stage, regardless of their chapter.
 
 ## Acts
 
-Acts are simple named buckets (e.g. "Act 1: Setup", "Act 2: Confrontation") that group chapters.
+Acts are optional ordered groups of consecutive chapters (e.g. "Act 1: Setup", "Act 2: Confrontation"). Chapters can also remain unassigned.
 
-To assign a chapter to an act, right-click it → **Rename Act** and type the act name (use the same spelling for every chapter of that act). An act header appears in the binder above the first chapter of each act, the [Timeline](12-timeline.md) shows acts as its broadest grouping, and the [Plot Grid](08-plot-grid.md) groups columns by act.
+On desktop, create acts in **Plan → Structure**, then right-click a chapter → **Assign act** and select its destination. Assigning a chapter moves it into that act's chapter group; moving an act moves all its chapters. Empty acts are supported, and removing an act keeps its chapters as unassigned. The mobile chapter editor retains its text-based act field.
+
+An act header appears in the binder above its chapters, the [Timeline](12-timeline.md) shows acts as its broadest grouping, and the [Plot Grid](08-plot-grid.md) groups columns by act.
 
 The Timeline's **Add structure...** dropdown can lay out a known story structure (Three-Act, Save the Cat, Hero's Journey, 7-Point) as timeline events to plot against — see [Timeline](12-timeline.md).
 

@@ -152,6 +152,7 @@ function sharedFixture({ fail = false, layout = 'phone' } = {}) {
   }, { crypto }, readFileSync(new URL('../src/renderer/src/collaboration/sharedEditors.ts', import.meta.url), 'utf8')
     .replace("export { subscribeSharedDocument } from './sharedDocuments'", ''))
   const { flushEditor } = loadRendererSource('src/stores/projectPersistence.ts', {
+    './writingEditingClaims': { writingEditingClaims: { subscribe: () => () => undefined } },
     '../rpc/client': {}, './projectStore': { useProjectStore: project }, './sceneWriteQueue': {},
     '../collaboration/sharedEditors': shared
   })

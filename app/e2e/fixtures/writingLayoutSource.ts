@@ -58,7 +58,7 @@ const bodies: Record<string, string[]> = {
 
 const expressions: Record<string, [string, string][]> = {
   'comment-gutter.js': [
-    ["window.NovalistEditorState.editor.querySelectorAll('span.nv-comment[data-comment-id]')", 'globalThis.__writingLayout.measure("comment.anchorScan",()=>window.NovalistEditorState.editor.querySelectorAll(\'span.nv-comment[data-comment-id]\'))'],
+    ["root.querySelectorAll('span.nv-comment[data-comment-id]')", 'globalThis.__writingLayout.measure("comment.anchorScan",()=>root.querySelectorAll(\'span.nv-comment[data-comment-id]\'))'],
     ['item.anchor.getBoundingClientRect()', 'globalThis.__writingLayout.rect("comment.anchorRect",()=>item.anchor.getBoundingClientRect(),innerHeight)'],
     ['card.offsetHeight', 'globalThis.__writingLayout.measure("comment.cardHeight",()=>card.offsetHeight)'],
     ["card.style.top = desired + 'px';", 'globalThis.__writingLayout.count("comment.positionWrites"); card.style.top = desired + \'px\';'],

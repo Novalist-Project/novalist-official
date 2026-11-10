@@ -6,6 +6,7 @@ import { copyProject } from './copyProject'
 import { evaluateWhenReady, waitForAppReady } from './appReady'
 import { enterWriting } from './harness'
 import { REAL_PROJECT } from './realProject'
+import { replaceWritingScene } from './writingTestActions'
 
 /**
  * Paragraph dimming: with the setting on, the paragraph the caret is in stays
@@ -38,21 +39,17 @@ test('compose dimming marks the caret paragraph and dims the rest', async () => 
   await enterWriting(page)
 
   await page.locator('.binder-scene-row').first().click()
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
+  await page.locator('.writing-scope-segments').getByRole('button', { name: 'Scene', exact: true }).click()
+  const editor = page.frameLocator('.editor-frame').locator('[data-writing-scene]')
   await expect(editor).toBeVisible({ timeout: 30_000 })
+  const sceneId = (await editor.getAttribute('data-writing-scene'))!
   await expect
     .poll(async () => (await editor.innerText()).trim().length, { timeout: 15_000 })
     .toBeGreaterThan(20)
 
   // Three paragraphs of our own, so the test does not depend on which scene the
   // fixture project happens to open with.
-  await editor.click()
-  await page.keyboard.press('Control+A')
-  await page.keyboard.type('One')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('Two')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('Three')
+  await replaceWritingScene(page, sceneId, '<p>One</p><p>Two</p><p>Three</p>')
 
   // Turn the setting on the way Settings does.
   await page.evaluate(async () => {
@@ -62,10 +59,8 @@ test('compose dimming marks the caret paragraph and dims the rest', async () => 
   // Put the caret in the second paragraph, as a writer would. Page view wraps
   // the paragraphs in .nv-page, which is exactly what the bug was about, so the
   // selector has to reach through it.
-  const paragraphs = page
-    .frameLocator('.editor-frame')
-    .locator('#editor > :not(.nv-page), #editor > .nv-page > *')
-  await expect.poll(async () => paragraphs.count(), { timeout: 10_000 }).toBeGreaterThan(1)
+  const paragraphs = editor.locator('p')
+  await expect(paragraphs).toHaveText(['One', 'Two', 'Three'])
   await paragraphs.nth(1).click()
 
   // Polled rather than read once: the rule carries a 120ms transition, so an
@@ -75,19 +70,19 @@ test('compose dimming marks the caret paragraph and dims the rest', async () => 
     focused: number
     opacities: string[]
   } | null> =>
-    page.evaluate(() => {
+    page.evaluate(id => {
       const frame = document.querySelector<HTMLIFrameElement>('.editor-frame')
       const doc = frame?.contentDocument
       if (!doc) return null
       const blocks = Array.from(
-        doc.querySelectorAll('#editor > :not(.nv-page), #editor > .nv-page > *')
+        doc.querySelectorAll(`[data-writing-scene="${id}"] p`)
       )
       return {
         bodyHasClass: doc.body.classList.contains('dim-others'),
         focused: blocks.filter((b) => b.classList.contains('nv-focus-block')).length,
         opacities: blocks.map((b) => doc.defaultView!.getComputedStyle(b).opacity)
       }
-    })
+    }, sceneId)
 
   // Polled as one snapshot rather than polled-then-re-read: the two reads can
   // straddle a transition, and the second would catch the lit paragraph still

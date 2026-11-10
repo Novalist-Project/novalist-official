@@ -14,6 +14,8 @@ namespace Novalist.Backend.Extensions;
 
 public sealed partial class HostServices
 {
+    internal event Action<string, string>? SceneAnnotationsChanged;
+
     // ── Review (IExtensionReviewService) ───────────────────────────
 
     Task<IReadOnlyList<SceneCommentInfo>> IExtensionReviewService.GetCommentsAsync(
@@ -36,42 +38,57 @@ public sealed partial class HostServices
     async Task<string> IExtensionReviewService.AddCommentAsync(
         string chapterGuid, string sceneId, string anchorText, string text, string author)
     {
-        var scene = FindScene(chapterGuid, sceneId);
-        if (scene == null) return string.Empty;
-
-        var comment = new SceneComment
+        var id = string.Empty;
+        await ChangeWorkspaceAsync("writing/annotations", async () =>
         {
-            AnchorText = anchorText ?? string.Empty,
-            Text = text ?? string.Empty,
-            Author = string.IsNullOrWhiteSpace(author) ? null : author
-        };
-        (scene.Comments ??= []).Add(comment);
-        await _projectService.SaveScenesAsync();
-        return comment.Id;
+            var scene = FindScene(chapterGuid, sceneId);
+            if (scene == null) return;
+            var comment = new SceneComment
+            {
+                AnchorText = anchorText ?? string.Empty,
+                Text = text ?? string.Empty,
+                Author = string.IsNullOrWhiteSpace(author) ? null : author
+            };
+            (scene.Comments ??= []).Add(comment);
+            await _projectService.SaveScenesAsync();
+            SceneAnnotationsChanged?.Invoke(chapterGuid, sceneId);
+            id = comment.Id;
+        });
+        return id;
     }
 
     async Task<bool> IExtensionReviewService.SetCommentResolvedAsync(
         string chapterGuid, string sceneId, string commentId, bool resolved)
     {
-        var comment = FindScene(chapterGuid, sceneId)?.Comments?
-            .FirstOrDefault(c => c.Id == commentId);
-        if (comment == null) return false;
-
-        comment.Resolved = resolved;
-        await _projectService.SaveScenesAsync();
-        return true;
+        var changed = false;
+        await ChangeWorkspaceAsync("writing/annotations", async () =>
+        {
+            var comment = FindScene(chapterGuid, sceneId)?.Comments?
+                .FirstOrDefault(c => c.Id == commentId);
+            if (comment == null) return;
+            comment.Resolved = resolved;
+            await _projectService.SaveScenesAsync();
+            SceneAnnotationsChanged?.Invoke(chapterGuid, sceneId);
+            changed = true;
+        });
+        return changed;
     }
 
     async Task<bool> IExtensionReviewService.DeleteCommentAsync(
         string chapterGuid, string sceneId, string commentId)
     {
-        var comments = FindScene(chapterGuid, sceneId)?.Comments;
-        var comment = comments?.FirstOrDefault(c => c.Id == commentId);
-        if (comments == null || comment == null) return false;
-
-        comments.Remove(comment);
-        await _projectService.SaveScenesAsync();
-        return true;
+        var changed = false;
+        await ChangeWorkspaceAsync("writing/annotations", async () =>
+        {
+            var comments = FindScene(chapterGuid, sceneId)?.Comments;
+            var comment = comments?.FirstOrDefault(c => c.Id == commentId);
+            if (comments == null || comment == null) return;
+            comments.Remove(comment);
+            await _projectService.SaveScenesAsync();
+            SceneAnnotationsChanged?.Invoke(chapterGuid, sceneId);
+            changed = true;
+        });
+        return changed;
     }
 
     async Task<bool> IExtensionReviewService.SuggestEditAsync(

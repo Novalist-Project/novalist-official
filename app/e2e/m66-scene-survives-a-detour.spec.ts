@@ -17,22 +17,22 @@ import { dismissTour, enterWriting, launchApp, seedBook } from './harness'
 test('a detour to another view leaves the scene where it was', async () => {
   test.setTimeout(180_000)
   const app = await launchApp('nl-detour-')
-  await seedBook(app, { One: ['A', 'B'] })
+  const book = await seedBook(app, { One: ['A', 'B'] })
+  const sceneId = book.chapters[0].scenes[0].id
   const page = app.page
 
   await dismissTour(page)
   await enterWriting(page)
   await page.locator('.binder-scene-row').first().click()
 
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
+  const editor = page.frameLocator('.editor-frame').locator(`[data-writing-scene="${sceneId}"]`)
   await expect(editor).toBeVisible({ timeout: 30_000 })
   await editor.click()
   await page.keyboard.type('Hello from the scene.')
-  // Wait for the shell to have the prose, not merely the iframe: the editor
-  // reports a change on a short timer, and leaving before it fires is a race
-  // about saving rather than the thing under test here.
+  // Wait for the retained document to receive the iframe's pending change.
   await expect
-    .poll(() => page.evaluate(() => window.novalistStores.project.getState().openScenePlainText), {
+    .poll(() => page.evaluate(id => window.novalistStores.project.getState()
+      .getWritingRegistry()?.capture().find(scene => scene.sceneId === id)?.html, sceneId), {
       timeout: 15_000
     })
     .toContain('Hello from the scene.')
@@ -43,7 +43,7 @@ test('a detour to another view leaves the scene where it was', async () => {
 
   // While away, the shell still knows which scene is being written - that is
   // what the inspector and the status bar go on describing.
-  expect(await page.evaluate(() => window.novalistStores.project.getState().openSceneId)).not.toBeNull()
+  expect(await page.evaluate(() => window.novalistStores.project.getState().openSceneId)).toBe(sceneId)
 
   await page.evaluate(() => window.novalistStores.shell.getState().setMainView('write'))
   await expect(editor).toContainText('Hello from the scene.', { timeout: 20_000 })

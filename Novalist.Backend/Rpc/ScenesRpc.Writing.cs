@@ -17,7 +17,8 @@ public sealed partial class ScenesRpc
         if (shared is not null) return shared with { Annotations = WritingAnnotations.FromScene(resolved.Scene) };
 #endif
         var snapshot = await reader.ReadAsync(reference);
-        return new(sceneId, snapshot.Html, snapshot.Hash) { Annotations = WritingAnnotations.FromScene(resolved.Scene) };
+        return new(sceneId, snapshot.Html, snapshot.Hash) { Annotations = WritingAnnotations.FromScene(resolved.Scene),
+            Missing = !await _workspace.FileService.ExistsAsync(resolved.Path) };
     }
 
     [JsonRpcMethod("scenes/setFocusedWritingOwner")]

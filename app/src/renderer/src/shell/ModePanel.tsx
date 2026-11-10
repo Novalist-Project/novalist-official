@@ -62,6 +62,7 @@ type IconComponent = React.ComponentType<{ size?: number; strokeWidth?: number }
 const VIEW_ICONS: Partial<Record<MainView, IconComponent>> = {
   write: PenLine,
   manuscript: BookOpen,
+  structure: BookOpen,
   drafts: Layers,
   narration: AudioLines,
   timeline: ChartNoAxesGantt,
@@ -119,6 +120,7 @@ export function ModePanel(): React.JSX.Element {
 
   const tallies: Partial<Record<MainView, number>> = {
     manuscript: sceneCount,
+    structure: sceneCount,
     drafts: draftCount,
     codex: codexCount
   }

@@ -4,6 +4,7 @@ import { dismissTour, enterWriting, launchApp, seedBook } from './harness'
 test('Focus settings persist, apply to the page and surround, and reset independently', async () => {
   const h = await launchApp('nl-focus-preferences-')
   try {
+    await h.page.evaluate(() => window.novalistStores.settings.getState().update('global', { pageViewEnabled: true }))
     const book = await seedBook(h, { Chapter: ['Scene'] })
     await dismissTour(h.page)
     await h.page.evaluate(async (chapter) => {
@@ -44,6 +45,7 @@ test('Focus settings persist, apply to the page and surround, and reset independ
     await h.page.evaluate(() => window.novalistStores.shell.getState().toggleFocusMode())
     const body = h.page.frameLocator('iframe.editor-frame').locator('body')
     const paper = body.locator('.nv-page').first()
+    await expect(body).toHaveClass(/\bpage-view\b/)
     await expect(body).toHaveClass(/focus-appearance/)
     await expect(h.page.locator('iframe.editor-frame')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(h.page.frameLocator('iframe.editor-frame').locator('html')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')

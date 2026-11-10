@@ -18,6 +18,7 @@ function scheduleCommentRender() {
 }
 
 function createCommentCard(id, data) {
+    const sceneId = window.NovalistWritingDocument?.enabled ? window.getWritingSceneRoot()?.dataset.writingScene : undefined;
     const card = document.createElement('div');
     card.className = 'nv-cc-card';
     card.dataset.commentId = id;
@@ -34,7 +35,7 @@ function createCommentCard(id, data) {
     ta.addEventListener('input', () => {
         const cur = window.NovalistEditorState.commentsState.get(id);
         if (cur) cur.text = ta.value;
-        window.sendMessage({ type: 'commentTextChanged', commentId: id, text: ta.value });
+        window.sendMessage({ type: 'commentTextChanged', commentId: id, text: ta.value, sceneId });
         scheduleCommentRender();
     });
     ta.addEventListener('focus', () => {
@@ -49,7 +50,7 @@ function createCommentCard(id, data) {
     del.title = 'Delete comment';
     del.addEventListener('click', (e) => {
         e.stopPropagation();
-        window.sendMessage({ type: 'commentDeleted', commentId: id });
+        window.sendMessage({ type: 'commentDeleted', commentId: id, sceneId });
     });
     card.appendChild(del);
 
@@ -69,7 +70,8 @@ function renderCommentGutter() {
     const gutter = ensureGutter();
     const liveIds = new Set();
     const items = [];
-    const spans = window.NovalistEditorState.editor.querySelectorAll('span.nv-comment[data-comment-id]');
+    const root = window.getWritingServiceRoot?.() || window.NovalistEditorState.editor;
+    const spans = root.querySelectorAll('span.nv-comment[data-comment-id]');
     spans.forEach(s => {
         const id = s.getAttribute('data-comment-id');
         if (!id || !window.NovalistEditorState.commentsState.has(id) || liveIds.has(id)) return;

@@ -63,6 +63,18 @@ function markSelectionDeleted() {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.getRangeAt(0).collapsed) return false;
 
+    const scenes = window.NovalistWritingDocument?.enabled ? window.writingSelectedRanges() : [];
+    if (scenes.length > 1) {
+        let caret = null;
+        for (const { range } of scenes) {
+            sel.removeAllRanges();
+            sel.addRange(range);
+            if (markSelectionDeleted() && !caret) caret = sel.getRangeAt(0).cloneRange();
+        }
+        if (caret) { sel.removeAllRanges(); sel.addRange(caret); }
+        return !!caret;
+    }
+
     const range = sel.getRangeAt(0);
     const contents = range.extractContents();
     const del = document.createElement('del');

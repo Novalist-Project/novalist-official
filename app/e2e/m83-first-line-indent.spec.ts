@@ -1,5 +1,5 @@
 import { test, expect, type FrameLocator } from '@playwright/test'
-import { enterWriting, launchApp, seedBook } from './harness'
+import { dismissTour, enterWriting, launchApp, seedBook } from './harness'
 
 const PROSE = [
   '<p id="ordinary">Ordinary prose.</p>',
@@ -69,7 +69,8 @@ function expectOnlyOrdinaryIndented(indents: Indents): void {
 test('first-line indent is configurable and reaches every prose view', async () => {
   test.setTimeout(180_000)
   const h = await launchApp('nl-first-line-indent-')
-  const book = await seedBook(h, { One: ['A'] })
+  const book = await seedBook(h, { One: ['A'] }, 'Spec', false)
+  await dismissTour(h.page)
   const chapter = book.chapters[0]
   const scene = chapter.scenes[0]
 
@@ -93,31 +94,34 @@ test('first-line indent is configurable and reaches every prose view', async () 
 
   await enterWriting(h.page)
   await h.page.locator('.binder-scene-row').click()
+  await h.page.locator('.writing-scope-segments').getByRole('button', { name: 'Scene', exact: true }).click()
   const sceneFrame = h.page.frameLocator('.editor-frame')
+  const sceneRoot = `[data-writing-scene="${scene.id}"]`
   await expect(sceneFrame.locator('#ordinary')).toBeVisible({ timeout: 30_000 })
-  const initialSceneIndent = await measuredIndents(sceneFrame, '#editor')
+  const initialSceneIndent = await measuredIndents(sceneFrame, sceneRoot)
   expectOnlyOrdinaryIndented(initialSceneIndent)
 
   await h.page.evaluate(() =>
     window.novalistStores.settings.getState().update('global', { editorFirstLineIndent: 1 })
   )
   await expect
-    .poll(async () => (await measuredIndents(sceneFrame, '#editor')).ordinary)
+    .poll(async () => (await measuredIndents(sceneFrame, sceneRoot)).ordinary)
     .toBeLessThan(initialSceneIndent.ordinary)
 
   await h.page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
-  await expect(h.page.locator('iframe[title="manuscript"]')).toBeVisible({ timeout: 30_000 })
-  const manuscriptFrame = h.page.frameLocator('iframe[title="manuscript"]')
-  await expect(manuscriptFrame.locator('.scene-editor')).toHaveCount(1, { timeout: 30_000 })
+  await h.page.locator('.writing-scope-segments').getByRole('button', { name: 'Manuscript', exact: true }).click()
+  await expect(h.page.locator('iframe[title="editor"]')).toBeVisible({ timeout: 30_000 })
+  const manuscriptFrame = h.page.frameLocator('iframe[title="editor"]')
+  await expect(manuscriptFrame.locator('[data-writing-scene]')).toHaveCount(1, { timeout: 30_000 })
   await expect(manuscriptFrame.locator('#ordinary')).toBeVisible({ timeout: 30_000 })
-  const initialManuscriptIndent = await measuredIndents(manuscriptFrame, '.scene-editor')
+  const initialManuscriptIndent = await measuredIndents(manuscriptFrame, sceneRoot)
   expectOnlyOrdinaryIndented(initialManuscriptIndent)
 
   await h.page.evaluate(() =>
     window.novalistStores.settings.getState().update('global', { editorFirstLineIndent: 1.5 })
   )
   await expect
-    .poll(async () => (await measuredIndents(manuscriptFrame, '.scene-editor')).ordinary)
+    .poll(async () => (await measuredIndents(manuscriptFrame, sceneRoot)).ordinary)
     .toBeGreaterThan(initialManuscriptIndent.ordinary)
 
   await h.rpc('expose/save', [PROSE])

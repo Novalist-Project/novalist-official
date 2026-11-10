@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { launchApp, seedBook, dismissTour, selectCodexTab, resizeWindow } from './harness'
+import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 
 test('research drafts survive an immediate unmount and undo cannot cross note ownership', async () => {
   const h = await launchApp('nl-audit-research-')
@@ -29,7 +30,10 @@ test('research drafts survive an immediate unmount and undo cannot cross note ow
 test('inline information is read-only and alternative replacements remain suggestions until accepted', async () => {
   const h = await launchApp('nl-audit-inline-')
   try {
-    await seedBook(h, { One: ['A'] })
+    const book = await seedBook(h, { One: ['A'] }, 'Spec', false)
+    const chapter = book.chapters[0]
+    const sceneId = chapter.scenes[0].id
+    await h.rpc('scenes/write', [chapter.guid, sceneId, '<p>Original prose</p>', 'Original prose'])
     await dismissTour(h.page)
     await h.page.evaluate(async () => {
       const original = window.novalistRpc.request.bind(window.novalistRpc)
@@ -47,11 +51,11 @@ test('inline information is read-only and alternative replacements remain sugges
       const chapter = state.chapters[0]
       await state.openScene(chapter.guid, chapter.scenes[0].id)
     })
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
-    await expect(editor).toBeVisible()
+    const editor = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${sceneId}"]`)
+    await expect(editor).toHaveText('Original prose')
     const invoke = async (id: string) => editor.evaluate((element, actionId) => {
-      const frame = window as unknown as { setContent(html: string): void; triggerInlineAction(id: string): void }
-      frame.setContent('<p>Original prose</p>')
+      const frame = window as unknown as { focusEditor(): void; triggerInlineAction(id: string): void }
+      frame.focusEditor()
       const range = document.createRange()
       range.selectNodeContents(element.querySelector('p')!)
       const selection = window.getSelection()!
@@ -80,22 +84,20 @@ test('inline information is read-only and alternative replacements remain sugges
 test('an image-only scene survives editor loading and serialization', async () => {
   const h = await launchApp('nl-audit-image-only-')
   try {
-    await seedBook(h, { One: ['A'] })
+    const book = await seedBook(h, { One: ['A'] }, 'Spec', false)
+    const chapter = book.chapters[0]
+    const sceneId = chapter.scenes[0].id
+    await h.rpc('scenes/write', [chapter.guid, sceneId, '<p><img src="Images/cover.png" alt="Cover"></p>', ''])
     await dismissTour(h.page)
     await h.page.evaluate(async () => {
       const state = window.novalistStores.project.getState()
       const chapter = state.chapters[0]
       await state.openScene(chapter.guid, chapter.scenes[0].id)
     })
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
-    await expect(editor).toBeVisible()
-    const html = await editor.evaluate(() => {
-      const frame = window as unknown as { setContent(html: string): void; getContent(): string }
-      frame.setContent('<p><img data-nv-src="Images/cover.png" src="novalist-project://nl/Images/cover.png" alt="Cover"></p>')
-      return frame.getContent()
-    })
-    expect(html).toContain('src="Images/cover.png"')
+    const editor = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${sceneId}"]`)
     await expect(editor.locator('img')).toHaveAttribute('alt', 'Cover')
+    const html = await editor.evaluate((_, id) => (window as unknown as EditorWindow).serializeWritingScene(id), sceneId)
+    expect(html).toContain('src="Images/cover.png"')
   } finally { await h.close() }
 })
 

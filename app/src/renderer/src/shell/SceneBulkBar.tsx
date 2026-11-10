@@ -6,6 +6,7 @@ import { useProjectStore, type ProjectStateDto, type SceneStructureMethod } from
 import { useSelectionStore } from '../stores/selectionStore'
 import { useManuscriptStore } from '../stores/manuscriptStore'
 import { useShellStore } from '../stores/shellStore'
+import { useHostBridgeStore } from '../stores/hostBridgeStore'
 import { ConfirmDialog } from './ConfirmDialog'
 import { InputDialog } from './InputDialog'
 import { ShiftDatesDialog } from './ShiftDatesDialog'
@@ -86,7 +87,8 @@ export function SceneBulkBar(): React.JSX.Element {
           className="dialog-button"
           onClick={() => {
             void useManuscriptStore.getState().compose(selected)
-            useShellStore.getState().setMainView('manuscript')
+              .then(() => useShellStore.getState().setMainView('manuscript'))
+              .catch(error => useHostBridgeStore.getState().pushToast(String(error)))
           }}
         >
           <BookOpen size={14} /> {t('bulk.readAsOne')}

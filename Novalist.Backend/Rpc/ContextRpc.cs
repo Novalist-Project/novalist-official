@@ -68,9 +68,9 @@ public sealed partial class ContextRpc
             .Select(lore => new EntitySource(lore, lore.Name, BuildPatterns([lore.Name])))
             .ToList();
 
-        var chapters = projects.GetChaptersOrdered();
-        var (aggregateByChapter, currentContent) = await ReadContextContentAsync(
-            chapters, targetChapter, targetScene, currentSceneHtml, cancellationToken);
+        var currentContent = currentSceneHtml is not null
+            ? NormalizeSceneContent(currentSceneHtml, html: true)
+            : NormalizeSceneContent((await projects.ReadSceneContentsAsync(targetChapter, [targetScene], cancellationToken))[0]);
         cancellationToken.ThrowIfCancellationRequested();
 
         var matchedCharacters = MatchSources(currentContent, characterSources);
@@ -115,6 +115,10 @@ public sealed partial class ContextRpc
             })
             .ToArray();
 
+        var chapters = projects.GetChaptersOrdered();
+        Dictionary<string, string> aggregateByChapter = matchedCharacters.Count > 0
+            ? await ReadContextContentAsync(chapters, targetChapter, targetScene, currentContent, cancellationToken)
+            : [];
         var mentionRows = BuildMentionRows(matchedCharacters, chapters, aggregateByChapter, targetChapter, targetScene);
         var povOptions = BuildPovOptions(matchedCharacters, characterSources, targetChapter, targetScene);
         var analysis = AnalyzeText(currentContent, matchedCharacters, targetChapter, targetScene, povOptions,
@@ -124,34 +128,31 @@ public sealed partial class ContextRpc
             SuggestResearch(characterCards, locationCards, itemCards, loreCards, analysis.Tags));
     }
 
-    private async Task<(Dictionary<string, string> Chapters, string Current)> ReadContextContentAsync(
+    private async Task<Dictionary<string, string>> ReadContextContentAsync(
         IReadOnlyList<ChapterData> chapters, ChapterData targetChapter, SceneData targetScene,
-        string? currentSceneHtml, CancellationToken cancellationToken)
+        string currentContent, CancellationToken cancellationToken)
     {
         var projects = _workspace.Projects;
         var aggregateByChapter = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var currentContent = string.Empty;
         foreach (var chapter in chapters)
         {
             var scenes = projects.GetScenesForChapter(chapter.Guid);
-            var rawContents = await projects.ReadSceneContentsAsync(chapter, scenes, cancellationToken);
+            var currentChapter = string.Equals(chapter.Guid, targetChapter.Guid, StringComparison.OrdinalIgnoreCase);
+            var unreadScenes = scenes.Where(scene => !currentChapter ||
+                !string.Equals(scene.Id, targetScene.Id, StringComparison.OrdinalIgnoreCase)).ToArray();
+            var rawContents = await projects.ReadSceneContentsAsync(chapter, unreadScenes, cancellationToken);
             var contents = new List<string>(scenes.Count);
-            foreach (var (scene, rawContent) in scenes.Zip(rawContents))
+            var rawIndex = 0;
+            foreach (var scene in scenes)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var isCurrent = string.Equals(chapter.Guid, targetChapter.Guid, StringComparison.OrdinalIgnoreCase)
+                var isCurrent = currentChapter
                     && string.Equals(scene.Id, targetScene.Id, StringComparison.OrdinalIgnoreCase);
-                // The open editor can be newer than the saved file. Substitute
-                // only this scene, including an intentionally emptied draft.
-                var content = NormalizeSceneContent(isCurrent && currentSceneHtml != null
-                    ? currentSceneHtml
-                    : rawContent);
-                contents.Add(content);
-                if (isCurrent) currentContent = content;
+                contents.Add(isCurrent ? currentContent : NormalizeSceneContent(rawContents[rawIndex++]));
             }
             aggregateByChapter[chapter.Guid] = string.Join(Environment.NewLine + Environment.NewLine, contents);
         }
-        return (aggregateByChapter, currentContent);
+        return aggregateByChapter;
     }
 
     private SceneAnalysisDto AnalyzeText(string currentContent, IReadOnlyList<MatchedSource> matchedCharacters,

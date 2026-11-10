@@ -23,7 +23,15 @@ could encounter in a previously released version.
 
 ### Added
 
-- **Quick edit** — choose paragraph styles beside selected text or at the caret, with mixed-style indicators and keyboard access from the command palette. The fixed writing toolbar remains available.
+- **Unified writing and Structure planning** — switch between Scene, Chapter, and Manuscript while keeping your place in a continuous document, with outline navigation in the same editor, editable scene, chapter and act names, stage selectors, and scene information that follows the prose while scrolling. Synopses expand to fit their text. Writing starts at a readable size; Ctrl+wheel enlarges prose, headings and scene information within the pane. Optional book width and paper pages honor saved book typography and page settings, preserving the previous editor's page proportions and margins. Includes cross-scene editing and undo, scope-aware Find/Replace, independent pane scopes, and selected-scene and filtered runs. Plan's Structure view organizes acts, chapters, and scenes alongside Corkboard, Outliner, and Board. Insert scene breaks and chapter headings from the writing toolbar or quick edit, or add scenes and chapters at inline boundaries. Quick edit offers paragraph styles beside selected text or at the caret, with mixed-style indicators and keyboard access.
+
+### Fixed
+
+- Opening a project or changing collaboration sessions no longer shows a spurious workspace-changed error from background invitation polling.
+- Starting or joining collaboration is faster for large projects.
+- Restarting an audiobook export immediately after it finishes reliably starts the new render.
+- Clicking a spelling or grammar count keeps the issue popup open after scrolling to the marked text.
+- The editor follows the configured proofing language without replacing it with the interface language or quote preset.
 
 ---
 

@@ -9,12 +9,19 @@ import {
   type WebContents
 } from 'electron'
 import { join } from 'node:path'
+import { normalizeDetachedPaneRequest } from '../shared/detachedPane'
 import { readFileSync } from 'node:fs'
 import { BackendProcess } from './backend-process'
 import { DesktopCollaborationServices } from './collaboration/DesktopCollaborationServices'
 import { WorkspaceWindows } from './workspace-windows'
 import { WritingFocusOwner } from './writing-focus'
+import { WritingSearchCaptureBroker } from './writing-search'
+import { WritingSearchLeaseBroker } from './writing-search-lease'
+import { WritingSearchPublicationStore } from './writing-search-publication'
+import type { WritingSearchCaptureReply, WritingSearchContext, WritingSearchLeaseReply, WritingSearchLeaseRequest, WritingSearchSharedIntent } from '../shared/writingSearchProtocol'
+import type { SceneRef, WritingCommitRequest } from '../renderer/src/views/editor/writingTypes'
 import { WindowCloseCoordinator } from './window-close'
+import { WindowCloseRequests } from './window-close-request'
 import type { WorkspaceEvent } from '../shared/workspaceProtocol'
 import { attachLiquidGlass } from './glass'
 import { clampWindowToDisplay, createAppWindow, initialWindowGeometry, material, resolveIconPath } from './window-appearance'
@@ -38,13 +45,24 @@ const workspaceWindows = new WorkspaceWindows(backend.router, 15_000, (error) =>
 const writingFocus = new WritingFocusOwner((method, params) => backend.router.request(method, params),
   () => BrowserWindow.getFocusedWindow()?.webContents.id)
 const windowCloses = new WindowCloseCoordinator()
+const writingSearch = new WritingSearchCaptureBroker()
+const writingPublications = new WritingSearchPublicationStore(join(process.env.NOVALIST_SETTINGS_DIR ?? app.getPath('userData'), 'writing-search'),
+  (method, params) => backend.router.request(method, params))
+const writingSearchLeases = new WritingSearchLeaseBroker(
+  (request, details) => writingPublications.publish(request, details),
+  () => backend.requireResync('A writing replacement could not finish recovering.'))
+let writingRecoveryPending = false
 backend.onNotification((message) => workspaceWindows.receive(message))
 backend.onRequest((method, params) => collaboration.request(method, params))
 backend.onRestart(async () => {
+  writingRecoveryPending = writingSearchLeases.hasLease
   await collaboration.reset()
   await workspaceWindows.recover()
 })
-backend.onResync(() => workspaceWindows.resync())
+backend.onResync(() => {
+  writingRecoveryPending = writingSearchLeases.hasLease
+  return workspaceWindows.resync()
+})
 
 function attachBackendPort(sender: WebContents): void {
   const { port1, port2 } = new MessageChannelMain()
@@ -62,29 +80,13 @@ registerProtocolSchemes()
 let mainWindow: BrowserWindow | null = null
 let setFocusWindow: ((enabled: boolean) => Promise<void>) | null = null
 const approvedCloses = new Set<number>()
-let closeRequest: Promise<void> | null = null
-let quitRequested = false
+const closeRequests = new WindowCloseRequests(windowCloses, {
+  getMainWindow: () => mainWindow, getWindows: () => BrowserWindow.getAllWindows(), approvedCloses,
+  quit: () => app.quit()
+})
 
 function prepareWindowClose(win: BrowserWindow, quit: boolean): void {
-  quitRequested ||= quit
-  if (closeRequest) return
-  const all = quit || win === mainWindow
-  const targets = all ? BrowserWindow.getAllWindows() : [win]
-  const owners = targets.map((target) => target.webContents.id)
-  const backupOwner = all ? mainWindow?.webContents.id : undefined
-  const operation = windowCloses.prepare(owners, backupOwner).then(() => {
-    if (quitRequested && !all && mainWindow && !mainWindow.isDestroyed()) {
-      // The current operation only prepared one detached pane. Escalating to
-      // quit needs a fresh global transaction, including the main window.
-      closeRequest = null
-      prepareWindowClose(mainWindow, true)
-      return
-    }
-    for (const target of targets) if (!target.isDestroyed()) approvedCloses.add(target.id)
-    if (quitRequested) app.quit()
-    else for (const target of targets) if (!target.isDestroyed()) target.close()
-  }).catch(() => {}).finally(() => { if (closeRequest === operation) { closeRequest = null; quitRequested = false } })
-  closeRequest = operation
+  void closeRequests.request(win, quit).catch(() => {})
 }
 
 ipcMain.on('novalist:close-handler-ready', (event, ready: boolean) => {
@@ -106,10 +108,34 @@ ipcMain.on('novalist:workspace-ready', (event, ready: boolean) => {
 ipcMain.on('novalist:workspace-ack', (event, token: string, phase: WorkspaceEvent['phase'], saved: boolean, error?: string) => {
   workspaceWindows.acknowledge(event.sender.id, token, phase, saved, error)
 })
-ipcMain.handle('novalist:workspace-snapshot', (event) => workspaceWindows.snapshot(event.sender.id))
+ipcMain.handle('novalist:workspace-snapshot', async (event) => {
+  const snapshot = await workspaceWindows.snapshot(event.sender.id)
+  const workspaceId = snapshot.state.projectPath
+  if (workspaceId && !writingSearchLeases.hasLease) await writingPublications.recover({ workspaceId, workspaceEpoch: snapshot.epoch })
+  if (writingRecoveryPending && writingSearchLeases.hasLease && workspaceId) {
+    writingRecoveryPending = false
+    setTimeout(() => { void writingSearchLeases.recover({ workspaceId, workspaceEpoch: snapshot.epoch })
+      .catch(() => backend.requireResync('A writing replacement is waiting for recovery.')) }, 0)
+  }
+  return snapshot
+})
 ipcMain.handle('novalist:workspace-retry', () => backend.retryRecovery())
 ipcMain.handle('novalist:claim-writing-focus', (event, sourceId: string, epoch: number) =>
   writingFocus.claim(event.sender.id, sourceId, epoch))
+ipcMain.on('novalist:writing-search-ready', (event) => {
+  writingSearch.register(event.sender.id, request => event.sender.send('novalist:writing-search-capture', request))
+  writingSearchLeases.register(event.sender.id, request => event.sender.send('novalist:writing-search-lease', request))
+})
+ipcMain.on('novalist:writing-search-captured', (event, reply: WritingSearchCaptureReply) => writingSearch.acknowledge(event.sender.id, reply))
+ipcMain.handle('novalist:writing-search-capture', (event, context: WritingSearchContext) => writingSearch.capture(context, event.sender.id))
+ipcMain.on('novalist:writing-search-lease-ack', (event, reply: WritingSearchLeaseReply) => writingSearchLeases.acknowledge(event.sender.id, reply))
+ipcMain.handle('novalist:writing-search-lease', async (event, context: WritingSearchContext, refs: SceneRef[]) => {
+  if (!writingSearchLeases.hasLease) await writingPublications.recover(context)
+  return writingSearchLeases.acquire(event.sender.id, context, refs)
+})
+ipcMain.handle('novalist:writing-search-finish', (event, token: string, changes?: WritingSearchLeaseRequest['changes']) => writingSearchLeases.finish(event.sender.id, token, changes))
+ipcMain.handle('novalist:writing-search-publish', (event, token: string, request: WritingCommitRequest, changes: { ref: SceneRef; afterHtml: string }[], shared?: WritingSearchSharedIntent) =>
+  writingSearchLeases.publish(event.sender.id, token, request, changes, shared))
 
 function attachWindowLifecycle(win: BrowserWindow): void {
   const owner = win.webContents.id
@@ -123,6 +149,8 @@ function attachWindowLifecycle(win: BrowserWindow): void {
   const release = (): void => {
     void writingFocus.release(owner).catch((error) => backend.requireResync(error))
     windowCloses.remove(owner)
+    writingSearch.remove(owner)
+    writingSearchLeases.remove(owner)
     workspaceWindows.remove(owner)
     backend.detachClient(owner)
   }
@@ -210,13 +238,9 @@ ipcMain.handle(
   'novalist:open-pane-window',
   (
     _event,
-    request: {
-      view: string
-      projectPath: string | null
-      chapterGuid: string | null
-      sceneId: string | null
-    }
+    input: unknown
   ) => {
+    const request = normalizeDetachedPaneRequest(input)
     const win = createAppWindow({ width: 720, height: 900, minWidth: 360, minHeight: 400 })
     win.once('ready-to-show', () => win.show())
     attachWindowLifecycle(win)
@@ -226,6 +250,10 @@ ipcMain.handle(
     if (request.projectPath) query.project = request.projectPath
     if (request.chapterGuid) query.chapter = request.chapterGuid
     if (request.sceneId) query.scene = request.sceneId
+    if (request.bookId) query.book = request.bookId
+    if (request.draftId) query.draft = request.draftId
+    if (request.writingScope) query.writingScope = request.writingScope
+    if (request.selectedSceneIds) query.selectedScenes = JSON.stringify(request.selectedSceneIds)
 
     if (process.env.ELECTRON_RENDERER_URL) {
       const search = new URLSearchParams(query).toString()

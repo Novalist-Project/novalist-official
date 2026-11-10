@@ -10,7 +10,33 @@
 
 **Spec:** [Unified writing workspace design](../specs/2026-11-09-unified-writing-workspace-design.md).
 **ADR:** [One continuous writing surface](../../adr/0008-unified-writing-surface.md).
-**Status:** Implementation authorized on 2026-11-09. Task 1 is in progress and remains a mandatory feasibility gate; later tasks are pending its result.
+**Status:** Implementation remains under review on the local feature branch. The earlier functional checks missed editor visual acceptance. The editor presentation has now been corrected against the approved prototype, with headless appearance checks for desktop and narrow panes, German synopsis labels, scope switching, and optional pages. Writer review of the corrected build, final performance acceptance, and local integration commits remain. No merge or release is authorized. Historical experimental results remain separate from production acceptance evidence.
+
+## Execution record
+
+The [validation record](../../research/unified-writing-validation.md) and
+[parity inventory](../../research/unified-writing-parity.md) map the delivered
+behavior to actual tests. Functional results are a deduplicated union of completed
+checkpoints, with 25 prerequisite skips retained explicitly. Local Electron runs
+were explicitly authorized by the user for this implementation. Checked steps
+record delivered work; Task 1's historical failed experiments remain failed.
+References below to isolated desktop execution were satisfied by the user's
+explicit authorization for these local synthetic-project runs.
+
+| Tasks | Delivered behavior and evidence |
+| --- | --- |
+| 1 | Completed experimental comparisons and feature inventory. Historical failed adapter gates remain failed in the feasibility report; production acceptance is measured separately in Task 13. |
+| 2–4 | Canonical scene registry, passive reads, scene-aware native editing, retained writer history and journaled recoverable commits; Node, Core, Backend and native editor checks. |
+| 5 | Shared writer history, observer lifetime and bounded services implemented and reviewed; final large-book runtime/memory proof remains in Task 13. |
+| 6–7 | Ordered acts, reference-safe lifecycle, caret splits, boundary chapters and atomic structural undo/recovery; Core, Backend and application checks. |
+| 8–10 | Dirty/offscreen search and atomic replacement, quick styles/structure actions, per-pane scopes, compact synopsis and retained presentation; owner, native and application checks. |
+| 11–12 | Metadata-only Structure and existing planning tools, Binder structural history, layout/route migration and mobile compatibility; mounted component, application and build checks. |
+| 13 | Manuals, changelog and independent integration reviews complete; final six-case performance acceptance and local commits remain. |
+
+Foundation work has focused commits. The later production integration and its
+dependent regression migrations are delivered together; validation and raw
+content-free acceptance evidence are retained with the final documentation.
+This consolidates the later commit steps without changing their behavioral gates.
 
 ## Global Constraints
 
@@ -126,7 +152,7 @@ with deterministic scene IDs; `measureWriting(page): Promise<WritingMetrics>`
 reports runtime/DOM/heap counts and latency samples, never prose. Record the
 chosen production transaction/selection adapter after the experiment.
 
-- [ ] Write failing browser assertions for two-scene selection/format/delete,
+- [x] Write failing browser assertions for two-scene selection/format/delete,
   scoped serialization, undo after scope changes, IME, annotations, and local
   undo after a remote change. Representative acceptance assertions:
 
@@ -137,19 +163,19 @@ chosen production transaction/selection adapter after the experiment.
   expect(serializedSceneIds).toEqual(originalSceneIds)
   ```
 
-- [ ] Run the small fixture on an isolated desktop; confirm failures expose the
+- [x] Run the small fixture on an isolated desktop; confirm failures expose the
   current separate-surface/undo limitations rather than harness errors.
-- [ ] Build only the experiment needed to compare common editable prose with
+- [x] Build only the experiment needed to compare common editable prose with
   protected scene boundaries against existing multi-iframe behavior. Prove the
   primitive that preserves per-scene serialization, selection, and local/shared
   undo; do not replace the editor engine.
-- [ ] Run 100/500/1,000 scenes up to 1 million words and five traversal rounds.
+- [x] Run 100/500/1,000 scenes up to 1 million words and five traversal rounds.
   Include two panes, long scenes, page/typewriter mode, images, comments, and
   remote editing. Record environment, raw metrics, and each pass/fail.
-- [ ] Inventory every EditorWindow command/feature from `editorBridge.ts` and
+- [x] Inventory every EditorWindow command/feature from `editorBridge.ts` and
   the spec. For each, identify selection scope, affected scene, and an existing
   or new assertion. A “not implemented” parity row blocks production rollout.
-- [ ] If any required gate fails, record the exact case and return for an
+- [x] If any required gate fails, record the exact case and return for an
   architectural decision. On success, update interfaces if required and commit
   the report/harness; do not merge throwaway rendering code as production.
 
@@ -178,7 +204,7 @@ Add `scenes/readPassive(bookId, draftId, chapterGuid, sceneId)` returning the ex
 the supplied book/draft inside the active project without changing active book
 or emitting activation. Project searches use each book's active draft.
 
-- [ ] Add failing identity/projection tests:
+- [x] Add failing identity/projection tests:
   ```js
   assert.equal(passiveFetchesAfterTwoSubscribersReadTheSameRef, 1)
   assert.deepEqual(resolveWritingProjection(chapters, emptySelection), [])
@@ -187,11 +213,11 @@ or emitting activation. Project searches use each book's active draft.
   ```
   Also test independent panes, stale read after draft switch, equal scene IDs
   in different contexts, filtered order, and one pending-write owner.
-- [ ] Run those Node/backend suites and verify the new behavior is missing.
-- [ ] Implement passive fetch, explicit activation, retained scene documents,
+- [x] Run those Node/backend suites and verify the new behavior is missing.
+- [x] Implement passive fetch, explicit activation, retained scene documents,
   typed projections, reference counting, and workspace-epoch rejection.
   Do not replace selected/caret scene with the last prefetched scene.
-- [ ] Verify close failure retains unsaved documents and cancels context switch;
+- [x] Verify close failure retains unsaved documents and cancels context switch;
   release clean resources without erasing session history. Commit after focused
   tests and typecheck pass.
 
@@ -221,7 +247,7 @@ Tests: new `app/scripts/writing-document-dom.test.mjs`,
 `revealWritingPoint(point): void`.
 Legacy single-scene `setContent/getContent` remain adapters.
 
-- [ ] Add failing DOM/browser cases:
+- [x] Add failing DOM/browser cases:
   ```js
   assert.deepEqual(captured.changes.map(x => x.ref.sceneId), ['s1', 's2'])
   assert.equal(serializeScene('s1').includes('data-editor-chrome'), false)
@@ -230,15 +256,15 @@ Legacy single-scene `setContent/getContent` remain adapters.
   ```
   Cover reverse selections, inline markup, lists, emoji/Unicode offsets,
   duplicate annotation IDs, empty scenes, pasted HTML, and hidden scenes.
-- [ ] Verify the baseline fails the focused cases on the isolated runner.
-- [ ] Implement the proven common-root adapter with stable scene wrappers,
+- [x] Verify the baseline fails the focused cases on the isolated runner.
+- [x] Implement the proven common-root adapter with stable scene wrappers,
   protected structural chrome, canonical text-offset conversion, sanitized
   scene serialization, and before/after transaction reporting. Never reset
   all HTML on every input or rebuild unaffected roots on scope changes.
-- [ ] Route caret-specific commands to the active scene and selection-specific
+- [x] Route caret-specific commands to the active scene and selection-specific
   commands across touched scenes. Qualify annotations by scene identity;
   clipboard text excludes UI labels while preserving prose paragraph breaks.
-- [ ] Prove unchanged single-scene/mobile behavior plus the new cross-scene
+- [x] Prove unchanged single-scene/mobile behavior plus the new cross-scene
   cases; commit only with local DOM checks and isolated browser evidence.
 
 **Checks:** `node --experimental-strip-types --test scripts/writing-document-dom.test.mjs`
@@ -265,7 +291,7 @@ Journal has `PrepareAsync`, `CommitAsync`, `RollbackAsync`, and
 `RecoverAsync` over a validated affected-file manifest; caller-supplied
 paths are forbidden. Journal contents are protected project data, not logs.
 
-- [ ] Add failing cases for one-step two-scene undo, history after remount,
+- [x] Add failing cases for one-step two-scene undo, history after remount,
   two panes editing one scene, dirty change during slow save, stale epoch/hash,
   a refusing window, failure on the second file, and restart recovery.
   ```js
@@ -273,15 +299,15 @@ paths are forbidden. Journal contents are protected project data, not logs.
   assert.equal(afterFailedCommit.pendingTransactionId, transaction.id)
   assert.equal(afterOldAcknowledgement.newerTextStillDirty, true)
   ```
-- [ ] Run focused Node/Core/backend tests and verify failures.
-- [ ] Implement writer-session history and grouped commit ownership, capturing
+- [x] Run focused Node/Core/backend tests and verify failures.
+- [x] Implement writer-session history and grouped commit ownership, capturing
   iframe edits before save/teardown. Validate all hashes before mutation;
   retain affected metadata/files and inverse operations. Recover/roll back
   partial local mutations under the workspace gate before publishing state.
-- [ ] Keep ordinary one-scene APIs working. Do not replace the old entire save
+- [x] Keep ordinary one-scene APIs working. Do not replace the old entire save
   system at once or clear dirty flags for text newer than the acknowledged
   transaction. Project-wide replacement history retains cross-book references.
-- [ ] Verify injected interruption at every journal phase, replay idempotency,
+- [x] Verify injected interruption at every journal phase, replay idempotency,
   conflict retry, and shutdown veto, then commit.
 
 **Checks:** from `app`,
@@ -310,7 +336,7 @@ Undo/redo return `Promise<HistoryResult>` from the shared contracts.
 and `dispose(): Promise<void>`. Service requests/results carry scene identity
 and revision. Document/history lifetime is separate from mounted bindings.
 
-- [ ] Add failing assertions for a two-scene action followed by remote insertion:
+- [x] Add failing assertions for a two-scene action followed by remote insertion:
   ```js
   assert.equal((await history.undo(id)).status, 'applied')
   assert.equal(remoteTextStillPresent, true)
@@ -319,12 +345,12 @@ and revision. Document/history lifetime is separate from mounted bindings.
   ```
   Include IME teardown veto, hidden dirty documents, two local panes, remote
   deletion with recovered-copy behavior, and stale proofing results.
-- [ ] Confirm focused Node/shared-browser cases fail before ownership changes.
-- [ ] Keep local-origin Yjs history for edited scenes; release clean unused
+- [x] Confirm focused Node/shared-browser cases fail before ownership changes.
+- [x] Keep local-origin Yjs history for edited scenes; release clean unused
   view bindings and services without destroying needed history. Group managers
   by logical transaction ID so one undo affects only that writer's contribution.
   Pin composing/selected content and retain failed sends.
-- [ ] Schedule heavy proofing/entity/media work for visible/active/pinned scenes;
+- [x] Schedule heavy proofing/entity/media work for visible/active/pinned scenes;
   cancel stale work on revision/context change. Read-aloud/dictation and extension
   actions target the active scene or an explicitly selected range.
 - [ ] Prove feature parity from Task 1's inventory, no runtime accumulation,
@@ -361,7 +387,7 @@ chapter GUIDs, and optional act metadata. No renderer invents these group rules.
 Expose ordered act metadata and validation issues in project state; projection
 contains named groups, empty acts, and position-preserving unassigned runs.
 
-- [ ] Add failing cases for empty acts, contiguous groups, unassigned chapters,
+- [x] Add failing cases for empty acts, contiguous groups, unassigned chapters,
   case-insensitive uniqueness, all chapters moving with their act, legacy
   interleaving, and old mobile serialization round-trip. Essential assertions:
   ```csharp
@@ -369,19 +395,19 @@ contains named groups, empty acts, and position-preserving unassigned runs.
   Assert.Equal(expectedWholeActOrder, orderAfterMove);
   Assert.False(renameIntoConflictingSharedMetadata.IsValid);
   ```
-- [ ] Verify failures in the new Core/backend suites.
-- [ ] Implement canonical chapter-order projection and mutations over the
+- [x] Verify failures in the new Core/backend suites.
+- [x] Implement canonical chapter-order projection and mutations over the
   existing name-based lists. Preserve the spec's empty-act placement rule;
   do not add invisible ordering metadata that older clients discard.
-- [ ] Preflight rename references in `StoryPremise.Acts`,
+- [x] Preflight rename references in `StoryPremise.Acts`,
   `CharacterOverride.Act`, `EntityStateOverride.Act`, and narration scope IDs.
   If the destination name already carries conflicting shared metadata, reject
   before mutation. Copy retained shared references when the old name remains
   in another draft; never overwrite unrelated context.
-- [ ] Validate legacy assignments, produce a regrouping preview with before/after
+- [x] Validate legacy assignments, produce a regrouping preview with before/after
   chapter IDs, and retain existing order until explicitly applied. Rejection
   never disables ordinary prose writing.
-- [ ] Verify date/word-target semantics, export tokens, imported acts, draft
+- [x] Verify date/word-target semantics, export tokens, imported acts, draft
   switching, and nondestructive removal; commit.
 
 **Checks:** root Core/backend `dotnet test` filtered to
@@ -424,7 +450,7 @@ Define `StructureCommand` as these typed variants:
 | createAct / renameAct / removeAct / moveAct | named arguments from Task 6 |
 | regroupActs | validated preview token and expected structure revision |
 
-- [ ] Write failing behavioral assertions:
+- [x] Write failing behavioral assertions:
   ```js
   assert.deepEqual(splitChapterSceneTitles, ['new half', 'following scene'])
   assert.equal(newBoundaryChapter.scenes.length, 1)
@@ -434,16 +460,16 @@ Define `StructureCommand` as these typed variants:
   Cover caret at either edge, empty book, cancelled naming, duplicate annotation
   IDs, partial file failure, stale grouping preview, sorted multi-selection,
   cross-act reassignment, and remote edits during the operation.
-- [ ] Run focused tests, verify failures, then implement preflight/compound
+- [x] Run focused tests, verify failures, then implement preflight/compound
   operations. Resolve destinations after removing movers, using the full
   manuscript order even when the UI is filtered.
-- [ ] Integrate comment/footnote transfer and recounting. Return the correct
+- [x] Integrate comment/footnote transfer and recounting. Return the correct
   caret target; record one inverse including all metadata/file changes.
-- [ ] For shared projects, coordinate shared prose changes/binding transfer with
+- [x] For shared projects, coordinate shared prose changes/binding transfer with
   the existing project-file lease/batch and recovery mechanisms. Keep structural
   connectivity guards. Reject unsafe inverses after remote changes; preserve
   recovered copies and all pending collaborator work.
-- [ ] Verify write failures roll back/recover before state publication, rather
+- [x] Verify write failures roll back/recover before state publication, rather
   than inheriting the current coordinator's partial-mutation behavior. Commit
   after focused tests and isolated structural/collaboration checks.
 
@@ -471,7 +497,7 @@ field, index, length, snapshot hash/revision.
 computes validated replacements without writing. Host applies changes as one
 Task 4/5 transaction. Retain old search RPC signatures for existing clients.
 
-- [ ] Add failing assertions:
+- [x] Add failing assertions:
   ```js
   assert.deepEqual(foundSceneIds, ['dirty-visible', 'clean-offscreen'])
   assert.equal(highlightedText, expectedMatch)
@@ -481,18 +507,18 @@ Task 4/5 transaction. Retain old search RPC signatures for existing clients.
   Include regex timeout/invalid pattern, inline markup, non-BMP Unicode,
   a phrase straddling a scene break (no match), stale result, remote change,
   and project-wide replacement with another book open in a second window.
-- [ ] Confirm failures in Node/Core/backend and isolated navigation tests.
-- [ ] Build an immutable search snapshot by capturing pending content in all
+- [x] Confirm failures in Node/Core/backend and isolated navigation tests.
+- [x] Build an immutable search snapshot by capturing pending content in all
   participating windows; overlay dirty versions on passive backend reads.
   Do not persist merely to make text searchable and do not change the active
   backend book as an observable side effect of project search.
-- [ ] Add projection-default scope, wider choices, exact range navigation,
+- [x] Add projection-default scope, wider choices, exact range navigation,
   next/previous, Replace current, and Replace All. Use the same canonical
   text-offset mapping as Task 3; reload/revalidate changed matches.
-- [ ] Route local/shared prose replacement through their transaction owners,
+- [x] Route local/shared prose replacement through their transaction owners,
   with one undo group even for multiple books. Keep optional non-prose search
   and existing notes replacement/snapshot semantics separate and accurate.
-- [ ] Verify failure/cancellation never clears pending content or leaves an
+- [x] Verify failure/cancellation never clears pending content or leaves an
   unexplained partial replacement; commit.
 
 **Checks:** `node --experimental-strip-types --test scripts/writing-search.test.mjs`
@@ -518,7 +544,7 @@ declare selectionToolbar/contextMenu transient access. Add
 `writing.sceneBreak`, `writing.chapterHeading`, `writing.insertChapter`.
 The first opens the picker for the saved range/caret; the latter dispatch Task 7.
 
-- [ ] Add failing placement and interaction tests:
+- [x] Add failing placement and interaction tests:
   ```js
   assert.equal(selectionAfterChoosingStyle, selectionBeforeOpeningPicker)
   assert.equal(bodyStyleAtEmptyCaret, '')
@@ -526,13 +552,13 @@ The first opens the picker for the saved range/caret; the latter dispatch Task 7
   ```
   Python tooling must accept only declared transient access and still reject
   undeclared duplicates or two persistent homes.
-- [ ] Run Node/tooling tests to confirm failures.
-- [ ] Add style/structure groups to the bubble with preserved selection,
+- [x] Run Node/tooling tests to confirm failures.
+- [x] Add style/structure groups to the bubble with preserved selection,
   keyboard focus, mixed-state labeling, Escape dismissal, and viewport clamping.
   Keep native picker interaction working; do not prevent all pointer events.
-- [ ] Expose the same picker through context menu/palette at a collapsed caret
+- [x] Expose the same picker through context menu/palette at a collapsed caret
   and empty paragraph. Retain fixed-toolbar access and all existing bubble tools.
-- [ ] Verify locale/placement checks and isolated responsive keyboard/pointer
+- [x] Verify locale/placement checks and isolated responsive keyboard/pointer
   cases, then commit.
 
 **Checks:** root `python -m unittest tools/test_placement_doctor.py`,
@@ -558,7 +584,7 @@ synopsis document. Add per-pane `writingScope: WritingScope` without storing
 prose in preferences. Add writer-local presentation storage keyed by project,
 book, draft, and scene; master visibility is project-local.
 
-- [ ] Add failing assertions:
+- [x] Add failing assertions:
   ```js
   assert.equal(newPane.writingScope, 'manuscript')
   assert.equal(otherPane.writingScope, 'scene')
@@ -567,15 +593,15 @@ book, draft, and scene; master visibility is project-local.
   ```
   Cover caret retention, all-empty chapters, narrow split panes, focus mode,
   synopsis editing immediately before collapse, failed saves, and remote refresh.
-- [ ] Confirm failures, then mount one runtime per pane using the existing
+- [x] Confirm failures, then mount one runtime per pane using the existing
   editor configuration/feature bridge, with projections from Task 2.
-- [ ] Add scope switcher, scene separators without titles, chapter headings,
+- [x] Add scope switcher, scene separators without titles, chapter headings,
   active-scene context, word counts, collapsible synopsis, and chapter/scene
   boundary insertion controls. Empty books have actionable creation controls.
-- [ ] Apply the spec's token-based compact dimensions and responsive fallback.
+- [x] Apply the spec's token-based compact dimensions and responsive fallback.
   Preserve user reading width, zoom-to-fit, page view, typewriter scrolling,
   compose dimming, selection, and focus-mode behavior across scopes.
-- [ ] Verify both local and shared synopses use the established document
+- [x] Verify both local and shared synopses use the established document
   lifecycle; commit after focused Node and isolated layout/scope checks.
 
 **Checks:** focused Node suites and `npm --prefix app run typecheck`;
@@ -602,7 +628,7 @@ planning scene fields without HTML/hash/shared-prose payloads.
 order destinations. `PlanningView` offers Structure, Corkboard, Outliner, Board.
 Add discoverable `MainView = 'structure'` under Plan; preserve other Plan tools.
 
-- [ ] Add failing assertions:
+- [x] Add failing assertions:
   ```js
   assert.equal(proseReadCallsDuringPlanningLoad, 0)
   assert.deepEqual(emptyChapterIdsShown, emptyChapterIdsInProject)
@@ -611,20 +637,20 @@ Add discoverable `MainView = 'structure'` under Plan; preserve other Plan tools.
   ```
   Cover keyboard moves, acts/unassigned runs, filtered destination resolution,
   inactive scenes, collapsed groups, cancellation, and live synopsis edits.
-- [ ] Confirm new tests fail.
-- [ ] Implement metadata-only planning retrieval using the manifest/project
+- [x] Confirm new tests fail.
+- [x] Implement metadata-only planning retrieval using the manifest/project
   metadata. Preserve POV, goal, outcome, custom properties, labels/stages and
   shared synopsis references needed by existing tools; do not use prose-loading
   `manuscript/get` merely to draw cards.
-- [ ] Build Structure's chapter summaries and scene cards, ordered act groups,
+- [x] Build Structure's chapter summaries and scene cards, ordered act groups,
   precise before/after/inside drop indicators, keyboard move menus, and creation.
   Dispatch Task 7 transactions rather than direct move RPCs. Edit summaries
   only in active fields; do not mount hundreds of Markdown editors for previews.
-- [ ] Keep Corkboard freeform coordinates, Board grouping semantics, Outliner
+- [x] Keep Corkboard freeform coordinates, Board grouping semantics, Outliner
   fields, filter chips, Smart Lists, multi-selection, and “Read as one.”
   Legacy ordering problems use an explicit preview/repair workflow, never an
   on-load reorder.
-- [ ] Verify planning updates reflect immediately in Write/outline/export order,
+- [x] Verify planning updates reflect immediately in Write/outline/export order,
   and save failures retain editing values; commit.
 
 **Checks:** new Node/backend suites; isolated
@@ -651,7 +677,7 @@ workspace layouts. Persist an optional writing scope on each saved writing
 leaf; named workspaces capture the same pane preferences. Migration is idempotent.
 Legacy `nav.manuscript`/Ctrl+D5 maps to Write + Manuscript scope on desktop.
 
-- [ ] Add failing assertions:
+- [x] Add failing assertions:
   ```js
   assert.equal(migratedLegacyLeaf.view, 'write')
   assert.equal(migratedLegacyLeaf.writingScope, 'manuscript')
@@ -662,16 +688,16 @@ Legacy `nav.manuscript`/Ctrl+D5 maps to Write + Manuscript scope on desktop.
   Include missing/unknown fields, detached panes, stale selected IDs, and another
   project. Scope is part of persisted-pane equality; changing only scope must
   not be mistaken for an unchanged layout.
-- [ ] Confirm failures and implement both storage migrations without discarding
+- [x] Confirm failures and implement both storage migrations without discarding
   unrelated layout choices. Scene navigation preserves the pane's current scope.
-- [ ] Route filtered/selected writing to the new projection, preserve exact
+- [x] Route filtered/selected writing to the new projection, preserve exact
   selected ID semantics, and add the visible scope/filter label and clear action.
   Fetch/selection/filter changes never discard pending writes or reset history.
-- [ ] Redirect desktop prose entry points and remove the duplicate desktop save
+- [x] Redirect desktop prose entry points and remove the duplicate desktop save
   owner. Keep legacy assets/adapters wherever mobile still uses them; deletion
   is allowed only after all callers are migrated and mobile parity is proven.
   Update unsaved guards and recovery consumers explicitly.
-- [ ] Verify modes, commands, menus, links, named layouts, tabs, tear-off windows,
+- [x] Verify modes, commands, menus, links, named layouts, tabs, tear-off windows,
   project/draft changes, and mobile scene writing; commit.
 
 **Checks:** new migration/scope Node tests plus existing pending/external refresh
@@ -692,7 +718,7 @@ Review glossary/spec/ADR terminology against implemented behavior.
 hardware/runtime identity, fixture dimensions, raw timing/count/memory series,
 and pass/fail per gate, never story text or private project paths.
 
-- [ ] Add failing integrated assertions for 1,000 scenes/1 million words,
+- [x] Add failing integrated assertions for 1,000 scenes/1 million words,
   five traversals, independent panes, selected/filtered search, typing during
   background work, and crash/reopen after a partial compound write.
   ```ts
@@ -706,7 +732,7 @@ and pass/fail per gate, never story text or private project paths.
   an implemented assertion; no feature marked missing may pass the gate.
 - [ ] Fix observed failures through their owning tasks, without weakening
   coverage, placement rules, or performance targets. Re-run affected checks.
-- [ ] Update the user manual for scopes, hidden scene titles, acts, synopsis
+- [x] Update the user manual for scopes, hidden scene titles, acts, synopsis
   margin, quick-edit styles, structure creation, filtered writing, and undo/search.
   Check release tags and Unreleased first; update one final Added entry and
   leave published sections unchanged. Preserve separate Fixed entries only for

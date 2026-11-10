@@ -1,25 +1,33 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
-import { rpc } from '../rpc/client'
 import { useEditorBridge } from '../stores/editorBridgeStore'
 import { useShellStore } from '../stores/shellStore'
+import { useSceneAnnotations } from './useSceneAnnotations'
+import { writingErrorMessage } from '../views/editor/writingError'
 
-interface CommentRow {
-  id: string
-  anchorText: string
-  text: string
-  resolved: boolean
+function AnnotationInput({ value, placeholder, inputRef, onCommit }: {
+  value: string
+  placeholder?: string
+  inputRef?: (input: HTMLInputElement | null) => void
+  onCommit(value: string): void
+}): React.JSX.Element {
+  const input = useRef<HTMLInputElement | null>(null)
+  const edited = useRef(false)
+  useEffect(() => {
+    if (input.current && document.activeElement !== input.current) input.current.value = value
+  }, [value])
+  return <input className="outliner-input" defaultValue={value} placeholder={placeholder}
+    ref={element => { input.current = element; inputRef?.(element) }}
+    onFocus={() => { edited.current = false }} onInput={() => { edited.current = true }}
+    onBlur={event => {
+      if (edited.current && event.currentTarget.value !== value) onCommit(event.currentTarget.value)
+      else event.currentTarget.value = value
+      edited.current = false
+    }} />
 }
 
-interface FootnoteRow {
-  id: string
-  number: number
-  text: string
-}
-
-/** Standalone footnotes + comments lists for the open scene, editable and
- * deletable, persisted through scenes/setAnnotations. */
+/** Editable footnotes and comments for the active scene. */
 export function AnnotationsPanel({
   chapterGuid,
   sceneId
@@ -28,35 +36,9 @@ export function AnnotationsPanel({
   sceneId: string
 }): React.JSX.Element | null {
   const { t } = useTranslation()
-  const [comments, setComments] = useState<CommentRow[]>([])
-  const [footnotes, setFootnotes] = useState<FootnoteRow[]>([])
-  // Any write to the scene's annotations, from here or from the prose. This
-  // list showed whatever it had read when the scene opened, so a footnote made
-  // in the editor did not appear until the writer left the scene and came back.
-  const annotationsRevision = useEditorBridge((s) => s.annotationsRevision)
+  const { comments, footnotes, setComments, setFootnotes, persist, remove, error } = useSceneAnnotations(chapterGuid, sceneId)
   const pendingFootnoteText = useShellStore((s) => s.pendingFootnoteText)
   const textBoxes = useRef(new Map<string, HTMLInputElement>())
-
-  const load = (): void => {
-    void rpc
-      .request<{ comments: CommentRow[]; footnotes: FootnoteRow[] }>('scenes/getAnnotations', [
-        chapterGuid,
-        sceneId
-      ])
-      .then((a) => {
-        setComments(a.comments)
-        setFootnotes(a.footnotes)
-      })
-      .catch(() => {
-        setComments([])
-        setFootnotes([])
-      })
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapterGuid, sceneId, annotationsRevision])
 
   /**
    * The caret goes into the note that was just made, so it can be written now
@@ -70,15 +52,6 @@ export function AnnotationsPanel({
     useShellStore.getState().clearPendingFootnoteText()
     box.focus()
   }, [pendingFootnoteText, footnotes])
-
-  const persist = (
-    nextComments: CommentRow[],
-    nextFootnotes: FootnoteRow[]
-  ): Promise<void> =>
-    rpc
-      .request('scenes/setAnnotations', [chapterGuid, sceneId, nextComments, nextFootnotes])
-      .then(() => useEditorBridge.getState().annotationsChanged())
-      .catch(() => undefined)
 
   /**
    * The editor, but only while it is showing the scene this panel is about.
@@ -96,31 +69,17 @@ export function AnnotationsPanel({
   /** Takes the writer to the marker, which is the only way to judge a note. */
   const showFootnote = (id: string): void => proseEditor()?.scrollToFootnoteById(id)
 
-  const removeFootnote = (index: number): void => {
-    const gone = footnotes[index]
-    const next = footnotes.filter((_, i) => i !== index)
-    setFootnotes(next)
-    // The prose is told after the shortened list is saved: taking a marker out
-    // renumbers the rest, and the editor answers that by reading the list back.
-    // The other order has it read the list this row was still in.
-    void persist(comments, next).then(() => proseEditor()?.removeFootnoteById(gone.id))
-  }
-
-  const removeComment = (index: number): void => {
-    const gone = comments[index]
-    const next = comments.filter((_, i) => i !== index)
-    setComments(next)
-    void persist(next, footnotes).then(() => proseEditor()?.removeCommentById(gone.id))
-  }
-
   // A blank panel says nothing about whether it is working. The tab is where
   // footnotes live whether or not the scene has any, so it says so.
   if (comments.length === 0 && footnotes.length === 0) {
-    return <div className="inspector-placeholder">{t('footnotes.empty')}</div>
+    return <div className="inspector-placeholder" role={error ? 'alert' : undefined}>
+      {error ? writingErrorMessage(error) : t('footnotes.empty')}
+    </div>
   }
 
   return (
     <>
+      {error && <div role="alert">{writingErrorMessage(error)}</div>}
       {footnotes.length > 0 && (
         <div className="ctx-section">
           <div className="inspector-label">{t('footnotes.panelTitle')}</div>
@@ -137,18 +96,16 @@ export function AnnotationsPanel({
               >
                 {fn.number}
               </button>
-              <input
-                className="outliner-input"
-                ref={(el) => {
+              <AnnotationInput
+                inputRef={(el) => {
                   if (el) textBoxes.current.set(fn.id, el)
                   else textBoxes.current.delete(fn.id)
                 }}
                 placeholder={t('footnotes.addPrompt')}
-                defaultValue={fn.text}
-                onBlur={(e) => {
-                  if (e.target.value === fn.text) return
+                value={fn.text}
+                onCommit={(text) => {
                   const next = footnotes.map((f, i) =>
-                    i === index ? { ...f, text: e.target.value } : f
+                    i === index ? { ...f, text } : f
                   )
                   setFootnotes(next)
                   void persist(comments, next)
@@ -157,7 +114,7 @@ export function AnnotationsPanel({
               <button
                 className="binder-expand"
                 aria-label={t('explorer.contextDelete')}
-                onClick={() => removeFootnote(index)}
+                onClick={() => void remove('footnote', fn.id)}
               >
                 <X size={12} strokeWidth={2} />
               </button>
@@ -180,13 +137,11 @@ export function AnnotationsPanel({
                 </span>
               )}
               <div className="annotation-row">
-                <input
-                  className="outliner-input"
-                  defaultValue={comment.text}
-                  onBlur={(e) => {
-                    if (e.target.value === comment.text) return
+                <AnnotationInput
+                  value={comment.text}
+                  onCommit={(text) => {
                     const next = comments.map((c, i) =>
-                      i === index ? { ...c, text: e.target.value } : c
+                      i === index ? { ...c, text } : c
                     )
                     setComments(next)
                     void persist(next, footnotes)
@@ -195,7 +150,7 @@ export function AnnotationsPanel({
                 <button
                   className="binder-expand"
                   aria-label={t('explorer.contextDelete')}
-                  onClick={() => removeComment(index)}
+                  onClick={() => void remove('comment', comment.id)}
                 >
                   <X size={12} strokeWidth={2} />
                 </button>

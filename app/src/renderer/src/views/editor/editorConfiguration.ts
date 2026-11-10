@@ -20,10 +20,16 @@ export function hardBandColors(): Record<string, string> {
   }
 }
 
+export function pushEditorLanguage(editor: EditorWindow): void {
+  const language = useSettingsStore.getState().view?.effective.grammarCheckLanguage
+  if (language) editor.setLanguage(language)
+}
+
 export function pushEditorSettings(editor: EditorWindow, initial = false): void {
   const view = useSettingsStore.getState().view
   if (!view) return
   const eff = view.effective
+  pushEditorLanguage(editor)
   const words = view.global.spellCheckCustomWords
   editor.setSpellingDictionary(
     Array.isArray(words) ? words.filter((word): word is string => typeof word === 'string') : []
@@ -55,8 +61,9 @@ export function pushEditorSettings(editor: EditorWindow, initial = false): void 
     .request<{ words: string[]; trigger: number }>('completion/get')
     .then((list) => editor.setCompletionList(list.words ?? [], list.trigger ?? 3))
     .catch(() => editor.setCompletionList([], 3))
-  if (!initial || eff.pageViewEnabled) {
-    editor.setPageView(eff.pageViewEnabled)
+  const pageView = eff.pageViewEnabled
+  if (!initial || pageView) {
+    editor.setPageView(pageView)
   }
   if (!initial || eff.enableBookParagraphSpacing) {
     editor.setBookParagraphSpacing(eff.enableBookParagraphSpacing)
@@ -67,10 +74,6 @@ export function pushEditorSettings(editor: EditorWindow, initial = false): void 
   if (!initial || eff.spellCheckEnabled) {
     editor.setSpellCheck(eff.spellCheckEnabled)
   }
-  // The prose is checked against the language it is written in, not the one the
-  // menus are in - a German novel written on an English install still wants a
-  // German dictionary.
-  editor.setLanguage(eff.autoReplacementLanguage)
 }
 
 // Speech verbs mirror DialogueCorrectionExtension.GetLanguageConfig so the

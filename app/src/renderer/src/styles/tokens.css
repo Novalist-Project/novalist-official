@@ -53,6 +53,16 @@
 :root {
   /* Toolbar overrides this with the current interface scale. */
   --nl-ui-scale: 1;
+  --nl-writing-margin-collapsed: 120px;
+  --nl-writing-typewriter-space: 70vh;
+  --nl-writing-margin-expanded: 176px;
+  --nl-writing-gap: 12px;
+  --nl-writing-outer: 12px;
+  --nl-writing-document-width: 1120px;
+  --nl-writing-min-prose: 320px;
+  --nl-writing-scene-estimate: 600px;
+  --nl-writing-synopsis-min-height: 3lh;
+  --nl-writing-dim-opacity: 0.28;
 
   --nl-motion-fast: 120ms;
   --nl-motion-normal: 160ms;

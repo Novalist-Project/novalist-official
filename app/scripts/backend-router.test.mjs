@@ -109,6 +109,32 @@ test('data notifications broadcast while interactive UI has one owner', () => {
   assert.equal(detached.messages().at(-1).method, 'ui/wizard/open')
 })
 
+test('successful metadata changes notify peer windows without duplicating the origin response', () => {
+  const { router, requests } = harness()
+  const main = port(), detached = port()
+  router.attach(1, main)
+  router.attach(2, detached)
+  router.receive(2, detached, encodeRpcFrame({ jsonrpc: '2.0', id: 1, method: 'project/renameChapter', params: ['chapter', 'Private title'] }))
+  router.receiveBackend(encodeRpcFrame({ jsonrpc: '2.0', id: requests[0].id, result: { title: 'Private title' } }))
+  assert.deepEqual(main.messages(), [{ jsonrpc: '2.0', method: 'planning/metadataChanged', params: { method: 'project/renameChapter' } }])
+  assert.deepEqual(detached.messages(), [{ jsonrpc: '2.0', id: 1, result: { title: 'Private title' } }])
+})
+
+test('failed metadata, prose commits and old-epoch metadata replies produce no peer invalidation', () => {
+  for (const scenario of ['failure', 'prose', 'old-epoch']) {
+    const { router, requests } = harness()
+    const main = port(), detached = port()
+    router.attach(1, main)
+    router.attach(2, detached)
+    router.receive(2, detached, encodeRpcFrame({ jsonrpc: '2.0', id: 1,
+      method: scenario === 'prose' ? 'writing/commit' : 'project/renameChapter' }))
+    if (scenario === 'old-epoch') { router.setEpoch(1); router.settle(1, 1) }
+    router.receiveBackend(encodeRpcFrame({ jsonrpc: '2.0', id: requests[0].id,
+      ...(scenario === 'failure' ? { error: { code: -1, message: 'Not saved' } } : { result: true }) }))
+    assert.deepEqual(main.messages(), [], scenario)
+  }
+})
+
 test('epochs change only after client acknowledgement and drain tokens are scoped', () => {
   const { router, requests } = harness()
   const main = port(), detached = port()

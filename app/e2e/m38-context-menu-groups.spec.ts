@@ -28,8 +28,8 @@ test('context-menu groups require a selection and stay within the editor', async
     await page.locator('.binder-scene-row').first().click()
 
     const frame = page.frameLocator('iframe[title="editor"]')
-    const editor = frame.locator('#editor')
-    await editor.click()
+    const editor = frame.locator('[data-writing-scene]')
+    await editor.locator('p').first().click()
     // Focus restores the previous scroll position asynchronously. Let it finish
     // before typing and opening a menu whose position depends on that viewport.
     await expect.poll(() => editor.evaluate(element =>
@@ -37,28 +37,28 @@ test('context-menu groups require a selection and stay within the editor', async
         NovalistEditorState: { isFocusing: boolean }
       }).NovalistEditorState.isFocusing
     )).toBe(false)
-    await editor.pressSequentially('Liam Calder walked to the window.')
+    await page.keyboard.type('Liam Calder walked to the window.')
     const paragraph = editor.locator('p').filter({ hasText: 'Liam Calder walked to the window.' })
     await expect(paragraph).toHaveCount(1)
 
     const groupNames = async (): Promise<string[]> =>
       frame.locator('#context-menu .cm-parent > .cm-item > span').allTextContents()
 
-    // Caret only. Scene survives - splitting and inserting an image need no
-    // selection - and Codex, which is selection-only throughout, is absent.
+    // Styles and structural insertion work at a caret. Selection-only Codex
+    // actions remain absent until prose is selected.
     await paragraph.click({ button: 'right', position: { x: 8, y: 8 } })
     await expect(frame.locator('#context-menu.visible')).toBeVisible()
-    expect(await groupNames()).toEqual(['Scene'])
+    expect(await groupNames()).toEqual(['Paragraph style', 'Insert structure', 'Scene'])
     await page.keyboard.press('Escape')
 
     // With prose selected the group comes back, and its rows are live.
-    await editor.press('ControlOrMeta+a')
+    await page.keyboard.press('ControlOrMeta+a')
     await expect.poll(() => editor.evaluate(element =>
       element.ownerDocument.getSelection()?.toString() ?? ''
     )).toBe('Liam Calder walked to the window.')
     await paragraph.click({ button: 'right', position: { x: 8, y: 8 } })
     await expect(frame.locator('#context-menu.visible')).toBeVisible()
-    expect(await groupNames()).toEqual(['Scene', 'Codex'])
+    expect(await groupNames()).toEqual(['Paragraph style', 'Insert structure', 'Scene', 'Codex'])
     await expect(
       frame.locator('#context-menu .cm-parent', { hasText: 'Codex' }).locator('.cm-item.disabled')
     ).toHaveCount(0)

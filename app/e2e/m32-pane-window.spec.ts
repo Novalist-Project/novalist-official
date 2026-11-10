@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { copyProject } from './copyProject'
 import { evaluateWhenReady, waitForAppReady } from './appReady'
 import { REAL_PROJECT } from './realProject'
-import { closeTestApp } from './harness'
+import { closeTestApp, launchApp, seedBook, dismissTour } from './harness'
 
 /**
  * A pane torn out into its own window, and two panes side by side.
@@ -73,6 +73,30 @@ test('a pane opens in its own window and shows the real view', async () => {
   await expect(page.locator('.mode-rail')).toBeVisible()
 
   await closeTestApp(app)
+})
+
+test('a detached writing pane retains its scope and an explicit empty selected run', async () => {
+  const h = await launchApp('nl-detached-writing-scope-')
+  try {
+    const book = await seedBook(h, { Chapter: ['Opening', 'Later'] })
+    await dismissTour(h.page)
+    const chapter = book.chapters.find(item => item.title === 'Chapter')!
+    await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), chapter)
+    await expect(h.page.locator('.writing-scope-segments').getByRole('button', { name: 'Manuscript', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    const opened = h.app.waitForEvent('window')
+    await h.page.evaluate(async ({ chapterGuid, sceneId }) => {
+      const project = window.novalistStores.project.getState()
+      await window.novalist.openPaneWindow({ view: 'write', projectPath: project.projectPath,
+        bookId: project.activeBookId, draftId: project.activeDraftId,
+        chapterGuid, sceneId, writingScope: 'chapter', selectedSceneIds: [] })
+    }, { chapterGuid: chapter.guid, sceneId: chapter.scenes[0].id })
+    const detached = await opened
+    await expect(detached.locator('.app-shell.detached')).toBeVisible()
+    await expect(detached.locator('.writing-scope-segments').getByRole('button', { name: 'Chapter', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    await expect(detached.frameLocator('iframe[title="editor"]').locator('[data-writing-scene]')).toHaveCount(0)
+    await expect(detached.getByRole('button', { name: 'Show whole manuscript', exact: true })).toBeVisible()
+    await expect(h.page.locator('.writing-scope-segments').getByRole('button', { name: 'Manuscript', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  } finally { await h.close() }
 })
 
 test('splitting the editor gives each pane its own scene', async () => {

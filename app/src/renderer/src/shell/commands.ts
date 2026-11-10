@@ -35,6 +35,7 @@ const NAV_VIEWS: MainView[] = [
   'write',
   'dashboard',
   'manuscript',
+  'structure',
   'narration',
   'timeline',
   'plotGrid',

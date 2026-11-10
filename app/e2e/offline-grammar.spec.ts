@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { createServer } from 'node:http'
 import { dismissTour, enterWriting, launchApp, seedBook, type Harness } from './harness'
+import { replaceWritingScene } from './writingTestActions'
 
 async function grammarServer() {
   const requests: string[] = []
@@ -62,13 +63,13 @@ test('Harper checks British English offline and keeps learned words after reopen
     }, server.url)
     // Before the lazy engine has loaded: first use cannot rely on a CDN/cache.
     await h.page.context().setOffline(true)
-    const book = await seedBook(h, { One: ['Scene'] })
+    const book = await seedBook(h, { One: ['Scene'] }, 'Offline grammar fixture', false)
     await h.rpc('entities/create', ['character', 'Nemorra'])
     const text = String.fromCodePoint(0x1D11E) + ' This is a example. I realise it now. Aelthorn lives here. Nemorra lives here.'
     await h.rpc('scenes/write', [book.chapters[0].guid, book.chapters[0].scenes[0].id, `<p>${text}</p>`, text])
-    await h.page.locator('.binder-scene-row').first().click()
+    await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), book.chapters[0])
     const frame = h.page.frameLocator('.editor-frame')
-    const editor = frame.locator('#editor')
+    const editor = frame.locator('[data-writing-scene]')
     await expect(editor).toHaveText(text)
     // An astral character precedes the finding; the replacement must still
     // land on the article, using the editor's UTF-16 offsets.
@@ -90,7 +91,7 @@ test('Harper checks British English offline and keeps learned words after reopen
 
     // A fresh check and a fresh renderer must still accept the learned name.
     // Keep one real error so an idle/broken checker cannot satisfy the test.
-    await editor.fill(text)
+    await replaceWritingScene(h.page, book.chapters[0].scenes[0].id, `<p>${text}</p>`)
     await expect(frame.locator('.grammar-issue')).toHaveCount(1, { timeout: 20_000 })
     await expect(frame.locator('.grammar-issue')).toHaveText('a')
     await expect.poll(async () => (await h.rpc<{ html: string }>('scenes/read', [
@@ -189,11 +190,11 @@ test('learning a word clears LanguageTool spelling warnings without a paid accou
       grammarCheckProvider: 'languagetool', grammarCheckEnabled: true,
       grammarCheckApiUrl: url, grammarCheckApiKey: null, grammarCheckUsername: null
     }), server.url)
-    const book = await seedBook(h, { One: ['Scene'] })
-    await h.page.locator('.binder-scene-row').first().click()
+    const book = await seedBook(h, { One: ['Scene'] }, 'Dictionary fixture', false)
+    await h.rpc('scenes/write', [book.chapters[0].guid, book.chapters[0].scenes[0].id, '<p>Aelthorn sees the wrold.</p>', 'Aelthorn sees the wrold.'])
+    await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), book.chapters[0])
     const frame = h.page.frameLocator('.editor-frame')
-    await expect(frame.locator('#editor')).toBeVisible()
-    await frame.locator('#editor').fill('Aelthorn sees the wrold.')
+    await expect(frame.locator('[data-writing-scene]')).toHaveText('Aelthorn sees the wrold.')
     await expect(frame.locator('.grammar-issue')).toHaveCount(2, { timeout: 20_000 })
     server.pause()
     await frame.locator('.grammar-issue', { hasText: 'Aelthorn' }).click()
@@ -212,7 +213,7 @@ test('learning a word clears LanguageTool spelling warnings without a paid accou
       book.chapters[0].guid, book.chapters[0].scenes[0].id
     ])).html).toContain('Aelthorn sees the wrold.')
     await reopenEditor(h)
-    await expect(frame.locator('#editor')).toHaveText('Aelthorn sees the wrold.')
+    await expect(frame.locator('[data-writing-scene]')).toHaveText('Aelthorn sees the wrold.')
     await expect(frame.locator('.grammar-issue')).toHaveCount(1, { timeout: 20_000 })
     await expect(frame.locator('.grammar-issue')).toHaveText('wrold')
     expect(await h.rpc<string[]>('spell/words')).toEqual(['Aelthorn'])

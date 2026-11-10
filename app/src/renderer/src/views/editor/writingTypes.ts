@@ -74,6 +74,17 @@ export interface AnnotationChange {
   after: WritingAnnotations
 }
 
+export interface WritingAnnotationTransfer {
+  from: SceneRef
+  to: SceneRef
+  kind: 'comment' | 'footnote'
+  sourceId: string
+  targetId: string
+  move: boolean
+  expectedSourceRevision: number
+  sourceHtml: string
+}
+
 export interface WritingTransaction {
   id: string
   context: WritingContext
@@ -82,6 +93,7 @@ export interface WritingTransaction {
   changes: SceneChange[]
   /** An empty change list leaves annotations untouched. */
   annotationChanges: AnnotationChange[]
+  annotationTransfers?: WritingAnnotationTransfer[]
   beforeSelection: WritingSelection | null
   afterSelection: WritingSelection | null
 }

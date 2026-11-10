@@ -27,6 +27,7 @@ export class SceneMarkup {
   private boundaries: { node: Node; offsets: number[] }[] = []
   private runs: TextRun[] = []
   private offset = 0
+  private rendered = false
 
   constructor(private readonly editor: MarkupEnvironment, private readonly root: HTMLElement) {}
 
@@ -139,10 +140,35 @@ export class SceneMarkup {
 
   render(runs: TextRun[]): void {
     const fragment = this.prepare(runs)
-    this.patch(this.root, fragment)
+    if (this.rendered || !this.adoptInitial(fragment)) this.patch(this.root, fragment)
+    this.rendered = true
     this.editor.toDisplayImages(this.root)
     this.editor.refreshLayout?.()
     this.read()
+  }
+
+  private adoptInitial(fragment: DocumentFragment): boolean {
+    const identities: [Node, string][] = []
+    const children = (parent: Node): Node[] => Array.from(parent.childNodes).flatMap(node =>
+      node.nodeType === 1 && (node as Element).classList.contains('nv-page') ? children(node) : [node])
+    const matches = (existing: Node, desired: Node): boolean => {
+      if (existing.nodeType !== desired.nodeType || existing.nodeName !== desired.nodeName) return false
+      if (existing.nodeType !== 1) return existing.textContent === desired.textContent
+      const before = existing as Element, after = desired as Element
+      if (before.attributes.length !== after.attributes.length ||
+          Array.from(after.attributes).some(attribute => before.getAttribute(attribute.name) !== attribute.value)) return false
+      const identity = this.identities.get(desired), previous = this.identities.get(existing)
+      if (identity && previous && identity !== previous) return false
+      if (identity) identities.push([existing, identity])
+      return matchChildren(existing, desired)
+    }
+    const matchChildren = (existing: Node, desired: Node): boolean => {
+      const before = children(existing), after = children(desired)
+      return before.length === after.length && before.every((node, index) => matches(node, after[index]))
+    }
+    if (!matchChildren(this.root, fragment)) return false
+    for (const [node, identity] of identities) this.identities.set(node, identity)
+    return true
   }
 
   validateAttribute(name: string, value: string): void {

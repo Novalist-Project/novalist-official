@@ -2,7 +2,8 @@
 
 /** The footnote markers in the scene, in the order they are read. */
 window.footnoteOrder = function () {
-    return Array.from(window.NovalistEditorState.editor.querySelectorAll('sup.nv-fn[data-fn-id]'))
+    const root = window.NovalistWritingDocument?.enabled ? window.getWritingSceneRoot() : window.NovalistEditorState.editor;
+    return Array.from(root.querySelectorAll('sup.nv-fn[data-fn-id]'))
         .map(function (s) { return s.getAttribute('data-fn-id'); });
 };
 
@@ -23,7 +24,8 @@ window.insertFootnoteAtSelection = function (footnoteId) {
     var ids = window.renumberFootnotes();
     var num = ids.indexOf(footnoteId) + 1;
     try { window.NovalistEditorState.editor.dispatchEvent(new Event('input', { bubbles: true })); } catch (error) { console.warn("editor: operation failed", error instanceof Error ? error.name : typeof error); }
-    window.sendMessage({ type: 'footnoteInserted', footnoteId: footnoteId, number: num, ids: ids });
+    window.sendMessage({ type: 'footnoteInserted', footnoteId: footnoteId, number: num, ids: ids,
+        sceneId: window.writingSceneOf(sup)?.dataset.writingScene });
     return num;
 };
 
@@ -32,7 +34,8 @@ window.setFootnotesData = function (data) {
         var arr = typeof data === 'string' ? JSON.parse(data) : (data || []);
         var byId = {};
         for (var i = 0; i < arr.length; i++) byId[arr[i].id] = arr[i].text || '';
-        var sups = window.NovalistEditorState.editor.querySelectorAll('sup.nv-fn[data-fn-id]');
+        var root = window.NovalistWritingDocument?.enabled ? window.getWritingSceneRoot() : window.NovalistEditorState.editor;
+        var sups = root.querySelectorAll('sup.nv-fn[data-fn-id]');
         sups.forEach(function (s) {
             var id = s.getAttribute('data-fn-id');
             var t = byId[id];

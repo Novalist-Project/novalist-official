@@ -42,7 +42,7 @@ The menu bar is always visible on Windows and Linux, and sits in the system bar 
 
 - **File** — New Project, Browse for Project Folder, Import from Obsidian Plugin, Import a manuscript, Quick capture, Print, **Recent Projects** (a submenu of the last ten), and Exit (Close, on macOS).
 - **Edit** — Undo, Redo, Cut, Copy, Paste, Select All. These are the system's own, so they behave exactly as they do in every other application.
-- **Go** — every view in the app by name, grouped exactly as the modes group them: Dashboard; then Editor and Manuscript; then Timeline, Plot Grid, Planning board, Relationships, Calendar and Dialogue; then Codex, Wiki, Maps, Research, Gallery and Languages; then Exposé, Export, Git and Style report; then Series; then Extensions and Settings — with Quick Open and the Command Palette at the end.
+- **Go** — every view by name, including Write, its Manuscript scope, and Plan's Structure view, with Quick Open and the Command Palette at the end.
 - **View** — Show the mode panel, the binder, the inspector; Focus Mode; the pane commands (split right, split down, close, default layout, open in its own window); **Pane layouts** and **Workspace layouts**; interface size; and the developer items your platform provides.
 - **Window** — brings the main window back after you have closed it, minimise, zoom, and the window list.
 - **Help** — the **User manual**, **Take the tour**, **[Support Novalist](01-getting-started.md#supporting-novalist)**, **[About](#about)**, **Check for Updates** (absent in the Mac App Store build, which updates itself), and **Novalist on GitHub**.
@@ -56,8 +56,8 @@ Menu items are greyed out rather than hidden when they cannot do anything — wi
 The horizontal labelled navigation row below the project toolbar. Each entry has an icon **and its name**, so nothing has to be hovered to be identified:
 
 - **Dashboard** — home. Not part of any mode: it is where you are before you have decided what to do today, and where a project lands when you open it.
-- **Write** — the Editor and the Manuscript view.
-- **Plan** — Timeline, Plot Grid, Planning board, Relationships, Calendar, Dialogue.
+- **Write** — one Editor with Scene, Chapter, and Manuscript scopes, plus Drafts and Narration. Each pane remembers its scope; new panes start in Manuscript.
+- **Plan** — Structure (including Corkboard, Outliner, and Board), Timeline, Plot Grid, Planning board, Relationships, Calendar, Dialogue.
 - **World** — Codex, Wiki, Maps, Research, Gallery, Languages.
 - **Publish** — Exposé, Style report, Export, Git.
 - **Series** — the Series view, which is the one that sits above a single book.
@@ -74,7 +74,7 @@ Below the navigation row, the mode panel lists the views of the mode you are in.
 
 - The head names the mode and shows **how many views** it holds.
 - Views are listed in **labelled groups** — Write has "Drafting"; Plan has "Shape" and "Cast and time"; World has "In this book" and "Reference"; Publish has "Prepare" and "Produce"; Series has "Across books". A mode with a single group shows no label, because a heading over the whole list says nothing the panel's title has not.
-- Some rows carry a **count** on the right: the number of scenes beside Manuscript, the number of entries beside Codex.
+- Some rows carry a **count** on the right, such as the number of entries beside Codex.
 - Views contributed by extensions sit in their own group, **From extensions**, always last — so installing something never reorders a view you already knew where to find.
 - Past **ten** views, the panel grows a **filter** box. It is an accelerator, never the way something becomes reachable: every view is in the list whether or not you are filtering. While you filter, the group labels go, because they describe an order the filtered list no longer has.
 
@@ -186,7 +186,7 @@ The main area can be split into as many **panes** as you have room for, each sho
 - **Close** a pane from **View → Close pane** or `Ctrl+Alt+W`, or with the `×` in its header. The last pane always stays.
 - The **active pane** is outlined. Everything that changes a view — the mode panel, the **Go** menu, the command palette, a link in a panel — lands there, and clicking anywhere inside a pane makes it the active one. The left navigation and scene list follow the focused pane; the scene list appears for writing views.
 
-A pane split off the editor starts empty and waits for a scene: click one in the binder and it opens there. Two editor panes are two independent scenes, each with its own [tab strip](05-editor.md#scene-tabs) and its own auto-save.
+A pane split off the editor starts in Manuscript scope. Click a scene in the binder to navigate the active pane. Each writing pane keeps its own [scope and position](05-editor.md#moving-through-the-manuscript) and saves independently.
 
 ### Pane layouts
 

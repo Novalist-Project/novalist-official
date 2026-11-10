@@ -5,10 +5,12 @@ import type { FormattingState } from './EditorToolbar'
 import type { EntityHit } from './editorEntities'
 import type { EntityPeekController } from './peekTypes'
 import type { EditorAnnotations } from './useEditorAnnotations'
+import type { WritingFrameAdapter } from './writingFrameAdapter'
 
 export interface EditorMessageContext extends Pick<EditorAnnotations,
   'annotationsRef' | 'loadAnnotations' | 'applyFootnoteOrder' | 'persistAnnotations' | 'pushAnnotations' | 'paneIds'> {
   iframeRef: RefObject<HTMLIFrameElement | null>
+  writing?: WritingFrameAdapter
   editorRef: RefObject<EditorWindow | null>
   pane: string
   peekRef: RefObject<EntityPeekController>

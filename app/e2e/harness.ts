@@ -290,7 +290,8 @@ export const state = (h: Harness): Promise<Book> => h.rpc<Book>('project/getStat
 export async function seedBook(
   h: Harness,
   layout: Record<string, string[]>,
-  projectName = 'Spec'
+  projectName = 'Spec',
+  openWriting = true
 ): Promise<Book> {
   await evaluateWhenReady(h.page, async (a: { dir: string; name: string }) => {
     await window.novalistRpc.request('project/create', [a.dir, a.name, 'Book One'])
@@ -310,7 +311,7 @@ export async function seedBook(
   )
   // A helper that creates chapters and scenes through the binder's own calls has
   // plainly put the spec in Write.
-  await enterWriting(h.page)
+  if (openWriting) await enterWriting(h.page)
   return book
 }
 

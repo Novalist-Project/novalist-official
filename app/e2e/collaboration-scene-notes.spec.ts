@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { join } from 'node:path'
-import { dismissTour, launchApp, seedBook, type Harness } from './harness'
+import { dismissTour, enterWriting, launchApp, seedBook, type Harness } from './harness'
 
 async function openNotes(h: Harness): Promise<Page> {
   const opened = h.app.waitForEvent('window')
@@ -35,7 +35,7 @@ test('scene planning prose merges between writers with individual undo across wr
     const owner = await launchApp('nl-scene-notes-owner-')
     participants.push(owner)
     owner.page.on('pageerror', error => pageErrors.push(error.message))
-    const state = await seedBook(owner, { Opening: ['Arrival'] })
+    const state = await seedBook(owner, { Opening: ['Arrival'] }, 'Spec', false)
     await dismissTour(owner.page)
     const chapter = state.chapters.find(chapter => chapter.title === 'Opening')!
     const scene = chapter.scenes[0]
@@ -50,6 +50,7 @@ test('scene planning prose merges between writers with individual undo across wr
     await dismissTour(guest.page)
     await guest.rpc('collaboration/peer/join', [link, join(guest.workDir, 'Joined'), 'Guest'])
     for (const h of participants) {
+      await enterWriting(h.page)
       await h.page.evaluate(() => document.querySelector<HTMLButtonElement>('[data-collaboration-trigger][aria-expanded="false"]')?.click())
       await expect(h.page.getByText('Connected to the shared project.', { exact: true })).toBeVisible()
       await h.page.evaluate(async ({ chapter, scene }) => {
@@ -69,7 +70,7 @@ test('scene planning prose merges between writers with individual undo across wr
     await mergeAndUndo(
       ownerNotes.getByRole('textbox', { name: 'Edit notes', exact: true }),
       guestNotes.getByRole('textbox', { name: 'Edit notes', exact: true }), 'notes')
-    await owner.page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
+    await owner.page.evaluate(() => window.novalistStores.shell.getState().setMainView('structure'))
     await owner.page.getByRole('button', { name: 'Outliner', exact: true }).click()
     const outline = owner.page.locator('.outliner').getByRole('textbox', { name: 'SYNOPSIS', exact: true })
     await expect(outline).toHaveText('Bob Original synopsis.')

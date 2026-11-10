@@ -2,7 +2,9 @@ import type { WorkspaceSnapshot } from '../../../shared/workspaceProtocol'
 import type { SharedSceneIdentity } from '../../../shared/sharedScene'
 import type { SharedEntityFields } from '../collaboration/FocusedField'
 import type { WritingContext, WritingScope } from '../views/editor/writingTypes'
-import type { WritingDocumentRegistry } from './writingDocuments'
+import type { WritingDocumentRegistry, WritingDiskConflict } from './writingDocuments'
+
+export interface ChapterDateRange { start: string; end: string; note: string }
 
 export interface SceneDto {
   id: string
@@ -147,6 +149,7 @@ export interface ProjectState {
   /** A save the backend refused because the file changed underneath. Drives the
    *  merge dialog; null when there is nothing to resolve. */
   sceneConflict: {
+    writing?: WritingDiskConflict
     chapterGuid: string
     sceneId: string
     mine: string
@@ -196,7 +199,7 @@ export interface ProjectState {
     hash: string
   ): void
   /** @param insertAtOrder where the chapter goes, one-based; omit to append. */
-  createChapter(title: string, insertAtOrder?: number): Promise<void>
+  createChapter(title: string, insertAtOrder?: number, act?: string, dateRange?: ChapterDateRange): Promise<void>
   createScene(chapterGuid: string, title: string): Promise<void>
   switchBook(bookId: string): Promise<void>
   createBook(name: string): Promise<void>

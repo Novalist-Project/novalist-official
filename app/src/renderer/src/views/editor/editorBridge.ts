@@ -6,6 +6,8 @@
  */
 
 import { applyFocusAppearance } from './focusAppearance'
+import type { WritingTextMapping } from './writingTextMapping'
+import type { SceneSnapshot, WritingContext, WritingPoint, WritingSelection, WritingTransaction } from './writingTypes'
 
 export interface ProofingStatus {
   enabled: boolean
@@ -54,7 +56,7 @@ export interface EditorWindow extends Window {
   /** Tints each sentence by how hard it is to read. */
   setReadabilityEnabled(enabled: boolean): void
   /** Graded sentences plus the band colours, as JSON. */
-  setReadability(json: string): void
+  setReadability(json: string, requestId?: number): void
   /** Speaks the scene, from the caret's paragraph or from the top. */
   startReadAloud(fromCaret: boolean, rate: number, voiceUri: string | null): void
   /** The host has spoken one sentence through the system engine; advance. */
@@ -73,7 +75,9 @@ export interface EditorWindow extends Window {
   setMobile(enabled: boolean): void
   setTypewriterScroll(enabled: boolean, anchor: string): void
   setPageView(enabled: boolean): void
-  repaginatePageView(): void
+  repaginatePageView(root?: HTMLElement): void
+  schedulePageViewRepaginate(root?: HTMLElement): void
+  canRenderWritingScene(sceneId: string, revision: number): boolean
   setBookParagraphSpacing(enabled: boolean): void
   setCommentsData(data: { id: string; anchorText: string; text: string }[]): void
   setFootnotesData(data: { id: string; text: string }[]): void
@@ -144,6 +148,27 @@ export interface EditorWindow extends Window {
   /** Applies a named paragraph style (`nv-style-<id>`) to the selection; '' clears it. */
   setParagraphStyle(style: string): void
   openQuickEdit(): void
+  setWritingStructureEnabled(enabled: boolean): void
+  setWritingContext(context: WritingContext, origin: string): void
+  setWritingProjection(scenes: SceneSnapshot[], selection: WritingSelection | null): void
+  captureWritingChanges(): WritingTransaction[]
+  getWritingSelection(): WritingSelection | null
+  restoreWritingSelection(selection: WritingSelection | null): void
+  revealWritingPoint(point: WritingPoint, viewportOffset?: number): void
+  writingDomPoint(point: WritingPoint): { node: Node; offset: number } | null
+  getWritingSceneRoot(sceneId?: string): HTMLElement | null
+  serializeWritingScene(sceneId: string): string
+  captureWritingSplit(point: WritingPoint): { sourceHtml: string; beforeHtml: string; afterHtml: string }
+  updateWritingScene(snapshot: SceneSnapshot): void
+  acknowledgeWritingScene(snapshot: SceneSnapshot): void
+  configureWritingTextMapping(mapping: WritingTextMapping): void
+  setWritingServiceScene(sceneId: string): void
+  toDisplayImages(root: HTMLElement): void
+  clearGrammarHighlights(root: HTMLElement): void
+  refreshSceneBreakClasses(root: HTMLElement): void
+  writingServiceState(): {
+    activeSceneId: string | null; selectedSceneIds: string[]; composingSceneId: string | null; visibleSceneIds: string[]
+  }
   writingStructureEnabled?: boolean
   requestWritingStructure(command: 'sceneBreak' | 'chapterHeading' | 'insertChapter'): void
   toggleBulletList(): void

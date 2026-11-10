@@ -5,7 +5,7 @@ import * as pendingWrites from '../src/renderer/src/stores/pendingWrites.ts'
 
 const observerErrors = []
 
-const { WritingDocumentRegistry, createWritingRpcTransport, getWritingDocumentRegistry, closeWritingDocumentRegistry } = loadRendererSource('src/stores/writingDocuments.ts', {
+const { WritingDocumentRegistry, createWritingRpcTransport, getWritingDocumentRegistry, closeWritingDocumentRegistry, getWritingRegistries } = loadRendererSource('src/stores/writingDocuments.ts', {
   './pendingWrites': pendingWrites
 }, { crypto, structuredClone, reportError: error => observerErrors.push(error) })
 
@@ -304,6 +304,105 @@ test('the context factory retains one owner across independent projections', asy
   await closeWritingDocumentRegistry(options.context)
 })
 
+test('search enumerates retained documents only within its workspace epoch', async () => {
+  const contextA = { ...context, workspaceId: 'search-enumeration' }
+  const options = { context: contextA, isCurrent: () => true, transport: { read: async () => snapshot } }
+  const first = getWritingDocumentRegistry(options)
+  const second = getWritingDocumentRegistry({ ...options, context: { ...contextA, bookId: 'second-book' } })
+  const stale = getWritingDocumentRegistry({ ...options, context: { ...contextA, workspaceEpoch: 1 } })
+  assert.deepEqual(Array.from(getWritingRegistries(contextA)), [first, second])
+  assert.equal(getWritingRegistries({ workspaceId: 'different', workspaceEpoch: 2 }).length, 0)
+  await Promise.all([first.close(), second.close(), stale.close()])
+  assert.equal(getWritingRegistries(contextA).length, 0)
+})
+
+test('exclusive replacement capture blocks competing writes and acknowledges once', async () => {
+  const { owner, commits } = await registry()
+  const original = await owner.read(ref)
+  owner.apply(transaction(original, '<p>Unsaved before replacement</p>'))
+  const release = await owner.reserveExternal('replacement')
+  const captured = owner.captureExternal()[0]
+  assert.equal(captured.saved.html, snapshot.html)
+  assert.equal(captured.current.html, '<p>Unsaved before replacement</p>')
+  assert.throws(() => owner.apply(transaction(captured.current)), /reserved/)
+  assert.throws(() => owner.prepareCommit('competing'), /reserved/)
+  const flushing = owner.flush()
+  await turn()
+  assert.equal(commits.length, 0)
+  const change = { ref, before: captured.current, afterHtml: '<p>Replaced</p>', hash: 'replaced' }
+  assert.throws(() => owner.acceptExternalCommit('wrong-token', [change]), /reservation/)
+  owner.acceptExternalCommit('replacement', [change])
+  owner.acceptExternalCommit('replacement', [change])
+  assert.equal(owner.getSnapshot(ref).revision, captured.current.revision + 1)
+  assert.equal(owner.isDirty, false)
+  release()
+  await flushing
+  assert.equal(commits.length, 0)
+  await owner.close()
+})
+
+test('external publication validates every scene before changing any and keeps annotations pending', async () => {
+  const { owner, commits } = await registry()
+  const a = await owner.read(ref)
+  const otherRef = { ...ref, sceneId: 'other' }
+  const b = await owner.read(otherRef)
+  const before = { comments: [], footnotes: [] }
+  const after = { comments: [], footnotes: [{ id: 'note', number: 1, text: 'Pending note' }] }
+  owner.apply({ ...transaction(a), changes: [], annotationChanges: [{ ref, before, after }] })
+  const release = await owner.reserveExternal('replace')
+  const first = { ref, before: owner.getSnapshot(ref), afterHtml: '<p>A</p>', hash: 'a' }
+  const second = { ref: otherRef, before: { ...b, revision: 99 }, afterHtml: '<p>B</p>', hash: 'b' }
+  assert.throws(() => owner.acceptExternalCommit('replace', [first, second]), /revision/)
+  assert.equal(owner.getSnapshot(ref).html, snapshot.html)
+  owner.acceptExternalCommit('replace', [first])
+  assert.equal(owner.isDirty, true)
+  release()
+  await owner.flush()
+  assert.deepEqual(commits[0].annotationChanges[0].after, after)
+  await owner.close()
+})
+
+test('shared annotation acknowledgements notify without creating local scene writes', async () => {
+  const { owner, commits } = await registry({ transport: { read: async () => ({ ...snapshot,
+    shared: { sessionId: 'shared', itemId: 'scene', state: '' }, annotations: { comments: [], footnotes: [] } }) } })
+  await owner.read(ref)
+  let notifications = 0
+  owner.subscribe(ref, () => notifications++)
+  const annotations = { comments: [], footnotes: [{ id: 'note', number: 1, text: 'Shared note' }] }
+  owner.receiveSharedAnnotations(ref, annotations)
+  annotations.footnotes[0].text = 'Mutated caller'
+  assert.equal(owner.getAnnotations(ref).footnotes[0].text, 'Shared note')
+  assert.equal(notifications, 2)
+  await owner.flush()
+  assert.equal(commits.length, 0)
+  await owner.close()
+})
+
+test('only the held external lease can rebind a registry after a backend epoch change', async () => {
+  let epoch = context.workspaceEpoch
+  const { owner } = await registry({ isCurrent: value => value.workspaceEpoch === epoch })
+  const original = await owner.read(ref)
+  owner.apply(transaction(original))
+  const before = owner.getSnapshot(ref)
+  const release = await owner.reserveExternal('recovery')
+  const next = { ...context, workspaceEpoch: epoch + 1 }
+  epoch++
+  assert.throws(() => owner.rebindExternal('wrong', context, next), /reservation/)
+  assert.throws(() => owner.rebindExternal('recovery', context, { ...next, bookId: 'wrong' }), /context/)
+  owner.rebindExternal('recovery', context, next)
+  assert.equal(owner.context.workspaceEpoch, epoch)
+  assert.equal(Object.isFrozen(owner.context), true)
+  assert.equal(owner.getSnapshot(ref), before)
+  epoch = 0
+  owner.rebindExternal('recovery', next, { ...next, workspaceEpoch: 0 })
+  assert.equal(owner.context.workspaceEpoch, 0)
+  owner.acceptExternalCommit('recovery', [{ ref, before, afterHtml: '<p>Recovered replacement</p>', hash: 'receipt-hash' }])
+  release()
+  assert.equal(owner.isDirty, false)
+  assert.throws(() => owner.rebindExternal('recovery', next, { ...next, workspaceEpoch: epoch + 1 }), /reservation/)
+  await owner.close()
+})
+
 test('transactions validate every revision before publishing any scene', async () => {
   const { owner } = await registry()
   const original = await owner.read(ref)
@@ -313,6 +412,24 @@ test('transactions validate every revision before publishing any scene', async (
   assert.equal(owner.capture()[0].html, snapshot.html)
   assert.throws(() => owner.apply({ ...transaction(original), context: { ...context, workspaceEpoch: 1 } }), /context/)
   await owner.close()
+})
+
+test('shared channel recovery requires its lease and retains canonical prose and revision', async () => {
+  const identity = { sessionId: 'old-session', itemId: 'shared-item', state: 'old-state' }
+  const { owner } = await registry({ transport: { read: async () => ({ ...snapshot, shared: identity }) } })
+  const before = await owner.read(ref)
+  const release = await owner.reserveExternal('recover-shared')
+  const next = { ...identity, sessionId: 'new-session', state: 'new-state' }
+  try {
+    assert.throws(() => owner.acceptExternalSharedIdentity('wrong', ref, identity, next), /reservation/)
+    assert.throws(() => owner.acceptExternalSharedIdentity('recover-shared', ref, identity, { ...next, itemId: 'other' }), /context/)
+    owner.acceptExternalSharedIdentity('recover-shared', ref, identity, next)
+    owner.acceptExternalSharedIdentity('recover-shared', ref, identity, next)
+    assert.equal(owner.getSnapshot(ref).revision, before.revision)
+    assert.equal(owner.getSnapshot(ref).html, before.html)
+    assert.equal(owner.getSnapshot(ref).shared.sessionId, 'new-session')
+    assert.equal(owner.isDirty, false)
+  } finally { release(); await owner.close() }
 })
 
 test('failed close captures live changes and retains dirty state for retry', async () => {

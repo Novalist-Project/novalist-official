@@ -1,8 +1,10 @@
 # Unified writing workspace
 
 Product requirements confirmed through the design interview on 2026-11-09.
-Implementation authorized on 2026-11-09. No production code has changed;
-module boundaries remain subject to the feasibility gate.
+Implementation authorized on 2026-11-09. Production integration is on the local
+feature branch; functional regression verification and independent reviews are
+complete. Final performance acceptance and local commits remain. The requirements below remain the acceptance
+criteria, not a claim that every gate has passed.
 
 ## Intent and references
 

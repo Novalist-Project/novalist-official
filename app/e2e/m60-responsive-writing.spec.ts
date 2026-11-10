@@ -243,7 +243,7 @@ async function selectInProse(
 test('the writing bar holds still while a selection is made', async () => {
   test.setTimeout(180_000)
   const h = await launchApp('nl-writing-context-')
-  const book = await seedBook(h, { One: ['A'] })
+  const book = await seedBook(h, { One: ['A'] }, 'Writing toolbar fixture', false)
   await closeTourIfOffered(h.page)
   const chapter = book.chapters[0]
   const scene = chapter.scenes[0]
@@ -262,7 +262,7 @@ test('the writing bar holds still while a selection is made', async () => {
     { chapterGuid: chapter.guid, sceneId: scene.id }
   )
 
-  const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+  const editor = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${scene.id}"]`)
   await expect(editor).toContainText('Mira waited', { timeout: 30_000 })
   await h.page.waitForTimeout(1_000)
 
@@ -326,7 +326,7 @@ test('quick edit preserves backward selection and works at an empty caret', asyn
   test.setTimeout(120_000)
   const h = await launchApp('nl-writing-quick-edit-')
   try {
-    const book = await seedBook(h, { Opening: ['First'] })
+    const book = await seedBook(h, { Opening: ['First'] }, 'Quick edit fixture', false)
     await closeTourIfOffered(h.page)
     const chapter = book.chapters[0]
     const scene = chapter.scenes[0]
@@ -335,7 +335,7 @@ test('quick edit preserves backward selection and works at an empty caret', asyn
       window.novalistStores.project.getState().openScene(chapterGuid, sceneId),
     { chapterGuid: chapter.guid, sceneId: scene.id })
     const frame = h.page.frameLocator('.editor-frame')
-    const editor = frame.locator('#editor')
+    const editor = frame.locator(`[data-writing-scene="${scene.id}"]`)
     await expect(editor).toContainText('Quiet rain')
     await editor.evaluate(root => {
       const text = root.querySelector('p')!.firstChild!
@@ -373,7 +373,7 @@ test('quick edit preserves backward selection and works at an empty caret', asyn
     await editor.evaluate(() => (window as unknown as EditorWindow).openQuickEdit())
     await picker.press('Escape')
     await expect(frame.locator('#floating-toolbar')).toBeHidden()
-    await expect(editor).toBeFocused()
+    await expect(frame.locator('#editor')).toBeFocused()
   } finally {
     await h.close()
   }

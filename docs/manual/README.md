@@ -23,10 +23,10 @@ If you are looking for a specific feature, jump straight to its page from the ta
 
 5. [Chapters & Scenes](04-chapters-and-scenes.md) — the unit of writing in Novalist. Status, dates, plotlines, favorites, reordering, archiving.
 6. [Editor](05-editor.md) — WYSIWYG editor, inline formatting, paragraph styles, focus mode, two scenes at once, auto-replacements, dialogue correction, grammar check, entity hover cards.
-7. [Manuscript view](10-manuscript.md) — read the whole book end-to-end, switch to corkboard or outliner.
+7. [Manuscript writing and Structure planning](10-manuscript.md) — write continuously with independent pane scopes; arrange the book in Structure, Corkboard, Outliner, or Board.
 8. [Drafts](45-drafts.md) — name your drafts, put them in your own order, say what each is for, and send chapters and scenes between them.
 9. [Narration](46-narration.md) — your book as it will be read aloud: a voice per character shown on the prose itself, the narrator keeping the tags, and a direction per line taken from your own words.
-10. [Find & Replace](21-find-replace.md) — project-wide search with scopes and snapshot-guarded replace-all.
+10. [Find & Replace](21-find-replace.md) — scoped search and undoable prose Replace All, with separate notes and synopsis replacement.
 11. [Quick Open](31-quick-open.md) — one search box over scenes, Codex, notes, comments, research, and events.
 
 ### Worldbuilding
@@ -103,5 +103,5 @@ Everything in your project lives in a single folder. The `.novalist/` subfolder 
 Novalist also protects your work in three ways of its own:
 
 - **Backups** archive the whole project folder to a ZIP outside the project, on open, on close, and on a timer, with a restore button in Settings. On by default. See [Backups](35-backups.md).
-- **Snapshots** cover a single scene: take one from the Snapshots button on the writing bar at any time, and replace-all operations take one automatically before touching your text — so you can revert one scene without affecting the rest. See [Snapshots](17-snapshots.md).
+- **Snapshots** preserve a single scene for later: take one from the writing bar at any time. Notes and synopsis replacement, manuscript cleanup and snapshot restores also take automatic copies. Desktop prose Replace All uses one writing undo action. See [Snapshots](17-snapshots.md).
 - **Git** gives you full project history when you want to drive it yourself. See [Git integration](18-git.md).

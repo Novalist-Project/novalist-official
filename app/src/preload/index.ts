@@ -1,8 +1,11 @@
 import type { WorkspaceEvent, WorkspaceSnapshot, CloseStage } from "../shared/workspaceProtocol";
 import type { SceneNotesContext, SceneNotesWindowState } from '../shared/sceneNotesProtocol'
+import type { WritingSearchCapture, WritingSearchCaptureReply, WritingSearchCaptureRequest, WritingSearchContext, WritingSearchLease, WritingSearchLeaseReply, WritingSearchLeaseRequest, WritingSearchSharedIntent } from '../shared/writingSearchProtocol'
+import type { SceneRef, WritingCommitRequest, WritingCommitResult } from '../renderer/src/views/editor/writingTypes'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { DeepLink } from '../main/deeplink'
 import { selfUpdateDisabled } from '../shared/selfUpdatePolicy'
+import { normalizeDetachedPaneRequest, type DetachedPaneRequest } from '../shared/detachedPane'
 
 const material =
   process.argv.find((a) => a.startsWith('--nl-material='))?.split('=')[1] ?? 'opaque'
@@ -27,6 +30,33 @@ const isMas =
  * picked up by the RPC client from the message event's ports array.
  */
 contextBridge.exposeInMainWorld('novalist', {
+  acquireWritingSearchLease(context: WritingSearchContext, refs: SceneRef[]): Promise<WritingSearchLease> {
+    return ipcRenderer.invoke('novalist:writing-search-lease', context, refs)
+  },
+  finishWritingSearchLease(token: string, changes?: WritingSearchLeaseRequest['changes']): Promise<void> {
+    return ipcRenderer.invoke('novalist:writing-search-finish', token, changes)
+  },
+  publishWritingSearchLease(token: string, request: WritingCommitRequest, changes: { ref: SceneRef; afterHtml: string }[], shared?: WritingSearchSharedIntent): Promise<WritingCommitResult> {
+    return ipcRenderer.invoke('novalist:writing-search-publish', token, request, changes, shared)
+  },
+  onWritingSearchLease(handler: (request: WritingSearchLeaseRequest) => void): () => void {
+    const listener = (_event: Electron.IpcRendererEvent, request: WritingSearchLeaseRequest): void => handler(request)
+    ipcRenderer.on('novalist:writing-search-lease', listener)
+    return () => ipcRenderer.removeListener('novalist:writing-search-lease', listener)
+  },
+  writingSearchLeaseAck(reply: WritingSearchLeaseReply): void { ipcRenderer.send('novalist:writing-search-lease-ack', reply) },
+  captureWritingSearch(context: WritingSearchContext): Promise<WritingSearchCapture[]> {
+    return ipcRenderer.invoke('novalist:writing-search-capture', context)
+  },
+  onWritingSearchCapture(handler: (request: WritingSearchCaptureRequest) => void): () => void {
+    const listener = (_event: Electron.IpcRendererEvent, request: WritingSearchCaptureRequest): void => handler(request)
+    ipcRenderer.on('novalist:writing-search-capture', listener)
+    ipcRenderer.send('novalist:writing-search-ready')
+    return () => ipcRenderer.removeListener('novalist:writing-search-capture', listener)
+  },
+  writingSearchCaptured(reply: WritingSearchCaptureReply): void {
+    ipcRenderer.send('novalist:writing-search-captured', reply)
+  },
   material,
   platform: process.platform,
   // True only in the Mac App Store build. The renderer uses this to hide
@@ -178,13 +208,8 @@ contextBridge.exposeInMainWorld('novalist', {
   },
   /** Opens a second window showing one view, on the project the asking window
    *  has open and - for the editor - the scene it is showing. */
-  openPaneWindow(request: {
-    view: string
-    projectPath: string | null
-    chapterGuid: string | null
-    sceneId: string | null
-  }): Promise<void> {
-    return ipcRenderer.invoke('novalist:open-pane-window', request)
+  openPaneWindow(request: DetachedPaneRequest): Promise<void> {
+    return ipcRenderer.invoke('novalist:open-pane-window', normalizeDetachedPaneRequest(request))
   },
 
   registerExtensionRoots(roots: Record<string, string>): Promise<void> {
