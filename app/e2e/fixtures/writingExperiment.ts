@@ -8,6 +8,7 @@ import { applySimpleInsertion } from './writingIncremental'
 import { installScenePagination } from './writingPageLayout'
 import { installSceneCapture, type CaptureTelemetry } from './writingSceneCapture'
 import { authoredClass, contentRecords, scenePoint, WritingPresentation } from './writingPresentation'
+import type { WritingViewport } from './writingViewport'
 
 interface SceneDocument { doc: Y.Doc; text: Y.Text; history: Y.UndoManager }
 interface SceneView { root: HTMLElement; markup: SceneMarkup; state: SceneDocument }
@@ -23,6 +24,7 @@ interface ExperimentEditor extends EditorWindow {
   reportContentChanged(): void
   sendMessage(message: object): void
   writingCaptureTelemetry: CaptureTelemetry
+  writingViewport?: WritingViewport
 }
 
 const writer = {}
@@ -244,8 +246,12 @@ class ExperimentPane implements WritingPane {
     }
     const a = position(anchor)
     const f = position(focus)
-    this.root.focus({ preventScroll: true })
-    this.editor.getSelection()!.setBaseAndExtent(a.node, a.offset, f.node, f.offset)
+    const select = () => {
+      this.root.focus({ preventScroll: true })
+      this.editor.getSelection()!.setBaseAndExtent(a.node, a.offset, f.node, f.offset)
+    }
+    if (this.editor.writingViewport) this.editor.writingViewport.intent(select)
+    else select()
   }
 
   private selectedRanges(): { index: number; range: Range }[] {
