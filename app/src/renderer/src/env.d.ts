@@ -177,6 +177,7 @@ interface Window {
     onBackgroundSave?(handler: () => Promise<void>): () => void
     forwardMainCommand?(command: string): void
     retryWorkspaceRecovery?(): Promise<void>
+    claimWritingFocus?(sourceId: string, epoch: number): Promise<{ sourceId: string; focusGeneration: number } | null>
     workspaceSnapshot?(): Promise<import('../../shared/workspaceProtocol').WorkspaceSnapshot>
     onWorkspaceEvent?(handler: (event: import('../../shared/workspaceProtocol').WorkspaceEvent) => Promise<void> | void): () => void
     updatesChecked(): void

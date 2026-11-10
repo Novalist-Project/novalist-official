@@ -99,6 +99,23 @@ public sealed partial class Workspace
         return new(sceneId, html, Core.Services.ContentHasher.Hash(html), new(sharedSession, item.Value, snapshot.State, PeerProjects?.IsActive == true));
     }
 
+    internal async Task<SceneContentDto?> ReadSharedScenePathAsync(string path, string sceneId, CancellationToken ct)
+    {
+        if (sharedScenes is null || sharedRoot is null || Projects.ProjectRoot != sharedRoot) return null;
+        var relative = Path.GetRelativePath(sharedRoot, path).Replace('\\', '/');
+        if (!sharedItems.TryGetValue(relative, out var item)) return null;
+        var snapshot = await sharedScenes.ReadAsync(item, ct);
+        var html = snapshot.Html ?? throw new InvalidOperationException("The shared scene was deleted.");
+        return new(sceneId, html, Core.Services.ContentHasher.Hash(html), new(sharedSession, item, snapshot.State, PeerProjects?.IsActive == true));
+    }
+
+    internal void RequireUnsharedWritingPath(string path)
+    {
+        if (sharedRoot is not null && Projects.ProjectRoot == sharedRoot
+            && sharedItems.ContainsKey(Path.GetRelativePath(sharedRoot, path).Replace('\\', '/')))
+            throw new InvalidOperationException("A shared scene must be saved as collaborative edits.");
+    }
+
     internal SharedSceneWorkspace RequireSharedScenes(Guid sessionId)
     {
         if (sharedScenes is null || sessionId != sharedSession || Projects.ProjectRoot != sharedRoot)

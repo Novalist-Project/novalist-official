@@ -252,6 +252,9 @@ contextBridge.exposeInMainWorld('novalist', {
   },
   forwardMainCommand(command: string): void { ipcRenderer.send('novalist:main-command', command) },
   retryWorkspaceRecovery(): Promise<void> { return ipcRenderer.invoke('novalist:workspace-retry') },
+  claimWritingFocus(sourceId: string, epoch: number): Promise<{ sourceId: string; focusGeneration: number } | null> {
+    return ipcRenderer.invoke('novalist:claim-writing-focus', sourceId, epoch)
+  },
   workspaceSnapshot(): Promise<WorkspaceSnapshot> {
     return ipcRenderer.invoke('novalist:workspace-snapshot')
   },

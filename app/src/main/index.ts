@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs'
 import { BackendProcess } from './backend-process'
 import { DesktopCollaborationServices } from './collaboration/DesktopCollaborationServices'
 import { WorkspaceWindows } from './workspace-windows'
+import { WritingFocusOwner } from './writing-focus'
 import { WindowCloseCoordinator } from './window-close'
 import type { WorkspaceEvent } from '../shared/workspaceProtocol'
 import { attachLiquidGlass } from './glass'
@@ -34,6 +35,8 @@ app.setName('Novalist')
 const backend = new BackendProcess()
 const collaboration = new DesktopCollaborationServices(join(process.env.NOVALIST_SETTINGS_DIR ?? app.getPath('userData'), 'collaboration', 'credentials'))
 const workspaceWindows = new WorkspaceWindows(backend.router, 15_000, (error) => backend.requireResync(error))
+const writingFocus = new WritingFocusOwner((method, params) => backend.router.request(method, params),
+  () => BrowserWindow.getFocusedWindow()?.webContents.id)
 const windowCloses = new WindowCloseCoordinator()
 backend.onNotification((message) => workspaceWindows.receive(message))
 backend.onRequest((method, params) => collaboration.request(method, params))
@@ -105,9 +108,12 @@ ipcMain.on('novalist:workspace-ack', (event, token: string, phase: WorkspaceEven
 })
 ipcMain.handle('novalist:workspace-snapshot', (event) => workspaceWindows.snapshot(event.sender.id))
 ipcMain.handle('novalist:workspace-retry', () => backend.retryRecovery())
+ipcMain.handle('novalist:claim-writing-focus', (event, sourceId: string, epoch: number) =>
+  writingFocus.claim(event.sender.id, sourceId, epoch))
 
 function attachWindowLifecycle(win: BrowserWindow): void {
   const owner = win.webContents.id
+  win.on('blur', () => { void writingFocus.release(owner).catch((error) => backend.requireResync(error)) })
   win.on('close', (event) => {
     if (approvedCloses.has(win.id)) return
     if (!windowCloses.has(owner) && win !== mainWindow) return
@@ -115,6 +121,7 @@ function attachWindowLifecycle(win: BrowserWindow): void {
     prepareWindowClose(win, false)
   })
   const release = (): void => {
+    void writingFocus.release(owner).catch((error) => backend.requireResync(error))
     windowCloses.remove(owner)
     workspaceWindows.remove(owner)
     backend.detachClient(owner)
