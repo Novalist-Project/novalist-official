@@ -25,7 +25,11 @@ const fixtures = [
   { name: 'capitalize-quoted', html: '<p style="text-transform:capitalize">"alpha" bravo</p><p>tail</p>' },
   { name: 'capitalize-inline-word', html: '<p style="text-transform:capitalize">al<em>pha</em> bravo</p><p>tail</p>' },
   { name: 'capitalize-fragment-word', html: '<span style="text-transform:capitalize">al</span><em style="text-transform:capitalize">pha</em><span style="text-transform:capitalize"> bravo</span>' },
-  { name: 'capitalize-mixed-context', html: '<p style="text-transform:capitalize">al<span style="text-transform:none">pha</span> bravo<br>charlie</p><p lang="tr" style="text-transform:capitalize">al<em lang="en">pha</em> <strong>iki</strong></p>' }
+  { name: 'capitalize-mixed-context', html: '<p style="text-transform:capitalize">al<span style="text-transform:none">pha</span> bravo<br>charlie</p><p lang="tr" style="text-transform:capitalize">al<em lang="en">pha</em> <strong>iki</strong></p>' },
+  { name: 'capitalize-visible-separator', html: '<p style="text-transform:capitalize">alpha<span style="visibility:visible"> </span>bravo</p><p>tail</p>' },
+  { name: 'capitalize-hidden-separator', html: '<p style="text-transform:capitalize">alpha<span style="visibility:hidden"> </span>bravo</p><p>tail</p>' },
+  { name: 'capitalize-hidden-prefix', html: '<p style="text-transform:capitalize"><span style="visibility:hidden">secret</span>bravo</p><p>tail</p>' },
+  { name: 'capitalize-display-none-separator', html: '<p style="text-transform:capitalize">alpha<span style="display:none"> </span>bravo</p><p>tail</p>' }
 ]
 
 for (const fixture of fixtures) {

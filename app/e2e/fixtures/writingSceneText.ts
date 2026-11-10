@@ -1,4 +1,4 @@
-type TextItem = number | { text: string; collapse: boolean; lineBreak?: boolean; capitalize?: boolean }
+type TextItem = number | { text: string; collapse: boolean; lineBreak?: boolean; capitalize?: boolean; contextOnly?: boolean }
 
 function textLocale(element: HTMLElement): string | undefined {
   const language = element.closest('[lang]')?.getAttribute('lang')
@@ -15,7 +15,10 @@ function textItems(node: Node, items: TextItem[]): void {
   if (!element) return
   const style = element.ownerDocument.defaultView!.getComputedStyle(element)
   if (node.nodeType === 3) {
-    if (style.visibility !== 'visible') return
+    if (style.visibility !== 'visible') {
+      items.push({ text: node.textContent ?? '', collapse: false, contextOnly: true })
+      return
+    }
     let text = node.textContent ?? ''
     const locale = ['uppercase', 'lowercase'].includes(style.textTransform) ? textLocale(element) : undefined
     if (style.textTransform === 'uppercase') text = locale ? text.toLocaleUpperCase(locale) : text.toUpperCase()
@@ -59,7 +62,7 @@ export function logicalSceneText(nodes: readonly Node[]): string {
   let space = false
   for (const item of items) {
     if (typeof item === 'number') { breaks = Math.max(breaks, item); space = false; continue }
-    if (!item.text) continue
+    if (item.contextOnly || !item.text) continue
     if (breaks && output) output += '\n'.repeat(breaks)
     breaks = 0
     let text = item.text
