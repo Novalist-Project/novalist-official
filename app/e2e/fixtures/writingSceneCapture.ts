@@ -42,6 +42,7 @@ export function installSceneCapture(editor: CaptureEditor, presentation: Writing
   const observer = presentation.observe(root, markDirty)
   const capture = (scene: HTMLElement, previous = baseline.get(scene)) => {
     if (editor.NovalistEditorState.isComposing || editor.NovalistEditorState.isSettingContent) return null
+    markDirty(contentRecords(observer.takeRecords()))
     const html = serialize(scene)
     dirty.delete(scene)
     if (html === previous) return null

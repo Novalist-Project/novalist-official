@@ -100,6 +100,64 @@ test('presentation review I2: a pure peer insertion produces no authored publica
   } finally { await h.close() }
 })
 
+for (const direct of [true, false]) {
+  test(`presentation review N1: ${direct ? 'direct capture and delivery' : 'ordinary flush'} does not publish a later remote echo`, async () => {
+    const h = await setup()
+    try {
+      await h.page.evaluate(direct => {
+        window.writingPanes[1].select({ scene: 1, offset: 0 }, { scene: 1, offset: 0 })
+        const editor = document.querySelectorAll('iframe')[1].contentWindow as EditorWindow & { sendMessage(message: object): void }
+        editor.document.querySelector('[data-scene-id="scene-b"] p')!.firstChild!.textContent = 'already captured local delta'
+        window.writingPanes[1].capture()
+        if (direct) {
+          const change = editor.capturePendingContentChange()
+          if (!change || change.html !== '<p>already captured local delta</p>') throw new Error('Expected the local revision to be captured.')
+          editor.sendMessage({ type: 'contentChanged', ...change })
+        } else editor.flushPendingContentChange()
+        window.writingPanes[0].remoteInsert(1, 0, 'REMOTE ')
+      }, direct)
+      await flush(h)
+      const after = await snapshotWriting(h.page)
+      expect(after.panes[0].scenes[1].html).toBe('<p>REMOTE already captured local delta</p>')
+      expect(after.panes[1].scenes).toEqual(after.panes[0].scenes)
+      expect(after.panes[0].deltas[1].map(run => run.insert).join('')).toBe('REMOTE already captured local delta\n')
+      expect(after.panes[1].deltas).toEqual(after.panes[0].deltas)
+      expect(after.panes[0].undoGroups).toEqual([[1]])
+      expect(after.publications).toEqual([{ sceneId: 'scene-b', html: '<p>already captured local delta</p>' }])
+      await flush(h)
+      expect(await h.page.evaluate(() => window.writingPublications)).toEqual(after.publications)
+    } finally { await h.close() }
+  })
+}
+
+test('presentation review N1: direct capture preserves another owner queued in the same observer batch', async () => {
+  const h = await setup()
+  try {
+    await h.page.evaluate(() => {
+      window.writingPanes[1].select({ scene: 1, offset: 0 }, { scene: 1, offset: 0 })
+      const editor = document.querySelectorAll('iframe')[1].contentWindow as EditorWindow & { sendMessage(message: object): void }
+      editor.document.querySelector('[data-scene-id="scene-b"] p')!.firstChild!.textContent = 'already captured local delta'
+      window.writingPanes[1].capture()
+      editor.document.querySelector('[data-scene-id="scene-a"] p')!.firstChild!.textContent = 'queued owner '
+      const change = editor.capturePendingContentChange()
+      if (!change) throw new Error('Expected the direct local revision.')
+      editor.sendMessage({ type: 'contentChanged', ...change })
+      window.writingPanes[0].remoteInsert(1, 0, 'REMOTE ')
+    })
+    await flush(h)
+    const after = await snapshotWriting(h.page)
+    expect(after.panes[0].scenes[0].html).toBe('<p>queued owner <b>bravo</b></p><p><span class="nv-comment" data-comment-id="note">comment</span></p>')
+    expect(after.panes[0].scenes[1].html).toBe('<p>REMOTE already captured local delta</p>')
+    expect(after.panes[1].scenes).toEqual(after.panes[0].scenes)
+    expect(after.panes[1].deltas).toEqual(after.panes[0].deltas)
+    expect(after.panes[0].undoGroups).toEqual([[1], [0]])
+    expect(after.publications).toEqual([
+      { sceneId: 'scene-b', html: '<p>already captured local delta</p>' },
+      { sceneId: 'scene-a', html: '<p>queued owner <b>bravo</b></p><p><span class="nv-comment" data-comment-id="note">comment</span></p>' }
+    ])
+  } finally { await h.close() }
+})
+
 async function flush(h: WritingHarness): Promise<void> {
   await h.page.evaluate(() => {
     for (const pane of window.writingPanes) pane.capture()
