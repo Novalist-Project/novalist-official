@@ -1,3 +1,25 @@
+export function commentSceneMarkupSource(source: string): string {
+  source = source.replaceAll('\r\n', '\n')
+  const replace = (before: string, after: string): void => {
+    if (source.split(before).length !== 2) throw new Error('The comment markup seam no longer matches its exact source.')
+    source = source.replace(before, after)
+  }
+  replace('export class SceneMarkup {', `for (const tag of ['address', 'article', 'aside', 'dl', 'dt', 'dd', 'footer', 'header', 'main', 'nav', 'section']) blockTags.add(tag)
+const wrapperTags = new Set(['a', 'span', 'b', 'strong', 'i', 'em', 'u', 's', 'strike', 'font', 'code', 'mark', 'sup', 'sub'])
+const blockSelector = [...blockTags].join(',')
+
+export class SceneMarkup {`)
+  replace('return blockTags.has(element.tagName.toLowerCase())', `return blockTags.has(element.localName) || (wrapperTags.has(element.localName) && element.querySelector(blockSelector) !== null)`)
+  replace('!blockTags.has(block.tag)', '!(blockTags.has(block.tag) || wrapperTags.has(block.tag))')
+  replace('domPosition(index: number)', "domPosition(index: number, affinity: 'forward' | 'backward' = 'backward')")
+  replace('for (const entry of this.textNodes)', "for (const entry of affinity === 'forward' ? this.textNodes.toReversed() : this.textNodes)")
+  replace('    this.identities.set(safe, block.id)', `    if (safe.localName !== block.tag || (wrapperTags.has(block.tag) &&
+        (safe.attributes.length !== element.attributes.length || Array.from(element.attributes).some(attribute => safe.getAttribute(attribute.name) !== attribute.value))))
+      throw new Error('Unsupported shared authored wrapper.')
+    this.identities.set(safe, block.id)`)
+  return source
+}
+
 export function fragmentSceneMarkupSource(source: string): string {
   source = source.replaceAll('\r\n', '\n')
   const replace = (before: string, after: string): void => {
@@ -8,6 +30,7 @@ export function fragmentSceneMarkupSource(source: string): string {
   replace('  private identities = new WeakMap<Node, string>()', `  private surface?: SceneSurface
   attachSurface(surface: SceneSurface): void { this.surface = surface }
   private identities = new WeakMap<Node, string>()`)
+  replace("child.classList.contains('nv-page') ? path", "!this.surface && child.classList.contains('nv-page') ? path")
   replace('    for (const node of element.childNodes) {\n      if (node.nodeType', '    for (const node of element === this.root && this.surface ? this.surface.atoms() : element.childNodes) {\n      if (node.nodeType')
   replace('    this.boundaries.push({ node: element, offsets: position.offsets })\n    if (inline ||', `    if (element === this.root && this.surface) {
       let first = 0

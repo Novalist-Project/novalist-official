@@ -6,13 +6,13 @@ import { resolve } from 'node:path'
 import { build } from 'esbuild'
 import { JSDOM } from 'jsdom'
 import createDOMPurify from 'dompurify'
-import { fragmentSceneMarkupSource } from '../e2e/fixtures/writingSceneMarkupSource.ts'
+import { commentSceneMarkupSource, fragmentSceneMarkupSource } from '../e2e/fixtures/writingSceneMarkupSource.ts'
 
 const sourcePath = resolve('src/renderer/src/collaboration/sceneMarkup.ts')
 const bundle = await build({ stdin: { contents: "export { SceneMarkup } from './src/renderer/src/collaboration/sceneMarkup'; export { createSceneSanitizer } from './src/shared/sceneSanitizer'; export * as surfaces from './e2e/fixtures/writingSceneSurface'; export { installSceneCapture } from './e2e/fixtures/writingSceneCapture'; export { installFragmentInput } from './e2e/fixtures/writingFragmentInput';", resolveDir: process.cwd() }, bundle: true, write: false, platform: 'node', format: 'cjs',
   plugins: [{ name: 'fragment-markup', setup(builder) {
     builder.onLoad({ filter: /sceneMarkup\.ts$/ }, ({ path }) => path === sourcePath
-      ? { contents: fragmentSceneMarkupSource(readFileSync(path, 'utf8')), loader: 'ts' } : undefined)
+      ? { contents: fragmentSceneMarkupSource(commentSceneMarkupSource(readFileSync(path, 'utf8'))), loader: 'ts' } : undefined)
   } }] })
 const module = { exports: {} }
 new Function('require', 'module', 'exports', bundle.outputFiles[0].text)(createRequire(import.meta.url), module, module.exports)

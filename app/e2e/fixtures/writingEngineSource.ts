@@ -1,6 +1,7 @@
 import { installWritingViewport } from './writingViewport'
 import { createHash } from 'node:crypto'
 import { writingSpacingAttributes } from './writingPresentation'
+import { sceneCommentSource } from './writingCommentSource'
 
 export function scopeEditorSource(name: string, source: string, fragments = false): string {
   source = source.replaceAll('\r\n', '\n')
@@ -32,7 +33,7 @@ export function scopeEditorSource(name: string, source: string, fragments = fals
     if (source.split(marker).length !== 2 || createHash('sha256').update(legacy).digest('hex') !== '392cf1d4ee60fd1860127579c5639220fae7a2f08f8a47bcb068f002f047a816') throw new Error('The experimental focus seam no longer matches the source engine.')
     source = source.slice(0, source.indexOf(marker)) + `(${installWritingViewport.toString()})();\n`
   }
-  if (fragments) {
+  if (fragments || name === 'grammar-highlights.js') {
     const edits: Record<string, [string, string][]> = {
       'grammar-highlights.js': [
         ['function buildGrammarPlainTextMap(root = window.NovalistEditorState.editor) {', 'function buildGrammarPlainTextMap(root = window.NovalistEditorState.editor, nodes = root.childNodes) {'],
@@ -60,5 +61,5 @@ export function scopeEditorSource(name: string, source: string, fragments = fals
       source = source.replace(before, after)
     }
   }
-  return source
+  return sceneCommentSource(name, source)
 }

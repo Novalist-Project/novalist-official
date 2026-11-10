@@ -1,0 +1,429 @@
+{
+  "kind": "unified-writing-comment-correction",
+  "baseRevision": "8754bd02bbe5de38a0aa85825ddefeb93c0016dd",
+  "limits": "Test-only bounded comments, supported block-containing wrappers and metadata entry points. Adjacent/empty inline fidelity remains hard RED; host metadata transport, independent pane documents, production and main Task1 remain open.",
+  "provenance": "Existing accepted source archives plus exact changed-byte overrides. Each accepted record has reconstructed source or frozen command/source binding. Exploratory intermediate records keep their original source digests; unavailable bytes are not invented. No post-capture payload redaction.",
+  "variants": [
+    {
+      "name": "prefinal",
+      "baseArchives": [
+        {
+          "file": "fragments-round1-evidence.json.gz",
+          "sha256": "115a4ffd9332f63a894fe40dbb373b5be22f895d430ed643cfbc7ff4ff8e8d44"
+        },
+        {
+          "file": "fragments-round2-evidence.json.gz",
+          "sha256": "b447fd51d323917b5eeab106498b9f2954392e0131cff038aa57f0bcfd15f13f"
+        }
+      ],
+      "sourceSha256": "e3fc978e111de5a529a100e55b7dd33f5c20907a8241c78a82c5424d0d0cfa7b",
+      "sourceFiles": 284,
+      "overrides": [
+        {
+          "file": "e2e/fixtures/writingCommentSource.ts",
+          "sha256": "e2bf0d47b448112df24738008df4ea5395dfde143e540ba72911b0b6ed51ca8f"
+        },
+        {
+          "file": "e2e/fixtures/writingComments.ts",
+          "sha256": "1221e500d57d5e3bebd4cd91e6d0707fbfc11aa050a7183edf452c703f12b13d"
+        },
+        {
+          "file": "e2e/fixtures/writingEngineSource.ts",
+          "sha256": "69bc05d8ad17e8dcbc62ba6863cff2ea0eb9d11af250812f5474cdd9aededaa2"
+        },
+        {
+          "file": "e2e/fixtures/writingExperiment.ts",
+          "sha256": "d5cb7ce50d94a318d9a68ff5e540c94fa87a04905088682a79c8dfcd0a0144de"
+        },
+        {
+          "file": "e2e/fixtures/writingHarness.ts",
+          "sha256": "addd44571b8d069a395e1509541783a63f463f4a2a78e5ed29c1c73c49fcc89f"
+        },
+        {
+          "file": "e2e/fixtures/writingProvenance.ts",
+          "sha256": "a0fcf92413120d023c0b7eab1f8f0b7849caa29d47ec31742b07987382b65e6a"
+        },
+        {
+          "file": "e2e/fixtures/writingSceneMarkupSource.ts",
+          "sha256": "829fbae5a7067cfa4c3a52f2159802d5d3b285609649dc37eaeeee2d859c336c"
+        },
+        {
+          "file": "e2e/writing-comments.spec.ts",
+          "sha256": "9f434354d2f3c7efce6c7a90cffd35bdddbb36bd013ac89a857d4d8afbf3df15"
+        },
+        {
+          "file": "playwright.writing-presentation.config.ts",
+          "sha256": "6baeefbf868c404f378efc1ae39085bdf9c5955cb9c629ce04c5feb599d675ed"
+        }
+      ],
+      "supplemental": [
+        {
+          "file": "scripts/writing-comments.test.mjs",
+          "sha256": "d3951b460b6f8f8b72b53acb302db3871d3f2aec55014d85e2f077366797f358"
+        },
+        {
+          "file": "scripts/writing-scene-surface.test.mjs",
+          "sha256": "28347378d463282fbc08dcc974b834ef56610bcb258ce13e7203a55f518adf98"
+        }
+      ]
+    },
+    {
+      "name": "routed",
+      "baseArchives": [
+        {
+          "file": "fragments-round1-evidence.json.gz",
+          "sha256": "115a4ffd9332f63a894fe40dbb373b5be22f895d430ed643cfbc7ff4ff8e8d44"
+        },
+        {
+          "file": "fragments-round2-evidence.json.gz",
+          "sha256": "b447fd51d323917b5eeab106498b9f2954392e0131cff038aa57f0bcfd15f13f"
+        }
+      ],
+      "sourceSha256": "69dbacfd4c93a709f6493a526ad120d50246b2e8fb5892be7708480caef02cd1",
+      "sourceFiles": 284,
+      "overrides": [
+        {
+          "file": "e2e/fixtures/writingCommentSource.ts",
+          "sha256": "e2bf0d47b448112df24738008df4ea5395dfde143e540ba72911b0b6ed51ca8f"
+        },
+        {
+          "file": "e2e/fixtures/writingComments.ts",
+          "sha256": "1221e500d57d5e3bebd4cd91e6d0707fbfc11aa050a7183edf452c703f12b13d"
+        },
+        {
+          "file": "e2e/fixtures/writingEngineSource.ts",
+          "sha256": "600c50e557794a1138e37de15bfbd138e3c09c9c65d281ac0d1ec83ae7f8f044"
+        },
+        {
+          "file": "e2e/fixtures/writingExperiment.ts",
+          "sha256": "d5cb7ce50d94a318d9a68ff5e540c94fa87a04905088682a79c8dfcd0a0144de"
+        },
+        {
+          "file": "e2e/fixtures/writingHarness.ts",
+          "sha256": "addd44571b8d069a395e1509541783a63f463f4a2a78e5ed29c1c73c49fcc89f"
+        },
+        {
+          "file": "e2e/fixtures/writingProvenance.ts",
+          "sha256": "a0fcf92413120d023c0b7eab1f8f0b7849caa29d47ec31742b07987382b65e6a"
+        },
+        {
+          "file": "e2e/fixtures/writingSceneCapture.ts",
+          "sha256": "c9946b085852c86518cb1208a65919ca2734981b7fe6c5e81a230268896abe27"
+        },
+        {
+          "file": "e2e/fixtures/writingSceneMarkupSource.ts",
+          "sha256": "829fbae5a7067cfa4c3a52f2159802d5d3b285609649dc37eaeeee2d859c336c"
+        },
+        {
+          "file": "e2e/writing-comments.spec.ts",
+          "sha256": "339a7562bccda771670d4916efbcf50b1519ea51db307a8d269f6a3ef1240e36"
+        },
+        {
+          "file": "playwright.writing-presentation.config.ts",
+          "sha256": "6baeefbf868c404f378efc1ae39085bdf9c5955cb9c629ce04c5feb599d675ed"
+        }
+      ],
+      "supplemental": [
+        {
+          "file": "scripts/writing-comments.test.mjs",
+          "sha256": "d3951b460b6f8f8b72b53acb302db3871d3f2aec55014d85e2f077366797f358"
+        },
+        {
+          "file": "scripts/writing-scene-surface.test.mjs",
+          "sha256": "28347378d463282fbc08dcc974b834ef56610bcb258ce13e7203a55f518adf98"
+        }
+      ]
+    },
+    {
+      "name": "accepted",
+      "baseArchives": [
+        {
+          "file": "fragments-round1-evidence.json.gz",
+          "sha256": "115a4ffd9332f63a894fe40dbb373b5be22f895d430ed643cfbc7ff4ff8e8d44"
+        },
+        {
+          "file": "fragments-round2-evidence.json.gz",
+          "sha256": "b447fd51d323917b5eeab106498b9f2954392e0131cff038aa57f0bcfd15f13f"
+        }
+      ],
+      "sourceSha256": "133da7eaa782996e6872e46d56dfe205c71dfbfe3c463dcf47afe6a79c1ddca1",
+      "sourceFiles": 284,
+      "overrides": [
+        {
+          "file": "e2e/fixtures/writingCommentSource.ts",
+          "sha256": "e2bf0d47b448112df24738008df4ea5395dfde143e540ba72911b0b6ed51ca8f"
+        },
+        {
+          "file": "e2e/fixtures/writingComments.ts",
+          "sha256": "1221e500d57d5e3bebd4cd91e6d0707fbfc11aa050a7183edf452c703f12b13d"
+        },
+        {
+          "file": "e2e/fixtures/writingEngineSource.ts",
+          "sha256": "600c50e557794a1138e37de15bfbd138e3c09c9c65d281ac0d1ec83ae7f8f044"
+        },
+        {
+          "file": "e2e/fixtures/writingExperiment.ts",
+          "sha256": "d5cb7ce50d94a318d9a68ff5e540c94fa87a04905088682a79c8dfcd0a0144de"
+        },
+        {
+          "file": "e2e/fixtures/writingHarness.ts",
+          "sha256": "addd44571b8d069a395e1509541783a63f463f4a2a78e5ed29c1c73c49fcc89f"
+        },
+        {
+          "file": "e2e/fixtures/writingLayoutSource.ts",
+          "sha256": "5518b79f11e438c9cc810c681d834a425ee090f38f93e4c9311fc626ef559b01"
+        },
+        {
+          "file": "e2e/fixtures/writingProvenance.ts",
+          "sha256": "a0fcf92413120d023c0b7eab1f8f0b7849caa29d47ec31742b07987382b65e6a"
+        },
+        {
+          "file": "e2e/fixtures/writingSceneCapture.ts",
+          "sha256": "c9946b085852c86518cb1208a65919ca2734981b7fe6c5e81a230268896abe27"
+        },
+        {
+          "file": "e2e/fixtures/writingSceneMarkupSource.ts",
+          "sha256": "829fbae5a7067cfa4c3a52f2159802d5d3b285609649dc37eaeeee2d859c336c"
+        },
+        {
+          "file": "e2e/writing-comments.spec.ts",
+          "sha256": "339a7562bccda771670d4916efbcf50b1519ea51db307a8d269f6a3ef1240e36"
+        },
+        {
+          "file": "playwright.writing-presentation.config.ts",
+          "sha256": "6baeefbf868c404f378efc1ae39085bdf9c5955cb9c629ce04c5feb599d675ed"
+        }
+      ],
+      "supplemental": [
+        {
+          "file": "scripts/writing-comments.test.mjs",
+          "sha256": "d3951b460b6f8f8b72b53acb302db3871d3f2aec55014d85e2f077366797f358"
+        },
+        {
+          "file": "scripts/writing-scene-surface.test.mjs",
+          "sha256": "28347378d463282fbc08dcc974b834ef56610bcb258ce13e7203a55f518adf98"
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "folder": "writing-comments-capture-routed",
+      "binding": {
+        "variant": "accepted",
+        "passed": 9,
+        "failed": 0,
+        "engine": "chromium",
+        "log": "comments-capture-routed.log"
+      },
+      "records": 1,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-command-first",
+      "binding": null,
+      "records": 3,
+      "digestOnlyExploratoryRecords": 2
+    },
+    {
+      "folder": "writing-comments-containers-green",
+      "binding": null,
+      "records": 4,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-containers-red",
+      "binding": null,
+      "records": 4,
+      "digestOnlyExploratoryRecords": 3
+    },
+    {
+      "folder": "writing-comments-element-routed",
+      "binding": {
+        "variant": "routed",
+        "passed": 15,
+        "failed": 0,
+        "engine": "chromium",
+        "log": "comments-element-routed.log"
+      },
+      "records": 16,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-element-visibility-control",
+      "binding": null,
+      "records": 2,
+      "digestOnlyExploratoryRecords": 1
+    },
+    {
+      "folder": "writing-comments-final-correctness",
+      "binding": {
+        "variant": "accepted",
+        "passed": 12,
+        "failed": 0,
+        "engine": "chromium",
+        "log": "comments-final-correctness.log"
+      },
+      "records": 1,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-final-element",
+      "binding": {
+        "variant": "prefinal",
+        "passed": 8,
+        "failed": 7,
+        "engine": "chromium",
+        "log": "comments-final-element.log"
+      },
+      "records": 16,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-final-native",
+      "binding": {
+        "variant": "prefinal",
+        "passed": 73,
+        "failed": 0,
+        "engine": "electron",
+        "log": "comments-final-native.log"
+      },
+      "records": 83,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-final-presentation",
+      "binding": {
+        "variant": "prefinal",
+        "passed": 28,
+        "failed": 0,
+        "engine": "chromium",
+        "log": "comments-final-presentation.log"
+      },
+      "records": 2,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-final-residual-red",
+      "binding": {
+        "variant": "accepted",
+        "passed": 0,
+        "failed": 2,
+        "engine": "chromium",
+        "log": "comments-final-residual-red.log"
+      },
+      "records": 3,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-final-telemetry",
+      "binding": {
+        "variant": "accepted",
+        "passed": 2,
+        "failed": 0,
+        "engine": "chromium",
+        "log": "comments-final-telemetry.log"
+      },
+      "records": 1,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-identity-green",
+      "binding": null,
+      "records": 4,
+      "digestOnlyExploratoryRecords": 3
+    },
+    {
+      "folder": "writing-comments-identity-red",
+      "binding": null,
+      "records": 3,
+      "digestOnlyExploratoryRecords": 2
+    },
+    {
+      "folder": "writing-comments-leaves-green",
+      "binding": null,
+      "records": 9,
+      "digestOnlyExploratoryRecords": 8
+    },
+    {
+      "folder": "writing-comments-leaves-publication-red",
+      "binding": null,
+      "records": 9,
+      "digestOnlyExploratoryRecords": 8
+    },
+    {
+      "folder": "writing-comments-leaves-red",
+      "binding": null,
+      "records": 1,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-mapper-red",
+      "binding": null,
+      "records": 5,
+      "digestOnlyExploratoryRecords": 4
+    },
+    {
+      "folder": "writing-comments-metadata-first",
+      "binding": null,
+      "records": 2,
+      "digestOnlyExploratoryRecords": 1
+    },
+    {
+      "folder": "writing-comments-metadata-red",
+      "binding": null,
+      "records": 2,
+      "digestOnlyExploratoryRecords": 1
+    },
+    {
+      "folder": "writing-comments-native-routed",
+      "binding": {
+        "variant": "routed",
+        "passed": 22,
+        "failed": 0,
+        "engine": "electron",
+        "log": "comments-native-routed.log"
+      },
+      "records": 23,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-red",
+      "binding": {
+        "source": "prior accepted round2 archive",
+        "passed": 0,
+        "failed": 2,
+        "engine": "electron",
+        "grep": "comment diagnostic|rich slices:.*wrapSelectionAsComment"
+      },
+      "records": 3,
+      "digestOnlyExploratoryRecords": 0
+    },
+    {
+      "folder": "writing-comments-wrapper-green",
+      "binding": null,
+      "records": 5,
+      "digestOnlyExploratoryRecords": 4
+    },
+    {
+      "folder": "writing-comments-wrapper-red",
+      "binding": null,
+      "records": 5,
+      "digestOnlyExploratoryRecords": 4
+    }
+  ],
+  "checks": {
+    "nodes": "34/34; Node module/localStorage warnings retained",
+    "typecheck": "web/node/e2e passed",
+    "doctors": "8/8",
+    "aislop": "100; 0 errors; 0 warnings; npm audit unavailable info"
+  },
+  "archive": {
+    "file": "comments-evidence.json.gz",
+    "sha256": "e80f95c98976b70c51e9760ff2a69859433b00059f0626cfae3531557f59d349",
+    "bytes": 373975,
+    "records": 207,
+    "blobs": 217,
+    "digestOnlyExploratoryRecords": 41
+  }
+}

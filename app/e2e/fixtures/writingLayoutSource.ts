@@ -70,7 +70,7 @@ const expressions: Record<string, [string, string][]> = {
     ['range.getBoundingClientRect()', 'globalThis.__writingLayout.measure("typewriter.caretRect",()=>range.getBoundingClientRect())'],
     ['window.NovalistEditorState.wrapper.getBoundingClientRect()', 'globalThis.__writingLayout.measure("typewriter.wrapperRect",()=>window.NovalistEditorState.wrapper.getBoundingClientRect())']
   ],
-  'writingSceneCapture.ts': [['scene.innerText', 'globalThis.__writingLayout.measure("capture.innerText",()=>scene.innerText)']],
+  'writingSceneCapture.ts': [['logicalSceneText(isSurface(scene) ? scene.atoms() : Array.from(scene.childNodes))', 'globalThis.__writingLayout.measure("capture.logicalText",()=>logicalSceneText(isSurface(scene) ? scene.atoms() : Array.from(scene.childNodes)))']],
   'writingPageLayout.ts': [
     ['presentation.append(measuringPage, ...blocks)', 'globalThis.__writingLayout.measure("page.measureWrites",()=>presentation.append(measuringPage, ...blocks))'],
     ['block.offsetHeight', 'globalThis.__writingLayout.measure("page.heightRead",()=>block.offsetHeight)'],
@@ -82,7 +82,10 @@ const expressions: Record<string, [string, string][]> = {
 }
 
 export function profileWritingSource(name: string, source: string): string {
-  for (const [before, after] of expressions[name] ?? []) {
+  for (const [original, instrumented] of expressions[name] ?? []) {
+    const scopedMarks = name === 'comment-gutter.js' && original.includes('querySelectorAll') && source.includes('(window.writingComments?.allMarks() ?? [])')
+    const before = scopedMarks ? '(window.writingComments?.allMarks() ?? [])' : original
+    const after = scopedMarks ? instrumented.replace(original, before) : instrumented
     const count = source.split(before).length - 1
     if (count !== 1) throw new Error(`Layout expression seam ${name}:${before} expected 1, found ${count}.`)
     source = source.replace(before, after)

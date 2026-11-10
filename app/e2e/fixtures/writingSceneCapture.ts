@@ -23,7 +23,7 @@ export function installSceneCapture(editor: CaptureEditor, presentation: Writing
   const clean = editor.getCleanContentHtml.bind(editor)
   const map = editor.buildGrammarPlainTextMap.bind(editor)
   const cleanScene = (scene: CaptureOwner): string => isSurface(scene) ? clean(projection!.clone(scene), false) : clean(scene)
-  const text = (scene: CaptureOwner): string => isSurface(scene) ? logicalSceneText(scene.atoms()) : scene.innerText
+  const text = (scene: CaptureOwner): string => logicalSceneText(isSurface(scene) ? scene.atoms() : Array.from(scene.childNodes))
   const identity = (scene: CaptureOwner): string => isSurface(scene) ? scene.sceneId : scene.dataset.sceneId!
   const owner = (node: Node): CaptureOwner | null => {
     if (projection) return projection.owner(node)

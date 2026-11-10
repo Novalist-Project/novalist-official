@@ -12,13 +12,16 @@ import type { WritingViewport } from './writingViewport'
 import { SceneProjection, type SceneSurface } from './writingSceneSurface'
 import { installFragmentLayout } from './writingFragmentLayout'
 import { installFragmentInput } from './writingFragmentInput'
+import { CommentBookmark, wrapCommentLeaves } from './writingComments'
 
-interface SceneDocument { doc: Y.Doc; text: Y.Text; history: Y.UndoManager }
+interface SceneDocument { doc: Y.Doc; text: Y.Text; history: Y.UndoManager; commentIds: Set<string> }
 interface SceneView { root: HTMLElement; markup: SceneMarkup; state: SceneDocument; surface?: SceneSurface }
 interface RelativePoint { scene: number; position: Y.RelativePosition }
 interface LogicalSelection { anchor: RelativePoint; focus: RelativePoint }
 interface ScopeSelection { logical: LogicalSelection; anchor: Node | null; anchorOffset: number; focus: Node | null; focusOffset: number }
 interface ExperimentEditor extends EditorWindow {
+  setCommentsData(data: { id: string; anchorText: string; text: string }[], sceneId?: string): void
+  writingComments?: { active(): string; key(id: string, sceneId: string): string; reserve(id: string, sceneId: string): void; owner(node: Node): string; marks(sceneId: string): Element[]; allMarks(): Element[] }
   wrapSelectionAsComment(id: string): string | null
   sanitizePastedHtml(html: string): string
   NovalistEditorState: { pageViewEnabled: boolean; pageViewMutationObserver: MutationObserver | null; isComposing: boolean; isSettingContent: boolean }
@@ -138,11 +141,16 @@ class ExperimentPane implements WritingPane {
         this.viewIndices.set(surface, index)
       }
       const state = history.scenes[index]
+      for (const mark of root.querySelectorAll('[data-comment-id]')) state.commentIds.add(mark.getAttribute('data-comment-id')!)
       if (!state.text.length) state.doc.transact(() => updateRichText(state.text, markup.read()))
       else markup.render(state.text.toDelta())
-      const transactionSelections = new WeakMap<Y.Transaction, LogicalSelection | null>()
+      const transactionSelections = new WeakMap<Y.Transaction, { logical: LogicalSelection | null; exact: CommentBookmark | null }>()
       state.doc.on('beforeTransaction', transaction => {
-        if (!this.applying && !this.composing && this.selectionTouches(index)) transactionSelections.set(transaction, this.selection() ?? this.savedSelection)
+        if (!this.applying && !this.composing && this.selectionTouches(index)) {
+          const selected = this.editor.getSelection()
+          transactionSelections.set(transaction, { logical: this.selection() ?? this.savedSelection,
+            exact: selected?.anchorNode && selected.focusNode ? new CommentBookmark(selected) : null })
+        }
       })
       state.text.observe(event => {
         if (this.applying || this.composing) return
@@ -152,7 +160,7 @@ class ExperimentPane implements WritingPane {
         if (!optimized || !applySimpleInsertion(markup, event.delta)) this.render(index)
         this.markDirty(contentRecords(this.observer.takeRecords()).filter(record => surface ? this.projection!.owner(record.target) !== surface : !root.contains(record.target)))
         acknowledge?.()
-        if (saved) { this.savedSelection = saved; this.restore(saved) }
+        if (saved?.logical) { this.savedSelection = saved.logical; this.restore(saved.logical, saved.exact) }
       })
       return { root, markup, state, surface }
     })
@@ -164,7 +172,35 @@ class ExperimentPane implements WritingPane {
       editor.document.head.append(style)
       installScenePagination(editor, presentation)
     }
-    editor.setCommentsData(Array.from(this.root.querySelectorAll<HTMLElement>('[data-comment-id]'), mark => ({ id: mark.dataset.commentId!, anchorText: mark.textContent ?? '', text: 'Synthetic annotation' })))
+    if (scoped) {
+      const marks = (view: SceneView): Element[] => Array.from(view.surface ? view.surface.atoms() : view.root.childNodes).flatMap(node => {
+        if (node.nodeType !== 1) return []
+        const element = node as Element
+        return [...(element.matches('span.nv-comment[data-comment-id]') ? [element] : []), ...element.querySelectorAll('span.nv-comment[data-comment-id]')]
+      })
+      editor.writingComments = {
+        active: () => this.activeScene() ?? (this.views.length === 1 ? this.book.scenes[0].id : ''),
+        key: (id, sceneId) => JSON.stringify([sceneId, id]),
+        reserve: (id, sceneId) => {
+          const index = this.book.scenes.findIndex(scene => scene.id === sceneId)
+          if (index < 0) throw new Error('Unknown comment scene ownership.')
+          this.views[index].state.commentIds.add(id)
+        },
+        owner: node => {
+          const owner = this.locate(node, 0)?.scene
+          const index = owner ? this.viewIndices.get(owner) : undefined
+          if (index === undefined) throw new Error('Comment outside registered scene ownership.')
+          return this.book.scenes[index].id
+        },
+        marks: sceneId => {
+          const index = this.book.scenes.findIndex(scene => scene.id === sceneId)
+          if (index < 0) throw new Error('Unknown comment scene ownership.')
+          return marks(this.views[index])
+        },
+        allMarks: () => this.views.flatMap(view => this.hidden(view) ? [] : marks(view))
+      }
+      for (const [index, view] of this.views.entries()) editor.setCommentsData(marks(view).map(mark => ({ id: mark.getAttribute('data-comment-id')!, anchorText: mark.textContent ?? '', text: 'Synthetic annotation' })), book.scenes[index].id)
+    } else editor.setCommentsData(Array.from(this.root.querySelectorAll<HTMLElement>('[data-comment-id]'), mark => ({ id: mark.dataset.commentId!, anchorText: mark.textContent ?? '', text: 'Synthetic annotation' })))
     if (this.projection) {
       const input = installFragmentInput(this.projection)
       editor.addEventListener('pagehide', () => {
@@ -282,14 +318,15 @@ class ExperimentPane implements WritingPane {
     return anchor && focus ? { anchor, focus } : null
   }
 
-  private restore(selection: LogicalSelection): void {
+  private restore(selection: LogicalSelection, exact: CommentBookmark | null = null): void {
     if (this.hidden(this.views[selection.anchor.scene]) || this.hidden(this.views[selection.focus.scene])) return
-    const resolve = (point: RelativePoint) => {
+    const resolve = (point: RelativePoint, affinity: 'forward' | 'backward' = 'backward') => {
       const view = this.views[point.scene]
       view.markup.read()
       const position = Y.createAbsolutePositionFromRelativePosition(point.position, view.state.doc)
-      return position ? view.markup.domPosition(position.index) : null
+      return position ? (view.markup as SceneMarkup & { domPosition(index: number, affinity: 'forward' | 'backward'): { node: Node; offset: number } | null }).domPosition(position.index, affinity) : null
     }
+    if (exact) { exact.restore((end, affinity) => resolve(selection[end], affinity)); return }
     const anchor = resolve(selection.anchor)
     const focus = resolve(selection.focus)
     if (anchor && focus) this.editor.getSelection()?.setBaseAndExtent(anchor.node, anchor.offset, focus.node, focus.offset)
@@ -331,19 +368,35 @@ class ExperimentPane implements WritingPane {
   command(command: WritingCommand): void {
     this.capture()
     const selection = this.selection()
+    const selected = this.editor.getSelection()
+    const exact = selected?.anchorNode && selected.focusNode ? new CommentBookmark(selected) : null
+    const commentIds = new Map<number, string>()
     this.commanding = true
     try {
       for (const { index, range } of this.selectedRanges().reverse()) {
-        const selected = this.editor.getSelection()!
-        selected.removeAllRanges()
-        selected.addRange(range)
-        if (command === 'wrapSelectionAsComment') this.editor.wrapSelectionAsComment(`comment-${index}`)
-        else this.editor[command]()
+        if (command === 'wrapSelectionAsComment') {
+          if (!exact) continue
+          let id = commentIds.get(index)
+          if (!id) {
+            const ids = this.views[index].state.commentIds
+            id = `comment-${index}`
+            for (let suffix = 1; ids.has(id); suffix++) id = `comment-${index}-${suffix}`
+            ids.add(id)
+            commentIds.set(index, id)
+          }
+          wrapCommentLeaves(range, id, exact)
+        }
+        else {
+          selected!.removeAllRanges()
+          selected!.addRange(range)
+          this.editor[command]()
+        }
         this.dirty.add(index)
       }
     } finally { this.commanding = false }
     this.capture()
-    if (selection) this.restore(selection)
+    if (selection) this.restore(selection, command === 'wrapSelectionAsComment' ? exact : null)
+    if (command === 'wrapSelectionAsComment') this.editor.reportContentChanged()
   }
 
   private beforeInput(event: InputEvent): void {
@@ -449,6 +502,10 @@ class ExperimentPane implements WritingPane {
       clearWritingSpacing(clone)
       clone.querySelectorAll('.nv-focus-block').forEach(node => node.classList.remove('nv-focus-block'))
       clone.querySelectorAll('[class=""]').forEach(node => node.removeAttribute('class'))
+      clone.querySelectorAll('img[data-nv-src]').forEach(node => {
+        node.setAttribute('src', node.getAttribute('data-nv-src')!)
+        node.removeAttribute('data-nv-src')
+      })
       if (!view.surface) clone.querySelectorAll('.nv-page').forEach(page => page.replaceWith(...page.childNodes))
       return { id: this.book.scenes[index].id, html: clone.innerHTML, text: clone.textContent ?? '' }
     })
@@ -504,7 +561,7 @@ window.installWriting = (book, optimized, scoped, fragments) => {
   const states = book.scenes.map(() => {
     const doc = new Y.Doc()
     const text = doc.getText('prose')
-    return { doc, text, history: new Y.UndoManager(text, { trackedOrigins: new Set([writer]) }) }
+    return { doc, text, history: new Y.UndoManager(text, { trackedOrigins: new Set([writer]) }), commentIds: new Set<string>() }
   })
   const history = new CompoundHistory(states)
   window.writingPanes = Array.from(document.querySelectorAll('iframe'), frame => new ExperimentPane(frame.contentWindow as ExperimentEditor, book, history, optimized, scoped, fragments))

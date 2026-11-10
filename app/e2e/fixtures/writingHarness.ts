@@ -11,7 +11,7 @@ import { closeTestApp } from '../harness'
 import { scopeEditorSource } from './writingEngineSource'
 import { createLayoutTelemetry } from './writingLayoutTelemetry'
 import { profileWritingSource, layoutSourceNames } from './writingLayoutSource'
-import { fragmentSceneMarkupSource } from './writingSceneMarkupSource'
+import { commentSceneMarkupSource, fragmentSceneMarkupSource } from './writingSceneMarkupSource'
 
 export type WritingMode = 'original' | 'experiment'
 export interface WritingHarness {
@@ -82,11 +82,12 @@ export async function launchWriting(mode: WritingMode, paneCount = 1, profiling 
     const bundle = await build({ entryPoints: [resolve('e2e/fixtures/writingExperiment.ts')], bundle: true, write: false, format: 'iife', platform: 'browser',
       plugins: [{ name: 'writing-source-seams', setup(builder) {
         builder.onLoad({ filter: /\.ts$/ }, async ({ path }) => {
-          const markup = fragments && path === resolve('src/renderer/src/collaboration/sceneMarkup.ts')
+          const markup = path === resolve('src/renderer/src/collaboration/sceneMarkup.ts')
           const profileSource = profiling && layoutSourceNames.includes(basename(path))
           if (!markup && !profileSource) return undefined
           let contents = await readFile(path, 'utf8')
-          if (markup) contents = fragmentSceneMarkupSource(contents)
+          if (markup) contents = commentSceneMarkupSource(contents)
+          if (markup && fragments) contents = fragmentSceneMarkupSource(contents)
           if (profileSource) contents = profileWritingSource(basename(path), contents)
           return { contents, loader: 'ts' }
         })
