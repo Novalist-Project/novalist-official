@@ -29,19 +29,36 @@ interface ExperimentEditor extends EditorWindow {
 
 const writer = {}
 
+function stripWritingFields(attributes: Record<string, string>): void {
+  for (const name of writingSpacingAttributes) delete attributes[name]
+}
+
 class ExperimentMarkup extends SceneMarkup {
   read() {
     return super.read().map(run => {
-      if (!run.attributes?.block) return run
-      const blocks: { attributes: Record<string, string> }[] = JSON.parse(run.attributes.block)
+      if (!run.attributes) return run
+      const attributes = { ...run.attributes }
+      const marks: string[] = attributes.markOrder ? JSON.parse(attributes.markOrder) : []
+      for (const name of marks) {
+        const values: Record<string, string> = JSON.parse(attributes[name])
+        stripWritingFields(values)
+        attributes[name] = JSON.stringify(values)
+      }
+      if (attributes.embed) {
+        const embed: { tag: string; attributes: Record<string, string> } = JSON.parse(attributes.embed)
+        stripWritingFields(embed.attributes)
+        attributes.embed = JSON.stringify(embed)
+      }
+      if (!attributes.block) return { ...run, attributes }
+      const blocks: { attributes: Record<string, string> }[] = JSON.parse(attributes.block)
       for (const block of blocks) {
-        for (const name of writingSpacingAttributes) delete block.attributes[name]
+        stripWritingFields(block.attributes)
         if (!('class' in block.attributes)) continue
         const value = authoredClass(block.attributes.class)
         if (value) block.attributes.class = value
         else delete block.attributes.class
       }
-      return { ...run, attributes: { ...run.attributes, block: JSON.stringify(blocks) } }
+      return { ...run, attributes: { ...attributes, block: JSON.stringify(blocks) } }
     })
   }
 }

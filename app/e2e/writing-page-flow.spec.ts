@@ -12,6 +12,51 @@ interface FlowPane extends WritingPane { presentation: WritingPresentation }
 
 const html = '<p>opening</p><p style="margin:1em 0 !important;padding:0.5em !important;background:rgb(240, 220, 200)">alpha</p>bravo <em>inline</em><p>charlie</p>'
 
+for (const target of ['img', 'em']) {
+  test(`page flow inline purity: ${target} fields stay local through real capture, peer propagation and undo`, async ({}, info) => {
+    const h = await launchWriting('experiment', 2, false)
+    const authored = '<p>alpha <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="synthetic" title="embed" data-authored="keep" style="width:1px;height:1px"><em class="kept" title="inline" data-authored="keep" style="color:rgb(10, 20, 30)">mark</em></p>'
+    try {
+      await h.seed({ wordCount: 2, scenes: [{ id: 'owner', html: authored }] })
+      const result = await h.page.evaluate(({ target, authored }) => {
+        const panes = window.writingPanes as FlowPane[]
+        const roots = Array.from(document.querySelectorAll('iframe'), frame => frame.contentDocument!.querySelector('[data-scene-id]')!)
+        const elements = roots.map(root => Array.from(root.querySelectorAll('img, em')))
+        const originalAttributes = elements.map(nodes => nodes.map(node => Array.from(node.attributes, attribute => [attribute.name, attribute.value])))
+        const atom = roots[0].querySelector(target)!
+        const identity = () => elements.every((nodes, pane) => nodes.every((node, index) => node.isConnected && roots[pane].querySelectorAll('img, em')[index] === node))
+        const attributesExact = () => elements.every((nodes, pane) => nodes.every((node, index) => JSON.stringify(Array.from(node.attributes)
+          .filter(attribute => !['data-writing-flow-before', 'data-writing-flow-after'].includes(attribute.name))
+          .map(attribute => [attribute.name, attribute.value])) === JSON.stringify(originalAttributes[pane][index])))
+        const sharedClean = () => panes.every(pane => !JSON.stringify(pane.inspect().deltas).includes('data-writing-flow-'))
+        const initialExact = panes.every(pane => pane.serialize()[0].html === authored)
+        panes[0].presentation.spacing(atom, 'before', 85)
+        panes[0].presentation.spacing(atom, 'after', 153)
+        roots[0].querySelector('p')!.firstChild!.textContent = 'changed '
+        panes[0].capture()
+        const capture = { sharedClean: sharedClean(), connected: identity(), attributesExact: attributesExact(),
+          installed: atom.getAttribute('data-writing-flow-before') === '85' && atom.getAttribute('data-writing-flow-after') === '153',
+          peerClean: !roots[1].querySelector('[data-writing-flow-before], [data-writing-flow-after]'),
+          htmlExact: panes.every(pane => pane.serialize()[0].html === authored.replace('alpha ', 'changed ')),
+          history: panes[0].inspect().undoGroups }
+        panes[0].undo()
+        const undo = { sharedClean: sharedClean(), connected: identity(), attributesExact: attributesExact(),
+          htmlExact: panes.every(pane => pane.serialize()[0].html === authored), history: panes[0].inspect().undoGroups }
+        panes[0].redo()
+        const redo = { sharedClean: sharedClean(), connected: identity(), attributesExact: attributesExact(),
+          htmlExact: panes.every(pane => pane.serialize()[0].html === authored.replace('alpha ', 'changed ')), history: panes[0].inspect().undoGroups }
+        return { initialExact, capture, undo, redo }
+      }, { target, authored })
+      await writeFile(info.outputPath('page-flow-inline-purity.json'), JSON.stringify({ provenance: writingProvenance(),
+        workload: { route: 'experiment', panes: 2, scenes: 1, words: 2, pageView: false, target }, result }, null, 2))
+      expect(result.initialExact).toBe(true)
+      expect(result.capture).toEqual({ sharedClean: true, connected: true, attributesExact: true, installed: true, peerClean: true, htmlExact: true, history: [[0]] })
+      expect(result.undo).toEqual({ sharedClean: true, connected: true, attributesExact: true, htmlExact: true, history: [] })
+      expect(result.redo).toEqual({ sharedClean: true, connected: true, attributesExact: true, htmlExact: true, history: [[0]] })
+    } finally { await h.close() }
+  })
+}
+
 test('page flow fields preserve exact content, selection, copy and mixed authored edits', async () => {
   const h = await launchWriting('experiment', 2, false)
   try {
