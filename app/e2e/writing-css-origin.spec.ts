@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { writeFile } from 'node:fs/promises'
 import { launchWriting } from './fixtures/writingHarness'
 import { writingProvenance } from './fixtures/writingProvenance'
+import { writingDiagnosticEvidence } from './fixtures/writingDiagnosticEvidence'
 
 declare global {
   interface Window {
@@ -52,8 +53,8 @@ test('CSS origin native platform proof: fixed sheet gate owns one installation p
     const serialized = await h.page.evaluate(() => window.writingPanes.map(pane => pane.serialize()[0].html))
     await h.seed(book)
     const recreated = await h.page.evaluate(() => [window.writingUserCss.fixed(0, true, 153), window.writingUserCss.fixed(1, true, 85)])
-    await writeFile(info.outputPath('css-origin-fixed.json'), JSON.stringify({ provenance: writingProvenance(),
-      workload: { route: 'experiment', panes: 2, scenes: 1, words: 3, toggles: 5, recreations: 1, pageView: false }, result, serialized, recreated }, null, 2))
+    await writeFile(info.outputPath('css-origin-fixed.json'), JSON.stringify(writingDiagnosticEvidence({ provenance: writingProvenance(),
+      workload: { route: 'experiment', panes: 2, scenes: 1, words: 3, toggles: 5, recreations: 1, pageView: false }, result, serialized, recreated }), null, 2))
     expect(result.owners).toEqual([{ owner: 1, installations: 1 }, { owner: 2, installations: 2 }])
     expect(serialized).toEqual([html, html])
     const stages = [result.before, result.both, result.disabled, ...result.toggles.flatMap(sample => [sample.off, sample.on])]
@@ -117,8 +118,8 @@ test('CSS origin native platform proof: isolated user-important spacing and remo
       return { before, first, both, removedFirst, removedBoth, removalNextFrame }
     })
     const serialized = await h.page.evaluate(() => window.writingPanes.map(pane => pane.serialize()[0].html))
-    await writeFile(info.outputPath('css-origin.json'), JSON.stringify({ provenance: writingProvenance(),
-      workload: { route: 'experiment', panes: 2, scenes: 1, words: 3, platform: 'Electron user-origin CSS', pageView: false }, result, serialized }, null, 2))
+    await writeFile(info.outputPath('css-origin.json'), JSON.stringify(writingDiagnosticEvidence({ provenance: writingProvenance(),
+      workload: { route: 'experiment', panes: 2, scenes: 1, words: 3, platform: 'Electron user-origin CSS', pageView: false }, result, serialized }), null, 2))
     for (const stage of Object.values(result)) for (const pane of stage) {
       expect(pane.html).toBe(html)
       expect(pane.connected).toBe(true)
@@ -166,8 +167,8 @@ for (const key of ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight']) {
             focusOffset: selection.focusOffset, collapsed: selection.isCollapsed }
         }))
       }
-      await writeFile(info.outputPath('css-origin-key.json'), JSON.stringify({ provenance: writingProvenance(),
-        workload: { route: 'original', panes: 1, scenes: 1, words: 2, appliedAdaptations: false }, key, samples }, null, 2))
+      await writeFile(info.outputPath('css-origin-key.json'), JSON.stringify(writingDiagnosticEvidence({ provenance: writingProvenance(),
+        workload: { route: 'original', panes: 1, scenes: 1, words: 2, appliedAdaptations: false }, key, samples }), null, 2))
       expect(samples[1]).toEqual(samples[0])
       expect(samples[0].text).toBe('alphabravo')
       expect(samples[0].anchorParagraph).toBe(key === 'ArrowRight' ? 1 : 0)

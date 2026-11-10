@@ -2,6 +2,7 @@ import { expect, test, type Frame } from '@playwright/test'
 import { writeFile } from 'node:fs/promises'
 import { launchWriting } from './fixtures/writingHarness'
 import { writingProvenance } from './fixtures/writingProvenance'
+import { writingDiagnosticEvidence } from './fixtures/writingDiagnosticEvidence'
 
 async function nativeState(frame: Frame) {
   return frame.evaluate(() => {
@@ -52,8 +53,8 @@ for (const spacing of ['none', 'before', 'after', 'pseudo-before', 'pseudo-after
         const first = await nativeState(frame)
         await h.page.keyboard.press(key)
         const second = await nativeState(frame)
-        await writeFile(info.outputPath('css-native.json'), JSON.stringify({ provenance: writingProvenance(),
-          workload: { route: 'original', appliedAdaptations: false, scenes: 1, words: 2, panes: 1 }, spacing, key, before, first, second }, null, 2))
+        await writeFile(info.outputPath('css-native.json'), JSON.stringify(writingDiagnosticEvidence({ provenance: writingProvenance(),
+          workload: { route: 'original', appliedAdaptations: false, scenes: 1, words: 2, panes: 1 }, spacing, key, before, first, second }), null, 2))
         expect(first.text).toBe('alphabravo')
         expect(first.collapsed).toBe(true)
         if (key === 'Backspace' || key === 'Delete') {
@@ -95,7 +96,7 @@ for (const containment of [false, true]) {
         const after = measure()
         return { html, unchangedHtml: root.innerHTML === html, connected: nodes.every((node, index) => node.isConnected && root.childNodes[index] === node), em, before, after }
       }, containment)
-      await writeFile(info.outputPath('css-raw.json'), JSON.stringify({ provenance: writingProvenance(), containment, result }, null, 2))
+      await writeFile(info.outputPath('css-raw.json'), JSON.stringify(writingDiagnosticEvidence({ provenance: writingProvenance(), containment, result }), null, 2))
       expect(result.unchangedHtml).toBe(true)
       expect(result.connected).toBe(true)
       expect(result.after[0][0].top - result.before[0][0].top).toBeCloseTo(8 * result.em)
@@ -145,8 +146,8 @@ for (const spacing of ['margin', 'pseudo']) {
         }, spacing)
         const serialized = await h.page.evaluate(() => window.writingPanes[0].serialize()[0].html)
         await h.page.screenshot({ path: info.outputPath('authored-spacing.png') })
-        await writeFile(info.outputPath('css-authored.json'), JSON.stringify({ provenance: writingProvenance(),
-          workload: { route: 'experiment', scenes: 1, words: 3, panes: 1, pageView: false }, spacing, important, result, serialized }, null, 2))
+        await writeFile(info.outputPath('css-authored.json'), JSON.stringify(writingDiagnosticEvidence({ provenance: writingProvenance(),
+          workload: { route: 'experiment', scenes: 1, words: 3, panes: 1, pageView: false }, spacing, important, result, serialized }), null, 2))
         expect(result.authored).toBe(html)
         expect(result.unchangedHtml).toBe(true)
         expect(result.connected).toBe(true)
