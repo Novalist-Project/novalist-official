@@ -18,7 +18,8 @@ export function followWritingSceneRails(live: EditorWindow, targets: RailTarget[
     for (const root of visible) {
       const rail = rails.get(root)!
       const bounds = root.getBoundingClientRect()
-      const offset = narrow ? 0 : Math.max(0, Math.min(top - bounds.top, bounds.height - rail.offsetHeight))
+      const inset = parseFloat(getComputedStyle(rail).marginBlockStart)
+      const offset = narrow ? 0 : Math.max(0, Math.min(top - bounds.top - inset, bounds.height - inset - rail.offsetHeight))
       rail.style.translate = `0 ${offset}px`
     }
   }
@@ -54,12 +55,17 @@ export function followWritingSceneRails(live: EditorWindow, targets: RailTarget[
   }
   viewport.addEventListener('scroll', schedule, { passive: true })
   live.addEventListener('resize', schedule)
+  live.addEventListener('writingzoomchange', schedule)
+  const appearance = new MutationObserver(schedule)
+  appearance.observe(live.document.body, { attributes: true, attributeFilter: ['class'] })
   return () => {
     live.cancelAnimationFrame(pending)
     sizes.disconnect()
     visibility.disconnect()
+    appearance.disconnect()
     viewport.removeEventListener('scroll', schedule)
     live.removeEventListener('resize', schedule)
+    live.removeEventListener('writingzoomchange', schedule)
     for (const [root, rail] of rails) {
       root.style.removeProperty('--writing-rail-height')
       rail.style.removeProperty('translate')

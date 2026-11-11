@@ -9,6 +9,55 @@ test.beforeEach(async ({ page }) => {
   await expect(page.frameLocator('iframe').locator('.writing-book-heading')).toBeVisible()
 })
 
+for (const language of ['en', 'ar']) for (const book of [false, true]) {
+  test(`${language} headings and scene information align with prose across page layouts, book=${book}`, async ({ page }, testInfo) => {
+    const canvas = page.frameLocator('iframe')
+    const rail = canvas.locator('.writing-scene-margin').first()
+    await expect(rail).toHaveCSS('font-size', '16.9px')
+    if (book) await page.evaluate('window.setBookLayout(true, 4)')
+    const background = await canvas.locator('body').evaluate(element => getComputedStyle(element).backgroundColor)
+    for (const zoom of [1, 2]) for (const pages of [false, true, false]) {
+      await page.locator('iframe').evaluate((element, { language, zoom, pages }) => {
+        const editor = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
+        editor.setInterfaceLanguage(language, language === 'ar' ? 'rtl' : 'ltr')
+        editor.setWritingZoom(zoom)
+        editor.setPageView(pages)
+        editor.document.getElementById('editor-wrapper')!.scrollTop = 0
+      }, { language, zoom, pages })
+      const prose = canvas.locator('.writing-scene p').first()
+      await expect(prose).toHaveCSS('font-size', `${(book ? 11 : 17) * zoom}px`)
+      const text = (await prose.boundingBox())!
+      for (const heading of [canvas.locator('.writing-book-heading h1'), canvas.locator('.writing-chapter-heading h2').first(), canvas.locator('.writing-act-name').first()]) {
+        const box = (await heading.boundingBox())!
+        expect(box.x).toBeCloseTo(text.x, 0)
+        expect(box.width).toBeCloseTo(text.width, 0)
+      }
+      await expect.poll(async () => (await rail.boundingBox())!.y).toBeCloseTo(text.y, 0)
+      const surround = await canvas.locator('#editor-wrapper').evaluate(element => {
+        const color = getComputedStyle(element).backgroundColor
+        return color === 'rgba(0, 0, 0, 0)' ? getComputedStyle(element.ownerDocument.body).backgroundColor : color
+      })
+      expect(surround).toBe(background)
+      if (pages) await expect(canvas.locator('.nv-page').first()).not.toHaveCSS('background-color', background)
+      if (zoom === 2) await page.screenshot({ path: testInfo.outputPath(pages ? 'paged-alignment.png' : 'continuous-alignment.png') })
+    }
+    await page.setViewportSize({ width: 450, height: 1000 })
+    await page.locator('iframe').evaluate(element => {
+      const editor = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
+      editor.setWritingZoom(1)
+      editor.setPageView(true)
+    })
+    await expect(canvas.locator('body')).toHaveClass(/writing-narrow/)
+    const text = (await canvas.locator('.writing-scene p').first().boundingBox())!
+    const heading = (await canvas.locator('.writing-chapter-heading h2').first().boundingBox())!
+    expect(heading.x).toBeCloseTo(text.x, 0)
+    expect(heading.width).toBeCloseTo(text.width, 0)
+    const panel = (await rail.boundingBox())!
+    expect(panel.y + panel.height).toBeLessThanOrEqual(text.y)
+    expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+  })
+}
+
 test('continuous editor follows the approved document hierarchy and compact scene rail', async ({ page }, testInfo) => {
   const canvas = page.frameLocator('iframe')
   await expect(page.getByRole('button', { name: 'Manuscript', exact: true })).toHaveAttribute('aria-pressed', 'true')
@@ -141,7 +190,6 @@ test('text zoom reflows prose while the document and scene rail stay inside the 
   await setZoom(1)
   const prose = canvas.locator('.writing-scene p').nth(1)
   const baseline = await prose.boundingBox()
-  const heading = await canvas.locator('.writing-book-heading').boundingBox()
   const reservedRail = await canvas.locator('.writing-scene-margin').first().evaluate(element =>
     parseFloat(getComputedStyle(element).getPropertyValue('--nl-writing-margin-collapsed')))
   for (const zoom of [2, 3, .5, 1]) {
@@ -151,7 +199,7 @@ test('text zoom reflows prose while the document and scene rail stay inside the 
     expect(after!.x).toBeGreaterThanOrEqual(0)
     expect(after!.x + after!.width).toBeLessThanOrEqual(1000)
     if (zoom > 1) expect(after!.height).toBeGreaterThan(baseline!.height)
-    expect((await canvas.locator('.writing-book-heading').boundingBox())!.x).toBeCloseTo(heading!.x, 0)
+    expect((await canvas.locator('.writing-book-heading').boundingBox())!.x).toBeCloseTo(after!.x, 0)
     const sceneRail = (await canvas.locator('.writing-scene-margin').first().boundingBox())!
     expect(sceneRail.width).toBeGreaterThanOrEqual(reservedRail * zoom - 0.5)
     expect(sceneRail.x).toBeGreaterThanOrEqual(0)
@@ -232,17 +280,18 @@ test('expanded synopsis fits its content within the stable panel and scrolls whe
   expect(await input.evaluate(element => element.scrollHeight)).toBeGreaterThan((await input.boundingBox())!.height)
 })
 
-test('scene information stays visible while scrolling through its prose', async ({ page }) => {
+for (const pages of [false, true]) test(`scene information stays visible while scrolling through its prose, pages=${pages}`, async ({ page }) => {
   await page.goto(`${url}?long=1`)
   const frame = page.frameLocator('iframe')
   const rail = frame.locator('.writing-scene-margin').nth(1)
   await expect(rail).toHaveCSS('font-size', '16.9px')
+  if (pages) await page.locator('iframe').evaluate(element => ((element as HTMLIFrameElement).contentWindow as unknown as EditorWindow).setPageView(true))
   const scene = frame.locator('.writing-scene').nth(1)
   await scene.scrollIntoViewIfNeeded()
   expect((await scene.boundingBox())!.height).toBeGreaterThan((await rail.boundingBox())!.height + 100)
   await frame.locator('#editor-wrapper').evaluate(element => {
     const scene = element.querySelectorAll('.writing-scene')[1]
-    element.scrollTop += scene.getBoundingClientRect().top - element.getBoundingClientRect().top + 50
+    element.scrollTop += scene.querySelector('p')!.getBoundingClientRect().top - element.getBoundingClientRect().top + 50
   })
   await expect.poll(async () => (await rail.boundingBox())!.y).toBeGreaterThanOrEqual((await page.locator('iframe').boundingBox())!.y)
   expect((await rail.boundingBox())!.y).toBeLessThan((await page.locator('iframe').boundingBox())!.y + 30)

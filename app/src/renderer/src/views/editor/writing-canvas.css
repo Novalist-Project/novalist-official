@@ -2,9 +2,12 @@ body.unified-writing-canvas {
   --padding-h: var(--nl-writing-outer);
   --writing-chrome-scale: var(--writing-text-scale, 1);
   --writing-rail: calc(var(--nl-writing-margin-collapsed) * var(--writing-chrome-scale));
+  --writing-prose-start: calc(var(--nl-space-xl) + var(--nl-space-hairline));
+  --writing-prose-end: var(--nl-space-none);
+  --writing-rail-top: var(--nl-space-none);
 }
 body.unified-writing-canvas.book-width { --writing-chrome-scale: calc(var(--writing-text-scale, 1) * min(1, var(--font-size) / var(--nl-font-body))); }
-body.unified-writing-canvas #editor-wrapper { max-width: none; overflow-anchor: auto; container-type: inline-size; }
+body.unified-writing-canvas #editor-wrapper { max-width: none; overflow-anchor: auto; container-type: inline-size; background: transparent; }
 body.unified-writing-canvas .writing-zoom-surface { width: 100%; }
 body.unified-writing-canvas.typewriter-on #editor { padding-top: var(--nl-writing-typewriter-space); }
 body.unified-writing-canvas.typewriter-on #editor::after { height: var(--nl-writing-typewriter-space); }
@@ -23,7 +26,11 @@ body.unified-writing-canvas.page-view #editor-wrapper {
   --page-target-width: calc(32 * var(--font-size) * var(--writing-text-scale, 1));
   --page-outer-gap: min(calc(var(--nl-space-xl) * var(--writing-text-scale, 1)), calc(var(--writing-page-container) * 0.02));
   --page-h-padding: clamp(calc(var(--nl-space-md) * var(--writing-text-scale, 1)), calc((var(--writing-page-container) - 2 * var(--page-outer-gap) - 24 * var(--font-size) * var(--writing-text-scale, 1)) / 2), calc(4 * var(--font-size) * var(--writing-text-scale, 1)));
+  --page-v-padding: calc(4 * var(--font-size) * var(--writing-text-scale, 1));
   --page-width: min(var(--page-target-width), calc(var(--writing-page-container) - 2 * var(--page-outer-gap)));
+  --writing-prose-start: var(--page-h-padding);
+  --writing-prose-end: var(--page-h-padding);
+  --writing-rail-top: var(--page-v-padding);
 }
 body.unified-writing-canvas.book-width.page-view #editor-wrapper { --writing-page-container: min(var(--writing-page-available), calc((var(--writing-book-text-width) + 2 * var(--nl-space-xl)) * var(--writing-text-scale, 1))); }
 body.unified-writing-canvas.page-view #editor { display: block; max-width: min(100%, calc(var(--page-width) + var(--writing-page-side-space))); }
@@ -42,7 +49,7 @@ body.unified-writing-canvas #editor [data-editor-chrome] * { box-sizing: border-
 .writing-scene-chrome { position: relative; user-select: none; }
 .writing-scene {
   position: relative;
-  min-height: max(1em, var(--writing-rail-height, 0px));
+  min-height: max(1em, calc(var(--writing-rail-height, 0px) + var(--writing-rail-top)));
   content-visibility: auto;
   contain-intrinsic-size: auto var(--nl-writing-scene-estimate);
 }
@@ -55,6 +62,7 @@ body.unified-writing-canvas #editor .writing-scene + .writing-scene-chrome { mar
   position: absolute;
   inset-inline-end: calc(100% + var(--nl-writing-gap));
   top: 100%;
+  margin-block-start: var(--writing-rail-top);
   /* Use the centered document's spare leading margin without moving its prose. */
   width: calc((100cqw - 100% + var(--writing-rail) - var(--nl-writing-gap)) / 2 - var(--nl-writing-outer));
   min-width: var(--writing-rail);
@@ -94,7 +102,7 @@ html[dir="rtl"] .writing-scene-margin button[aria-expanded="false"] svg { transf
 .writing-scene-margin button svg.expanded { transform: none; }
 .writing-scene-margin .writing-focus-scene { color: var(--nl-accent); margin-top: var(--nl-space-sm); }
 .writing-scene-margin textarea, .writing-synopsis-popover textarea { width: 100%; field-sizing: content; resize: none; flex-shrink: 0; min-height: var(--nl-writing-synopsis-min-height); box-sizing: border-box; background: var(--nl-surface-input); color: var(--nl-text); border: var(--nl-space-hairline) solid var(--nl-border); border-radius: var(--nl-radius-sm); padding: var(--nl-space-sm); font: inherit; }
-.writing-book-heading, .writing-chapter-heading { margin-inline-start: calc(-1 * (var(--writing-rail) + var(--nl-writing-gap))); }
+.writing-book-heading, .writing-chapter-heading { margin-inline: var(--writing-prose-start) var(--writing-prose-end); }
 .writing-book-heading { padding-block: var(--nl-space-lg) var(--nl-space-xxl); }
 .writing-book-heading h1 { font: var(--nl-weight-title) calc(var(--nl-font-display-sm) * var(--writing-chrome-scale))/var(--nl-leading-tight) var(--nl-font-display-face); color: var(--nl-text); margin: var(--nl-space-md) 0; }
 .writing-chapter-heading { padding-block: var(--nl-space-xl) var(--nl-space-xxl); border-top: var(--nl-space-hairline) solid var(--nl-border); }
@@ -107,9 +115,8 @@ html:lang(ar) :is(.writing-eyebrow, .writing-scene-number) { letter-spacing: nor
 .writing-boundary-insert:hover { color: var(--nl-accent); }
 .writing-boundary-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nl-space-lg); border-top: var(--nl-space-hairline) solid var(--nl-border); }
 .writing-scene-chrome:first-of-type > .writing-boundary-insert { margin-top: 0; }
-body.writing-narrow #editor { padding-inline: var(--nl-writing-outer); }
+body.writing-narrow #editor { padding-inline: var(--nl-writing-outer); --writing-rail-top: var(--nl-space-none); }
 body.writing-narrow .writing-scene-margin { position: static; width: 100%; min-width: 0; max-width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: var(--nl-space-md); }
-body.writing-narrow .writing-book-heading, body.writing-narrow .writing-chapter-heading { margin-inline-start: 0; }
 .writing-synopsis-popover { position: fixed; margin: 0; inset: auto; box-sizing: border-box; width: min(calc(var(--nl-writing-margin-expanded) * var(--writing-chrome-scale)), calc(100vw - 2 * var(--nl-space-md))); max-height: calc(100vh - 2 * var(--nl-space-md)); overflow: auto; padding: var(--nl-space-md); background: var(--nl-surface-input); color: var(--nl-text); border: var(--nl-space-hairline) solid var(--nl-border); border-radius: var(--nl-radius-md); }
 .writing-synopsis-popover textarea { display: block; margin-block: var(--nl-space-sm); }
 body.dim-others #editor > .writing-scene { opacity: 1; }
