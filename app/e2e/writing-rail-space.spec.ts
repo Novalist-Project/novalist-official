@@ -27,8 +27,7 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
       }
       return {
         rails: Array.from(viewport.querySelectorAll('.writing-scene-margin'), box),
-        prose: Array.from(viewport.querySelectorAll('.writing-scene'), box),
-        focus: box(viewport.querySelector('.writing-focus-scene')!)
+        prose: Array.from(viewport.querySelectorAll('.writing-scene'), box)
       }
     })
     await expect.poll(async () => (await layout()).rails.map(rail => rail.width)).toEqual([
@@ -36,9 +35,16 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
     ])
     const before = await layout()
     for (const rail of before.rails) expect(rail.height).toBeCloseTo(before.rails[0].height, 1)
+    const focus = rails.first().locator('.writing-focus-scene')
+    const focusOffset = () => focus.evaluate(element => element.getBoundingClientRect().top - element.parentElement!.getBoundingClientRect().top)
+    const collapsedOffset = await focusOffset()
+    const collapsedGap = await focus.evaluate(element => element.getBoundingClientRect().top -
+      element.parentElement!.querySelector('button[aria-expanded]')!.getBoundingClientRect().bottom)
+    expect(collapsedGap).toBeLessThanOrEqual(20)
     const input = rails.first().locator('textarea')
     await rails.first().locator('button[aria-expanded]').click()
     await expect(input).toBeEnabled()
+    expect(await focusOffset()).toBeGreaterThan(collapsedOffset)
     for (const text of ['Short synopsis.', 'A long synopsis should scroll inside the panel. '.repeat(100)]) {
       await input.fill(text)
       await expect.poll(layout).toEqual(before)
@@ -48,6 +54,7 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
     expect(await input.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
     await rails.first().locator('button[aria-expanded]').click()
     await expect.poll(layout).toEqual(before)
+    expect(await focusOffset()).toBe(collapsedOffset)
   })
 }
 

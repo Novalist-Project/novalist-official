@@ -69,6 +69,7 @@ body.unified-writing-canvas #editor .writing-scene + .writing-scene-chrome { mar
 }
 body:not(.writing-narrow) .writing-scene-margin > * { flex-shrink: 0; }
 .writing-scene-margin .writing-synopsis-slot { flex: 1; min-height: var(--nl-writing-synopsis-min-height); overflow: auto; }
+.writing-synopsis-slot:empty { display: none; }
 .writing-synopsis-slot textarea { max-height: 100%; }
 .writing-scene-number { font-family: var(--nl-font-mono); letter-spacing: var(--nl-tracking-eyebrow); text-transform: uppercase; }
 [data-writing-active="true"] .writing-scene-number { color: var(--nl-accent); }
