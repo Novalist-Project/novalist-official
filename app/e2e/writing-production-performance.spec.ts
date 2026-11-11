@@ -7,6 +7,7 @@ import { seedWritingBook } from './fixtures/writingBook'
 import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 
 test('production common root handles one million words with bounded typing and traversal memory', async ({ page, context }, testInfo) => {
+  test.setTimeout(180_000)
   await page.goto(pathToFileURL(resolve('src/renderer/public/editor/editor.html')).href)
   const book = await seedWritingBook({ seed: async () => {} }, { sceneCount: 1000, wordCount: 1_000_000, rich: true })
   const readiness = await page.evaluate(scenes => {

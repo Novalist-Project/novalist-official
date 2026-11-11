@@ -1,9 +1,14 @@
-name: Unified writing feasibility
+name: Unified writing validation
 
 on:
   push:
     branches: [feat/unified-writing-workspace]
   workflow_dispatch:
+    inputs:
+      research:
+        description: Run historical experiments with known failing assertions
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -14,7 +19,7 @@ concurrency:
 
 jobs:
   editor-gate:
-    name: Continuous editor experiment
+    name: Production editor checks
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -29,16 +34,23 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - name: Install dependencies
         run: npm ci
-      - name: Install browser dependencies
-        run: npx playwright install --with-deps chromium
+      - name: Validate historical editor adapters
+        run: node --test scripts/writing-engine-source.test.mjs
       - name: Typecheck harness
         run: npm run typecheck
+      - name: Install browser dependencies
+        id: browsers
+        run: npx playwright install --with-deps chromium
+      - name: Production editor regression tests
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        run: npx playwright test --config playwright.writing-native.config.ts --workers=1 --output test-results/writing-native
       - name: Headless Chromium experiment
+        if: ${{ !cancelled() && inputs.research == true && steps.browsers.outcome == 'success' }}
         env:
           NOVALIST_WRITING_ENGINE: chromium
         run: npx playwright test --config playwright.writing-feasibility.config.ts --workers=1 --output test-results/writing-feasibility/chromium
       - name: Isolated Electron experiment
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.research == true && steps.browsers.outcome == 'success' }}
         env:
           NOVALIST_WRITING_ENGINE: electron
           NOVALIST_E2E_ALLOW_DESKTOP: '1'

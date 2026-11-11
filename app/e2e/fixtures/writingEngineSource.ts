@@ -7,12 +7,12 @@ export function scopeEditorSource(name: string, source: string, fragments = fals
   source = source.replaceAll('\r\n', '\n')
   const changes: Record<string, [string, string][]> = {
     'content-input.js': [
-      ['function getCleanContentHtml() {', 'function getCleanContentHtml(root = window.NovalistEditorState.editor) {'],
-      ['const clone = window.NovalistEditorState.editor.cloneNode(true);', `const clone = root.cloneNode(true); for (const name of ${JSON.stringify(writingSpacingAttributes)}) clone.querySelectorAll('[' + name + ']').forEach(node => node.removeAttribute(name));`]
+      ['function getCleanContentHtml() {\n    const root = window.NovalistWritingDocument?.enabled\n        ? window.getWritingSceneRoot() : window.NovalistEditorState.editor;', 'function getCleanContentHtml(root = window.NovalistEditorState.editor) {'],
+      ['const clone = root.cloneNode(true);', `const clone = root.cloneNode(true); for (const name of ${JSON.stringify(writingSpacingAttributes)}) clone.querySelectorAll('[' + name + ']').forEach(node => node.removeAttribute(name));`]
     ],
     'grammar-highlights.js': [
       ['function buildGrammarPlainTextMap() {', 'function buildGrammarPlainTextMap(root = window.NovalistEditorState.editor) {'],
-      ['window.NovalistEditorState.editor.childNodes', 'root.childNodes']
+      ['    const root = window.getWritingServiceRoot?.() || window.NovalistEditorState.editor;\n', '']
     ],
     'typewriter-scroll.js': [
       ['function recenterCaret() {', 'function recenterCaret() { return window.writingViewport.intent(() => {'],
@@ -20,17 +20,17 @@ export function scopeEditorSource(name: string, source: string, fragments = fals
     ],
     'writing-zoom.js': [
       ['    window.setWritingZoom = (factor, anchor = typewriterAnchor) => {', '    window.setWritingZoom = (factor, anchor = typewriterAnchor) => window.writingViewport.intent(() => {'],
-      ['        refresh();\n    };', '        refresh();\n    });']
+      ["        window.dispatchEvent(new Event('writingzoomchange'));\n    };", "        window.dispatchEvent(new Event('writingzoomchange'));\n    });"]
     ]
   }
   for (const [before, after] of changes[name] ?? []) {
-    if (!source.includes(before) || (['typewriter-scroll.js', 'writing-zoom.js'].includes(name) && source.split(before).length !== 2)) throw new Error('The experimental editor seam no longer matches the source engine.')
+    if (source.split(before).length !== 2) throw new Error(`${name}: expected one editor seam matching ${JSON.stringify(before)}`)
     source = source.replaceAll(before, after)
   }
   if (name === 'clipboard-focus-events.js') {
     const marker = '// Track scroll positions for focus-gain scroll jump prevention'
     const legacy = source.slice(source.indexOf(marker))
-    if (source.split(marker).length !== 2 || createHash('sha256').update(legacy).digest('hex') !== '392cf1d4ee60fd1860127579c5639220fae7a2f08f8a47bcb068f002f047a816') throw new Error('The experimental focus seam no longer matches the source engine.')
+    if (source.split(marker).length !== 2 || createHash('sha256').update(legacy).digest('hex') !== '51731f1f2521918e8795f924248c70b6a8f8437d64ba607a0f8b6406226e6425') throw new Error(`${name}: the experimental focus seam no longer matches the source engine`)
     source = source.slice(0, source.indexOf(marker)) + `(${installWritingViewport.toString()})();\n`
   }
   if (fragments || name === 'grammar-highlights.js') {
@@ -53,11 +53,13 @@ export function scopeEditorSource(name: string, source: string, fragments = fals
       ],
       'content-input.js': [
         ['function getCleanContentHtml(root = window.NovalistEditorState.editor) {', 'function getCleanContentHtml(root = window.NovalistEditorState.editor, unwrapPresentation = true) {'],
+        ["return root ? cleanContentRoot(root) : '';", "return root ? cleanContentRoot(root, unwrapPresentation) : '';"],
+        ['function cleanContentRoot(root) {', 'function cleanContentRoot(root, unwrapPresentation = true) {'],
         ['if (window.NovalistEditorState.pageViewEnabled) {', 'if (unwrapPresentation && window.NovalistEditorState.pageViewEnabled) {']
       ]
     }
     for (const [before, after] of edits[name] ?? []) {
-      if (source.split(before).length !== 2) throw new Error('The fragment engine seam no longer matches its exact source.')
+      if (source.split(before).length !== 2) throw new Error(`${name}: expected one fragment seam matching ${JSON.stringify(before)}`)
       source = source.replace(before, after)
     }
   }

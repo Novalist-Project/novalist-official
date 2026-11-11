@@ -13,7 +13,16 @@ assertions, including explicitly expected failures. Run them separately with:
 npx playwright test --config playwright.writing-research.config.ts
 ```
 
-The original focused feasibility configuration and workflow also remain available.
+The original focused feasibility configuration remains available. The branch's
+**Unified writing validation** workflow checks the rewritten-source adapters and
+TypeScript before installing browser dependencies, then runs the shipped editor's
+headless regression suite, including its one-million-word runtime benchmark.
+Historical Chromium and isolated Electron experiments run only when the manual
+workflow's `research` input is enabled. These rejected adapters still have known
+failing pagination and performance assertions recorded in the feasibility report;
+they are not the production branch gate. Selecting research retains those failing
+assertions and fails the workflow when they fail. Both research engines run after
+successful setup even if another browser suite fails.
 Fragment and user-origin stylesheet experiments require their existing explicit
 environment switches. Research results do not establish production acceptance.
 
