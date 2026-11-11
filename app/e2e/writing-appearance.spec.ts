@@ -42,13 +42,36 @@ test('German synopsis controls keep UI sizing with large prose and dimming', asy
   const rail = canvas.locator('.writing-scene-margin').first()
   const synopsis = rail.getByRole('button', { name: /^Zusammenfassung$/i })
   await expect(synopsis).toHaveCSS('font-size', '16.9px')
-  expect((await synopsis.boundingBox())!.height).toBeLessThan(40)
   expect(await synopsis.evaluate(button => button.scrollWidth - button.clientWidth)).toBeLessThanOrEqual(1)
+  expect(await rail.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
   await expect(canvas.locator('.writing-scene-chrome').nth(1)).toHaveCSS('opacity', '1')
   await synopsis.click()
   await expect(rail.locator('textarea')).toHaveValue(/Elara discovers/)
   await page.screenshot({ path: testInfo.outputPath('editor-german-synopsis.png') })
 })
+
+for (const language of ['de', 'ar']) for (const zoom of [1, 2]) {
+  test(`${language} scene information fits its rail at ${zoom * 100}% zoom`, async ({ page }) => {
+    const rail = page.frameLocator('iframe').locator('.writing-scene-margin').first()
+    await expect(rail).toHaveCSS('font-size', '16.9px')
+    await page.evaluate(language => (window as unknown as { changeLanguage(language: string): Promise<void> }).changeLanguage(language), language)
+    await page.locator('iframe').evaluate((element, { language, zoom }) => {
+      const editor = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
+      editor.setInterfaceLanguage(language, language === 'ar' ? 'rtl' : 'ltr')
+      editor.setPageView(true)
+      editor.setWritingZoom(zoom)
+    }, { language, zoom })
+    await expect(rail).toHaveCSS('font-size', `${13 * zoom}px`)
+    for (const expanded of [false, true]) {
+      if (expanded) await rail.locator('button[aria-expanded]').click()
+      await expect(rail.locator('button[aria-expanded]')).toHaveAttribute('aria-expanded', String(expanded))
+      await expect.poll(() => rail.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+      for (const control of await rail.locator('button, select, textarea').all()) {
+        expect(await control.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+}
 
 test('scope switches and optional pages retain the continuous editor controls', async ({ page }) => {
   const canvas = page.frameLocator('iframe')
@@ -100,6 +123,7 @@ test('writing starts at a readable size independently of the small print font', 
 test('text zoom reflows prose while the document and scene rail stay inside the pane', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1000, height: 950 })
   const canvas = page.frameLocator('iframe')
+  await expect(canvas.locator('.writing-scene-margin').first()).toHaveCSS('font-size', '16.9px')
   const setZoom = (factor: number) => page.locator('iframe').evaluate((element, zoom) => {
     ((element as HTMLIFrameElement).contentWindow as unknown as EditorWindow).setWritingZoom(zoom)
   }, factor)

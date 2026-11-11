@@ -140,7 +140,7 @@ export async function buildWritingAppearance(): Promise<string> {
   const css = `<link rel="stylesheet" href="${pathToFileURL(resolve('src/renderer/public/fonts/fonts.css')).href}">` +
     ['styles/tokens.css', 'styles/base.css', 'shell/shell.css', 'views/editor/editor.css', 'views/editor/unified-writing.css']
     .map(path => `<link rel="stylesheet" href="${pathToFileURL(resolve('src/renderer/src', path)).href}">`).join('\n')
-  await writeFile(resolve(directory, 'index.html'), `<!doctype html><html><head><meta charset="utf-8">${css}</head>
+  await writeFile(resolve(directory, 'index.html'), `<!doctype html><html data-shell="desktop"><head><meta charset="utf-8">${css}</head>
     <body><div id="root"></div><script>window.editorUrl=${JSON.stringify(pathToFileURL(resolve('src/renderer/public/editor/editor.html')).href)};</script>
     <script src="fixture.js"></script></body></html>`)
   return pathToFileURL(resolve(directory, 'index.html')).href

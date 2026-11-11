@@ -69,7 +69,7 @@ body.unified-writing-canvas #editor .writing-scene + .writing-scene-chrome { mar
 .writing-act-name { margin-bottom: var(--nl-space-lg); color: var(--nl-accent); }
 .writing-scene-margin small { font: inherit; }
 .writing-scene-margin button, .writing-boundary-insert { background: transparent; border: 0; padding: var(--nl-space-tightest) 0; color: inherit; font: inherit; text-align: start; cursor: pointer; }
-.writing-scene-margin button { display: flex; align-items: center; gap: var(--nl-space-tightest); white-space: nowrap; }
+.writing-scene-margin button { display: flex; align-items: center; gap: var(--nl-space-tightest); min-width: 0; white-space: normal; overflow-wrap: anywhere; hyphens: auto; }
 .writing-scene-margin button svg { flex-shrink: 0; width: 1em; height: 1em; }
 .writing-scene-margin button[aria-expanded] svg { transform: rotate(-90deg); }
 html[dir="rtl"] .writing-scene-margin button[aria-expanded="false"] svg { transform: rotate(90deg); }
