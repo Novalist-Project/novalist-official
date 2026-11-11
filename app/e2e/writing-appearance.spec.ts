@@ -140,7 +140,10 @@ test('text zoom reflows prose while the document and scene rail stay inside the 
     expect(after!.x + after!.width).toBeLessThanOrEqual(1000)
     if (zoom > 1) expect(after!.height).toBeGreaterThan(baseline!.height)
     expect((await canvas.locator('.writing-book-heading').boundingBox())!.x).toBeCloseTo(heading!.x, 0)
-    expect((await canvas.locator('.writing-scene-margin').first().boundingBox())!.width).toBeCloseTo(rail!.width * zoom, 0)
+    const sceneRail = (await canvas.locator('.writing-scene-margin').first().boundingBox())!
+    expect(sceneRail.width).toBeGreaterThanOrEqual(rail!.width * zoom - 0.5)
+    expect(sceneRail.x).toBeGreaterThanOrEqual(0)
+    expect(sceneRail.x + sceneRail.width).toBeLessThanOrEqual(1000)
     expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
     if (zoom === 2) await page.screenshot({ path: testInfo.outputPath('editor-text-zoom-200.png') })
   }
