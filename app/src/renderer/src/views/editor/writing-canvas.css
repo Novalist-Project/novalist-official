@@ -58,6 +58,7 @@ body.unified-writing-canvas #editor .writing-scene + .writing-scene-chrome { mar
   /* Use the centered document's spare leading margin without moving its prose. */
   width: calc((100cqw - 100% + var(--writing-rail) - var(--nl-writing-gap)) / 2 - var(--nl-writing-outer));
   min-width: var(--writing-rail);
+  padding-inline-start: var(--nl-space-md);
   display: flex;
   flex-direction: column;
   align-items: stretch;
