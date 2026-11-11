@@ -18,13 +18,18 @@ for (const pages of [false, true]) {
         const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
         live.revealWritingPoint({ sceneId, offset: 0, affinity: 'after' })
       }, id)
-      // Allow deferred page layout and native content visibility to settle.
-      await page.waitForTimeout(450)
-      const position = await frame.locator(`[data-writing-scene="${id}"] p`).first().evaluate(element => {
+      const measurePosition = () => frame.locator(`[data-writing-scene="${id}"] p`).first().evaluate(element => {
         const bounds = element.getBoundingClientRect()
         const viewport = element.ownerDocument.getElementById('editor-wrapper')!.getBoundingClientRect()
         return { top: bounds.top - viewport.top, bottom: bounds.bottom - viewport.top, height: viewport.height }
       })
+      await expect.poll(async () => {
+        const position = await measurePosition()
+        return position.top >= -1 && position.top < position.height
+      }, { message: `start of ${id} reaches the viewport after deferred layout` }).toBe(true)
+      // Once the jump arrives, later layout must not move it out of view.
+      await page.waitForTimeout(450)
+      const position = await measurePosition()
       expect(position.top, `start of ${id} stays in the viewport`).toBeGreaterThanOrEqual(-1)
       expect(position.top).toBeLessThan(position.height)
     }
