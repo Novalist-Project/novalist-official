@@ -4,7 +4,6 @@ body.unified-writing-canvas {
   --writing-rail: calc(var(--nl-writing-margin-collapsed) * var(--writing-chrome-scale));
 }
 body.unified-writing-canvas.book-width { --writing-chrome-scale: calc(var(--writing-text-scale, 1) * min(1, var(--font-size) / var(--nl-font-body))); }
-body.unified-writing-canvas:has(.writing-scene-margin.expanded) { --writing-rail: calc(var(--nl-writing-margin-expanded) * var(--writing-chrome-scale)); }
 body.unified-writing-canvas #editor-wrapper { max-width: none; overflow-anchor: auto; container-type: inline-size; }
 body.unified-writing-canvas .writing-zoom-surface { width: 100%; }
 body.unified-writing-canvas.typewriter-on #editor { padding-top: var(--nl-writing-typewriter-space); }
@@ -56,17 +55,20 @@ body.unified-writing-canvas #editor .writing-scene + .writing-scene-chrome { mar
   position: absolute;
   inset-inline-end: calc(100% + var(--nl-writing-gap));
   top: 100%;
-  width: max-content;
-  min-width: var(--writing-rail);
   /* Use the centered document's spare leading margin without moving its prose. */
-  max-width: calc((100cqw - 100% + var(--writing-rail) - var(--nl-writing-gap)) / 2 - var(--nl-writing-outer));
+  width: calc((100cqw - 100% + var(--writing-rail) - var(--nl-writing-gap)) / 2 - var(--nl-writing-outer));
+  min-width: var(--writing-rail);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: var(--nl-space-sm);
+  height: calc(var(--nl-writing-margin-height) * var(--writing-chrome-scale));
   max-height: calc(100vh - 2 * var(--nl-space-md));
   overflow: auto;
 }
+body:not(.writing-narrow) .writing-scene-margin > * { flex-shrink: 0; }
+.writing-scene-margin .writing-synopsis-slot { flex: 1; min-height: var(--nl-writing-synopsis-min-height); overflow: auto; }
+.writing-synopsis-slot textarea { max-height: 100%; }
 .writing-scene-number { font-family: var(--nl-font-mono); letter-spacing: var(--nl-tracking-eyebrow); text-transform: uppercase; }
 [data-writing-active="true"] .writing-scene-number { color: var(--nl-accent); }
 .writing-scene-stage { display: flex; align-items: center; gap: var(--nl-space-sm); }
@@ -104,7 +106,7 @@ html:lang(ar) :is(.writing-eyebrow, .writing-scene-number) { letter-spacing: nor
 .writing-boundary-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nl-space-lg); border-top: var(--nl-space-hairline) solid var(--nl-border); }
 .writing-scene-chrome:first-of-type > .writing-boundary-insert { margin-top: 0; }
 body.writing-narrow #editor { padding-inline: var(--nl-writing-outer); }
-body.writing-narrow .writing-scene-margin { position: static; width: 100%; min-width: 0; max-width: 100%; flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: var(--nl-space-md); }
+body.writing-narrow .writing-scene-margin { position: static; width: 100%; min-width: 0; max-width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: var(--nl-space-md); }
 body.writing-narrow .writing-book-heading, body.writing-narrow .writing-chapter-heading { margin-inline-start: 0; }
 .writing-synopsis-popover { position: fixed; margin: 0; inset: auto; box-sizing: border-box; width: min(calc(var(--nl-writing-margin-expanded) * var(--writing-chrome-scale)), calc(100vw - 2 * var(--nl-space-md))); max-height: calc(100vh - 2 * var(--nl-space-md)); overflow: auto; padding: var(--nl-space-md); background: var(--nl-surface-input); color: var(--nl-text); border: var(--nl-space-hairline) solid var(--nl-border); border-radius: var(--nl-radius-md); }
 .writing-synopsis-popover textarea { display: block; margin-block: var(--nl-space-sm); }

@@ -43,8 +43,10 @@ export function WritingSceneMargin({ scene, expanded, onExpandedChange, wordCoun
     {synopsisVisible && <button ref={anchor} type="button" aria-expanded={expanded} onClick={() => onExpandedChange(!expanded)}>
       <ChevronDown size={13} className={expanded ? 'expanded' : ''} />{t('unifiedWriting.synopsis')}
     </button>}
-    {synopsisVisible && expanded && (narrow ? <SynopsisPopover scene={scene} anchor={anchor.current} onClose={() => onExpandedChange(false)} /> :
-      <SceneSynopsisField chapterGuid={scene.chapterGuid} sceneId={scene.sceneId} className="writing-synopsis-input" multiline />)}
+    {narrow ? synopsisVisible && expanded && <SynopsisPopover scene={scene} anchor={anchor.current} onClose={() => onExpandedChange(false)} /> :
+      <div className="writing-synopsis-slot">
+        {synopsisVisible && expanded && <SceneSynopsisField chapterGuid={scene.chapterGuid} sceneId={scene.sceneId} className="writing-synopsis-input" multiline />}
+      </div>}
     {onFocus && <button type="button" className="writing-focus-scene" onClick={onFocus}><Scan size={13} />{t('unifiedWriting.focusScene')}</button>}
   </aside>
 }

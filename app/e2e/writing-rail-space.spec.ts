@@ -5,6 +5,52 @@ import { buildWritingAppearance } from './fixtures/writingAppearance'
 let url: string
 test.beforeAll(async () => { url = await buildWritingAppearance() })
 
+for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'page']) {
+  test(`${language} ${mode} panels keep their dimensions and prose position when synopses change`, async ({ page }) => {
+    const query = new URLSearchParams({ short: '', 'sceneTitle-first': 'One',
+      'sceneTitle-second': 'A scene with a much longer name that needs more than one line' })
+    await page.goto(`${url}?${query}`)
+    const canvas = page.frameLocator('iframe')
+    const rails = canvas.locator('.writing-scene-margin')
+    await expect(rails.first()).toHaveCSS('font-size', '16.9px')
+    await page.evaluate(language => (window as unknown as { changeLanguage(language: string): Promise<void> }).changeLanguage(language), language)
+    await page.locator('iframe').evaluate((element, { language, mode }) => {
+      const editor = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
+      editor.setInterfaceLanguage(language, language === 'ar' ? 'rtl' : 'ltr')
+      editor.setBookWidth(mode === 'book', 500)
+      editor.setPageView(mode === 'page')
+    }, { language, mode })
+    const layout = () => canvas.locator('#editor-wrapper').evaluate(viewport => {
+      const box = (element: Element) => {
+        const rect = element.getBoundingClientRect()
+        return { x: rect.x, y: rect.y + viewport.scrollTop, width: rect.width, height: rect.height }
+      }
+      return {
+        rails: Array.from(viewport.querySelectorAll('.writing-scene-margin'), box),
+        prose: Array.from(viewport.querySelectorAll('.writing-scene'), box),
+        focus: box(viewport.querySelector('.writing-focus-scene')!)
+      }
+    })
+    await expect.poll(async () => (await layout()).rails.map(rail => rail.width)).toEqual([
+      (await rails.first().boundingBox())!.width, (await rails.first().boundingBox())!.width, (await rails.first().boundingBox())!.width
+    ])
+    const before = await layout()
+    for (const rail of before.rails) expect(rail.height).toBeCloseTo(before.rails[0].height, 1)
+    const input = rails.first().locator('textarea')
+    await rails.first().locator('button[aria-expanded]').click()
+    await expect(input).toBeEnabled()
+    for (const text of ['Short synopsis.', 'A long synopsis should scroll inside the panel. '.repeat(100)]) {
+      await input.fill(text)
+      await expect.poll(layout).toEqual(before)
+    }
+    expect(await input.evaluate(element => element.scrollHeight)).toBeGreaterThan((await input.boundingBox())!.height)
+    await input.evaluate(element => { element.scrollTop = element.scrollHeight })
+    expect(await input.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+    await rails.first().locator('button[aria-expanded]').click()
+    await expect.poll(layout).toEqual(before)
+  })
+}
+
 for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'page']) for (const zoom of [1, 2]) {
   test(`${language} ${mode} rail uses spare margin before wrapping at ${zoom * 100}%`, async ({ page }) => {
     await page.goto(`${url}?sceneTitle=${encodeURIComponent('Szene 1: Ein Morgen am Meer')}`)

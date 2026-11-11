@@ -66,9 +66,11 @@ const sceneIds = longBook ? ['first', 'second', 'third', ...Array.from({ length:
 const refs = sceneIds.map((id, index) => ({ ...context, chapterGuid: index < 2 ? 'chapter-1' : 'chapter-2', sceneId: id }))
 const chapters = [{ guid: 'chapter-1', act: 'Part one', title: 'The city that forgot', description: 'A missing street. An impossible map. The first sign that the city is keeping a secret.', order: 0 },
   { guid: 'chapter-2', title: 'Beneath the ink', description: 'Some secrets refuse to stay on the page.', order: 1 }].map(chapter => ({ ...chapter,
-    scenes: refs.filter(ref => ref.chapterGuid === chapter.guid).map(ref => ({ id: ref.sceneId, title: new URLSearchParams(location.search).get('sceneTitle') ?? 'Hidden scene title', wordCount: 181, stage: 'revised', synopsis: '' })) }))
+    scenes: refs.filter(ref => ref.chapterGuid === chapter.guid).map(ref => ({ id: ref.sceneId,
+      title: new URLSearchParams(location.search).get('sceneTitle-' + ref.sceneId) ?? new URLSearchParams(location.search).get('sceneTitle') ?? 'Hidden scene title',
+      wordCount: 181, stage: 'revised', synopsis: '' })) }))
 const registry = new WritingDocumentRegistry({ context, isCurrent: () => true, transport: {
-  read: async ref => ({ html: longBook ? prose.repeat(1 + sceneIds.indexOf(ref.sceneId) % 4) : prose, hash: 'saved' }), activate: async () => true,
+  read: async ref => ({ html: new URLSearchParams(location.search).has('short') ? '<p>Short scene.</p>' : longBook ? prose.repeat(1 + sceneIds.indexOf(ref.sceneId) % 4) : prose, hash: 'saved' }), activate: async () => true,
   commit: async () => { throw Error('This appearance fixture cannot save a project'); }
 } })
 const i18n = createInstance()

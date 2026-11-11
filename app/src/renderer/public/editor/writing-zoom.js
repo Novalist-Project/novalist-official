@@ -90,8 +90,10 @@
         if (document.body.classList.contains('unified-writing-canvas')) {
             const page = content.querySelector('.nv-page');
             const style = getComputedStyle(content);
-            const rail = document.body.classList.contains('writing-narrow') ? 0 :
-                (content.querySelector('.writing-scene-margin')?.getBoundingClientRect().width || 0) / scale;
+            const margin = content.querySelector('.writing-scene-margin');
+            // Spare space occupied by the panel remains available when fitting the page.
+            const rail = margin && !document.body.classList.contains('writing-narrow')
+                ? parseFloat(getComputedStyle(margin).minWidth) / scale : 0;
             const outer = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) - rail * scale;
             if (page && document.body.classList.contains('page-view'))
                 return (wrapper.clientWidth - outer) / (page.offsetWidth / scale + rail);

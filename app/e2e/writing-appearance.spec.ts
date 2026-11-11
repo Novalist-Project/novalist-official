@@ -20,10 +20,13 @@ test('continuous editor follows the approved document hierarchy and compact scen
   await expect(canvas.locator('.writing-scene').first()).not.toContainText('Hidden scene title')
   await expect(canvas.locator('.nv-page')).toHaveCount(0)
   const rail = canvas.locator('.writing-scene-margin').first()
+  await expect(rail).toHaveCSS('font-size', '16.9px')
   await expect(rail.locator('button[aria-expanded]')).toHaveAttribute('aria-expanded', 'false')
   await expect(rail.locator('textarea')).toHaveCount(0)
   const size = await rail.boundingBox()
-  expect(size!.width).toBeLessThanOrEqual(156)
+  const outer = await rail.evaluate(element => parseFloat(getComputedStyle(element).getPropertyValue('--nl-writing-outer')))
+  expect(size!.x).toBeGreaterThanOrEqual(0)
+  expect(size!.x).toBeLessThanOrEqual(2 * outer)
   const prose = await canvas.locator('.writing-scene').first().boundingBox()
   expect(prose!.x - (size!.x + size!.width)).toBeLessThanOrEqual(16)
   await page.screenshot({ path: testInfo.outputPath('editor-desktop.png') })
@@ -96,11 +99,19 @@ test('Focus scene isolates the scene beside its button and keeps its ordinal', a
 
 test('narrow writing pane keeps synopsis above prose without horizontal overflow', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 500, height: 900 })
+  await page.goto(`${url}?sceneTitle=${encodeURIComponent('A very long scene title containing many words that should wrap across several lines in a narrow editor')}`)
   const canvas = page.frameLocator('iframe')
   await expect(canvas.locator('body')).toHaveClass(/writing-narrow/)
-  const rail = await canvas.locator('.writing-scene-margin').first().boundingBox()
+  const panel = canvas.locator('.writing-scene-margin').first()
+  await expect(panel).toHaveCSS('font-size', '16.9px')
+  const rail = await panel.boundingBox()
   const prose = await canvas.locator('.writing-scene').first().boundingBox()
   expect(rail!.y + rail!.height).toBeLessThanOrEqual(prose!.y)
+  expect(await panel.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+  await panel.locator('button[aria-expanded]').click()
+  await expect(canvas.locator('.writing-synopsis-popover')).toBeVisible()
+  expect(await panel.boundingBox()).toEqual(rail)
+  expect(await canvas.locator('.writing-scene').first().boundingBox()).toEqual(prose)
   const width = await canvas.locator('body').evaluate(body => [body.scrollWidth, body.ownerDocument.documentElement.clientWidth])
   expect(width[0]).toBeLessThanOrEqual(width[1])
   await page.screenshot({ path: testInfo.outputPath('editor-narrow.png') })
@@ -131,7 +142,8 @@ test('text zoom reflows prose while the document and scene rail stay inside the 
   const prose = canvas.locator('.writing-scene p').nth(1)
   const baseline = await prose.boundingBox()
   const heading = await canvas.locator('.writing-book-heading').boundingBox()
-  const rail = await canvas.locator('.writing-scene-margin').first().boundingBox()
+  const reservedRail = await canvas.locator('.writing-scene-margin').first().evaluate(element =>
+    parseFloat(getComputedStyle(element).getPropertyValue('--nl-writing-margin-collapsed')))
   for (const zoom of [2, 3, .5, 1]) {
     await setZoom(zoom)
     await expect(prose).toHaveCSS('font-size', `${17 * zoom}px`)
@@ -141,7 +153,7 @@ test('text zoom reflows prose while the document and scene rail stay inside the 
     if (zoom > 1) expect(after!.height).toBeGreaterThan(baseline!.height)
     expect((await canvas.locator('.writing-book-heading').boundingBox())!.x).toBeCloseTo(heading!.x, 0)
     const sceneRail = (await canvas.locator('.writing-scene-margin').first().boundingBox())!
-    expect(sceneRail.width).toBeGreaterThanOrEqual(rail!.width * zoom - 0.5)
+    expect(sceneRail.width).toBeGreaterThanOrEqual(reservedRail * zoom - 0.5)
     expect(sceneRail.x).toBeGreaterThanOrEqual(0)
     expect(sceneRail.x + sceneRail.width).toBeLessThanOrEqual(1000)
     expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
@@ -201,29 +213,41 @@ test('inline scene and chapter buttons target the displayed boundaries', async (
   })
 })
 
-test('expanded synopsis grows to its content and shrinks again', async ({ page }) => {
+test('expanded synopsis fits its content within the stable panel and scrolls when full', async ({ page }) => {
   const rail = page.frameLocator('iframe').locator('.writing-scene-margin').first()
   await rail.getByRole('button', { name: 'Synopsis', exact: true }).click()
   const input = rail.locator('textarea')
   await expect(input).toBeEnabled()
-  await input.fill('A scene synopsis with several lines of detail. '.repeat(8))
-  await expect.poll(() => input.evaluate(element => element.clientHeight)).toBeGreaterThan(180)
+  const panel = (await rail.boundingBox())!
+  const short = (await input.boundingBox())!.height
+  await input.fill('A scene synopsis with several lines of detail. '.repeat(3))
+  await expect.poll(async () => (await input.boundingBox())!.height).toBeGreaterThan(short)
   expect(await input.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(2)
   const expanded = (await input.boundingBox())!.height
   await input.fill('Short synopsis.')
   await expect.poll(async () => (await input.boundingBox())!.height).toBeLessThan(expanded)
   await input.fill('A long synopsis must remain reachable within the writing pane. '.repeat(80))
-  expect((await rail.boundingBox())!.height).toBeLessThan((await page.locator('iframe').boundingBox())!.height)
-  expect(await rail.evaluate(element => element.scrollHeight)).toBeGreaterThan((await rail.boundingBox())!.height)
+  expect((await rail.boundingBox())!.height).toBe(panel.height)
+  expect(await rail.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1)
+  expect(await input.evaluate(element => element.scrollHeight)).toBeGreaterThan((await input.boundingBox())!.height)
 })
 
 test('scene information stays visible while scrolling through its prose', async ({ page }) => {
+  await page.goto(`${url}?long=1`)
   const frame = page.frameLocator('iframe')
-  const rail = frame.locator('.writing-scene-margin').first()
-  const position = (await rail.boundingBox())!.y
-  await frame.locator('#editor-wrapper').evaluate((element, top) => { element.scrollTop = top }, position + 100)
+  const rail = frame.locator('.writing-scene-margin').nth(1)
+  await expect(rail).toHaveCSS('font-size', '16.9px')
+  const scene = frame.locator('.writing-scene').nth(1)
+  await scene.scrollIntoViewIfNeeded()
+  expect((await scene.boundingBox())!.height).toBeGreaterThan((await rail.boundingBox())!.height + 100)
+  await frame.locator('#editor-wrapper').evaluate(element => {
+    const scene = element.querySelectorAll('.writing-scene')[1]
+    element.scrollTop += scene.getBoundingClientRect().top - element.getBoundingClientRect().top + 50
+  })
   await expect.poll(async () => (await rail.boundingBox())!.y).toBeGreaterThanOrEqual((await page.locator('iframe').boundingBox())!.y)
   expect((await rail.boundingBox())!.y).toBeLessThan((await page.locator('iframe').boundingBox())!.y + 30)
+  const panel = (await rail.boundingBox())!, prose = (await scene.boundingBox())!
+  expect(panel.y + panel.height).toBeLessThanOrEqual(prose.y + prose.height + 1)
 })
 
 test('shared synopsis text follows editor zoom and expands with its content', async ({ page }) => {
@@ -234,9 +258,16 @@ test('shared synopsis text follows editor zoom and expands with its content', as
   await expect(field).toHaveText('Shared synopsis')
   await page.locator('iframe').evaluate(element => ((element as HTMLIFrameElement).contentWindow as unknown as EditorWindow).setWritingZoom(2))
   await expect(field).toHaveCSS('font-size', '26px')
+  const panel = (await rail.boundingBox())!
   const initial = (await field.boundingBox())!.height
   await field.fill('Shared synopsis text also needs enough room to be read. '.repeat(8))
   await expect.poll(async () => (await field.boundingBox())!.height).toBeGreaterThan(initial)
+  expect((await rail.boundingBox())!.height).toBe(panel.height)
+  expect((await rail.boundingBox())!.width).toBe(panel.width)
+  await field.fill('Long shared synopsis. '.repeat(200))
+  const slot = rail.locator('.writing-synopsis-slot')
+  expect(await slot.evaluate(element => element.scrollHeight)).toBeGreaterThan((await slot.boundingBox())!.height)
+  expect((await rail.boundingBox())!.height).toBe(panel.height)
 })
 
 test('enabled book width applies the chosen text measure and book typography at the selected zoom', async ({ page }) => {
