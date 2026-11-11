@@ -20,7 +20,7 @@ concurrency:
 jobs:
   editor-gate:
     name: Production editor checks
-    runs-on: ubuntu-latest
+    runs-on: windows-2025
     timeout-minutes: 45
     defaults:
       run:
@@ -38,9 +38,9 @@ jobs:
         run: node --test scripts/writing-engine-source.test.mjs
       - name: Typecheck harness
         run: npm run typecheck
-      - name: Install browser dependencies
+      - name: Install Chromium
         id: browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Production editor regression tests
         if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
         run: npx playwright test --config playwright.writing-native.config.ts --workers=1 --output test-results/writing-native
@@ -54,7 +54,7 @@ jobs:
         env:
           NOVALIST_WRITING_ENGINE: electron
           NOVALIST_E2E_ALLOW_DESKTOP: '1'
-        run: xvfb-run --auto-servernum npx playwright test --config playwright.writing-feasibility.config.ts --workers=1 --output test-results/writing-feasibility/electron
+        run: npx playwright test --config playwright.writing-feasibility.config.ts --workers=1 --output test-results/writing-feasibility/electron
       - name: Upload gate evidence
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
