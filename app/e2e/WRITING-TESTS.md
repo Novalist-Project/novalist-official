@@ -15,6 +15,7 @@ npx playwright test --config playwright.writing-research.config.ts
 
 The original focused feasibility configuration remains available. The branch's
 **Unified writing validation** workflow runs on an isolated `windows-2025` runner.
+Checkout includes release tags for the book-layout comparison against `v3.7.2`.
 It checks the rewritten-source adapters and TypeScript before installing Chromium,
 then runs the shipped editor's
 headless regression suite, including its one-million-word runtime benchmark.
