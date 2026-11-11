@@ -4,6 +4,8 @@ This is the full list of **default** keyboard shortcuts shipped with Novalist. O
 
 Gestures are written in Novalist's key-gesture grammar: `D1` through `D9` are the number keys `1` through `9` on the main keyboard row, so `Ctrl+D1` means `Ctrl+1`.
 
+Shortcuts also work while an Arabic or other non-Latin keyboard layout is active. Modified letter and number keys use their physical shortcut positions when the typed character is non-Latin. Latin layouts keep their normal letter bindings, and recording a shortcut uses the same rules. Ordinary typing, composition and AltGraph characters are left alone.
+
 A shortcut is a **property of a command, not the reason one exists**. Every command Novalist has is listed in **Settings → Keyboard shortcuts**, whether or not it ships with a gesture, and any of them can be given one: click a command's gesture button, press the combination to capture it (Novalist warns you if it clashes with another command), and reset one or all of them back to the defaults at any time. See [Settings](23-settings.md#hotkeys). Most commands ship unbound — the table below is what a fresh install binds.
 
 ## Navigation

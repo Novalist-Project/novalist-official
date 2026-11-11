@@ -68,7 +68,7 @@ export function EntityReferenceList({ targetType, label, value, onChange, editab
       <label key={entry.id}>
         <input type="checkbox" checked={ids.includes(entry.id)} disabled={busy} aria-disabled={!editable}
           onChange={event => void change(event.target.checked ? [...ids, entry.id] : ids.filter(id => id !== entry.id))} />
-        {entry.name}
+        <bdi>{entry.name}</bdi>
       </label>
     )}
   </div>

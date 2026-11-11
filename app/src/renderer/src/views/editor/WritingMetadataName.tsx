@@ -47,10 +47,10 @@ export function WritingMetadataName({ value, label, context, save, structural = 
     } catch (reason) { setError(writingErrorMessage(reason)) }
     finally { setBusy(false) }
   }
-  if (draft === null) return <button type="button" className="writing-metadata-name" aria-label={label}
+  if (draft === null) return <button dir="auto" type="button" className="writing-metadata-name" aria-label={label}
     title={label} onClick={() => { setError(''); setDraft(value) }}>{value || label}</button>
   return <span className="writing-metadata-editor" aria-busy={busy}>
-    <input ref={input} className="writing-metadata-input" aria-label={label} value={draft} disabled={busy}
+    <input dir="auto" ref={input} className="writing-metadata-input" aria-label={label} value={draft} disabled={busy}
       onChange={event => setDraft(event.target.value)} onKeyDown={event => {
         if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); void submit() }
         if (event.key === 'Escape' && !busy) { event.preventDefault(); event.stopPropagation(); setDraft(null) }

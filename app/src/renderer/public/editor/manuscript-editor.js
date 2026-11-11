@@ -325,13 +325,16 @@ function sanitizePastedHtml(html) {
     const allElements = tmp.querySelectorAll('*');
     for (const el of allElements) {
         const tag = el.tagName.toLowerCase();
-        const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+        const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'div', 'span', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
         if (!allowedTags.includes(tag)) {
             el.replaceWith(...el.childNodes);
             continue;
         }
         const style = el.getAttribute('style');
+        const direction = el.getAttribute('dir');
+        const validDirection = /^(ltr|rtl|auto)$/i.test(direction ?? '') ? direction.toLowerCase() : el.style.direction;
         while (el.attributes.length > 0) el.removeAttribute(el.attributes[0].name);
+        if (/^(ltr|rtl|auto)$/.test(validDirection)) el.setAttribute('dir', validDirection);
         if (style) {
             const allowed = {};
             if (/font-weight\s*:\s*bold/i.test(style)) allowed['font-weight'] = 'bold';
@@ -343,36 +346,26 @@ function sanitizePastedHtml(html) {
             if (parts.length > 0) el.setAttribute('style', parts.join(';'));
         }
     }
+    window.applyProseDirection?.(tmp);
     return tmp.innerHTML;
 }
 
 // ── Keyboard ────────────────────────────────────────────────────
 
 function onKeyDown(e) {
+    if (window.NovalistShortcutKeys.key(e) === null) return;
     // Forward function keys (F1-F12) and Esc unconditionally so host hotkeys
     // like F11 (focus mode) work while focus is in the editor.
     var isFunctionKey = /^F\d{1,2}$/.test(e.code);
-    if (isFunctionKey || e.key === 'Escape') {
+    if (isFunctionKey || e.key === 'Escape' ||
+        ((e.ctrlKey || e.metaKey || e.altKey) && !isTextEditingShortcut(e))) {
         e.preventDefault();
         sendMessage({
             type: 'hotkey',
             key: e.key,
             code: e.code,
             ctrlKey: e.ctrlKey,
-            shiftKey: e.shiftKey,
-            altKey: e.altKey
-        });
-        return;
-    }
-
-    // Forward modifier key combinations to the host app for hotkey dispatch.
-    if ((e.ctrlKey || e.altKey) && !isTextEditingShortcut(e)) {
-        e.preventDefault();
-        sendMessage({
-            type: 'hotkey',
-            key: e.key,
-            code: e.code,
-            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
             shiftKey: e.shiftKey,
             altKey: e.altKey
         });
@@ -380,8 +373,9 @@ function onKeyDown(e) {
 }
 
 function isTextEditingShortcut(e) {
-    if (!e.ctrlKey) return false;
-    var k = e.key.toLowerCase();
+    if (!e.ctrlKey && !e.metaKey) return false;
+    var k = window.NovalistShortcutKeys.key(e);
+    if (k === null) return false;
     if (!e.shiftKey && !e.altKey) return 'acvxzy'.includes(k);
     if (e.shiftKey && !e.altKey && k === 'z') return true;
     return false;
@@ -406,6 +400,7 @@ function toDisplayImages(root) {
 
 function getSceneContent(root) {
     const copy = root.cloneNode(true);
+    window.stripRuntimeProseDirection?.(copy);
     for (const image of copy.querySelectorAll('img[data-nv-src]')) {
         image.setAttribute('src', image.getAttribute('data-nv-src'));
         image.removeAttribute('data-nv-src');

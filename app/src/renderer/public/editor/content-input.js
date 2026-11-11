@@ -109,6 +109,7 @@ function getCleanContentHtml() {
 
 function cleanContentRoot(root) {
     const clone = root.cloneNode(true);
+    window.stripRuntimeProseDirection?.(clone);
     clone.querySelectorAll('[data-editor-chrome]').forEach(node => node.remove());
     window.clearGrammarHighlights(clone);
     // These are display decorations, not edits to the stored prose.
@@ -225,7 +226,10 @@ function forwardEditorHotkey(e) {
             ctrlKey: e.ctrlKey,
             metaKey: e.metaKey,
             shiftKey: e.shiftKey,
-            altKey: e.altKey
+            altKey: e.altKey,
+            isComposing: e.isComposing,
+            keyCode: e.keyCode,
+            altGraph: e.getModifierState?.('AltGraph') === true
         });
 }
 

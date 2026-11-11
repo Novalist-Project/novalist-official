@@ -9,6 +9,7 @@ import type { SharedEntityFields } from '../../collaboration/FocusedField'
 import { EntityReferenceList } from './EntityReferenceList'
 import { useEntityFieldSuggestions } from './useEntityFieldSuggestions'
 import { SharedEntityReferenceList } from './SharedEntityReferenceList'
+import { ContentSelect } from '../../shell/ContentSelect'
 
 const LORE_CATEGORIES = ['Organization', 'Culture', 'History', 'Other']
 const refTargetType = (field: CustomTypeDefinition['defaultFields'][number]): string =>
@@ -174,25 +175,25 @@ export function EntityDetailFields({
     if (control === 'plainText') {
       if (shared && itemId) return <SharedFieldControl key={itemId} binding={{ sessionId: shared.sessionId, itemId }}
         value={value} label={label} multiline disabled={record.locked === true} />
-      return <textarea className="dialog-input codex-field-input" aria-label={label} rows={5}
+      return <textarea dir="auto" className="dialog-input codex-field-input" aria-label={label} rows={5}
         key={`${record.id}:${key}:${value}`} defaultValue={value} onBlur={(event) => commit(event.target.value)} />
     }
     if (control === 'category' || (options && options.length > 0)) {
       const opts = options ?? LORE_CATEGORIES
       if (shared && itemId) return <SharedFieldControl key={itemId} binding={{ sessionId: shared.sessionId, itemId }} value={value} label={label} options={opts} disabled={record.locked === true} />
       return (
-        <select
+        <ContentSelect
           className="dialog-input codex-field-input"
           aria-label={label}
           value={value || opts[0]}
           onChange={(e) => commit(e.target.value)}
         >
           {opts.map((o) => (
-            <option key={o} value={o}>
+            <option dir="auto" key={o} value={o}>
               {o}
             </option>
           ))}
-        </select>
+        </ContentSelect>
       )
     }
     const inputType = control === 'date' ? 'date' : 'text'
@@ -210,7 +211,7 @@ export function EntityDetailFields({
         {shared && itemId ? <SharedFieldControl key={itemId} binding={{ sessionId: shared.sessionId, itemId }}
           value={value} label={label} type={inputType} list={listId} disabled={record.locked === true}
           onFocus={listId ? () => suggestions.load(suggestionType) : undefined} /> : <input
-          className="outliner-input codex-field-input"
+          dir="auto" className="outliner-input codex-field-input"
           type={inputType}
           aria-label={label}
           list={listId}

@@ -72,7 +72,10 @@ export function createEditorActionMessages(context: EditorHandlerContext): Edito
         ctrlKey: Boolean(message.ctrlKey),
         metaKey: Boolean(message.metaKey),
         shiftKey: Boolean(message.shiftKey),
-        altKey: Boolean(message.altKey)
+        altKey: Boolean(message.altKey),
+        isComposing: Boolean(message.isComposing),
+        keyCode: Number(message.keyCode ?? 0),
+        altGraph: Boolean(message.altGraph)
       })
       // Escape is not a registered hotkey - it is what dismisses whatever
       // overlay is up (mobile sheets, dialogs). Those listen on the window,

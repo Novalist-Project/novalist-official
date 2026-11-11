@@ -17,7 +17,7 @@ export function MetadataInput<T>({ value, editable, change, format, parse, onBlu
     if (!focused || !editable || !previousEditable.current) setDraft(format(value))
     previousEditable.current = editable
   }, [value, editable, focused, format])
-  return <input {...props} value={focused && editable ? draft : format(value)} readOnly={!editable}
+  return <input dir="auto" {...props} value={focused && editable ? draft : format(value)} readOnly={!editable}
     onFocus={() => setFocused(true)} onBlur={event => { setFocused(false); onBlur?.(event) }}
     onChange={event => { setDraft(event.target.value); change(parse(event.target.value)) }} />
 }

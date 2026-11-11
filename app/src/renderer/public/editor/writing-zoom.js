@@ -129,10 +129,13 @@
                 layoutWidth = measureLayoutWidth();
             }
             const scrollbar = wrapper.offsetWidth - wrapper.clientWidth;
-            wrapper.style.maxWidth = (layoutWidth * scale + scrollbar) + 'px';
-            wrapper.style.setProperty('--writing-layout-width', layoutWidth + 'px');
-            surface.style.width = (layoutWidth * scale) + 'px';
-            content.style.width = layoutWidth + 'px';
+            const rtl = content.querySelector(':dir(rtl)') !== null;
+            const visibleWidth = document.body.clientWidth - scrollbar;
+            const width = rtl ? Math.min(layoutWidth, visibleWidth / scale) : layoutWidth;
+            wrapper.style.maxWidth = (width * scale + scrollbar) + 'px';
+            wrapper.style.setProperty('--writing-layout-width', width + 'px');
+            surface.style.width = (width * scale) + 'px';
+            content.style.width = width + 'px';
             // CSS zoom reshapes glyphs at the scaled font size and can rewrap lines.
             content.style.transform = 'scale(' + scale + ')';
         }
@@ -179,6 +182,9 @@
     const observer = new MutationObserver(scheduleRefresh);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    content.addEventListener('input', () => {
+        if (scale !== 1 && !document.body.classList.contains('unified-writing-canvas')) scheduleRefresh();
+    });
     new ResizeObserver(resizeSurface).observe(content);
     window.addEventListener('resize', scheduleRefresh);
 })();

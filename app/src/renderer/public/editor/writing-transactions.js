@@ -142,6 +142,7 @@ function writingSelectedContent(root, range) {
         ancestor = ancestor.parentElement;
     }
     container.querySelectorAll('[data-editor-chrome]').forEach(node => node.remove());
+    window.stripRuntimeProseDirection?.(container);
     return container;
 }
 
@@ -157,7 +158,15 @@ function writingClipboard(event) {
     event.clipboardData.setData('text/plain', fragments.map(root => window.writingSceneText(root).replace(/\n$/, '')).join('\n'));
     if (event.type === 'cut') {
         if (window.NovalistEditorState.suggestionMode) window.markSelectionDeleted();
-        else if (!deleteWritingSelection()) ranges[0].range.deleteContents();
+        else if (!deleteWritingSelection()) {
+            const { root, range, id } = ranges[0];
+            range.deleteContents();
+            if (!root.textContent && !root.querySelector('img,hr,table')) {
+                root.replaceChildren(window.sceneContentFragment('<p><br></p>'));
+                const point = { sceneId: id, offset: 0, affinity: 'after' };
+                window.restoreWritingSelection({ anchor: point, focus: point });
+            }
+        }
         window.NovalistEditorState.editor.dispatchEvent(new Event('input'));
     }
 }
@@ -166,7 +175,7 @@ const writingRoot = window.NovalistEditorState.editor;
 writingRoot.addEventListener('keydown', event => {
     if (!window.NovalistWritingDocument.enabled || window.NovalistEditorState.isComposing ||
         (!event.ctrlKey && !event.metaKey) || event.altKey) return;
-    const key = event.key.toLowerCase();
+    const key = window.NovalistShortcutKeys.key(event);
     if (key !== 'z' && key !== 'y') return;
     event.preventDefault();
     event.stopImmediatePropagation();

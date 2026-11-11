@@ -69,7 +69,7 @@ function EntityRow({
         </span>
       )}
       <span className="codex-row-text">
-        <span className="codex-row-name">{entity.name}</span>
+        <span dir="auto" className="codex-row-name">{entity.name}</span>
         {entity.detail && <span className="codex-row-detail">{entity.detail}</span>}
       </span>
       {entity.gender && <span className="codex-gender">{entity.gender.slice(0, 1).toUpperCase()}</span>}

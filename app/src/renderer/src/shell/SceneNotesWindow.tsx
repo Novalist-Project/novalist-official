@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import '../../public/editor/shortcut-key.js'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { EyeOff, ListChecks, Pin, PinOff, PanelsTopLeft } from 'lucide-react'
@@ -75,7 +76,7 @@ export function SceneNotesWindow(): React.JSX.Element {
   useEffect(() => {
     const hide = (): void => { void flushPendingWrites().then(() => window.novalist.hideSceneNotes?.()).catch(() => setError(true)) }
     const keydown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' || ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'n')) {
+      if (event.key === 'Escape' || ((event.ctrlKey || event.metaKey) && event.shiftKey && globalThis.NovalistShortcutKeys.key(event) === 'n')) {
         event.preventDefault(); hide()
       }
     }

@@ -127,13 +127,13 @@ function TableCell({ entity, column, label, commit }: {
   if (prose && !entity.locked) return <MarkdownEditor shared={prose} value={value} onChange={commit} ariaLabel={label} minRows={1} />
   const metadata = shared?.metadata?.[column.field] ? metadataBinding(entity, column.field) : undefined
   if (metadata) return <SharedMetadataField binding={metadata} value={value} onChange={commit}>
-    {field => <input className="codex-table-input" aria-label={label} value={field.value} readOnly={!field.editable}
+    {field => <input dir="auto" className="codex-table-input" aria-label={label} value={field.value} readOnly={!field.editable}
       disabled={entity.locked} onChange={event => field.change(event.target.value)}
       onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur() }} />}
   </SharedMetadataField>
   if (shared && itemId) return <SharedFieldControl binding={{ sessionId: shared.sessionId, itemId }}
     value={value} label={label} disabled={entity.locked} />
-  return <input className="codex-table-input" defaultValue={value} aria-label={label}
+  return <input dir="auto" className="codex-table-input" defaultValue={value} aria-label={label}
     readOnly={!!shared} disabled={entity.locked} onBlur={event => commit(event.target.value)}
     onKeyDown={event => {
       if (event.key === 'Enter') event.currentTarget.blur()

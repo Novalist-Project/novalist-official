@@ -1,4 +1,5 @@
 import * as Y from 'yjs'
+import '../../public/editor/shortcut-key.js'
 import type { RichEditingSurface } from './richEditingSurface'
 import { updateRichText } from './richText'
 import { SceneMarkup } from './sceneMarkup'
@@ -119,7 +120,7 @@ export class CollaborativeScene {
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.editor.managedTransactions) return
     if (this.composing || event.isComposing || !(event.ctrlKey || event.metaKey) || event.altKey) return
-    const key = event.key.toLowerCase()
+    const key = globalThis.NovalistShortcutKeys.key(event)
     if (key !== 'z' && key !== 'y') return
     event.preventDefault()
     event.stopImmediatePropagation()

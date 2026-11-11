@@ -192,5 +192,5 @@ for (const event of ['pointerdown', 'beforeinput', 'compositionstart', 'cut', 'p
 }
 bookmarkRoot.addEventListener('keydown', event => {
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key) ||
-        ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a')) replaceWritingBookmark(event);
+        ((event.ctrlKey || event.metaKey) && window.NovalistShortcutKeys.key(event) === 'a')) replaceWritingBookmark(event);
 }, true);

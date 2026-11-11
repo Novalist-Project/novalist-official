@@ -39,7 +39,7 @@ window.NovalistEditorState.editor.addEventListener('mousedown', () => {
 });
 
 window.NovalistEditorState.editor.addEventListener('keydown', (e) => {
-    if (window.isCompositionInput(e)) return;
+    if (window.isCompositionInput(e) || window.NovalistShortcutKeys.key(e) === null) return;
     // Forward function keys (F1-F12) and Esc unconditionally so host hotkeys
     // like F11 (focus mode) and Esc work even while focus is in the editor.
     var isFunctionKey = /^F\d{1,2}$/.test(e.code);

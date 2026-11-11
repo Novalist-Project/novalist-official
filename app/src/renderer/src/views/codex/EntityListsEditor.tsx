@@ -263,7 +263,7 @@ export function EntityListsEditor({
               change(current => (current ?? []).map((r, i) => (i === index ? { ...r, ...p } : r)))
             return (
               <div key={index} className="entity-rel-row">
-                <input
+                <input dir="auto"
                   className="outliner-input"
                   list="codex-rel-roles"
                   onFocus={suggestions.loadRelationships}
@@ -283,7 +283,7 @@ export function EntityListsEditor({
                     if (!metadataBinding(record, 'relationships')) persistRelationships()
                   }}
                 />
-                <input
+                <input dir="auto"
                   className="outliner-input"
                   list="codex-rel-names"
                   onFocus={suggestions.loadRelationships}
@@ -313,7 +313,7 @@ export function EntityListsEditor({
                     </option>
                   ))}
                 </select>
-                <input
+                <input dir="auto"
                   className="outliner-input codex-rel-inverse"
                   placeholder={t('entityEditor.inverseRole')}
                   list="codex-rel-roles"
@@ -363,7 +363,7 @@ export function EntityListsEditor({
             <div className="entity-section-head">
               <SharedMetadataField<string | null> binding={section.id ? metadataBinding(record, `section:${section.id}:title`) : undefined}
                 value={section.title} onChange={next => setSections(current => current.map((s, i) => i === index ? { ...s, title: next ?? '' } : s))}>
-                {({ value, editable, change }) => <input className="outliner-input entity-section-title"
+                {({ value, editable, change }) => <input dir="auto" className="outliner-input entity-section-title"
                   value={value ?? ''} readOnly={!editable} onChange={event => change(event.target.value)}
                   onBlur={() => { if (!section.id || !metadataBinding(record, `section:${section.id}:title`)) void flushSections().catch(() => {}) }} />}
               </SharedMetadataField>

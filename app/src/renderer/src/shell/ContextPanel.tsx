@@ -14,6 +14,7 @@ import { currentSceneContextScope, useSceneContext } from './usePreparedSceneCon
 import { SECTION_STORAGE_KEY, readCollapsed, loc, CollapsibleSection, EntitySection } from './ContextSections'
 import { metadataBinding, SharedMetadataField } from '../collaboration/SharedMetadataField'
 import { MetadataInput } from '../collaboration/MetadataInput'
+import { ContentSelect } from './ContentSelect'
 
 /** Scene context/analysis panel: entities present in the scene, cross-chapter
  * mention matrix, and the auto-computed scene analysis. POV, emotion, intensity,
@@ -393,7 +394,7 @@ export function ContextPanel({
           <SharedMetadataField<string | null> binding={povBinding} value={a.pov}
             onChange={pov => void rpc.request('scenes/setPov', [chapterGuid, sceneId, pov ?? '']).then(() => analyze())}>
             {field => <div className="ctx-analysis-edit">
-            <select
+            <ContentSelect
               className="dialog-input ctx-analysis-input ctx-pov"
               value={field.value ?? a.pov}
               aria-label={t('context.pov')}
@@ -403,14 +404,14 @@ export function ContextPanel({
             >
               <option value="">{t('context.none')}</option>
               {a.pov && !a.povOptions.includes(a.pov) && (
-                <option value={a.pov}>{loc(t, a.pov)}</option>
+                <option dir="auto" value={a.pov}>{loc(t, a.pov)}</option>
               )}
               {a.povOptions.map((p) => (
                 <option key={p} value={p}>
                   {loc(t, p)}
                 </option>
               ))}
-            </select>
+            </ContentSelect>
             {resetButton('pov', povBinding ? () => field.change(null) : undefined)}
           </div>}</SharedMetadataField>
         </div>

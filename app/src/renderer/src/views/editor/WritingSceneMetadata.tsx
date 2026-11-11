@@ -8,6 +8,7 @@ import { flushPendingWrites } from '../../stores/pendingWrites'
 import { WritingMetadataName, requireWritingMetadataContext } from './WritingMetadataName'
 import { writingErrorMessage } from './writingError'
 import type { SceneRef, WritingContext } from './writingTypes'
+import { ContentSelect } from '../../shell/ContentSelect'
 
 export function WritingSceneName({ scene, title, context }: { scene: SceneRef; title: string; context: WritingContext }): React.JSX.Element {
   const { t } = useTranslation()
@@ -43,11 +44,11 @@ export function WritingSceneStage({ scene, stage, context }: { scene: SceneRef; 
   return <>
     <label className="writing-scene-stage">
       {stage && <span style={{ backgroundColor: stage.color }} />}
-      <select aria-label={t('stages.setTo')} value={stage?.key ?? ''} disabled={busy}
+      <ContentSelect aria-label={t('stages.setTo')} value={stage?.key ?? ''} disabled={busy}
         onChange={event => void change(event.target.value)}>
         <option value="">{t('stages.untriaged')}</option>
-        {stages.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
-      </select>
+        {stages.map(item => <option dir="auto" key={item.key} value={item.key}>{item.label}</option>)}
+      </ContentSelect>
     </label>
     {error && <span className="writing-metadata-error" role="alert">{error}</span>}
   </>

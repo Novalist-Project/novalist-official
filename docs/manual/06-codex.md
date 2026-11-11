@@ -2,6 +2,8 @@
 
 The Codex is Novalist's worldbuilding database. Every named thing in your story can live here: people, places, objects, organizations, magic systems, mythology — whatever you need.
 
+Arabic and other right-to-left names and descriptions follow their content direction in fields and lists. Formatted sections support Arabic and English paragraphs together, including the caret while editing. Dropdown values use the selected label's direction; changing your content does not change the interface language or layout.
+
 Open it from the **World** mode — **Codex** is the first entry under **In this book** in the mode panel — or from **Go → Codex** in the menu bar, or with `Ctrl+4`. This page covers the four built-in entity types, custom entity types, creating entries (including the guided wizard and the character interview), the detail pane, and the World Bible.
 
 For the visual relationship graph see [Relationships](14-relationships.md). For templates that pre-fill new entries see [Templates](07-templates.md).

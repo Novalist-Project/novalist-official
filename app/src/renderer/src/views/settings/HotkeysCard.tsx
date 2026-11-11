@@ -45,6 +45,7 @@ export function HotkeysCard(): React.JSX.Element {
     gestureOf(d.actionId, d.defaultGesture) !== d.defaultGesture
 
   const onRecordKeyDown = (event: React.KeyboardEvent, actionId: string): void => {
+    if (globalThis.NovalistShortcutKeys.key(event.nativeEvent) === null) return
     event.preventDefault()
     event.stopPropagation()
     if (event.key === 'Escape') {
