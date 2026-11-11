@@ -1,15 +1,16 @@
-#editor, .scene-editor {
+#editor, .scene-editor, .nl-prose {
     text-align: start;
 }
 #editor :is(p, div, h1, h2, h3, h4, h5, h6, blockquote, li, pre):not(.nv-image),
-.scene-editor :is(p, div, h1, h2, h3, h4, h5, h6, blockquote, li, pre):not(.nv-image) {
+.scene-editor :is(p, div, h1, h2, h3, h4, h5, h6, blockquote, li, pre):not(.nv-image),
+.nl-prose :is(p, div, h1, h2, h3, h4, h5, h6, blockquote, li, pre):not(.nv-image) {
     text-align: inherit;
 }
-#editor :is(ul, ol), .scene-editor :is(ul, ol) {
+#editor :is(ul, ol), .scene-editor :is(ul, ol), .nl-prose :is(ul, ol) {
     margin-inline: 0;
     padding-inline-start: var(--nl-space-xxl);
 }
-#editor .nv-style-poetry, .scene-editor .nv-style-poetry {
+#editor .nv-style-poetry, .scene-editor .nv-style-poetry, .nl-prose .nv-style-poetry {
     margin-inline: 0;
     padding-inline-start: var(--nl-space-xxl);
 }

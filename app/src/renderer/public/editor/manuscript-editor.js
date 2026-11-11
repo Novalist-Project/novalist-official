@@ -6,6 +6,7 @@ let bookSpacingEnabled = false;
 let contentChangeTimers = {};
 let lastHtmlMap = {};
 let renderedSections = null;
+let proofingLanguage = 'en';
 
 document.addEventListener('wheel', (event) => {
     if (!event.ctrlKey || event.deltaY === 0) return;
@@ -135,6 +136,7 @@ function createSceneBlock(chapterGuid, scene) {
     editor.className = 'scene-editor' + (bookSpacingEnabled ? ' book-spacing' : '');
     editor.contentEditable = 'true';
     editor.spellcheck = false;
+    editor.lang = proofingLanguage;
     editor.dataset.sceneId = scene.sceneId;
     editor.dataset.chapterGuid = chapterGuid;
     const html = window.sanitizeSceneHtml(scene.html) || '<p><br></p>';
@@ -306,7 +308,8 @@ function setBookWidth(enabled, widthPx) {
 }
 
 function setLanguage(lang) {
-    document.documentElement.lang = lang || 'en';
+    proofingLanguage = lang || 'en';
+    for (const editor of wrapper.querySelectorAll('.scene-editor')) editor.lang = proofingLanguage;
 }
 
 // ── Paste Sanitization ──────────────────────────────────────────

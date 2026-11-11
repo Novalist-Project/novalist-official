@@ -3,9 +3,10 @@ import test from 'node:test'
 import { loadRendererSource } from './renderer-source-loader.mjs'
 
 function fixture(mobile = false) {
-  const languages = [], dialogue = []
+  const languages = [], interfaces = [], dialogue = []
   const editor = new Proxy({}, { get: (_, method) => (...args) => {
     if (method === 'setLanguage') languages.push(args[0])
+    if (method === 'setInterfaceLanguage') interfaces.push(args)
     if (method === 'setDialogueCorrectionConfig') dialogue.push(JSON.parse(args[0]))
   } })
   const settings = { view: { global: { spellCheckCustomWords: [] }, effective: {
@@ -15,14 +16,16 @@ function fixture(mobile = false) {
   const stores = { useSettingsStore: Object.assign(() => {}, { getState: () => settings, subscribe: settings.subscribe }) }
   const globals = { window: { novalist: { isMobile: mobile } }, document: { documentElement: {} },
     MutationObserver: class { observe() {} disconnect() {} } }
+  const i18n = { language: 'en', dir: language => language.startsWith('ar') ? 'rtl' : 'ltr' }
   const configuration = loadRendererSource('src/views/editor/editorConfiguration.ts', {
+    '../../i18n': { default: i18n },
     './editorBridge': { inlineActionDescriptorsJson: () => '[]', extensionContextMenuItemsJson: () => '[]' },
     './writingTypography': { pushWritingTypography() {} }, '../../stores/settingsStore': stores,
     '../../rpc/client': { rpc: { request: async () => ({ words: [] }) } }
   }, globals)
   const shell = { getState: () => ({ mainView: 'write', activePaneId: 'pane-1' }), subscribe: () => () => {} }
   const context = { pane: 'pane-1', iframe: {}, iframeRef: { current: {} }, editorRef: { current: null },
-    i18n: { language: 'en' }, t: key => key, writing: { ready() {} },
+    i18n, t: key => key, writing: { ready() {} },
     loadingRef: { current: false }, lastReportedHtmlRef: { current: '' },
     loadAnnotations: async () => false, applyFootnoteOrder() {}, pushEntityNames: async () => {},
     peekRef: { current: { clearHide() {} } } }
@@ -44,7 +47,7 @@ function fixture(mobile = false) {
     react: { useEffect: callback => { cleanup = callback() } },
     './editorMessageHandlers': { createEditorMessageHandlers: () => new Map() }
   }, globals)
-  return { editor, settings, context, configuration, languages, dialogue,
+  return { editor, settings, context, configuration, languages, interfaces, dialogue,
     ready: () => ready.createEditorReadyMessages(context).ready(),
     reconnect: () => { messages.useEditorMessages(context); cleanup() } }
 }
@@ -91,4 +94,17 @@ test('reacquiring an editor after a UI-language change retains the resolved writ
   f.settings.view.effective.grammarCheckLanguage = 'en-GB'
   f.reconnect()
   assert.deepEqual(f.languages, ['de-CH', 'en-GB'])
+})
+
+test('ready and live interface switches keep Arabic UI separate from writing and quote settings', () => {
+  const f = fixture()
+  f.context.i18n.language = 'ar'
+  f.ready()
+  assert.deepEqual(f.interfaces, [['ar', 'rtl']])
+  assert.deepEqual(f.languages, ['de-CH'])
+  assert.equal(f.dialogue[0].openQuote, '“')
+  f.context.i18n.language = 'de'
+  f.reconnect()
+  assert.deepEqual(f.interfaces, [['ar', 'rtl'], ['de', 'ltr']])
+  assert.deepEqual(f.languages, ['de-CH', 'de-CH'])
 })

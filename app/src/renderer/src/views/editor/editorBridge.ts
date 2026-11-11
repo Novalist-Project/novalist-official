@@ -70,6 +70,7 @@ export interface EditorWindow extends Window {
     firstLineIndent: number
   ): void
   setLanguage(lang: string): void
+  setInterfaceLanguage(language: string, direction: 'ltr' | 'rtl'): void
   setSpellCheck(enabled: boolean): void
   /** Mobile mode: full-width text (no margin comment gutter) + touch-sized UI. */
   setMobile(enabled: boolean): void
@@ -331,7 +332,7 @@ export function extensionContextMenuItemsJson(): string {
 export function pushEditorTheme(editor: EditorWindow): void {
   const style = getComputedStyle(document.documentElement)
   const token = (name: string): string => style.getPropertyValue(name).trim()
-  for (const name of ['--nl-font-family', '--nl-font-caption', '--nl-radius-sm', '--nl-text', '--nl-surface-editor', '--nl-surface-selected'])
+  for (const name of ['--nl-font-family', '--nl-font-caption', '--nl-radius-sm', '--nl-text', '--nl-accent', '--nl-border', '--nl-surface-editor', '--nl-surface-selected'])
     editor.document.documentElement.style.setProperty(name, token(name))
   const fg = token('--nl-text')
   editor.setTheme(

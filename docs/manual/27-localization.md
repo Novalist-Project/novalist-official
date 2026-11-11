@@ -1,16 +1,19 @@
 # Localization
 
-Novalist's interface is fully localizable. Three languages ship in the box:
+Novalist's interface is fully localizable. Four languages ship in the box:
 
 - **English** (`en`) — the fallback language.
 - **German** (`de`).
 - **Chinese, Simplified** (`zh-CN`).
+- **Arabic** (`ar`, العربية).
 
 On first launch, Novalist picks the language matching your operating system where possible, and English otherwise.
 
 ## Choosing a language
 
 **Settings → Appearance → Language**. The dropdown lists every bundled language by its native name. Switching applies **immediately** — every label in the app changes on the spot, no restart needed.
+
+Arabic uses a right-to-left interface, including navigation, the inspector and editor controls. Switching to English, German or Chinese restores left-to-right layout. Saved split-pane positions remain where you placed them. The interface language does not change the writing language, spelling dictionary or authored paragraph alignment: an English paragraph still reads left to right inside an Arabic interface, and Arabic prose works with an English interface.
 
 By default the language is global. If you want a specific project to use a different interface language, open that project and tick the **project override** switch at the top of the Appearance section — the language (and the rest of Appearance) is then stored with the project and applied whenever you open it. See [Settings](23-settings.md) for how global vs project scope works.
 
@@ -72,20 +75,22 @@ Buckets:
 
 **Settings → Language packs** lists every language Novalist knows about and, for each one, two separate answers:
 
-- **Interface** — whether the menus are available in it. `Bundled` for the three that ship (English, German, Chinese), `Yours` for a file you dropped in, `Not available` otherwise.
+- **Interface** — whether the menus are available in it. `Bundled` for the four that ship (English, German, Chinese, Arabic), `Yours` for a file you dropped in, `Not available` otherwise.
 - **Scene analysis** — whether a [lexicon](#the-scene-analysis-lexicon) exists so the Inspector can detect POV, emotion, intensity, conflict and tags in prose written in it.
 
 The two are deliberately separate, because reading the menus in English while writing a French novel is a normal thing to do and one combined "supported" flag would be wrong for half the people asking. The list includes every language the Quote Style picker offers, so a writing language with no lexicon is stated rather than left to be discovered.
 
 The panel has buttons to open both folders, and a **Rescan** that picks up a file you just dropped in without restarting Novalist. Beside any language with no lexicon there is a button that writes a starting one into the analysis folder, seeded with the English word lists so the work is translating a real list rather than guessing which keys exist.
 
-Novalist bundles three interface languages and three lexicons. Everything past that is a file you or a contributor supplies — that has always been true, and the panel is there so it is visible rather than something you find out by wondering why your scenes have no detected emotion.
+Novalist bundles four interface languages and three lexicons. Arabic interface support does not include an Arabic scene-analysis lexicon. Additional lexicons are files you or a contributor can supply; the panel shows what is available.
 
 ## Adding a language yourself
 
 You do not have to wait for a release to use Novalist in another language. Drop a `<code>.json` locale file into the `Locales/` folder beside your settings, press **Rescan** in Settings → Language packs, and it joins the language dropdown — including a partial translation, which falls back to English for anything it leaves out, and including a file that patches a language Novalist already ships. See [Custom themes & language packs](34-custom-themes-and-languages.md) for the format and the folder location.
 
 ## Contributing translations
+
+The bundled Arabic translation and RTL layout work build on [Ammar-Banna's contribution in issue #78](https://github.com/Novalist-Project/novalist-official/issues/78).
 
 The bundled locale files are compiled into the app, so getting a language *shipped* means adding a file to the source tree and building. If you'd like your translation included in a future Novalist release:
 

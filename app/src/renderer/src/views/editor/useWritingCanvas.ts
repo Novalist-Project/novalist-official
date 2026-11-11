@@ -42,6 +42,7 @@ export function useWritingCanvasStyles(live: EditorWindow | null): boolean {
 function chrome(live: EditorWindow, className = ''): HTMLElement {
   const element = live.document.createElement('div')
   element.dataset.editorChrome = 'writing'
+  element.lang = live.document.documentElement.lang
   element.contentEditable = 'false'
   element.className = `writing-scene-chrome ${className}`
   return element

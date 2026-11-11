@@ -6,7 +6,7 @@ function applyProseDirection(root) {
     if (root.matches?.(selector)) blocks.unshift(root);
     for (const block of blocks) {
         if (block.id === 'editor' || block.closest('[data-editor-chrome]') ||
-            block.matches('.nv-page,.writing-scene,.scene-editor,[data-writing-scene]') ||
+            block.matches('.nv-page,.writing-scene,.scene-editor,.nl-prose,[data-writing-scene]') ||
             block.tagName === 'DIV' && block.querySelector('p,div,h1,h2,h3,h4,h5,h6,blockquote,li,ul,ol,pre')) continue;
         const direction = block.getAttribute('dir')?.toLowerCase();
         const container = block.matches('ul,ol,li,blockquote');
@@ -14,7 +14,7 @@ function applyProseDirection(root) {
         const explicit = block.style.direction;
         const inherited = block.parentElement?.closest('[dir="ltr"],[dir="rtl"],[style*="direction"]');
         const inheritedStyle = inherited?.style.direction;
-        if (!explicit && inherited && !inherited.matches('#editor,.scene-editor') &&
+        if (!explicit && inherited && !inherited.matches('html,body,#editor,.scene-editor,.nl-prose') &&
             (!inherited.hasAttribute('data-nv-auto-direction') || inheritedStyle === 'ltr' || inheritedStyle === 'rtl')) continue;
         if (!block.hasAttribute('data-nv-auto-direction')) block.setAttribute('data-nv-auto-direction', direction === 'auto' ? 'auto' : '');
         block.setAttribute('dir', explicit === 'rtl' || explicit === 'ltr' ? explicit : 'auto');

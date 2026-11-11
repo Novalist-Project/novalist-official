@@ -2,6 +2,7 @@ const wrap = document.getElementById('wrap');
 let speakingEls = [];
 let selectedEls = [];
 let progressEls = [];
+let proofingLanguage = 'en';
 
 function sendMessage(payload) {
     parent.postMessage({ novalistNarration: JSON.stringify(payload) }, '*');
@@ -60,10 +61,11 @@ function setBook(json) {
 
             const prose = document.createElement('div');
             prose.className = 'nl-prose';
+            prose.lang = proofingLanguage;
             // The host's own markup, and the writer's own words. Read-only:
             // this is where the book is listened to, not a second place to
             // edit it.
-            prose.replaceChildren(window.sanitizeSceneFragment(scene.html));
+            prose.replaceChildren(window.sceneContentFragment(scene.html));
             block.appendChild(prose);
             section.appendChild(block);
 
@@ -205,7 +207,8 @@ function setReadingComfort(lineHeight, letterSpacing) {
 }
 
 function setLanguage(lang) {
-    document.documentElement.lang = lang || 'en';
+    proofingLanguage = lang || 'en';
+    for (const prose of wrap.querySelectorAll('.nl-prose')) prose.lang = proofingLanguage;
 }
 
 sendMessage({ type: 'ready' });

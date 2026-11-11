@@ -68,10 +68,10 @@ function setBookParagraphSpacing(enabled) {
 }
 
 function setLanguage(lang) {
-    document.documentElement.lang = lang || 'en';
     // The prose surface carries its own lang so the platform spell checker picks
     // the right dictionary for the writing language rather than the UI language.
     window.NovalistEditorState.editor.lang = lang || 'en';
+    for (const comment of document.querySelectorAll('.nv-cc-text,.nv-cc-anchor')) comment.lang = window.NovalistEditorState.editor.lang;
 }
 
 // Red underlines from the platform's own checker. Off by default in the markup

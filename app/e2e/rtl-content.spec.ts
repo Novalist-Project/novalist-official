@@ -55,6 +55,25 @@ test('Wiki keeps mixed paragraphs independent, Arabic letters joined and code LT
   await expect(page.locator('.wiki-article-header')).toHaveCSS('direction', 'ltr')
 })
 
+test('Arabic interface preserves independently directed Wiki prose, fields and Markdown', async ({ page }) => {
+  for (const direction of ['rtl', 'ltr', 'rtl']) {
+    await page.evaluate(direction => {
+      document.documentElement.lang = direction === 'rtl' ? 'ar' : 'en'
+      document.documentElement.dir = direction
+    }, direction)
+    await expect(page.locator('header').first()).toHaveCSS('direction', direction)
+    await expect(page.getByRole('textbox', { name: 'Scene name', exact: true })).toHaveCSS('direction', 'rtl')
+    const markdown = page.getByRole('textbox', { name: 'Mixed Markdown' })
+    await expect(markdown.locator('.cm-line').first()).toHaveCSS('direction', 'rtl')
+    await expect(markdown.locator('.cm-line').nth(1)).toHaveCSS('direction', 'ltr')
+    await expect(page.locator('.wiki-prose p').first()).toHaveCSS('direction', 'rtl')
+    await expect(page.locator('.wiki-prose p').nth(1)).toHaveCSS('direction', 'ltr')
+    await expect(page.locator('.wiki-prose code')).toHaveCSS('direction', 'ltr')
+    await expect(page.locator('.wiki-prose ul')).toHaveCSS('direction', 'rtl')
+    expect(await page.locator('.wiki-lead').evaluate(element => getComputedStyle(element, '::first-letter').float)).toBe('none')
+  }
+})
+
 test('Wiki loose and nested lists and quotations retain Arabic markers without changing table alignment', async ({ page }) => {
   await page.addInitScript(() => Object.assign(window, { rtlWikiContent: '- عنصر عربي\n\n  فقرة أخرى\n\n  - عنصر داخلي\n\n    فقرة داخلية\n\n> > اقتباس داخلي\n\n| عنوان | آخر |\n| :---: | ---: |\n| عربي | قيمة |' }))
   await page.reload()

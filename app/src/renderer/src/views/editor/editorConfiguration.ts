@@ -3,6 +3,7 @@ import { inlineActionDescriptorsJson, extensionContextMenuItemsJson, type Editor
 import { useSettingsStore } from '../../stores/settingsStore'
 import { rpc } from '../../rpc/client'
 import { pushWritingTypography } from './writingTypography'
+import i18n from '../../i18n'
 
 /**
  * The two hard bands of the readability ramp, as a wash rather than a fill -
@@ -20,7 +21,8 @@ export function hardBandColors(): Record<string, string> {
   }
 }
 
-export function pushEditorLanguage(editor: EditorWindow): void {
+export function pushEditorLanguage(editor: Pick<EditorWindow, 'setLanguage' | 'setInterfaceLanguage'>): void {
+  editor.setInterfaceLanguage(i18n.language, i18n.dir(i18n.language))
   const language = useSettingsStore.getState().view?.effective.grammarCheckLanguage
   if (language) editor.setLanguage(language)
 }

@@ -54,6 +54,7 @@ import { useSettingsStore } from './src/renderer/src/stores/settingsStore'
 import { useWritingZoomStore } from './src/renderer/src/stores/writingZoomStore'
 import en from './src/renderer/src/locales/en.json'
 import de from './src/renderer/src/locales/de.json'
+import ar from './src/renderer/src/locales/ar.json'
 const context = { workspaceId: '/appearance', workspaceEpoch: 1, bookId: 'book', draftId: 'draft' }
 const prose = '<p>By the time the bells rang thirteen, Elara had already erased the street twice.</p>' +
   '<p>It was a small street. An unremarkable street. The sort of narrow, rain-dark passage that a person could walk down every morning for forty years without ever thinking to learn its name. But it had been there yesterday, between the apothecary and the house with the blue door. She was certain of that.</p>' +
@@ -116,7 +117,7 @@ async function mount() {
       state.live.setWritingProjection(visible, null)
       model.setState({ scope, anchor, snapshots: visible, refs: visible, projectionRevision: state.projectionRevision + 1 })
     } })
-  await i18n.init({ lng: 'en', fallbackLng: 'en', resources: { en: { translation: en }, de: { translation: de } } })
+  await i18n.init({ lng: 'en', fallbackLng: 'en', resources: { en: { translation: en }, de: { translation: de }, ar: { translation: ar } } })
   createRoot(document.getElementById('root')).render(<I18nextProvider i18n={i18n}><UnifiedWritingEditor paneId="appearance" /></I18nextProvider>)
 }
 mount()

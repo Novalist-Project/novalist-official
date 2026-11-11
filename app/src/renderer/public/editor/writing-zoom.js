@@ -98,7 +98,7 @@
             if (document.body.classList.contains('book-width')) {
                 const width = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--writing-book-text-width'));
                 const scene = content.querySelector('.writing-scene');
-                const inset = scene ? parseFloat(getComputedStyle(scene).paddingLeft) + parseFloat(getComputedStyle(scene).borderLeftWidth) : 0;
+                const inset = scene ? parseFloat(getComputedStyle(scene).paddingInlineStart) + parseFloat(getComputedStyle(scene).borderInlineStartWidth) : 0;
                 return (wrapper.clientWidth - outer - inset) / (width + rail);
             }
             return 1;
@@ -180,7 +180,7 @@
         if (!event.ctrlKey) clearCaretAnchor();
     }, { passive: true, capture: true });
     const observer = new MutationObserver(scheduleRefresh);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'dir'] });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     content.addEventListener('input', () => {
         if (scale !== 1 && !document.body.classList.contains('unified-writing-canvas')) scheduleRefresh();

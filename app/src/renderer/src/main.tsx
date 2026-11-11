@@ -23,6 +23,7 @@ import { rpc } from './rpc/client'
 import { installWritingSearchCapture } from './views/editor/writingSearchCapture'
 import { installWritingSearchLease } from './views/editor/writingSearchLease'
 import { postThemeToFrame, themeTokens, watchTheme } from './shell/extensionTheme'
+import './styles/rtl.css'
 
 // Store/RPC access for end-to-end tests (Playwright drives the real app through these).
 window.novalistStores = {

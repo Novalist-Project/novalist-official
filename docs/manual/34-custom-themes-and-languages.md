@@ -1,6 +1,6 @@
 # Custom themes and language packs
 
-Novalist ships three themes and three interface languages, but neither set is closed. You can add your own by dropping a file into a folder, and extensions can contribute themes too. Everything you add appears in the normal **Settings, Appearance** dropdowns alongside what ships in the box.
+Novalist ships three themes and four interface languages, but neither set is closed. You can add your own by dropping a file into a folder, and extensions can contribute themes too. Everything you add appears in the normal **Settings, Appearance** dropdowns alongside what ships in the box.
 
 Nothing here executes code. A theme is a colour table or a stylesheet, and a language is a JSON file of strings — a file you download from someone else can change how Novalist looks and reads, but it cannot run anything.
 

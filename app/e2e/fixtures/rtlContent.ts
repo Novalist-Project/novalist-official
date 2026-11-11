@@ -58,7 +58,7 @@ export async function buildRtlContent(): Promise<string> {
         return { contents: source[args.path], loader: 'js' }
       })
     } }] })
-  const css = ['styles/tokens.css', 'styles/base.css', 'shell/markdownEditor.css', 'views/wiki/wiki.css']
+  const css = ['styles/tokens.css', 'styles/base.css', 'shell/markdownEditor.css', 'views/wiki/wiki.css', 'styles/rtl.css']
     .map(path => `<link rel="stylesheet" href="${pathToFileURL(resolve('src/renderer/src', path)).href}">`).join('')
   await writeFile(resolve(directory, 'index.html'), `<!doctype html><html><head><meta charset="utf-8">${css}<style>body{overflow:auto}#root{padding:20px}.md-editor{height:180px}</style></head><body><div id="root"></div><script src="fixture.js"></script></body></html>`)
   return pathToFileURL(resolve(directory, 'index.html')).href

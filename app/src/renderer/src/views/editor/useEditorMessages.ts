@@ -53,6 +53,7 @@ export function useEditorMessages(context: EditorMessageContext): void {
     if (existing && typeof existing.setContent === 'function') {
       editorRef.current = existing
       pushEditorLanguage(existing)
+      pushEditorConfig(existing, t)
       if (context.writing) context.writing.ready(existing)
       else syncSharedEditor(context.pane, existing)
     }

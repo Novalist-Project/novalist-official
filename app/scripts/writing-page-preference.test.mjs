@@ -7,6 +7,7 @@ test('editor initialization and live settings updates honor the saved page prese
   const effective = { pageViewEnabled: true }
   const editor = new Proxy({}, { get: (_, method) => (...args) => calls.push([method, ...args]) })
   const { pushEditorSettings } = loadRendererSource('src/views/editor/editorConfiguration.ts', {
+    '../../i18n': { default: { language: 'en', dir: () => 'ltr' } },
     './editorBridge': {}, './writingTypography': { pushWritingTypography() {} },
     '../../stores/settingsStore': { useSettingsStore: { getState: () => ({ view: {
       global: { spellCheckCustomWords: [] }, effective

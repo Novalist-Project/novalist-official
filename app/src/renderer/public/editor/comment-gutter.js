@@ -25,11 +25,15 @@ function createCommentCard(id, data) {
 
     const anchor = document.createElement('div');
     anchor.className = 'nv-cc-anchor';
+    anchor.dir = 'auto';
+    anchor.lang = window.NovalistEditorState.editor.lang;
     anchor.textContent = data.anchorText || '';
     card.appendChild(anchor);
 
     const ta = document.createElement('textarea');
     ta.className = 'nv-cc-text';
+    ta.dir = 'auto';
+    ta.lang = window.NovalistEditorState.editor.lang;
     ta.value = data.text || '';
     ta.spellcheck = true;
     ta.addEventListener('input', () => {

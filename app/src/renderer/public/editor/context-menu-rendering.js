@@ -150,10 +150,7 @@ function positionContextMenu(e, contextMenu) {
     contextMenu.style.left = x + 'px';
     contextMenu.style.top = y + 'px';
 
-    // A flyout opens rightwards unless there is no room, which there never is
-    // when the menu was raised near the right edge - and a submenu the writer
-    // cannot see is a group they cannot reach.
-    const room = window.innerWidth - (x + rect.width);
+    const room = document.documentElement.dir === 'rtl' ? x : window.innerWidth - (x + rect.width);
     for (const parent of contextMenu.querySelectorAll('.cm-parent')) {
         parent.classList.toggle('flip', room < 210);
         parent.addEventListener('mouseenter', () => {
