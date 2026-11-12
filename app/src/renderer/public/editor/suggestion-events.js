@@ -31,6 +31,7 @@ window.scrollToSuggestionById = function (changeId) {
         ? root.querySelector('[data-nl-change="' + CSS.escape(changeId) + '"]')
         : root.querySelector('ins[data-nl-change], del[data-nl-change]');
     if (!node) return;
+    window.cancelWritingReveal?.();
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
     node.classList.add('nv-change-flash');
     setTimeout(function () { node.classList.remove('nv-change-flash'); }, 1400);

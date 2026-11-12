@@ -7,6 +7,7 @@ test.beforeAll(async () => { url = await buildWritingAppearance() })
 test.beforeEach(async ({ page }) => {
   await page.goto(url)
   await expect(page.frameLocator('iframe').locator('.writing-book-heading')).toBeVisible()
+  await expect(page.frameLocator('iframe').locator('.writing-scene p').first()).toHaveCSS('font-size', '22.1px')
 })
 
 for (const language of ['en', 'ar']) for (const book of [false, true]) {

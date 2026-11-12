@@ -172,6 +172,7 @@ function showSpeaking(range) {
         // height as though it were the sentence's, so reading a line near the
         // top threw the page upward by half a screen - which is what looked
         // like the editor scrolling itself back up.
+        window.cancelWritingReveal?.();
         window.NovalistEditorState.wrapper.scrollTop += (rect.top - box.top) - (box.height - rect.height) / 2;
     }
 

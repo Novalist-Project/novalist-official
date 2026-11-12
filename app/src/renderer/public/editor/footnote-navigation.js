@@ -4,6 +4,7 @@ window.scrollToFootnoteById = function (footnoteId) {
     var root = window.getWritingServiceRoot();
     var node = Array.from(root.querySelectorAll('sup.nv-fn[data-fn-id]')).find(note => note.dataset.fnId === footnoteId);
     if (!node) return;
+    window.cancelWritingReveal?.();
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
     var prev = node.style.background;
     node.style.background = 'rgba(137, 180, 250, 0.4)';

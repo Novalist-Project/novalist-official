@@ -36,6 +36,76 @@ for (const pages of [false, true]) {
   })
 }
 
+test('an outline jump survives a late scroll restoration without a layout change', async ({ page }) => {
+  await page.goto(`${url}?long=1&book=1`)
+  const frame = page.frameLocator('iframe')
+  await expect(frame.locator('[data-writing-scene="first"] p').first()).toHaveCSS('font-size', '33px')
+  await page.locator('iframe').evaluate(element => {
+    const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
+    live.revealWritingPoint({ sceneId: 'scene-29', offset: 0, affinity: 'after' })
+  })
+  const paragraph = frame.locator('[data-writing-scene="scene-29"] p').first()
+  const top = () => paragraph.evaluate(element => element.getBoundingClientRect().top -
+    element.ownerDocument.getElementById('editor-wrapper')!.getBoundingClientRect().top)
+  await expect.poll(async () => Math.abs(await top())).toBeLessThanOrEqual(1)
+  // Let deferred pagination finish before simulating a later scroll restoration.
+  await page.waitForTimeout(450)
+  const layout = await paragraph.evaluate(element => {
+    const viewport = element.ownerDocument.getElementById('editor-wrapper')!
+    const editor = element.ownerDocument.getElementById('editor')!
+    const before = editor.offsetHeight
+    viewport.scrollTop -= 200
+    return { before, after: editor.offsetHeight }
+  })
+  expect(layout.after).toBe(layout.before)
+  await expect.poll(async () => Math.abs(await top()), {
+    message: 'automatic scrolling must preserve the retained outline target'
+  }).toBeLessThanOrEqual(1)
+})
+
+for (const navigation of ['footnote', 'comment', 'suggestion', 'proofing', 'read aloud', 'continued read aloud']) {
+  test(`${navigation} navigation replaces a retained outline jump`, async ({ page }) => {
+    await page.goto(`${url}?long=1`)
+    const frame = page.frameLocator('iframe')
+    await expect(frame.locator('[data-writing-scene="first"] p').first()).toHaveCSS('font-size', '22.1px')
+    await page.locator('iframe').evaluate(element => {
+      const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
+      const paragraphs = live.getWritingSceneRoot('scene-28')!.querySelectorAll('p')
+      paragraphs[paragraphs.length - 1].insertAdjacentHTML('beforeend',
+        '<span id="navigation-target" class="grammar-issue" data-issue-type="grammar" data-issue-index="0">' +
+        '<span class="nv-comment" data-comment-id="next">Comment</span>' +
+        '<sup class="nv-fn" data-fn-id="next">1</sup><ins data-nl-change="next">Suggestion.</ins></span>')
+      live.revealWritingPoint({ sceneId: 'scene-28', offset: 0, affinity: 'after' })
+    })
+    await expect(frame.locator('[data-writing-scene="scene-28"] p').first()).toBeInViewport()
+    await page.waitForTimeout(450)
+    const target = frame.locator('#navigation-target')
+    await expect(target).not.toBeInViewport()
+    await page.locator('iframe').evaluate((element, navigation) => {
+      const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow & {
+        NovalistEditorState: { grammarIssues: unknown[]; readAloudQueue: unknown[] }
+      }
+      if (navigation === 'footnote') live.scrollToFootnoteById('next')
+      else if (navigation === 'comment') live.scrollToCommentById('next')
+      else if (navigation === 'suggestion') live.scrollToSuggestionById('next')
+      else if (navigation === 'proofing') {
+        live.NovalistEditorState.grammarIssues = [{ type: 'grammar', message: 'Correction', replacements: [] }]
+        live.scrollToNextIssue('grammar')
+      } else {
+        live.startReadAloud(false, 1, 'test-system-voice')
+        if (navigation === 'continued read aloud') {
+          live.revealWritingPoint({ sceneId: 'scene-28', offset: 0, affinity: 'after' })
+        }
+        const count = live.NovalistEditorState.readAloudQueue.length
+        for (let index = 0; index < count; index++) live.onSentenceSpoken(true)
+      }
+    }, navigation)
+    await expect(target).toBeInViewport()
+    await page.waitForTimeout(450)
+    await expect(target).toBeInViewport()
+  })
+}
+
 test('scrolling never paints an unpaginated scene before its paper appears', async ({ page }) => {
   await page.goto(`${url}?long=1&book=1`)
   const frame = page.frameLocator('iframe')

@@ -115,6 +115,7 @@ function openProofingIssueAfterScroll(target) {
     for (const event of interruptions) document.addEventListener(event, cancelProofingNavigation, true);
     // An already visible target produces no scrollend event.
     timer = setTimeout(finish, 150);
+    window.cancelWritingReveal?.();
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 

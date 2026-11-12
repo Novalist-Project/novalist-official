@@ -59,7 +59,10 @@ function scrollToComment(commentId, doScroll) {
     var node = Array.from(root.querySelectorAll('span.nv-comment[data-comment-id]')).find(span => span.dataset.commentId === commentId);
     if (!node) return;
     node.classList.add('nv-comment-active');
-    if (doScroll !== false) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (doScroll !== false) {
+        window.cancelWritingReveal?.();
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 }
 
 // ── Footnotes ──────────────────────────────────────────────────

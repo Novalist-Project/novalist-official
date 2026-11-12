@@ -123,11 +123,11 @@ function revealWritingPoint(point, viewportOffset) {
     root.style.contentVisibility = 'visible';
     window.repaginatePageView?.(root);
     restoreWritingSelection({ anchor: point, focus: point });
+    const viewport = window.NovalistEditorState.wrapper;
     const align = () => {
         if (!root.isConnected) { cancelWritingReveal(); return; }
         const position = writingDomPoint(point);
         const element = position?.node.nodeType === Node.ELEMENT_NODE ? position.node : position?.node.parentElement;
-        const viewport = window.NovalistEditorState.wrapper;
         if (position && Number.isFinite(viewportOffset)) {
             const range = document.createRange();
             range.setStart(position.node, position.offset);
@@ -143,12 +143,19 @@ function revealWritingPoint(point, viewportOffset) {
     window.NovalistEditorState.cancelFocusScrollRestore?.();
     if (typeof ResizeObserver === 'undefined') return;
     let frame = 0;
-    const observer = new ResizeObserver(() => {
+    const schedule = () => {
         if (!frame) frame = requestAnimationFrame(() => { frame = 0; align(); });
-    });
+    };
+    const observer = new ResizeObserver(schedule);
     observer.observe(window.NovalistEditorState.editor);
     observer.observe(root);
-    stopWritingReveal = () => { observer.disconnect(); cancelAnimationFrame(frame); };
+    // Late scroll restoration can move the target without resizing it.
+    viewport.addEventListener('scroll', schedule, { passive: true });
+    stopWritingReveal = () => {
+        observer.disconnect();
+        viewport.removeEventListener('scroll', schedule);
+        cancelAnimationFrame(frame);
+    };
 }
 
 function captureWritingSplit(point) {
@@ -172,7 +179,7 @@ function captureWritingSplit(point) {
 }
 
 Object.assign(window, { writingSceneOf, writingTextParts, writingSceneText, writingDomPoint,
-    writingPointFromDom, getWritingSelection, restoreWritingSelection, revealWritingPoint, configureWritingTextMapping, captureWritingSplit });
+    writingPointFromDom, getWritingSelection, restoreWritingSelection, revealWritingPoint, cancelWritingReveal, configureWritingTextMapping, captureWritingSplit });
 
 function replaceWritingBookmark(event) {
     const state = window.NovalistWritingDocument;
