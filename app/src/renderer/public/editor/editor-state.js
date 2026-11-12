@@ -70,11 +70,6 @@ let typewriterMouseDown = false;
 
 let typewriterSuspendUntil = 0;
 
-// ms epoch — suppress recenter until then
-// ms epoch — a scroll the editor issued itself (caret recentring), which must
-// not be mistaken for the user scrolling away from an open context menu.
-let programmaticScrollUntil = 0;
-
 // ── C#→JS Bridge ────────────────────────────────────────────────
 
 // ── Readability marking ─────────────────────────────────────────
@@ -157,7 +152,6 @@ Object.defineProperties(window.NovalistEditorState, {
     typewriterMouseDown: { get() { return typewriterMouseDown; }, set(value) { typewriterMouseDown = value; } },
     typewriterSuspendUntil: { get() { return typewriterSuspendUntil; }, set(value) { typewriterSuspendUntil = value; } },
     typewriterFrame: { get() { return typewriterFrame; }, set(value) { typewriterFrame = value; } },
-    programmaticScrollUntil: { get() { return programmaticScrollUntil; }, set(value) { programmaticScrollUntil = value; } },
     mentionCandidates: { get() { return mentionCandidates; }, set(value) { mentionCandidates = value; } },
     mentionState: { get() { return mentionState; }, set(value) { mentionState = value; } },
     mentionCreateVisible: { get() { return mentionCreateVisible; }, set(value) { mentionCreateVisible = value; } },

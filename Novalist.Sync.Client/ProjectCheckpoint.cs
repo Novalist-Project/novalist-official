@@ -54,7 +54,7 @@ public static partial class ProjectCheckpoint
         try
         {
             foreach (var path in paths)
-                sources.Add((path, new FileStream(SharedProjectPath.Resolve(root, path), FileMode.Open, FileAccess.Read, FileShare.Read)));
+                sources.Add((path, new FileStream(SharedProjectPath.Resolve(root, path), FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete)));
             using var archive = new ZipArchive(destination, ZipArchiveMode.Create, leaveOpen: true);
             var files = new List<CheckpointFile>();
             var totalBytes = sources.Sum(source => source.Stream.Length);

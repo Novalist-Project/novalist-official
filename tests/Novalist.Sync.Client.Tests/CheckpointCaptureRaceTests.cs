@@ -26,7 +26,7 @@ public sealed class CheckpointCaptureRaceTests : IDisposable
         var path = Path.Combine(source, relative);
         var temporary = path + ".tmp";
         File.WriteAllText(temporary, content);
-        File.Move(temporary, path, overwrite: true);
+        File.Replace(temporary, path, null);
     }
 
     [Fact]
