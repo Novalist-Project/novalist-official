@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { launchApp, seedBook, dismissTour, resizeWindow } from './harness'
+import { launchApp, seedBook, dismissTour, enterWriting, resizeWindow } from './harness'
 
 /**
  * Teaching the checker a word from the prose.
@@ -16,8 +16,11 @@ test('a word taught from the prose lands in the writer own dictionary', async ()
   const h = await launchApp('nl-dict-')
   try {
     await resizeWindow(h, 1000, 700)
-    await dismissTour(h.page)
     await seedBook(h, { 'Chapter One': ['Scene One'] })
+    await expect(h.page.locator('.tour-card')).toBeVisible()
+    await dismissTour(h.page)
+    await expect(h.page.locator('.tour-card')).toBeHidden()
+    await enterWriting(h.page)
 
     await h.page.locator('.binder-scene-row').first().click()
     const editor = h.page.frameLocator('.editor-frame').locator('#editor')
