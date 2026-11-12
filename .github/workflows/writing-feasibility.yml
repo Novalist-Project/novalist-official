@@ -98,7 +98,7 @@ jobs:
             os: ubuntu-22.04
             rid: linux-x64
             flags: --linux --x64
-            package: novalist-preview-linux-x64.AppImage
+            package: novalist-preview-linux-x86_64.AppImage
     steps:
       - uses: actions/checkout@v4
         with:

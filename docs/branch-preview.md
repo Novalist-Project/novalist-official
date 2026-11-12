@@ -15,7 +15,7 @@ The application bundles its runtime; Node.js and .NET do not need to be installe
 | Windows x64 | `novalist-preview-windows-x64.zip` | Extract this inner ZIP completely, then open `Novalist.exe`. No installer is needed. |
 | macOS Intel | `novalist-preview-macos-x64.dmg` | Open the DMG, copy Novalist into a separate test folder, then open it there. |
 | macOS Apple Silicon | `novalist-preview-macos-arm64.dmg` | Open the DMG, copy Novalist into a separate test folder, then open it there. |
-| Linux x64 | `novalist-preview-linux-x64.AppImage` | Run `chmod +x novalist-preview-linux-x64.AppImage`, then `./novalist-preview-linux-x64.AppImage`. |
+| Linux x64 | `novalist-preview-linux-x86_64.AppImage` | Run `chmod +x novalist-preview-linux-x86_64.AppImage`, then `./novalist-preview-linux-x86_64.AppImage`. |
 
 Quit your installed Novalist before launching the preview. These builds share
 its settings and cannot run alongside it. Keep the macOS preview in a separate
