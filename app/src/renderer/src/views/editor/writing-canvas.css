@@ -59,6 +59,7 @@ body.unified-writing-canvas:not(.page-view) .writing-scene[data-writing-active="
 #editor > .writing-scene:first-of-type, #editor > .writing-scene:last-of-type { content-visibility: visible; }
 body.unified-writing-canvas #editor .writing-scene + .writing-scene-chrome { margin-top: var(--nl-space-xxl); }
 .writing-scene-margin {
+  contain: layout style paint;
   position: absolute;
   inset-inline-end: calc(100% + var(--nl-writing-gap));
   top: 100%;
