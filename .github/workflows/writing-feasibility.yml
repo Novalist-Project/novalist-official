@@ -65,3 +65,123 @@ jobs:
           path: app/test-results/
           if-no-files-found: warn
           retention-days: 14
+
+  preview:
+    name: Test app (${{ matrix.platform }})
+    needs: editor-gate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: app
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-x64
+            os: windows-2025
+            rid: win-x64
+            flags: --win --x64
+            package: novalist-preview-windows-x64.zip
+          - platform: macos-x64
+            os: macos-latest
+            rid: osx-x64
+            flags: --mac --x64
+            package: novalist-preview-macos-x64.dmg
+          - platform: macos-arm64
+            os: macos-latest
+            rid: osx-arm64
+            flags: --mac --arm64
+            package: novalist-preview-macos-arm64.dmg
+          - platform: linux-x64
+            os: ubuntu-22.04
+            rid: linux-x64
+            flags: --linux --x64
+            package: novalist-preview-linux-x64.AppImage
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Set preview version
+        id: version
+        run: |
+          set -euo pipefail
+          base=$(node -p "require('./package.json').version.split('-')[0]")
+          suffix="preview.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          npm version "${base}-${suffix}" --no-git-tag-version --ignore-scripts
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "suffix=$suffix" >> "$GITHUB_OUTPUT"
+      - name: Publish backend
+        run: >-
+          dotnet publish ../Novalist.Backend/Novalist.Backend.csproj
+          -c Release -r "${{ matrix.rid }}" --self-contained
+          -p:PublishSingleFile=true
+          -p:VersionPrefix=${{ steps.version.outputs.base }}
+          -p:VersionSuffix=${{ steps.version.outputs.suffix }}
+          -o dist-backend
+      - name: Build app
+        run: npm run build
+      - name: Prepare macOS signing
+        if: runner.os == 'macOS'
+        env:
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MAC_CSC_LINK" ]; then
+            echo "::warning::Developer ID credentials are unavailable; building an unsigned macOS preview."
+            exit 0
+          fi
+          key_path="${RUNNER_TEMP}/AuthKey.p8"
+          printf '%s' "$APPLE_API_KEY_BASE64" | base64 --decode > "$key_path"
+          {
+            echo "CSC_LINK=$MAC_CSC_LINK"
+            echo "CSC_KEY_PASSWORD=$MAC_CSC_KEY_PASSWORD"
+            echo "APPLE_API_KEY=$key_path"
+            echo "APPLE_API_KEY_ID=$APPLE_API_KEY_ID"
+            echo "APPLE_API_ISSUER=$APPLE_API_ISSUER"
+          } >> "$GITHUB_ENV"
+      - name: Package preview
+        run: npx electron-builder --config electron-builder.preview.yml ${{ matrix.flags }} --publish never
+      - name: Include build details and instructions
+        run: |
+          set -euo pipefail
+          test -s "dist/preview/${{ matrix.package }}"
+          cp ../docs/branch-preview.md dist/preview/README.md
+          {
+            printf 'Branch: %s\nCommit: %s\n' "$GITHUB_REF_NAME" "$GITHUB_SHA"
+            printf 'Version: %s\n' "$(node -p "require('./package.json').version")"
+            printf 'Build: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
+          } > dist/preview/BUILD.txt
+      - name: Upload runnable preview
+        id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: novalist-preview-${{ matrix.platform }}-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            app/dist/preview/${{ matrix.package }}
+            app/dist/preview/README.md
+            app/dist/preview/BUILD.txt
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+      - name: Link preview download
+        env:
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+          PREVIEW_PLATFORM: ${{ matrix.platform }}
+        run: |
+          printf 'Download [%s preview](%s) (GitHub sign-in required; expires after 14 days).\n' "$PREVIEW_PLATFORM" "$ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"

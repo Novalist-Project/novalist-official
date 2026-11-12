@@ -1,0 +1,11 @@
+extends: ./electron-builder.yml
+directories:
+  output: dist/preview
+win:
+  target: zip
+  artifactName: novalist-preview-windows-${arch}.${ext}
+mac:
+  artifactName: novalist-preview-macos-${arch}.${ext}
+linux:
+  target: AppImage
+  artifactName: novalist-preview-linux-${arch}.${ext}
