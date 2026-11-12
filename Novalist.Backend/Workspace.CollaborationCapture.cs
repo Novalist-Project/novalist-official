@@ -37,7 +37,7 @@ public sealed partial class Workspace
             await ReportCollaborationProgressAsync(new("scanning", states.Count, scenePaths.Length, 0, 0));
         }
         states.AddRange(await CaptureSharedProseAsync(root, paths, documents, ct));
-        var state = new SharedProjectState(states, await SharedCodexFields.CaptureAsync(root, paths, ct));
+        var state = new SharedProjectState(states, await SharedCodexFields.CaptureAsync(LockedSharedFiles(root), paths, ct));
         await ReportCollaborationProgressAsync(new("comparing", 0, paths.Count, 0, 0));
         var progress = new CollaborationProgress(this);
         await ProjectCheckpoint.CreateAsync(root, archive, () =>

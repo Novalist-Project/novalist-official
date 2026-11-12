@@ -45,7 +45,7 @@ function setContent(html) {
     window.NovalistEditorState.lastHtml = window.getCleanContentHtml();
     window.NovalistEditorState.isSettingContent = false;
     window.NovalistEditorState.savedScrollTop = changed ? 0 : window.NovalistEditorState.savedScrollTop;
-    window.NovalistEditorState.wrapper.scrollTop = window.NovalistEditorState.savedScrollTop;
+    window.setWritingScroll(window.NovalistEditorState.savedScrollTop);
 
     // A stored path is not a URL this document can load; resolve before paint.
     window.toDisplayImages(window.NovalistEditorState.editor);

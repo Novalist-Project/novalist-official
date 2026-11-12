@@ -31,7 +31,8 @@ internal static class CheckpointBaselines
 
     private static bool IsHash(string hash) => hash is { Length: 64 } && hash.All(Uri.IsHexDigit);
 
-    internal static async Task<IReadOnlyList<CheckpointBaseline>> WriteAsync(ZipArchive archive, string root,
+    /// <param name="archived">The bytes already written to the archive, by path.</param>
+    internal static async Task<IReadOnlyList<CheckpointBaseline>> WriteAsync(ZipArchive archive, IReadOnlyDictionary<string, byte[]> archived,
         IReadOnlyList<CheckpointFile> files, IReadOnlyDictionary<string, byte[]>? baselines, CancellationToken ct)
     {
         var descriptions = new List<CheckpointBaseline>();
@@ -39,9 +40,9 @@ internal static class CheckpointBaselines
         var sources = files.ToDictionary(file => file.Path, StringComparer.Ordinal);
         foreach (var (path, original) in baselines)
         {
-            if (!sources.TryGetValue(path, out var source) || original is null || original.Length > MaxBaselineBytes)
+            if (!sources.TryGetValue(path, out var source) || !archived.TryGetValue(path, out var written) || original is null || original.Length > MaxBaselineBytes)
                 throw new InvalidDataException("A canonical project file is missing or too large.");
-            var current = await SharedProjectFiles.FilterContentAsync(path, await File.ReadAllBytesAsync(SharedProjectPath.Resolve(root, path), ct), ct);
+            var current = await SharedProjectFiles.FilterContentAsync(path, written, ct);
             var canonical = await SharedProjectFiles.FilterContentAsync(path, original, ct);
             if (!string.Equals(Hash(current), source.Sha256, StringComparison.OrdinalIgnoreCase))
                 throw new IOException("The project changed while its canonical merge state was captured.");

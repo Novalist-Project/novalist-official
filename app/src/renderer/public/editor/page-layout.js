@@ -150,7 +150,7 @@ function repaginatePageView() {
         window.restoreDictationPosition(savedDictation);
         // Moving blocks between wrappers temporarily changes the scrollable
         // height. Do not let scroll clamping/anchoring move the writing viewport.
-        window.NovalistEditorState.wrapper.scrollTop = savedScrollTop;
+        window.setWritingScroll(savedScrollTop);
         window.NovalistEditorState.pageViewRepaginating = false;
         if (window.NovalistEditorState.pageViewMutationObserver && window.NovalistEditorState.pageViewEnabled) {
             window.NovalistEditorState.pageViewMutationObserver.observe(window.NovalistEditorState.editor, { childList: true, characterData: true, subtree: true });

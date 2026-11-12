@@ -43,12 +43,18 @@ public static partial class ProjectCheckpoint
         var paths = selectPaths().Order(StringComparer.Ordinal).ToArray();
         ValidatePaths(paths);
         var sources = new List<(string Path, FileStream Stream)>();
+        // Fields and canonical baselines are checked against the bytes that went into the
+        // archive, not a second read of the disk: an autosave or an incoming change landing
+        // after a file was archived must not fail the checkpoint.
+        var retained = state.Fields.Select(field => field.Path).Concat(state.FileBaselines?.Keys ?? [])
+            .Append(".novalist/project.json").ToHashSet(StringComparer.Ordinal);
+        var archived = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         var meter = new BootstrapProgress(progress);
         meter.Report("scanning", total: paths.Length);
         try
         {
             foreach (var path in paths)
-                sources.Add((path, new FileStream(SharedProjectPath.Resolve(root, path), FileMode.Open, FileAccess.Read, FileShare.Read)));
+                sources.Add((path, new FileStream(SharedProjectPath.Resolve(root, path), FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete)));
             using var archive = new ZipArchive(destination, ZipArchiveMode.Create, leaveOpen: true);
             var files = new List<CheckpointFile>();
             var totalBytes = sources.Sum(source => source.Stream.Length);
@@ -60,7 +66,9 @@ public static partial class ProjectCheckpoint
                 totalBytes += content.Length - source.Length;
                 meter.Report("comparing", files.Count, paths.Length, completedBytes, totalBytes);
                 await using var entry = archive.CreateEntry("files/" + path, CompressionLevel.Fastest).Open();
-                var hash = await CopyAndHashAsync(content, entry, content.Length, cancellationToken, meter.AddBytes);
+                using var copy = retained.Contains(path) ? new MemoryStream() : null;
+                var hash = await CopyAndHashAsync(content, entry, content.Length, cancellationToken, meter.AddBytes, copy);
+                if (copy is not null) archived.Add(path, copy.ToArray());
                 files.Add(new(path, content.Length, hash));
                 completedBytes += content.Length;
                 meter.CompleteFile();
@@ -68,9 +76,10 @@ public static partial class ProjectCheckpoint
             if (!paths.SequenceEqual(selectPaths().Order(StringComparer.Ordinal)))
                 throw new IOException("The project changed while its checkpoint was being created. Try again.");
             var states = await CheckpointDocuments.WriteAsync(archive, files, state.Documents, cancellationToken);
-            var baselines = await CheckpointBaselines.WriteAsync(archive, root, files, state.FileBaselines, cancellationToken);
+            var baselines = await CheckpointBaselines.WriteAsync(archive, archived, files, state.FileBaselines, cancellationToken);
             ValidateFields(files, states, state.Fields);
-            await SharedCodexFields.ReadAsync(root, state.Fields, cancellationToken);
+            await SharedCodexFields.ReadAsync((relative, _) => archived.TryGetValue(relative, out var bytes) ? Task.FromResult(bytes)
+                : throw new InvalidDataException("A shared field's file is missing from the checkpoint."), state.Fields, cancellationToken);
             await using var manifest = archive.CreateEntry("manifest.json", CompressionLevel.Fastest).Open();
             await JsonSerializer.SerializeAsync(manifest, new CheckpointManifest(baselines.Count != 0 ? 5 : states.Any(document => document.TextField is not null) ? 4 : 3,
                 files, states, state.Fields, baselines), cancellationToken: cancellationToken);
@@ -186,7 +195,7 @@ public static partial class ProjectCheckpoint
     }
 
     private static async Task<string> CopyAndHashAsync(Stream input, Stream output, long expectedLength, CancellationToken cancellationToken,
-        Action<int>? copied = null)
+        Action<int>? copied = null, Stream? retain = null)
     {
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         var buffer = new byte[64 * 1024];
@@ -196,6 +205,7 @@ public static partial class ProjectCheckpoint
         {
             if (count > expectedLength - length) throw new InvalidDataException("Checkpoint content exceeds its declared size.");
             await output.WriteAsync(buffer.AsMemory(0, count), cancellationToken);
+            if (retain is not null) await retain.WriteAsync(buffer.AsMemory(0, count), cancellationToken);
             hash.AppendData(buffer, 0, count);
             length += count;
             copied?.Invoke(count);

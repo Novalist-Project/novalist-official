@@ -169,7 +169,7 @@ function showSpeaking(range) {
         // height as though it were the sentence's, so reading a line near the
         // top threw the page upward by half a screen - which is what looked
         // like the editor scrolling itself back up.
-        window.NovalistEditorState.wrapper.scrollTop += (rect.top - box.top) - (box.height - rect.height) / 2;
+        window.setWritingScroll(window.NovalistEditorState.wrapper.scrollTop + (rect.top - box.top) - (box.height - rect.height) / 2);
     }
 
     // Dimming follows the voice while it is reading. It marks the caret's
