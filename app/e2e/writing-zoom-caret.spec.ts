@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 import { launchApp, resizeWindow, seedBook } from './harness'
 
 async function caretBounds(scroller: Locator) {
@@ -24,6 +24,19 @@ async function expectCaret(scroller: Locator, anchor: 'off' | 'top' | 'middle' |
   expect(after.x).toBeLessThan(after.width)
   expect(after.offset).toBe(before.offset)
   expect(after.collapsed && after.focused).toBe(true)
+}
+
+async function zoom(page: Page, editor: Locator, delta: number, steps: number) {
+  const scale = () => editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))
+  const expected = Math.max(0.5, Math.min(3, Math.round((await scale()) * 100 - Math.sign(delta) * steps * 10) / 100))
+  for (let step = 0; step < steps; step++) await page.mouse.wheel(0, delta)
+  await expect.poll(scale).toBe(expected)
+  await expect.poll(() => editor.evaluate(() => {
+    const state = (window as Window & { NovalistEditorState?: {
+      pageViewRepaginateScheduled: boolean; pageViewRepaginating: boolean
+    } }).NovalistEditorState!
+    return state.pageViewRepaginateScheduled || state.pageViewRepaginating
+  })).toBe(false)
 }
 
 for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
@@ -59,7 +72,7 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
           await expect(h.page.locator('.shell-focus')).toBeVisible()
         }
         if (mode === 'pages' || mode === 'focus') await expect(frame.locator('.nv-page').first()).toBeVisible()
-        await frame.locator('#editor').focus()
+        await editor.locator('p').first().click()
         await expect.poll(() => editor.evaluate(() => {
           const state = (window as Window & { NovalistEditorState?: { isFocusing: boolean } }).NovalistEditorState
           return state?.isFocusing ?? false
@@ -94,9 +107,7 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
         await h.page.mouse.move(bounds.x + bounds.width / 2, bounds.y + 100)
         await h.page.keyboard.down('Control')
         for (const delta of [-100, 100]) {
-          for (let step = 0; step < 10; step++) await h.page.mouse.wheel(0, delta)
-          // Page view repaginates after its 150 ms debounce.
-          await h.page.waitForTimeout(250)
+          await zoom(h.page, editor, delta, 10)
           await expectCaret(scroller, anchor, before)
         }
         if (anchor !== 'off') {
@@ -107,10 +118,9 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
               window.getSelection()!.setPosition(node, edge === 'first' ? 0 : node.textContent!.length)
             }, edge)
             const edgeCaret = await caretBounds(scroller)
-            for (let step = 0; step < 5; step++) await h.page.mouse.wheel(0, 100)
-            await h.page.waitForTimeout(250)
+            await zoom(h.page, editor, 100, 5)
             await expectCaret(scroller, anchor, edgeCaret)
-            for (let step = 0; step < 5; step++) await h.page.mouse.wheel(0, -100)
+            await zoom(h.page, editor, -100, 5)
           }
         }
         await h.page.keyboard.up('Control')

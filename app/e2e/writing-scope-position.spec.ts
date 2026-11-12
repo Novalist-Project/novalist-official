@@ -56,3 +56,26 @@ test('scope narrowing follows the visible scene when the old caret is outside th
     return live.getWritingSceneRoot('fourth')!.getBoundingClientRect().top - live.document.getElementById('editor-wrapper')!.getBoundingClientRect().top
   })).toBeCloseTo(before, 0)
 })
+
+test('scope changes retain a typed paragraph-end caret in zoomed page view', async ({ page }) => {
+  await page.evaluate(() => {
+    const model = (window as unknown as { scopeModel: {
+      snapshots: { sceneId: string; bookId: string; draftId: string; chapterGuid: string }[]
+      adapter: { transformScene(ref: unknown, transform: () => { html: string }): void }
+      live: EditorWindow
+    } }).scopeModel
+    for (const snapshot of model.snapshots) model.adapter.transformScene(snapshot, () => ({ html: '<p><br></p>' }))
+    model.live.setPageView(true)
+    model.live.setWritingZoom(1.3)
+  })
+  const frame = page.frameLocator('iframe')
+  await frame.locator('[data-writing-scene="first"]').click({ position: { x: 30, y: 15 } })
+  await page.keyboard.type('Production typing persists.')
+  const before = await position(page)
+  expect(before.selection.focus.offset).toBe(27)
+  for (const [scope, count] of [['scene', 1], ['manuscript', 4]] as const) {
+    await page.getByRole('button', { name: scope, exact: true }).click()
+    await expect(frame.locator('.writing-scene')).toHaveCount(count)
+    await expect.poll(async () => (await position(page)).selection).toEqual(before.selection)
+  }
+})

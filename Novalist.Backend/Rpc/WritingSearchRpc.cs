@@ -14,7 +14,7 @@ public sealed class WritingSearchRpc(Workspace workspace)
     [JsonRpcMethod("writingSearch/find")]
     public async Task<WritingMatch[]> FindAsync(WritingSearchRequest request, CancellationToken ct)
     {
-        var prose = FindReplaceService.FindWriting(request.Options, await ReadAsync(request, ct));
+        var prose = FindReplaceService.FindWriting(request.Options, await ReadAsync(request, ct, requireCurrentHash: false));
         var reader = new SceneDocumentReader(workspace.Projects, workspace.FileService);
         var scenes = new List<ResolvedWritingScene>();
         if (request.Options.IncludeSceneNotes)
@@ -47,7 +47,8 @@ public sealed class WritingSearchRpc(Workspace workspace)
             throw new InvalidOperationException("The writing workspace changed.");
     }
 
-    private async Task<WritingSceneSnapshot[]> ReadAsync(WritingSearchRequest request, CancellationToken ct)
+    private async Task<WritingSceneSnapshot[]> ReadAsync(WritingSearchRequest request, CancellationToken ct,
+        bool requireCurrentHash = true)
     {
         ValidateEpoch(request.ExpectedEpoch);
         var overrides = request.Overrides.ToDictionary(snapshot => snapshot.Ref);
@@ -62,7 +63,7 @@ public sealed class WritingSearchRpc(Workspace workspace)
             var stored = await reader.ReadPassiveAsync(reference.BookId, reference.DraftId, reference.ChapterGuid, reference.SceneId);
             if (overrides.TryGetValue(reference, out var pending))
             {
-                if ((stored.Shared is null && pending.Hash != stored.Hash) || pending.Revision < 0)
+                if ((requireCurrentHash && stored.Shared is null && pending.Hash != stored.Hash) || pending.Revision < 0)
                     throw new InvalidOperationException("The scene changed outside this search snapshot.");
                 snapshots.Add(pending);
             }

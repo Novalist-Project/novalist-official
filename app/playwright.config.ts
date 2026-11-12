@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test'
 import { writingResearchSpecs } from './e2e/fixtures/writingResearchSpecs'
+import writingBrowser, { writingBrowserSpecs } from './playwright.writing-native.config'
 
 /**
  * The system clipboard is off limits for the whole run.
@@ -19,6 +20,11 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],
+  projects: [
+    { name: 'app', testIgnore: [...writingResearchSpecs, ...writingBrowserSpecs] },
+    { name: 'writing-browser', testMatch: writingBrowserSpecs,
+      timeout: writingBrowser.timeout, use: writingBrowser.use }
+  ],
   use: {
     trace: 'retain-on-failure'
   }

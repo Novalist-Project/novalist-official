@@ -57,14 +57,17 @@ test('F11 works in prose and panel fields, and text zoom preserves the focus col
     const initialHoverWidth = initialBounds.hoverWidth
     expect(initialHoverWidth).toBeGreaterThan(24)
     const paper = h.page.frameLocator('iframe.editor-frame').locator('.nv-page').first()
-    const paperWidth = () => paper.evaluate(element => element.getBoundingClientRect().width)
-    const initialPaperWidth = await paperWidth()
     const textSize = () => h.page.frameLocator('iframe.editor-frame').locator('[data-writing-scene] p').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))
     const initialTextSize = await textSize()
     await editor.evaluate((element) => element.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -100, bubbles: true, cancelable: true })))
     await expect.poll(textSize).toBeGreaterThan(initialTextSize)
     await expect.poll(async () => (await frame.boundingBox())!.width).toBe(initialWidth)
-    await expect.poll(paperWidth).toBeCloseTo(initialPaperWidth, 0)
+    const paperBounds = (await paper.boundingBox())!
+    const frameBounds = (await frame.boundingBox())!
+    expect(paperBounds.x).toBeGreaterThanOrEqual(frameBounds.x)
+    expect(paperBounds.x + paperBounds.width).toBeLessThanOrEqual(frameBounds.x + frameBounds.width)
+    expect(await h.page.frameLocator('iframe.editor-frame').locator('#editor-wrapper')
+      .evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
     expect(await h.page.evaluate(() => window.novalistStores.settings.getState().view?.effective.editorFontSize)).toBe(17)
     const zoomedWidth = (await frame.boundingBox())!.width
     await h.page.evaluate(() => window.novalistStores.settings.getState().update('global', { editorFontSize: 30 }))

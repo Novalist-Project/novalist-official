@@ -83,6 +83,19 @@ test('a delayed claim from a blurred window cannot reactivate its old scene', as
   assert.deepEqual(globalThis.editingClaims, ['b'])
 })
 
+test('a delayed activation cannot restore a scene removed by explicit scope navigation', async () => {
+  const f = fixture(), a = f.pane('a', 1)
+  let release
+  f.delayActivation(new Promise(resolve => { release = resolve }))
+  a.message({ type: 'focused' })
+  await settle()
+  a.references = new Map([['b', { bookId: 'book', draftId: 'draft', chapterGuid: 'chapter', sceneId: 'b' }]])
+  release()
+  await settle()
+  assert.deepEqual(globalThis.editingClaims, [], 'the obsolete activation must not replace the new scope anchor')
+  assert.deepEqual(f.errors, [])
+})
+
 function projectionFixture(selection) {
   const calls = [], errors = []
   const roots = new Map(['first', 'second'].map((id, index) => [id, { isConnected: true,

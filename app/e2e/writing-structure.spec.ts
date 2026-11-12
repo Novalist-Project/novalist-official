@@ -79,7 +79,7 @@ test('chapter heading splits at the caret and carries the remaining scenes into 
     await expect(frame.locator(`[data-writing-scene="${inserted.scenes[0].id}"]`)).toHaveText('Right')
     expect(await h.page.evaluate(() => window.novalistStores.project.getState().openSceneId)).toBe(inserted.scenes[0].id)
     const following = frame.locator('.writing-scene-chrome').filter({ has: frame.locator('.writing-chapter-heading h2', { hasText: 'Later' }) })
-    await expect(following.getByRole('button', { name: 'Insert chapter' })).toBeVisible()
+    await expect(following.locator('[data-writing-insert="chapter"]')).toBeVisible()
   } finally { await h.close() }
 })
 
@@ -90,7 +90,7 @@ test('end insertion creates a named chapter and one blank scene without needing 
     const chapter = book.chapters.find(value => value.title === 'Chapter')!
     await openWriting(h, chapter.guid, chapter.scenes[0].id)
     const frame = h.page.frameLocator('iframe[title="editor"]')
-    await frame.locator('.writing-end').getByRole('button', { name: 'Insert chapter' }).click()
+    await frame.locator('.writing-end [data-writing-insert="chapter"]').click()
     const dialog = h.page.getByRole('dialog', { name: /Insert chapter/ })
     await dialog.locator('input').fill('After the storm')
     await dialog.getByRole('button', { name: 'OK', exact: true }).click()

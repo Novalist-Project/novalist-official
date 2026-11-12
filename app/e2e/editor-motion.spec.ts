@@ -89,7 +89,7 @@ test('chapter disclosures animate their height and immediately disable closing s
   }
 })
 
-test('scene navigation fades the retained editor while typing and saving stay immediate', async () => {
+test('scene navigation retains the continuous editor while typing and saving stay immediate', async () => {
   const h = await launchApp('nl-scene-motion-')
   try {
     await h.page.emulateMedia({ reducedMotion: 'no-preference' })
@@ -113,7 +113,7 @@ test('scene navigation fades the retained editor while typing and saving stay im
 
     await h.page.locator('.binder-scene-row').filter({ hasText: 'Departure' }).click()
     await expect(editor).toHaveText('Departure begins.')
-    expect((await motion.evaluate(control => control.details())).some(animation => animation.fading)).toBe(true)
+    expect(await motion.evaluate(control => control.details())).toEqual([])
     expect(await originalFrame.evaluate(element => element.isConnected)).toBe(true)
     expect(await originalEditor.evaluate(element => element.isConnected)).toBe(true)
     await motion.evaluate(control => control.finish())

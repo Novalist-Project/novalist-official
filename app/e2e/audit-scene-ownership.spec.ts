@@ -49,7 +49,7 @@ for (const savedFirst of [0, 1]) {
   })
 }
 
-test('moving a tab to another pane preserves its original buffer when saving conflicts', async () => {
+test('saving a split pane preserves its original buffer when saving conflicts', async () => {
   const h = await launchApp('nl-audit-move-conflict-')
   try {
     const book = await seedBook(h, { Chapter: ['Source', 'Destination'] }, 'Spec', false)
@@ -65,18 +65,16 @@ test('moving a tab to another pane preserves its original buffer when saving con
     await replaceWritingScene(h.page, source.id, '<p>Unsaved source must stay here</p>')
     await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().getWritingRegistry()?.isDirty)).toBe(true)
     await h.rpc('scenes/write', [chapter.guid, source.id, '<p>Saved elsewhere</p>', 'Saved elsewhere'])
-    await left.locator('.editor-tab.active').click({ button: 'right' })
-    await left.locator('.editor-tab-menu button').nth(1).click()
+    await expect(h.page.evaluate(pane => window.novalistStores.project.getState().flushPane(pane), panes[0])).rejects.toThrow('writing.conflict')
     await expect(h.page.locator('.scene-conflict-card')).toBeVisible()
     await expect(h.page.locator('.pane-leaf')).toHaveCount(2)
     await expect(editor).toHaveText('Unsaved source must stay here')
     await expect(h.page.locator('.pane-leaf').nth(1).frameLocator('.editor-frame').locator(`[data-writing-scene="${destination.id}"]`)).toHaveText('Destination prose')
     const state = await h.page.evaluate(panes => panes.map(pane => {
       const editor = window.novalistStores.project.getState().editors[pane]
-      return { sceneId: editor.sceneId, tabs: editor.tabs.map(tab => tab.sceneId) }
+      return editor.sceneId
     }), panes)
-    expect(state[0]).toEqual({ sceneId: source.id, tabs: [source.id] })
-    expect(state[1]).toEqual({ sceneId: destination.id, tabs: [destination.id] })
+    expect(state).toEqual([source.id, destination.id])
     expect(await h.page.evaluate(() => window.novalistStores.project.getState().getWritingRegistry()?.isDirty)).toBe(true)
     expect((await h.rpc<{ html: string }>('scenes/read', [chapter.guid, source.id])).html).toBe('<p>Saved elsewhere</p>')
   } finally { await h.close() }

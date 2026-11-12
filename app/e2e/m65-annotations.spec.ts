@@ -97,8 +97,8 @@ async function editorShowing(h: Harness, contains: string): Promise<FrameLocator
 }
 
 /** Puts the caret at the end of a paragraph and drops a footnote marker there. */
-async function footnoteAtEndOf(page: Page, paragraph: number, id: string): Promise<void> {
-  await page.frameLocator('.editor-frame').locator('#editor p').nth(paragraph).click()
+async function footnoteAtEndOf(page: Page, sceneId: string, paragraph: number, id: string): Promise<void> {
+  await page.frameLocator('.editor-frame').locator(`[data-writing-scene="${sceneId}"] p`).nth(paragraph).click()
   await page.keyboard.press('End')
   await page.evaluate((footnoteId: string) => {
     const frame = document.querySelector('.editor-frame') as HTMLIFrameElement
@@ -124,9 +124,9 @@ test('a footnote put in ahead of another renumbers both', async () => {
 
   // The second paragraph first, then the first one - so the newer note stands
   // ahead of the older one in the prose and takes its number off it.
-  await footnoteAtEndOf(h.page, 1, 'fn-later-in-the-scene')
+  await footnoteAtEndOf(h.page, sceneId, 1, 'fn-later-in-the-scene')
   await expect(frame.locator('sup.nv-fn')).toHaveCount(1, { timeout: 10_000 })
-  await footnoteAtEndOf(h.page, 0, 'fn-earlier-in-the-scene')
+  await footnoteAtEndOf(h.page, sceneId, 0, 'fn-earlier-in-the-scene')
   await expect(frame.locator('sup.nv-fn')).toHaveCount(2, { timeout: 10_000 })
 
   // What the page says.
@@ -167,7 +167,7 @@ test('a new footnote shows in the list at once, with the caret in its box', asyn
   await h.page.evaluate(() => window.novalistStores.shell.getState().setInspectorTab('context'))
   await expect(h.page.locator('.annotation-num')).toHaveCount(0)
 
-  await footnoteAtEndOf(h.page, 0, 'fn-written-now')
+  await footnoteAtEndOf(h.page, sceneId, 0, 'fn-written-now')
 
   // The list is where the note goes, so the list has to be showing.
   await expect

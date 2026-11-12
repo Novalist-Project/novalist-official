@@ -23,6 +23,12 @@ async function openBook(h: Harness, overrides: Record<number, string> = {}, page
       createdAt: '2026-01-01T00:00:00Z', author: 'Fixture', resolved: false
     }], []])
   }
+  for (const scene of scenes.filter(scene => scene.html.includes('data-comment-id="text-note"'))) {
+    await h.rpc('scenes/setAnnotations', [chapter.guid, scene.id, [{
+      id: 'text-note', anchorText: 'Comment anchor', text: 'A rich-text annotation.',
+      createdAt: '2026-01-01T00:00:00Z', author: 'Fixture', resolved: false
+    }], [{ id: 'text-footnote', number: 1, text: 'A rich-text footnote.' }]])
+  }
   await dismissTour(h.page)
   await resizeWindow(h, 1500, 900)
   await h.page.evaluate(async pages => {

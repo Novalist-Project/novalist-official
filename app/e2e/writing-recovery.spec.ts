@@ -14,6 +14,13 @@ interface RecoveryProbe {
 interface SharedRecoveryProbe { recoverySeen: boolean; sessionId: string; ordinaryWrites: number }
 declare global { interface Window { retainedRecovery: RecoveryProbe; sharedRecovery: SharedRecoveryProbe } }
 
+async function dirtyScenes(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const registry = window.novalistStores.project.getState().getWritingRegistry()!
+    return registry.capture().filter(snapshot => registry.isSceneDirty(snapshot)).map(snapshot => snapshot.sceneId)
+  })
+}
+
 async function retainUnsavedWrites(page: Page): Promise<void> {
   await page.evaluate(() => {
     const client = window.novalistRpc
@@ -68,7 +75,7 @@ test('actual backend restart retains dirty canonical prose and undo in main and 
       await retainUnsavedWrites(page)
       await replaceWritingScene(page, chapter.scenes[index].id, `<p><strong>Pending ${index} after restart.</strong></p>`)
       await expect.poll(() => page.evaluate(() => window.novalistStores.project.getState().getWritingRegistry()?.isDirty)).toBe(true)
-      await expect(page.locator('.editor-tab-dirty')).toHaveCount(1)
+      await expect.poll(() => dirtyScenes(page)).toEqual([chapter.scenes[index].id])
       await expect(flushWriting(page)).rejects.toThrow('holding unsaved prose')
     }
 
@@ -83,7 +90,7 @@ test('actual backend restart retains dirty canonical prose and undo in main and 
       expect(await page.evaluate(() => window.novalistStores.project.getState().getWritingRegistry() === window.retainedRecovery.owner)).toBe(true)
       const scene = page.frameLocator('.editor-frame').locator(`[data-writing-scene="${chapter.scenes[index].id}"]`)
       await expect(scene).toHaveText(`Pending ${index} after restart.`)
-      await expect(page.locator('.editor-tab-dirty')).toHaveCount(1)
+      await expect.poll(() => dirtyScenes(page)).toEqual([chapter.scenes[index].id])
       await scene.click()
       await page.keyboard.press('ControlOrMeta+z')
       await expect(scene).toHaveText(`Original ${index}.`)
@@ -95,7 +102,7 @@ test('actual backend restart retains dirty canonical prose and undo in main and 
       expect(requests.at(-1)!.expectedEpoch).toBe(0)
       expect(requests.at(-1)!.transactionId).toBe(requests[0].transactionId)
       expect(await page.evaluate(() => window.novalistStores.project.getState().getWritingRegistry()!.isDirty)).toBe(false)
-      await expect(page.locator('.editor-tab-dirty')).toHaveCount(0)
+      await expect.poll(() => dirtyScenes(page)).toEqual([])
     }
     for (const [index, scene] of chapter.scenes.entries()) {
       expect((await h.rpc<{ html: string }>('scenes/read', [chapter.guid, scene.id])).html).toContain(`<strong>Pending ${index} after restart.</strong>`)
@@ -157,7 +164,7 @@ test('actual backend restart reconnects failed shared edits and undo to a recove
     await scene.click(); await h.page.keyboard.press('End'); await h.page.keyboard.type(' local')
     await expect.poll(() => attempts.includes('original-session')).toBe(true)
     await expect(h.page.locator('.writing-error')).toContainText('Shared edits are still waiting to be saved.')
-    await expect(h.page.locator('.editor-tab-dirty')).toHaveCount(1)
+    expect(prose.toString()).toBe('Base\n')
     prose.insert(0, 'peer ')
 
     // Restart the real backend; the controlled CRDT endpoint supplies its new session identity.
@@ -168,12 +175,12 @@ test('actual backend restart reconnects failed shared edits and undo to a recove
         recovering: state.workspaceRecovering, error: state.workspaceRecoveryError }
     })).toEqual({ seen: true, epoch: 0, busy: false, recovering: false, error: null })
     await expect(scene).toHaveText('peer Base local')
-    await expect(h.page.locator('.editor-tab-dirty')).toHaveCount(1)
+    expect(prose.toString()).toBe('peer Base\n')
     await expect.poll(() => attempts.includes('recovered-session')).toBe(true)
     refuse = false
     await h.page.locator('.writing-error').getByRole('button', { name: 'Try again', exact: true }).click()
     await expect.poll(() => prose.toString()).toBe('peer Base local\n')
-    await expect(h.page.locator('.editor-tab-dirty')).toHaveCount(0)
+    await expect(h.page.locator('.writing-error')).toHaveCount(0)
     await scene.click(); await h.page.keyboard.press('ControlOrMeta+z')
     await expect(scene).toHaveText('peer Base')
     await expect.poll(() => prose.toString()).toBe('peer Base\n')

@@ -245,6 +245,7 @@ test('the writing bar holds still while a selection is made', async () => {
   const h = await launchApp('nl-writing-context-')
   const book = await seedBook(h, { One: ['A'] }, 'Writing toolbar fixture', false)
   await closeTourIfOffered(h.page)
+  await h.page.mouse.move(0, 0)
   const chapter = book.chapters[0]
   const scene = chapter.scenes[0]
 
@@ -363,8 +364,8 @@ test('quick edit preserves backward selection and works at an empty caret', asyn
     await expect(picker).toBeFocused()
     await expect(picker).toHaveValue('')
     await picker.press('ArrowDown')
-    await picker.press('Enter')
     await expect(editor.locator('p').last()).toHaveClass('nv-style-heading')
+    await expect(frame.locator('#editor')).toBeFocused()
     const withinViewport = await picker.evaluate(element => {
       const toolbar = element.parentElement!.getBoundingClientRect()
       return toolbar.left >= 0 && toolbar.top >= 0 && toolbar.right <= window.innerWidth && toolbar.bottom <= window.innerHeight

@@ -38,6 +38,30 @@ public sealed class WritingSearchRpcTests
     }
 
     [Fact]
+    public async Task FindRetainsItsCapturedProseAfterAutosaveWhileReplacementRejectsTheStaleBase()
+    {
+        using var directory = new TempDir();
+        using var workspace = new Workspace(directory.Path);
+        var projects = workspace.Projects;
+        await projects.CreateProjectAsync(directory.Path, "Novel", "Book");
+        var chapter = await projects.CreateChapterAsync("Chapter");
+        var scene = await projects.CreateSceneAsync(chapter.Guid, "Scene");
+        await projects.WriteSceneContentAsync(chapter, scene, "<p>old</p>");
+        var reference = new SceneRef(projects.ActiveBook!.Id, projects.ActiveBook.ActiveDraftId!, chapter.Guid, scene.Id);
+        var request = new WritingSearchRequest(new() { Pattern = "wolf" }, [reference],
+            [new(reference, "<p>captured wolf</p>", ContentHasher.Hash("<p>old</p>"), 2)], 0);
+        await projects.WriteSceneContentAsync(chapter, scene, "<p>newer wolf</p>");
+
+        var rpc = new WritingSearchRpc(workspace);
+        var matches = await rpc.FindAsync(request, default);
+        Assert.Equal(9, Assert.Single(matches).Index);
+        Assert.Equal(2, matches[0].Revision);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => rpc.PrepareReplaceAsync(request, matches, "fox", default));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => rpc.ReplaceNotesAsync(request, "fox", default));
+        Assert.Equal("<p>newer wolf</p>", await projects.ReadSceneContentAsync(chapter, scene));
+    }
+
+    [Fact]
     public async Task OptionalFieldsArePassiveAndNotesReplacementKeepsProseAndSnapshotsSeparate()
     {
         using var directory = new TempDir();

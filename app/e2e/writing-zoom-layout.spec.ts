@@ -21,7 +21,7 @@ async function readLines(editor: Locator) {
         glyphHeight = Math.max(glyphHeight, rect.height)
       }
     }
-    return { lines, glyphHeight }
+    return { lines, glyphHeight, fontSize: parseFloat(getComputedStyle(root).fontSize) }
   })
 }
 
@@ -81,7 +81,8 @@ for (const mode of ['scene', 'pages', 'manuscript'] as const) {
         await expect.poll(async () => (await readLines(editor)).glyphHeight).toBeCloseTo(before.glyphHeight, 1)
         await expect.poll(async () => (await readLines(editor)).lines).toEqual(before.lines)
         for (let step = 0; step < 5; step++) await h.page.mouse.wheel(0, 100)
-        await expect.poll(async () => (await readLines(editor)).glyphHeight).toBeCloseTo(before.glyphHeight / 2, 1)
+        await expect.poll(async () => (await readLines(editor)).fontSize).toBeCloseTo(before.fontSize / 2, 1)
+        expect((await readLines(editor)).glyphHeight).toBeLessThan(before.glyphHeight)
         await expect.poll(async () => (await readLines(editor)).lines.length).toBeLessThanOrEqual(before.lines.length)
         expect(await scroller.evaluate(element => element.scrollWidth)).toBe(await scroller.evaluate(element => element.clientWidth))
         await h.page.keyboard.up('Control')

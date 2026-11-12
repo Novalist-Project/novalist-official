@@ -27,11 +27,23 @@ function parts(root: HTMLElement): WritingTextPart[] {
   return result
 }
 
+function endsParagraph(node: Node, paragraph: Node): boolean {
+  while (node !== paragraph) {
+    if (node.nextSibling || !node.parentNode) return false
+    node = node.parentNode
+  }
+  return true
+}
+
 function domPoint(root: HTMLElement, offset: number, affinity: 'before' | 'after' = 'after'): WritingDomPoint {
   const text = parts(root)
   for (let index = 0; index < text.length; index++) {
     const part = text[index]
     const end = part.start + part.text.length
+    const next = text[index + 1]
+    if (offset === end && part.node.nodeType === 3 && next?.node.nodeName === 'P' && endsParagraph(part.node, next.node)) {
+      return { node: part.node, offset: part.text.length }
+    }
     if (offset > end || (offset === end && affinity === 'after' && text[index + 1]?.start === end)) continue
     if (part.node.nodeType === 3) return { node: part.node, offset: Math.max(0, offset - part.start) }
     if (offset <= part.start && part.node.nodeName === 'P') return { node: part.node, offset: part.node.childNodes.length }

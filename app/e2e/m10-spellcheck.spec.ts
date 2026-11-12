@@ -52,12 +52,12 @@ test('the spell-check setting reaches the prose surface', async () => {
   // The prose surface is tagged with the writing language, not the UI language,
   // so the platform picks the right dictionary.
   await page.evaluate(async () => {
-    await window.novalistRpc.request('settings/updateGlobal', [{ autoReplacementLanguage: 'de' }])
+    await window.novalistRpc.request('settings/updateGlobal', [{ grammarCheckLanguage: 'de-CH', autoReplacementLanguage: 'en' }])
     await window.novalistStores.settings.getState().load()
   })
   await expect
     .poll(() => editor.evaluate((el) => (el as HTMLElement).lang), { timeout: 15_000 })
-    .toBe('de')
+    .toBe('de-CH')
 
   // Turning it off actually stops the underlines rather than only the setting.
   await page.evaluate(async () => {

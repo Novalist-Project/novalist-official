@@ -36,8 +36,10 @@ test('ctrl-click builds a selection and the bulk bar acts on it', async () => {
   await page.evaluate(async () => {
     const store = window.novalistStores.project.getState()
     await store.createChapter('Chapter One')
-    const guid = window.novalistStores.project.getState().chapters[0].guid
-    for (const title of ['Scene A', 'Scene B', 'Scene C'])
+    const chapter = window.novalistStores.project.getState().chapters[0]
+    const guid = chapter.guid
+    await store.renameScene(guid, chapter.scenes[0].id, 'Scene A')
+    for (const title of ['Scene B', 'Scene C'])
       await window.novalistStores.project.getState().createScene(guid, title)
   })
 

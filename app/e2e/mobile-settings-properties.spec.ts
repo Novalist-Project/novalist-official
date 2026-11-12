@@ -25,7 +25,10 @@ test('tablet property definitions fit beside the Settings categories with and wi
     ]) {
       await resizeWindow(h, width, 800)
       const toggle = h.page.getByRole('button', { name: 'Toggle binder', exact: true })
-      if ((await toggle.getAttribute('aria-pressed')) !== String(binder)) await toggle.click()
+      await toggle.evaluate((element, open) => {
+        if (element.getAttribute('aria-pressed') !== String(open)) (element as HTMLButtonElement).click()
+      }, binder)
+      await expect(toggle).toHaveAttribute('aria-pressed', String(binder))
       await expect(h.page.locator('.tablet-binder')).toHaveCount(binder ? 1 : 0)
       const geometry = await row.evaluate(element => {
         const bounds = element.getBoundingClientRect()

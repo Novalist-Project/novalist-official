@@ -218,11 +218,14 @@ export class WritingPaneController implements WritingFrameAdapter {
     if (!ref || (!renewFocus && (this.activeScene === ref.sceneId || this.activatingScene === ref.sceneId))) return
     const generation = ++this.activation
     this.activatingScene = ref.sceneId
+    const current = (): boolean => generation === this.activation && this.registry === owner && this.editor === editor &&
+      editor.document.hasFocus() && this.references.get(ref.sceneId)?.chapterGuid === ref.chapterGuid &&
+      editor.getWritingSelection()?.focus.sceneId === ref.sceneId
     try {
       const lease = await window.novalist.claimWritingFocus?.(this.sourceId, owner.context.workspaceEpoch)
-      if (!lease || generation !== this.activation || this.registry !== owner || this.editor !== editor || !editor.document.hasFocus()) return
+      if (!lease || !current()) return
       if (!await owner.activate(ref, { ...lease, activationGeneration: generation })) return
-      if (generation !== this.activation || this.registry !== owner || this.editor !== editor || !editor.document.hasFocus()) return
+      if (!current()) return
       this.activeScene = ref.sceneId
       writingEditingClaims.focus(this.sourceId, owner, ref)
       useShellStore.getState().setActivePane(this.paneId)
