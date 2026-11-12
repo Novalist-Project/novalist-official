@@ -16,5 +16,3 @@ epoch against a server-reserved history boundary before publishing a new
 checkpoint. Compaction reuses that boundary without a key change, so any writer
 can replace old history with a checkpoint; a pointer item in the log names the
 newest checkpoint for devices that start after the boundary. Reconnecting preserves local differences in a recovery archive.
-
-All work remains local until the user approves publishing after testing.
