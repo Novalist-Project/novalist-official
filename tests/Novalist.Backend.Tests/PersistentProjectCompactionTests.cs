@@ -173,7 +173,7 @@ public sealed class PersistentProjectCompactionTests
     {
         identity.Subject = subject;
         identity.IssueAccessToken = () => subject + "-token";
-        var desktop = new HostedDesktop(Path.Combine(root, subject), identity);
+        var desktop = new HostedDesktop(Path.Combine(root, "settings", subject), identity);
         await desktop.SignInAsync(server.Address);
         return desktop;
     }

@@ -26,7 +26,9 @@ public sealed class PersistentProjectRecoveryTests
         await using var archive = new MemoryStream();
         await ProjectCheckpoint.CreateAsync(root, archive, () => ProjectContentSelection.Read(root), ct);
         File.Move(lower, upper);
-        var extra = Path.Combine(root, "Research", "extra.txt");
+        var extraDirectory = Path.Combine(root, "Research", "Retained", "Drafts");
+        Directory.CreateDirectory(extraDirectory);
+        var extra = Path.Combine(extraDirectory, "extra.txt");
         await File.WriteAllTextAsync(extra, "Retained local file.", ct);
         var settingsPath = SharedProjectPath.Resolve(root, ".novalist/settings.json");
         var settings = await File.ReadAllBytesAsync(settingsPath, ct);
@@ -34,6 +36,7 @@ public sealed class PersistentProjectRecoveryTests
         using var restore = await RetainedProjectRestore.PrepareAsync(root, archive, temp.Path, ct);
         await restore.ApplyAsync(files, ct);
         Assert.False(File.Exists(extra));
+        Assert.False(Directory.Exists(Path.Combine(root, "Research", "Retained")));
         Assert.Single(Directory.GetFiles(Path.Combine(root, "Research")));
         Assert.Equal("Checkpoint note.", await File.ReadAllTextAsync(lower, ct));
         Assert.True(File.Exists(restore.RecoveryPath));
