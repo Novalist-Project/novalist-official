@@ -8,7 +8,7 @@ const directory = fileURLToPath(new URL('..', import.meta.url))
 const sources = {
   writingEditingClaims: `export const writingEditingClaims = { focus: (source, registry, ref) => globalThis.editingClaims.push(ref.sceneId), blur() {} };`,
   WritingSharedPresence: `export class WritingSharedPresence { update() {} close() {} }`,
-  projectStore: `const state = { editors: {}, setContextScene() {} }; export const editorPane = () => ({});
+  projectStore: `const state = { editors: {}, setContextScene() {} }; export const editorPane = (state, id) => state.editors[id] ?? {};
     export const useProjectStore = { getState: () => state, setState: update => Object.assign(state, update(state)) };`,
   shellStore: `export const useShellStore = { getState: () => ({ setActivePane() {} }) };`,
   writingHistory: `export const acceptSharedWritingTransaction = () => {}; export const acceptWritingTransaction = () => {}; export const getWritingHistory = () => {};`,
@@ -19,7 +19,9 @@ const sources = {
   writingNavigation: `export const registerWritingNavigation = () => () => {};`,
   writingAnnotationMessages: `export const applyWritingAnnotations = () => {}; export const handleWritingAnnotationMessage = () => false; export const pushWritingAnnotations = () => {};`
 }
-const result = await build({ entryPoints: [`${directory}/src/renderer/src/views/editor/writingPaneController.ts`],
+const result = await build({ stdin: { resolveDir: directory, contents: `
+  export { WritingPaneController } from './src/renderer/src/views/editor/writingPaneController';
+  export { useProjectStore } from './src/renderer/src/stores/projectStore';` },
   bundle: true, write: false, platform: 'node', format: 'esm', plugins: [{ name: 'controller-dependencies', setup(builder) {
     builder.onResolve({ filter: /./ }, args => {
       const key = args.path.split('/').at(-1)
@@ -27,11 +29,12 @@ const result = await build({ entryPoints: [`${directory}/src/renderer/src/views/
     })
     builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ contents: sources[args.path] }))
   } }] })
-const { WritingPaneController } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`)
+const { WritingPaneController, useProjectStore } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`)
 const settle = () => new Promise(resolve => setImmediate(resolve))
 
 function fixture() {
   globalThis.editingClaims = []
+  useProjectStore.setState(() => ({ editors: {} }))
   let focusedWindow = 1, focusedPane = 'a', backendScene = null, delayClaim = null, delayActivation = null
   const claims = [], activations = [], errors = []
   const focus = new WritingFocusOwner(async (method, params) => {
@@ -39,17 +42,18 @@ function fixture() {
     if (delayClaim) await delayClaim
   }, () => focusedWindow)
   globalThis.window = { novalist: { claimWritingFocus: (source, epoch) => focus.claim(focusedWindow, source, epoch) } }
-  const pane = (id, owner) => {
-    const ref = { bookId: 'book', draftId: 'draft', chapterGuid: 'chapter', sceneId: id }
+  const pane = (id, owner, selectedScene = id) => {
+    const ref = { bookId: 'book', draftId: 'draft', chapterGuid: 'chapter', sceneId: selectedScene }
+    useProjectStore.setState(state => ({ editors: { ...state.editors, [id]: { chapterGuid: ref.chapterGuid, sceneId: id } } }))
     const controller = new WritingPaneController(id, { ready() {}, selection() {}, projection() {}, error: error => errors.push(error), structure() {} })
     controller.registry = { context: { workspaceEpoch: 1 }, activate: async (ref, lease) => {
       if (delayActivation) await delayActivation
       activations.push({ scene: ref.sceneId, ...lease }); backendScene = ref.sceneId; return true
     } }
-    controller.references.set(id, ref)
+    controller.references.set(selectedScene, ref)
     controller.ready({ document: { hasFocus: () => focusedWindow === owner && focusedPane === id },
       configureWritingTextMapping() {}, setWritingContext() {}, setWritingStructureEnabled() {},
-      getWritingSelection: () => ({ anchor: { sceneId: id, offset: 0 }, focus: { sceneId: id, offset: 0 } }),
+      getWritingSelection: () => ({ anchor: { sceneId: selectedScene, offset: 0 }, focus: { sceneId: selectedScene, offset: 0 } }),
       writingServiceState: () => null })
     return controller
   }
@@ -93,6 +97,36 @@ test('a delayed activation cannot restore a scene removed by explicit scope navi
   release()
   await settle()
   assert.deepEqual(globalThis.editingClaims, [], 'the obsolete activation must not replace the new scope anchor')
+  assert.deepEqual(f.errors, [])
+})
+
+for (const stage of ['delayClaim', 'delayActivation']) {
+  test(`explicit scene navigation survives ${stage} before React updates the old projection`, async () => {
+    const f = fixture(), a = f.pane('a', 1)
+    let release
+    f[stage](new Promise(resolve => { release = resolve }))
+    a.message({ type: 'focused' })
+    await settle()
+    useProjectStore.setState(state => ({ editors: {
+      ...state.editors, a: { ...state.editors.a, chapterGuid: 'other-chapter', sceneId: 'shared-destination' }
+    } }))
+    release()
+    await settle()
+    assert.equal(useProjectStore.getState().editors.a.sceneId, 'shared-destination')
+    assert.equal(useProjectStore.getState().editors.a.chapterGuid, 'other-chapter')
+    assert.deepEqual(globalThis.editingClaims, [])
+    assert.deepEqual(f.errors, [])
+  })
+}
+
+test('caret navigation within a manuscript activates its new scene from the previous store anchor', async () => {
+  const f = fixture(), a = f.pane('a', 1, 'b')
+  assert.equal(useProjectStore.getState().editors.a.sceneId, 'a')
+  a.message({ type: 'writingSelectionChanged' })
+  await settle()
+  assert.equal(useProjectStore.getState().editors.a.sceneId, 'b')
+  assert.equal(f.backend(), 'b')
+  assert.deepEqual(globalThis.editingClaims, ['b'])
   assert.deepEqual(f.errors, [])
 })
 
