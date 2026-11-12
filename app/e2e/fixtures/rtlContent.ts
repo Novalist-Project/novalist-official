@@ -12,17 +12,35 @@ import { MetadataInput } from './src/renderer/src/collaboration/MetadataInput'
 import { EntityDetailFields } from './src/renderer/src/views/codex/EntityDetailFields'
 import { MarkdownEditor } from './src/renderer/src/shell/MarkdownEditor'
 import { WikiArticle } from './src/renderer/src/views/wiki/WikiArticle'
+import { ContentSelect } from './src/renderer/src/shell/ContentSelect'
 import en from './src/renderer/src/locales/en.json'
 const article = { id: 'arabic', typeKey: 'character', title: 'ليلى', aliases: [], lead: {},
  description: 'كانت ليلى تقرأ في المدينة.', infobox: { images: [], fields: [{ literalLabel: 'Name', value: 'ليلى' }] },
  sections: [{ title: 'حكاية', content: globalThis.rtlWikiContent ?? 'مرحبا بالعالم 123.\n\nEnglish paragraph.\n\n> اقتباس عربي\n\n- عنصر عربي\n\n' + String.fromCharCode(96) + 'code 123' + String.fromCharCode(96) }],
  relationships: [], referencedBy: [], contains: [], appearsWith: [], plotlines: [], mapPins: [], research: [], events: [], overrides: [], appearances: [] }
+function ContentDirectionFixture() {
+ const [render, setRender] = useState(0)
+ const [value, setValue] = useState('english')
+ const [label, setLabel] = useState('English')
+ const [direction, setDirection] = useState(undefined)
+ const [parentDirection, setParentDirection] = useState('ltr')
+ return <section id="content-direction" dir={parentDirection} data-render={render}>
+  <ContentSelect aria-label="Direction probe" value={value} dir={direction} onChange={event => setValue(event.target.value)}>
+   <option value="english">{label}</option><option value="arabic">العربية</option><option value="neutral">123</option>
+  </ContentSelect>
+  <button onClick={() => setRender(value => value + 1)}>Rerender content select</button>
+  <button onClick={() => setLabel(value => value === 'English' ? 'العربية' : 'English')}>Change selected label</button>
+  <button onClick={() => setParentDirection(value => value === 'ltr' ? 'rtl' : 'ltr')}>Change inherited direction</button>
+  <button onClick={() => setDirection(value => value === 'rtl' ? 'ltr' : 'rtl')}>Change explicit direction</button>
+  <button onClick={() => setDirection(undefined)}>Use content direction</button>
+ </section>
+}
 function Fixture() {
  const [name, setName] = useState('ليلى')
  const [record, setRecord] = useState({ id: 'custom', name: 'ليلى', fields: { language: 'English' } })
  const [markdown, setMarkdown] = useState('مرحبا بالعالم\nEnglish paragraph')
  const [wikiContent, setWikiContent] = useState(article.sections[0].content)
- return <><header>English interface</header>
+ return <><header>English interface</header><ContentDirectionFixture />
  <MetadataInput aria-label="Scene name" value={name} editable change={setName} format={value => value} parse={value => value} />
  <EntityDetailFields entityType="custom" record={record} customDef={{ defaultFields: [{ key: 'language', displayName: 'Language', type: 'Enum', enumOptions: ['English', 'العربية'] }] }}
  updateField={async (key, value) => setRecord(previous => ({ ...previous, fields: { ...previous.fields, [key]: value } }))} />

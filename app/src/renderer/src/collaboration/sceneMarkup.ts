@@ -52,7 +52,13 @@ export class SceneMarkup {
       id = crypto.randomUUID()
       this.identities.set(element, id)
     }
-    return { id, tag: element.tagName.toLowerCase(), attributes: Object.fromEntries(Array.from(element.attributes, attribute => [attribute.name, attribute.value])) }
+    const attributes = Object.fromEntries(Array.from(element.attributes, attribute => [attribute.name, attribute.value]))
+    if ('data-nv-auto-direction' in attributes) {
+      if (attributes['data-nv-auto-direction'] === 'auto') attributes.dir = 'auto'
+      else delete attributes.dir
+      delete attributes['data-nv-auto-direction']
+    }
+    return { id, tag: element.tagName.toLowerCase(), attributes }
   }
 
   private container(element: Element, path: Block[]): void {

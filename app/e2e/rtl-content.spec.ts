@@ -26,6 +26,59 @@ test('real fields and changed enum values follow their own content direction', a
   await expect(page.locator('header').first()).toHaveCSS('direction', 'ltr')
 })
 
+test('unchanged content select renders do not rewrite the direction probe or select direction', async ({ page }) => {
+  const select = page.getByRole('combobox', { name: 'Direction probe' })
+  await expect(select).toHaveAttribute('dir', 'ltr')
+  const observed = await select.evaluateHandle(element => {
+    const records: { type: string; attribute: string | null }[] = []
+    const observer = new MutationObserver(changes => {
+      records.push(...changes.map(change => ({ type: change.type, attribute: change.attributeName })))
+    })
+    observer.observe(element, { attributes: true, attributeFilter: ['dir'] })
+    observer.observe(element.nextElementSibling!, { childList: true, subtree: true, characterData: true })
+    return { records, disconnect: () => observer.disconnect() }
+  })
+  try {
+    for (let render = 1; render <= 5; render++) {
+      await page.getByRole('button', { name: 'Rerender content select', exact: true }).click()
+      await expect(page.locator('#content-direction')).toHaveAttribute('data-render', String(render))
+    }
+    expect(await observed.evaluate(state => state.records)).toEqual([])
+  } finally {
+    await observed.evaluate(state => state.disconnect())
+    await observed.dispose()
+  }
+})
+
+test('content select recalculates changed labels and respects neutral content, inherited style and explicit direction', async ({ page }) => {
+  const select = page.getByRole('combobox', { name: 'Direction probe' })
+  await expect(select).toHaveAttribute('dir', 'ltr')
+  await page.getByRole('button', { name: 'Change selected label', exact: true }).click()
+  await expect(select).toHaveAttribute('dir', 'rtl')
+  await page.getByRole('button', { name: 'Change selected label', exact: true }).click()
+  await expect(select).toHaveAttribute('dir', 'ltr')
+  await select.selectOption('arabic')
+  await expect(select).toHaveAttribute('dir', 'rtl')
+  await select.selectOption('neutral')
+  await expect(select).toHaveAttribute('dir', 'ltr')
+  await page.getByRole('button', { name: 'Change inherited direction', exact: true }).click()
+  await expect(select).toHaveAttribute('dir', 'ltr')
+  await page.addStyleTag({ content: '#content-direction bdi { direction: inherit; }' })
+  await page.getByRole('button', { name: 'Rerender content select', exact: true }).click()
+  await expect(select).toHaveAttribute('dir', 'rtl')
+  await page.getByRole('button', { name: 'Change inherited direction', exact: true }).click()
+  await expect(select).toHaveAttribute('dir', 'ltr')
+  await page.getByRole('button', { name: 'Change explicit direction', exact: true }).click()
+  await expect(select).toHaveAttribute('dir', 'rtl')
+  await page.getByRole('button', { name: 'Change explicit direction', exact: true }).click()
+  await select.selectOption('arabic')
+  await expect(select).toHaveAttribute('dir', 'ltr')
+  await page.getByRole('button', { name: 'Change inherited direction', exact: true }).click()
+  await expect(select).toHaveAttribute('dir', 'ltr')
+  await page.getByRole('button', { name: 'Use content direction', exact: true }).click()
+  await expect(select).toHaveAttribute('dir', 'rtl')
+})
+
 test('Markdown uses independent line direction and preserves native typed selection', async ({ page }) => {
   const editor = page.getByRole('textbox', { name: 'Mixed Markdown' })
   await expect(editor.locator('.cm-line').first()).toHaveCSS('direction', 'rtl')

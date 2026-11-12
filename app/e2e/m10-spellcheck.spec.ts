@@ -52,7 +52,9 @@ test('the spell-check setting reaches the prose surface', async () => {
   // The prose surface is tagged with the writing language, not the UI language,
   // so the platform picks the right dictionary.
   await page.evaluate(async () => {
-    await window.novalistRpc.request('settings/updateGlobal', [{ grammarCheckLanguage: 'de-CH', autoReplacementLanguage: 'en' }])
+    await window.novalistRpc.request('settings/updateGlobal', [{
+      autoReplacementLanguage: 'de-low', spellCheckLanguages: ['de-CH']
+    }])
     await window.novalistStores.settings.getState().load()
   })
   await expect

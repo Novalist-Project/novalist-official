@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import createDOMPurify from 'dompurify'
 import { createSceneSanitizer } from '../../../../shared/sceneSanitizer'
 import { SceneSynopsisField } from '../../shell/SceneSynopsisField'
@@ -14,15 +14,15 @@ import { WritingSceneName, WritingSceneStage } from './WritingSceneMetadata'
 
 const { sanitizeSceneFragment } = createSceneSanitizer(window, createDOMPurify(window))
 
-export function WritingSceneMargin({ scene, expanded, onExpandedChange, wordCount, registry, number, title = '', stage, onFocus, narrow = false, synopsisVisible = true }: {
-  scene: SceneRef; expanded: boolean; onExpandedChange(expanded: boolean): void; wordCount: number
+export const WritingSceneMargin = memo(function WritingSceneMargin({ scene, expanded, onExpandedChange, wordCount, registry, number, title = '', stage, onFocus, narrow = false, synopsisVisible = true }: {
+  scene: SceneRef; expanded: boolean; onExpandedChange(scene: SceneRef, expanded: boolean): void; wordCount: number
   registry: WritingDocumentRegistry
   narrow?: boolean
   synopsisVisible?: boolean
   number: number
   title?: string
   stage?: SceneStage
-  onFocus?(): void
+  onFocus?(scene: SceneRef): void
 }): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const subscribe = useCallback((listener: () => void) => registry.subscribe(scene, listener), [registry, scene])
@@ -40,16 +40,16 @@ export function WritingSceneMargin({ scene, expanded, onExpandedChange, wordCoun
     <WritingSceneName scene={scene} title={title} context={registry.context} />
     <WritingSceneStage scene={scene} stage={stage} context={registry.context} />
     <small>{t('unifiedWriting.words', { count })}</small>
-    {synopsisVisible && <button ref={anchor} type="button" aria-expanded={expanded} onClick={() => onExpandedChange(!expanded)}>
+    {synopsisVisible && <button ref={anchor} type="button" aria-expanded={expanded} onClick={() => onExpandedChange(scene, !expanded)}>
       <ChevronDown size={13} className={expanded ? 'expanded' : ''} />{t('unifiedWriting.synopsis')}
     </button>}
-    {narrow ? synopsisVisible && expanded && <SynopsisPopover scene={scene} anchor={anchor.current} onClose={() => onExpandedChange(false)} /> :
+    {narrow ? synopsisVisible && expanded && <SynopsisPopover scene={scene} anchor={anchor.current} onClose={() => onExpandedChange(scene, false)} /> :
       <div className="writing-synopsis-slot">
         {synopsisVisible && expanded && <SceneSynopsisField chapterGuid={scene.chapterGuid} sceneId={scene.sceneId} className="writing-synopsis-input" multiline />}
       </div>}
-    {onFocus && <button type="button" className="writing-focus-scene" onClick={onFocus}><Scan size={13} />{t('unifiedWriting.focusScene')}</button>}
+    {onFocus && <button type="button" className="writing-focus-scene" onClick={() => onFocus(scene)}><Scan size={13} />{t('unifiedWriting.focusScene')}</button>}
   </aside>
-}
+})
 
 function SynopsisPopover({ scene, anchor, onClose }: { scene: SceneRef; anchor: HTMLElement | null; onClose(): void }): React.JSX.Element {
   const { t } = useTranslation()

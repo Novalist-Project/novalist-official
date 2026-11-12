@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { WritingSceneMargin } from './WritingSceneMargin'
@@ -52,7 +52,7 @@ export const WritingCanvasChrome = memo(function WritingCanvasChrome({ live, reg
   useEffect(() => {
     if (registry) setExpanded(new Set(snapshots.filter(scene => synopsisExpanded(registry.context, scene)).map(scene => scene.sceneId)))
   }, [registry, snapshots])
-  const toggleExpanded = (scene: SceneRef, value: boolean): void => {
+  const toggleExpanded = useCallback((scene: SceneRef, value: boolean): void => {
     if (!registry) return
     setSynopsisExpanded(registry.context, scene, value)
     setExpanded(current => {
@@ -61,7 +61,7 @@ export const WritingCanvasChrome = memo(function WritingCanvasChrome({ live, reg
       else next.delete(scene.sceneId)
       return next
     })
-  }
+  }, [registry])
   const insertBefore = (beforeChapterGuid: string | null, actName: string | null): void => onStructure({ command: 'insertChapter', selection: null, anchor: null, destination: { beforeChapterGuid, actName } })
   return <>
     {introTarget && createPortal(<header className="writing-book-heading">
@@ -85,8 +85,8 @@ export const WritingCanvasChrome = memo(function WritingCanvasChrome({ live, reg
         </header>}
         {registry && <WritingSceneMargin scene={scene} registry={registry} wordCount={metadata?.wordCount ?? 0}
           number={(chapter?.scenes.findIndex(value => value.id === scene.sceneId) ?? index) + 1} title={metadata?.title ?? ''} stage={stages.find(stage => stage.key === metadata?.stage)}
-          onFocus={scope === 'scene' ? undefined : () => onFocusScene(scene)}
-          synopsisVisible={showSynopsis} narrow={narrow} expanded={expanded.has(scene.sceneId)} onExpandedChange={value => toggleExpanded(scene, value)} />}
+          onFocus={scope === 'scene' ? undefined : onFocusScene}
+          synopsisVisible={showSynopsis} narrow={narrow} expanded={expanded.has(scene.sceneId)} onExpandedChange={toggleExpanded} />}
       </>, element, scene.sceneId)
     })}
     {emptyTargets.map(({ chapter, element }) => createPortal(<>

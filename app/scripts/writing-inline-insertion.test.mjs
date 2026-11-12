@@ -112,6 +112,32 @@ test('chapter boundaries append scenes to the preceding chapter and inherit its 
   assert.deepEqual(f.plainEvents().find(event => event[0] === 'execute')[1], { kind: 'insertChapter', title: 'New chapter', beforeChapterGuid: 'b', actName: 'Act one' })
 })
 
+for (const leading of [false, true]) test(`a ${leading ? 'leading' : 'middle'} empty chapter retains its following insertion boundary`, async t => {
+  const before = leading ? [] : [chapter('before', 0, ['before1'])]
+  const f = await fixture(t, {
+    chapters: [...before, chapter('empty', 1, [], 'Empty act'), chapter('after', 2, ['after1'], 'Later act')],
+    visible: [...before.map(value => [value.guid, value.scenes[0].id]), ['after', 'after1']]
+  })
+  assert.ok(f.button('after1', 'scene'))
+  await f.app.click(f.button('after1', 'scene'))
+  assert.deepEqual(f.plainEvents().find(event => event[0] === 'execute')[1],
+    { kind: 'insertScene', chapterGuid: 'empty', beforeSceneId: null, title: 'Scene 1' })
+  f.w.events = []
+  assert.ok(f.button('after1', 'chapter'))
+  await f.app.click(f.button('after1', 'chapter'))
+  await f.app.click([...f.w.document.querySelectorAll('button')].find(button => button.textContent === 'Create chapter'))
+  assert.deepEqual(f.plainEvents().find(event => event[0] === 'execute')[1],
+    { kind: 'insertChapter', title: 'New chapter', beforeChapterGuid: 'after', actName: 'Empty act' })
+})
+
+for (const options of [{ limited: true }, { scope: 'chapter' }]) test(`empty chapters outside a ${options.limited ? 'filtered run' : 'chapter scope'} do not add insertion controls`, async t => {
+  const f = await fixture(t, { ...options,
+    chapters: [chapter('empty', 1, []), chapter('after', 2, ['after1'])], visible: [['after', 'after1']]
+  })
+  assert.equal(f.button('after1', 'scene'), null)
+  assert.equal(f.button('after1', 'chapter'), null)
+})
+
 test('end of scene scope inserts after that scene and offers no chapter split in the middle of a chapter', async t => {
   const f = await fixture(t, { scope: 'scene', visible: [['a', 'a1']] })
   assert.ok(f.button('end', 'scene'))

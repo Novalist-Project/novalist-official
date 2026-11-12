@@ -6,8 +6,10 @@ export function ContentSelect({ children, onChange, dir, ...props }: SelectHTMLA
   const label = useRef<HTMLElement>(null)
   const updateDirection = (): void => {
     if (dir || !select.current || !label.current) return
-    label.current.textContent = select.current.selectedOptions[0]?.textContent ?? ''
-    select.current.dir = getComputedStyle(label.current).direction
+    const selectedText = select.current.selectedOptions[0]?.textContent ?? ''
+    if (label.current.textContent !== selectedText) label.current.textContent = selectedText
+    const direction = getComputedStyle(label.current).direction
+    if (select.current.dir !== direction) select.current.dir = direction
   }
   useLayoutEffect(updateDirection)
   return <>

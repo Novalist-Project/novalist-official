@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { editorPane, useProjectStore } from '../../stores/projectStore'
 import { findPane, useShellStore } from '../../stores/shellStore'
 import { resolveWritingProjection } from '../../stores/writingProjection'
@@ -108,7 +108,7 @@ export function useUnifiedWritingDocument(paneId: string, onStructure: (request:
     if (!live || snapshots.length !== refs.length || snapshots.some((snapshot, index) => snapshot.sceneId !== refs[index].sceneId)) return
     adapter.project(snapshots)
   }, [live, snapshots, refs, adapter])
-  const setScope = (writingScope: WritingScope, focus?: SceneRef): void => {
+  const setScope = useCallback((writingScope: WritingScope, focus?: SceneRef): void => {
     if (!focus && writingScope === projection.scope) return
     if (focus) adapter.focusScene(focus)
     const anchor = focus ?? adapter.retainScopePosition()
@@ -117,7 +117,7 @@ export function useUnifiedWritingDocument(paneId: string, onStructure: (request:
       ...state.editors, [paneId]: { ...editorPane(state, paneId), writingScope,
         ...(anchor ? { chapterGuid: anchor.chapterGuid, sceneId: anchor.sceneId } : {}) }
     } }))
-  }
+  }, [adapter, paneId, projection.scope])
   const retry = async (): Promise<void> => {
     if (!registry) return
     try {

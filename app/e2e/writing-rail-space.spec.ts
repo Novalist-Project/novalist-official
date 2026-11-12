@@ -60,6 +60,7 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
 
 for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'page']) for (const zoom of [1, 2]) {
   test(`${language} ${mode} rail uses spare margin before wrapping at ${zoom * 100}%`, async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1000 })
     await page.goto(`${url}?sceneTitle=${encodeURIComponent('Szene 1: Ein Morgen am Meer')}`)
     const canvas = page.frameLocator('iframe')
     const rail = canvas.locator('.writing-scene-margin').first()

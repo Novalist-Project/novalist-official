@@ -29,8 +29,11 @@ test('Structure creates empty acts, moves chapters, edits summaries and undoes a
     await move.getByRole('button', { name: 'Move', exact: true }).click()
     await expect(h.page.locator('.structure-board')).toHaveAttribute('aria-busy', 'false')
     await expect.poll(async () => (await h.rpc<{ chapters: { title: string; act: string }[] }>('project/getState')).chapters.find(value => value.title === 'Arrival')?.act).toBe('Act One')
-    await h.page.locator('.planning-view').getByRole('button', { name: 'Undo', exact: true }).click()
-    await expect.poll(async () => (await h.rpc<{ chapters: { title: string; act: string }[] }>('project/getState')).chapters.find(value => value.title === 'Arrival')?.act).toBe('')
+    const undo = h.page.locator('.planning-view').getByRole('button', { name: 'Undo', exact: true })
+    await undo.click()
+    await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().chapters.find(chapter => chapter.title === 'Arrival')?.act)).toBe('')
+    await expect(undo).toBeEnabled()
+    expect((await h.rpc<{ chapters: { title: string; act: string }[] }>('project/getState')).chapters.find(value => value.title === 'Arrival')?.act).toBe('')
     for (const name of ['Corkboard', 'Outliner', 'Board', 'Structure']) {
       await h.page.locator('.manuscript-modes').getByRole('button', { name, exact: true }).click()
       await expect(h.page.locator('.planning-view')).toContainText('Arrival')

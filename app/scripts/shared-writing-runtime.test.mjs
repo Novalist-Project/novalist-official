@@ -25,7 +25,8 @@ function runtime(t, paginated = false) {
   w.sanitizeSceneFragment = w.sceneContentFragment
   w.repaginatePageView = () => {}
   w.schedulePageViewRepaginate = () => {}
-  for (const file of ['editor-content', 'writing-selection', 'writing-document', 'writing-transactions', 'content-input']) {
+  w.clearGrammarHighlights = () => {}
+  for (const file of ['editor-content', 'writing-selection', 'writing-document', 'writing-transactions', 'content-input', 'prose-direction']) {
     w.eval(readFileSync(new URL(`../src/renderer/public/editor/${file}.js`, import.meta.url), 'utf8'))
   }
   if (paginated) {
@@ -39,7 +40,7 @@ function runtime(t, paginated = false) {
     w.restoreDictationPosition = () => {}
     w.reapplyReadability = () => {}
     w.eval(readFileSync(new URL('../src/renderer/public/editor/page-layout.js', import.meta.url), 'utf8'))
-  } else w.cleanContentRoot = root => root.innerHTML
+  }
   return w
 }
 
@@ -70,7 +71,8 @@ for (const paginated of [false, true]) test(`two shared pane runtimes acknowledg
   const environment = { document: panes[0].document, sanitizeSceneFragment: panes[0].sceneContentFragment, toDisplayImages() {} }
   const host = new ProseDocumentHost(environment.document, environment)
   const context = { workspaceId: 'project', workspaceEpoch: 1, bookId: 'book', draftId: 'draft' }
-  const longScene = paginated ? `<p>${'long scene words '.repeat(26)}</p>`.repeat(320) : ''
+  const directions = '<p dir="ltr">Left</p><p dir="rtl">Right</p><p dir="auto">Auto</p><ul dir="auto"><li>List</li></ul><blockquote style="direction: rtl;">Styled</blockquote>'
+  const longScene = (paginated ? `<p>${'long scene words '.repeat(26)}</p>`.repeat(320) : '') + directions
   const documents = ['typing', 'remote'].map(sceneId => {
     const server = new Y.Doc()
     const state = host.seed(sceneId, `<p><b>${sceneId}</b> text</p>${sceneId === 'typing' ? longScene : ''}`)
@@ -116,11 +118,14 @@ for (const paginated of [false, true]) test(`two shared pane runtimes acknowledg
     host.dispose()
   })
   panes[0].getWritingSceneRoot('typing').querySelector('p').append(' local')
+  panes[0].applyProseDirection(panes[0].getWritingSceneRoot('typing'))
+  assert.equal(panes[0].getWritingSceneRoot('typing').querySelector('p').getAttribute('data-nv-auto-direction'), '')
   capture(0)
   documents[1].server.getText('prose').insert(0, 'Peer ')
   documents[1].owner.receive(Y.encodeStateAsUpdate(documents[1].server))
   assert.doesNotThrow(() => { capture(0); capture(1) })
   assert.equal(documents[0].owner.html, `<p><b>typing</b> text local</p>${longScene}`)
+  for (const pane of panes) assert.equal(pane.serializeWritingScene('typing'), `<p><b>typing</b> text local</p>${longScene}`)
   assert.equal((await getWritingHistory(registry).undo()).status, 'applied')
   if (paginated) await flushPagination(panes)
   for (const pane of panes) {

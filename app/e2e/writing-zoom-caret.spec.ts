@@ -26,17 +26,22 @@ async function expectCaret(scroller: Locator, anchor: 'off' | 'top' | 'middle' |
   expect(after.collapsed && after.focused).toBe(true)
 }
 
-async function zoom(page: Page, editor: Locator, delta: number, steps: number) {
-  const scale = () => editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))
-  const expected = Math.max(0.5, Math.min(3, Math.round((await scale()) * 100 - Math.sign(delta) * steps * 10) / 100))
-  for (let step = 0; step < steps; step++) await page.mouse.wheel(0, delta)
-  await expect.poll(scale).toBe(expected)
+async function waitForPagination(editor: Locator) {
+  await editor.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))))
   await expect.poll(() => editor.evaluate(() => {
     const state = (window as Window & { NovalistEditorState?: {
       pageViewRepaginateScheduled: boolean; pageViewRepaginating: boolean
     } }).NovalistEditorState!
     return state.pageViewRepaginateScheduled || state.pageViewRepaginating
   })).toBe(false)
+}
+
+async function zoom(page: Page, editor: Locator, delta: number, steps: number) {
+  const scale = () => editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))
+  const expected = Math.max(0.5, Math.min(3, Math.round((await scale()) * 100 - Math.sign(delta) * steps * 10) / 100))
+  for (let step = 0; step < steps; step++) await page.mouse.wheel(0, delta)
+  await expect.poll(scale).toBe(expected)
+  await waitForPagination(editor)
 }
 
 for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
@@ -70,6 +75,7 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
           await editor.click()
           await h.page.keyboard.press('F11')
           await expect(h.page.locator('.shell-focus')).toBeVisible()
+          await expect.poll(() => h.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isFullScreen())).toBe(true)
         }
         if (mode === 'pages' || mode === 'focus') await expect(frame.locator('.nv-page').first()).toBeVisible()
         await editor.locator('p').first().click()
@@ -77,6 +83,7 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
           const state = (window as Window & { NovalistEditorState?: { isFocusing: boolean } }).NovalistEditorState
           return state?.isFocusing ?? false
         })).toBe(false)
+        await waitForPagination(editor)
         await editor.evaluate(element => {
           const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
           const nodes: Node[] = []

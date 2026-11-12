@@ -142,7 +142,14 @@ async function fixture(t, count = 4) {
 test('scene navigation retains every unrelated scene margin subscription and DOM', async t => {
   const f = await fixture(t, 200)
   const before = f.app.counts(), margins = f.margins()
+  const computedStyle = f.w.getComputedStyle
+  let directionChecks = 0
+  f.w.getComputedStyle = (element, ...args) => {
+    if (element.tagName === 'BDI') directionChecks++
+    return computedStyle(element, ...args)
+  }
   for (const index of [1, 100, 199, 0, 50]) await f.app.navigate(index)
+  assert.equal(directionChecks, 0, 'caret movement must not recompute unchanged scene control directions')
   assert.deepEqual(f.app.counts(), before, 'navigation must not replace subscriptions for retained scene chrome')
   assert.deepEqual(f.margins(), margins)
   assert.equal(f.canvas.querySelector('.writing-book-heading h1').textContent, 'Test book')

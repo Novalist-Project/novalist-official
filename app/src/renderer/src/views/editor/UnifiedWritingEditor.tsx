@@ -14,6 +14,7 @@ import { PanelRight, FileText, Layers } from 'lucide-react'
 import { useShellStore } from '../../stores/shellStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { updateEditorSetting } from '../../shell/commandContext'
+import type { SceneRef } from './writingTypes'
 import './unified-writing.css'
 
 function requestStructure(request: WritingStructureRequest, paneId: string): void {
@@ -24,6 +25,7 @@ export function UnifiedWritingEditor({ paneId }: { paneId: string }): React.JSX.
   const { t } = useTranslation()
   const onStructure = useCallback((request: WritingStructureRequest) => requestStructure(request, paneId), [paneId])
   const writing = useUnifiedWritingDocument(paneId, onStructure)
+  const focusScene = useCallback((scene: SceneRef) => writing.setScope('scene', scene), [writing.setScope])
   const { live, registry, snapshots, chapters } = writing
   const [showSynopsis, setShowSynopsis] = useState(true)
   const pageView = useSettingsStore(state => state.view?.effective.pageViewEnabled === true)
@@ -87,6 +89,6 @@ export function UnifiedWritingEditor({ paneId }: { paneId: string }): React.JSX.
       anchorChapter={anchorChapter} revision={writing.projectionRevision} limited={limited} narrow={narrow}
       showSynopsis={showSynopsis} onStructure={onStructure} bookTitle={bookTitle} draftName={draftName}
       activeSceneId={writing.selection?.focus.sceneId ?? writing.anchor?.sceneId}
-      onFocusScene={scene => writing.setScope('scene', scene)} />
+      onFocusScene={focusScene} />
   </section>
 }

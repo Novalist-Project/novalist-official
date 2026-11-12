@@ -2,7 +2,7 @@ import type { ChapterDto } from '../../stores/projectTypes'
 import type { WritingBoundaryRequests } from './WritingBoundaryActions'
 import type { SceneRef, WritingScope } from './writingTypes'
 
-function afterScene(chapters: ChapterDto[], chapterIndex: number, sceneIndex: number): WritingBoundaryRequests {
+function afterScene(chapters: ChapterDto[], chapterIndex: number, sceneIndex = chapters[chapterIndex].scenes.length - 1): WritingBoundaryRequests {
   const chapter = chapters[chapterIndex]
   const following = chapter.scenes[sceneIndex + 1]
   return {
@@ -24,10 +24,16 @@ export function writingBoundaryRequests(chapters: ChapterDto[], scenes: SceneRef
   const position = (ref: SceneRef) => positions.get(`${ref.chapterGuid}/${ref.sceneId}`)
   const before = new Map<string, WritingBoundaryRequests>()
   scenes.forEach((current, index) => {
+    const right = position(current)
+    if (!right) return
+    if (!limited && scope === 'manuscript' && right.scene === 0 && chapters[right.chapter - 1]?.scenes.length === 0) {
+      before.set(current.sceneId, afterScene(chapters, right.chapter - 1))
+      return
+    }
     const previous = scenes[index - 1]
     if (!previous) return
-    const left = position(previous), right = position(current)
-    if (!left || !right) return
+    const left = position(previous)
+    if (!left) return
     const adjacent = left.chapter === right.chapter ? right.scene === left.scene + 1
       : right.chapter === left.chapter + 1 && right.scene === 0 && left.scene === chapters[left.chapter].scenes.length - 1
     if (adjacent) before.set(current.sceneId, afterScene(chapters, left.chapter, left.scene))
