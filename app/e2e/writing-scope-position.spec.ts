@@ -79,3 +79,38 @@ test('scope changes retain a typed paragraph-end caret in zoomed page view', asy
     await expect.poll(async () => (await position(page)).selection).toEqual(before.selection)
   }
 })
+
+test('scope changes retain the prose caret after editing and collapsing synopsis chrome', async ({ page }) => {
+  const frame = page.frameLocator('iframe')
+  const prose = frame.locator('[data-writing-scene="first"] p').first()
+  await prose.click()
+  await page.keyboard.press('ControlOrMeta+Home')
+  await page.keyboard.type('Production typing persists.')
+  const before = await position(page)
+  expect(before.selection.focus.offset).toBe(27)
+  await page.locator('iframe').evaluate(element => {
+    const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
+    const chrome = live.document.createElement('div')
+    chrome.dataset.editorChrome = 'writing'
+    chrome.contentEditable = 'false'
+    const button = live.document.createElement('button')
+    button.type = 'button'
+    button.textContent = 'Synopsis'
+    button.addEventListener('click', () => {
+      const input = chrome.querySelector('textarea')
+      if (input) input.remove()
+      else chrome.append(live.document.createElement('textarea'))
+    })
+    chrome.append(button)
+    live.getWritingSceneRoot('first')!.before(chrome)
+  })
+  const synopsis = frame.getByRole('button', { name: 'Synopsis', exact: true })
+  await synopsis.click()
+  await frame.locator('textarea').fill('Synopsis typed before collapse.')
+  await synopsis.click()
+  for (const [scope, count] of [['scene', 1], ['manuscript', 4]] as const) {
+    await page.getByRole('button', { name: scope, exact: true }).click()
+    await expect(frame.locator('.writing-scene')).toHaveCount(count)
+    await expect.poll(async () => (await position(page)).selection).toEqual(before.selection)
+  }
+})

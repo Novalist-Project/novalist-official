@@ -254,6 +254,8 @@ test('synopsis chrome input and navigation preserve the prose bookmark through p
     w.getSelection().removeAllRanges()
     synopsis.dispatchEvent(event === 'keydown' ? new w.KeyboardEvent(event, { key: 'ArrowLeft', bubbles: true })
       : new w.Event(event, { bubbles: true }))
+    assert.equal(w.getWritingSelection(), null, 'chrome does not expose a live prose selection')
+    assert.deepEqual(JSON.parse(JSON.stringify(w.getWritingSelection(true))), selection, event)
     chrome.remove()
     w.getSelection().setBaseAndExtent(w.NovalistEditorState.editor, 0, w.NovalistEditorState.editor, 0)
     w.getWritingSelection()
@@ -263,10 +265,27 @@ test('synopsis chrome input and navigation preserve the prose bookmark through p
     assert.equal(w.captureWritingChanges().length, 0)
     const chosen = { anchor: point('s1', 1), focus: point('s1', 1) }
     w.restoreWritingSelection(chosen)
+    assert.deepEqual(JSON.parse(JSON.stringify(w.getWritingSelection(true))), chosen, 'explicit navigation replaces the chrome bookmark')
     w.setWritingProjection(scenes, null)
     assert.deepEqual(JSON.parse(JSON.stringify(w.getWritingSelection())), chosen, 'explicit prose navigation replaces the bookmark')
     w.close()
   }
+})
+
+test('a prose bookmark cannot cross writing contexts or pane runtimes', () => {
+  const oldPane = editor(), newPane = editor()
+  oldPane.setWritingProjection([scene('s1', '<p>First</p>')], null)
+  oldPane.restoreWritingSelection({ anchor: point('s1', 2), focus: point('s1', 2) })
+  const chrome = oldPane.document.createElement('textarea')
+  chrome.setAttribute('data-editor-chrome', '')
+  oldPane.NovalistEditorState.editor.prepend(chrome)
+  chrome.dispatchEvent(new oldPane.Event('pointerdown', { bubbles: true }))
+  assert.throws(() => oldPane.setWritingContext({ workspaceId: 'w', workspaceEpoch: 2, bookId: 'b', draftId: 'd' }, 'pane'),
+    /Writing context requires a new pane runtime/)
+  newPane.setWritingProjection([scene('s1', '<p>First</p>')], null)
+  assert.equal(newPane.getWritingSelection(true), null)
+  oldPane.close()
+  newPane.close()
 })
 
 test('visible scene refresh preserves hidden forward/reverse bookmarks until explicit navigation', () => {

@@ -299,6 +299,27 @@ npm install
 npm run dev
 ```
 
+### Desktop E2E checks
+
+The default Playwright suite includes the 100-scene local and shared writing checks.
+The exhaustive 500/1,000-scene traversals and 20-repeat flake checks are local PC
+stress tests; GitHub Actions does not run them.
+
+After building the debug backend and running `npm run build` in `app`, use:
+
+```bash
+cd app
+npm run test:e2e:stress -- --list
+npm run test:e2e:stress -- --project=writing-benchmarks
+npm run test:e2e:stress -- --project=flake-stress
+```
+
+Listing tests opens no windows. Executing Electron tests requires a dedicated
+desktop session or explicit permission to use the interactive desktop, with
+`NOVALIST_E2E_ALLOW_DESKTOP=1` set for that run. The stress command does not set it.
+
+### Packaging
+
 To produce distributable installers for the current platform:
 
 ```

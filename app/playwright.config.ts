@@ -15,6 +15,7 @@ process.env.NOVALIST_NO_CLIPBOARD = '1'
 export default defineConfig({
   testDir: './e2e',
   testIgnore: writingResearchSpecs,
+  grepInvert: /@local-stress/,
   globalSetup: require.resolve('./e2e/desktopSetup.ts'),
   timeout: 180_000,
   fullyParallel: false,

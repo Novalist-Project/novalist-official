@@ -2,7 +2,8 @@
 
 The default Playwright configuration runs shipped editor and application tests,
 including `writing-cross-scene-editing`, scopes, search, structure, planning,
-synopses, recovery, feature parity, and both production performance suites.
+synopses, recovery, feature parity, the shipped-runtime benchmark, and the
+100-scene local/shared application performance cases.
 Existing `editor-*` and collaboration tests remain in that suite.
 
 Fourteen architecture experiments use `fixtures/writingHarness.ts`, which rewrites
@@ -40,9 +41,16 @@ Keep both results distinct; the application matrix is the release acceptance gat
 Profiling and diagnostic runs are not timing acceptance evidence. See the plan
 and specification for the unchanged thresholds and fixture sizes.
 
-The shared 1,000-scene case has a 900-second execution budget; other cases retain
-600 seconds. The budget includes synthetic project creation, hosting/joining,
-typing with background work, and 5,000 sequential cross-pane navigation commands.
+The 100-scene cases use the default 180-second execution budget. Larger cases run
+only through the opt-in PC command `npm run test:e2e:stress -- --project=writing-benchmarks`.
+The same local configuration provides `--project=flake-stress` for 20 repetitions
+of the dictionary, shared-board, multi-window and backend-restart regressions.
+GitHub Actions runs those regressions once in its ordinary suite and does not
+run the local stress command. Use `--list` to inspect either project safely.
+
+The shared 1,000-scene case has a 900-second execution budget; the other larger
+cases retain 600 seconds. The budget includes synthetic project creation,
+hosting/joining, typing with background work, and up to 5,000 sequential cross-pane navigation commands.
 The earlier 600-second shared run completed four traversals with stable heap and
 typing p95 15.7 ms. A bounded diagnostic measured 13.7 ms average focus/reveal/next-
 frame time. The increased harness budget allows the full endurance workload to

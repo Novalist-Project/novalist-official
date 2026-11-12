@@ -153,7 +153,7 @@ export interface EditorWindow extends Window {
   setWritingContext(context: WritingContext, origin: string): void
   setWritingProjection(scenes: SceneSnapshot[], selection: WritingSelection | null): void
   captureWritingChanges(): WritingTransaction[]
-  getWritingSelection(): WritingSelection | null
+  getWritingSelection(retainChromeBookmark?: boolean): WritingSelection | null
   restoreWritingSelection(selection: WritingSelection | null): void
   revealWritingPoint(point: WritingPoint, viewportOffset?: number): void
   writingDomPoint(point: WritingPoint): { node: Node; offset: number } | null

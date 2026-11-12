@@ -136,7 +136,7 @@ export class WritingPaneController implements WritingFrameAdapter {
     const editor = this.editor, registry = this.registry
     const viewport = editor?.document.getElementById('editor-wrapper')?.getBoundingClientRect()
     if (!editor || !registry || !viewport) return null
-    let selection = editor.getWritingSelection()
+    let selection = editor.getWritingSelection(true)
     let ref = selection && this.references.get(selection.focus.sceneId)
     let bounds = ref && selection ? this.pointBounds(selection.focus) : null
     if (!ref || !bounds?.height || bounds.bottom <= viewport.top || bounds.top >= viewport.bottom) {

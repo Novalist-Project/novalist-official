@@ -130,7 +130,7 @@ test('caret navigation within a manuscript activates its new scene from the prev
   assert.deepEqual(f.errors, [])
 })
 
-function projectionFixture(selection) {
+function projectionFixture(selection, retainedSelection = selection) {
   const calls = [], errors = []
   const roots = new Map(['first', 'second'].map((id, index) => [id, { isConnected: true,
     getBoundingClientRect: () => ({ top: index ? 300 : -500, bottom: index ? 900 : -100 }) }]))
@@ -146,7 +146,8 @@ function projectionFixture(selection) {
         getBoundingClientRect: () => ({ top: point.top, bottom: point.top + 20, height: 20 }) } } },
     writingDomPoint: point => ({ node: { top: roots.get(point.sceneId).getBoundingClientRect().top + 20 + point.offset }, offset: 0 }),
     getWritingSceneRoot: id => roots.get(id),
-    captureWritingChanges: () => [], getWritingSelection: () => selection, writingServiceState: () => null,
+    captureWritingChanges: () => [], getWritingSelection: retainChromeBookmark => retainChromeBookmark ? retainedSelection : selection,
+    writingServiceState: () => null,
     setWritingProjection(next) { domProjection = next }, focusEditor: () => calls.push('focus'),
     revealWritingPoint: (point, viewportOffset) => calls.push({ reveal: point, ...(viewportOffset !== undefined ? { viewportOffset } : {}) }),
     restoreWritingSelection: range => calls.push({ selection: range }) })
@@ -184,6 +185,34 @@ test('a changed workspace discards pending Focus scene navigation', () => {
   f.controller.project([f.refs[1]])
   f.controller.message({ type: 'writingProjectionApplied' })
   assert.deepEqual(f.calls, [])
+})
+
+test('Focus scene replaces a chrome bookmark that belongs to another scene', () => {
+  const f = projectionFixture(null, { anchor: { sceneId: 'first', offset: 12 }, focus: { sceneId: 'first', offset: 12 } })
+  f.controller.focusScene(f.refs[1])
+  f.controller.project([f.refs[1]])
+  f.controller.message({ type: 'writingProjectionApplied' })
+  assert.deepEqual(f.calls[1], { reveal: { sceneId: 'second', offset: 0, affinity: 'after' } })
+  assert.deepEqual(f.calls[2].selection.anchor, f.calls[2].selection.focus)
+})
+
+test('a changed workspace discards a retained chrome caret awaiting scope projection', () => {
+  const f = projectionFixture(null, { anchor: { sceneId: 'second', offset: 12 }, focus: { sceneId: 'second', offset: 12 } })
+  assert.deepEqual(f.controller.retainScopePosition(), f.refs[1])
+  f.controller.restoreScopePosition([f.refs[1]])
+  f.controller.registry = { context: { workspaceEpoch: 2 } }
+  f.controller.project([f.refs[1]])
+  f.controller.message({ type: 'writingProjectionApplied' })
+  assert.deepEqual(f.calls, [])
+})
+
+test('scope change rejects a retained chrome bookmark outside the current document', () => {
+  const f = projectionFixture(null, { anchor: { sceneId: 'removed', offset: 12 }, focus: { sceneId: 'removed', offset: 12 } })
+  assert.deepEqual(f.controller.retainScopePosition(), f.refs[1])
+  f.controller.restoreScopePosition([f.refs[1]])
+  f.controller.project([f.refs[1]])
+  f.controller.message({ type: 'writingProjectionApplied' })
+  assert.deepEqual(f.calls[1], { reveal: { sceneId: 'second', offset: 0, affinity: 'after' }, viewportOffset: 220 })
 })
 
 test('a newer scope choice cancels a deferred Focus scene request', () => {

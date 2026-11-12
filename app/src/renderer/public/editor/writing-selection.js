@@ -79,14 +79,15 @@ function writingPointFromDom(node, offset, affinity = 'after') {
     return { sceneId: root.dataset.writingScene, offset: Math.max(0, length), affinity };
 }
 
-function getWritingSelection() {
+function getWritingSelection(retainChromeBookmark = false) {
+    const state = window.NovalistWritingDocument;
+    if (retainChromeBookmark && state?.enabled && state.chromeSelection) return state.selection || null;
     const selection = window.getSelection();
     if (!selection?.rangeCount) return null;
     const anchor = writingPointFromDom(selection.anchorNode, selection.anchorOffset);
     const focus = writingPointFromDom(selection.focusNode, selection.focusOffset);
     if (!anchor || !focus) return null;
     const result = { anchor, focus };
-    const state = window.NovalistWritingDocument;
     if (state && !state.updating && !state.chromeSelection && JSON.stringify(result) !== JSON.stringify(state.projectedSelection)) {
         state.selection = result;
         state.projectedSelection = null;

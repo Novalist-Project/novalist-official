@@ -119,9 +119,21 @@ test('deleting text between concurrent paragraph splits retains the empty paragr
   })
   await page.keyboard.press('Backspace')
   await exchange(page, other)
-  await expect(other.locator('#editor p')).toHaveCount(3)
-  await expect(other.locator('#editor p').nth(1)).toHaveText('')
-  expect(await other.locator('#editor').innerHTML()).toBe(await page.locator('#editor').innerHTML())
+  const local = new Y.Doc()
+  const remote = new Y.Doc()
+  try {
+    for (const [writer, document] of [[page, local], [other, remote]] as const) {
+      await expect(writer.locator('#editor p')).toHaveCount(3)
+      await expect(writer.locator('#editor p').nth(1)).toHaveText('')
+      expect(await writer.evaluate(() => (window as unknown as EditorWindow).getContent()))
+        .toBe('<p>The </p><p><br></p><p> ends.</p>')
+      Y.applyUpdate(document, new Uint8Array(await writer.evaluate(() => window.collaboration.state())))
+    }
+    expect(remote.getText('prose').toDelta()).toEqual(local.getText('prose').toDelta())
+  } finally {
+    local.destroy()
+    remote.destroy()
+  }
 })
 
 test('concurrent typing merges in the existing editor and preserves the local caret', async ({ page, context }) => {

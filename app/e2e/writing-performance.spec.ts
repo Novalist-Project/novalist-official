@@ -8,8 +8,9 @@ import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge
 import { createApplicationPeer } from './fixtures/writingApplicationPeer'
 
 for (const shared of [false, true]) for (const sceneCount of [100, 500, 1000]) {
-  test(`integrated ${shared ? 'shared' : 'local'} writing ${sceneCount} scenes with two panes and background work`, async ({}, testInfo) => {
-    test.setTimeout(shared && sceneCount === 1000 ? 900_000 : 600_000)
+  test(`integrated ${shared ? 'shared' : 'local'} writing ${sceneCount} scenes with two panes and background work`,
+    { tag: sceneCount > 100 ? '@local-stress' : [] }, async ({}, testInfo) => {
+    if (sceneCount > 100) test.setTimeout(shared && sceneCount === 1000 ? 900_000 : 600_000)
     const h = await launchApp('nl-writing-acceptance-')
     let peer: Awaited<ReturnType<typeof createApplicationPeer>> | undefined
     let profiler: CDPSession | null = null
