@@ -24,6 +24,9 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
     internal Uri Address => new(app.Urls.Single());
     internal string? Reject { get; set; }
     internal TaskCompletionSource? Connecting { get; set; }
+    internal bool KeyBoundEnrollment { get; set; }
+    internal bool RejectRegistration { get; set; }
+    internal List<Registration> Registrations { get; } = [];
 
     private PersistentSessionServer(Uri authority)
     {
@@ -33,7 +36,7 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
         builder.Services.AddSingleton(this);
         builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 4 * 1024 * 1024).AddMessagePackProtocol();
         app = builder.Build();
-        app.MapGet("/client-configuration", () => new { protocolVersion = 1, authority = authority.AbsoluteUri, clientId = "novalist", scope = "openid profile sync offline_access" });
+        app.MapGet("/client-configuration", () => new { protocolVersion = 1, authority = authority.AbsoluteUri, clientId = "novalist", scope = "openid profile sync offline_access", keyBoundEnrollment = KeyBoundEnrollment });
         app.MapGet("/devices/registration", async (HttpContext context) =>
         {
             if (Connecting is { } entered) { entered.TrySetResult(); await Task.Delay(Timeout.Infinite, context.RequestAborted); }
@@ -41,7 +44,12 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
         });
         app.MapPut("/devices/verified", (HttpContext context, Registration registration) =>
         {
-            lock (gate) devices[registration.Keys.DeviceId] = Account(context);
+            if (RejectRegistration) return Results.StatusCode(StatusCodes.Status403Forbidden);
+            lock (gate)
+            {
+                devices[registration.Keys.DeviceId] = Account(context);
+                Registrations.Add(registration);
+            }
             return Results.Ok();
         });
         app.MapPost("/devices/enrollment", () => new { id = Guid.NewGuid(), nonce = Guid.NewGuid().ToString("N"), expiresAt = DateTimeOffset.UtcNow.AddMinutes(5) });
@@ -66,7 +74,9 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
     }
 
     internal sealed record PublicKeys(Guid DeviceId, byte[] SigningPublicKey, byte[] ReceivingPublicKey);
-    internal sealed record Registration(PublicKeys Keys, byte[] Signature);
+    internal sealed record EnrollmentProof(Guid ChallengeId, string IdentityToken, byte[]? Salt);
+    internal sealed record RecoveryRegistration(PublicKeys Keys);
+    internal sealed record Registration(PublicKeys Keys, byte[] Signature, RecoveryRegistration? RecoveryDevice, EnrollmentProof? EnrollmentProof);
     public async ValueTask DisposeAsync() => await app.DisposeAsync();
 
     public sealed partial class SessionHub(PersistentSessionServer server) : Hub

@@ -4,7 +4,7 @@ using StreamJsonRpc;
 
 namespace Novalist.Backend.Rpc;
 
-public sealed record HostedAccountDto(string Subject, string DisplayName);
+public sealed record HostedAccountDto(string Subject, string DisplayName, bool DeviceRegistered);
 
 public sealed class HostedAccountRpc : IAsyncDisposable
 {
@@ -30,7 +30,7 @@ public sealed class HostedAccountRpc : IAsyncDisposable
             if (signIn is not null) throw new InvalidOperationException("A sign-in is already in progress.");
             signIn = operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         }
-        try { return View(await accounts.SignInAsync(server, openBrowser, operation.Token)); }
+        try { return await ViewAsync(server, await accounts.SignInAsync(server, openBrowser, operation.Token), operation.Token); }
         finally
         {
             lock (gate) { signIn = null; operation.Dispose(); }
@@ -62,7 +62,7 @@ public sealed class HostedAccountRpc : IAsyncDisposable
         try
         {
             if (!isSharing(server)) _ = await account.GetAccessTokenAsync(cancellationToken);
-            return View(account);
+            return await ViewAsync(server, account, cancellationToken);
         }
         catch (UnauthorizedAccessException)
         {
@@ -81,7 +81,8 @@ public sealed class HostedAccountRpc : IAsyncDisposable
     [JsonRpcMethod("collaboration/account/cancel")]
     public void Cancel() { lock (gate) signIn?.Cancel(); }
 
-    private static HostedAccountDto View(HostedAccount account) => new(account.Subject, account.DisplayName);
+    private async Task<HostedAccountDto> ViewAsync(Uri server, HostedAccount account, CancellationToken ct) =>
+        new(account.Subject, account.DisplayName, await accounts.IsDeviceRegisteredAsync(server, account, ct));
 
     public async ValueTask DisposeAsync()
     {

@@ -28,7 +28,7 @@
     "persistentInvitationHint": "Keep this link private: it contains the project keys. The owner does not need to remain online.",
     "persistentRequiresAccount": "Persistent hosting requires a server with account sign-in and verified devices.",
     "enrollDevice": "Register this device",
-    "enrollHint": "Before using persistent hosting on a new device, register it through your browser with fresh multi-factor authentication. Its recovery identity stays in this app's secure credential store.",
+    "enrollHint": "This device is not registered yet. Signing in usually registers it; if it did not, register it through your browser with fresh multi-factor authentication before sharing or joining persistent projects. Its recovery identity stays in this app's secure credential store.",
     "deviceEnrolled": "Device registered. You can now share or join persistent projects.",
     "modeTcp": "Direct connection (TCP)",
     "modeSteam": "Steam",

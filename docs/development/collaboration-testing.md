@@ -41,9 +41,9 @@ supports Windows, Linux and macOS.
 Wait until the server terminal prints `Local test server: http://127.0.0.1:42672`.
 In each app, open **Collaborate** and choose **Persistent server** with that URL.
 
-- Owner: open a test copy of a project. Sign in as **Morgan**, then use
-  **Register this device** and select **Morgan** again in the browser.
-- Guest: sign in as **Alex**, register that device, and select **Alex** again.
+- Owner: open a test copy of a project and sign in as **Morgan**. The first
+  sign-in also registers the device; **Account details** shows it as registered.
+- Guest: sign in as **Alex**; that sign-in registers the guest device.
 - Owner: share the project and create an invitation. End the owner's session to
   test owner-offline availability.
 - Guest: paste the invitation, choose a new folder and join. Edit the project,
@@ -213,7 +213,7 @@ lifecycle and recovery using an in-process server seam.
 
 For isolated desktop acceptance, configure a persistent server with HTTPS, OIDC,
 native-client sign-in, fresh MFA enrollment, and PostgreSQL. Select **Persistent
-server** in both apps and register both devices. Upload a populated project,
+server** in both apps and sign in on both; each first sign-in registers its device. Upload a populated project,
 create an invitation, close the owner's session, and join from the other app
 into a new folder. Edit and disconnect, reconnect the owner to catch up, and test
 removal of a third member while another writer has queued prose. Confirm failed

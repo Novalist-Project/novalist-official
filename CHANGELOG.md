@@ -23,7 +23,7 @@ could encounter in a previously released version.
 
 ### Added
 
-- **Persistent project hosting** — choose Persistent server alongside relay and direct sessions to store encrypted projects and changes on your server. Register devices through browser sign-in with fresh multi-factor authentication, invite writers who can join while the owner is offline, and reconnect retained local copies to catch up. Local differences remain recoverable. Owners can remove writers with encryption-key renewal or delete the server copy. Edits are grouped before saving and any connected writer compacts old server history automatically, without new keys or interrupting others.
+- **Persistent project hosting** — choose Persistent server alongside relay and direct sessions to store encrypted projects and changes on your server. The first sign-in on a device registers it in the same browser visit with fresh multi-factor authentication, invite writers who can join while the owner is offline, and reconnect retained local copies to catch up. Local differences remain recoverable. Owners can remove writers with encryption-key renewal or delete the server copy. Edits are grouped before saving and any connected writer compacts old server history automatically, without new keys or interrupting others.
 
 ### Fixed
 

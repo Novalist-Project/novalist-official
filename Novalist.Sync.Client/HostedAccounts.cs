@@ -9,7 +9,7 @@ public interface ICollaborationCredentials
     Task RemoveAsync(string key, CancellationToken ct);
 }
 
-public sealed class HostedAccounts : IAsyncDisposable
+public sealed partial class HostedAccounts : IAsyncDisposable
 {
     private readonly ICollaborationCredentials credentials;
     private readonly SemaphoreSlim gate = new(1, 1);
@@ -34,9 +34,11 @@ public sealed class HostedAccounts : IAsyncDisposable
         try
         {
             if (accounts.ContainsKey(key)) throw new InvalidOperationException("Sign out of this server before signing in again.");
-            var settings = await HostedSignIn.DiscoverAsync(server, ct);
-            var account = browser is null ? await HostedSignIn.SignInAsync(settings, openBrowser, ct)
-                : await HostedSignIn.SignInAsync(settings, browser, ct);
+            var configuration = await RelayServerDiscovery.DiscoverAsync(server, ct);
+            var settings = configuration.SignIn ?? throw new InvalidOperationException("This server does not require sign-in.");
+            var account = configuration.KeyBoundEnrollment && !await HasRegisteredDeviceAsync(server, ct)
+                ? await SignInAndRegisterAsync(server, settings, openBrowser, ct)
+                : browser is null ? await HostedSignIn.SignInAsync(settings, openBrowser, ct) : await HostedSignIn.SignInAsync(settings, browser, ct);
             try
             {
                 await account.RememberAsync(credentials, key, ct);
@@ -94,7 +96,7 @@ public sealed class HostedAccounts : IAsyncDisposable
         var account = await RestoreAsync(server, ct) ?? throw new InvalidOperationException("Sign in before registering this device.");
         var devices = new DeviceIdentityStore(credentials);
         using var device = await devices.GetOrCreateAsync(account.Authority, account.Subject, ct);
-        var key = "recovery-device:" + JsonSerializer.Serialize(new[] { account.Authority.AbsoluteUri.TrimEnd('/'), account.Subject });
+        var key = RecoveryKey(account);
         var saved = await credentials.ReadAsync(key, ct);
         var recoveryKey = saved is null ? System.Security.Cryptography.RandomNumberGenerator.GetBytes(32) : Convert.FromBase64String(saved);
         try
@@ -103,6 +105,7 @@ public sealed class HostedAccounts : IAsyncDisposable
             using var recovery = RecoveryDeviceIdentity.Derive(recoveryKey);
             if (browser is null) await HostedDeviceEnrollment.EnrollAsync(server, device, recovery, account, openBrowser, ct);
             else await HostedDeviceEnrollment.EnrollAsync(server, device, recovery, account, browser, ct);
+            await MarkRegisteredAsync(server, account, ct);
         }
         finally { System.Security.Cryptography.CryptographicOperations.ZeroMemory(recoveryKey); }
     }

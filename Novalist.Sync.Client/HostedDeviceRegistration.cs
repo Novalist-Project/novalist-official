@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.IdentityModel.Tokens;
 using NSec.Cryptography;
 
 namespace Novalist.Sync.Client;
@@ -35,6 +36,20 @@ internal sealed class HostedDeviceRegistration(Uri server, DeviceIdentity device
         var identityToken = await authenticate(challenge.Nonce, ct);
         await SendAsync(http, await getToken(ct), registration with { EnrollmentProof = new(challenge.Id, identityToken) }, ct);
     }
+
+    public async Task EnrollKeyBoundAsync(HttpClient http, string token, DeviceIdentity recovery, string identityToken, byte[] salt,
+        CancellationToken ct)
+    {
+        var user = await DiscoverAsync(http, token, Guid.Empty, ct);
+        await SendAsync(http, token, CreateRegistration(user, null, recovery) with { EnrollmentProof = new(Guid.Empty, identityToken, salt) }, ct);
+    }
+
+    // Must match the server's DeviceProof.EnrollmentNonce byte for byte.
+    public string EnrollmentNonce(DeviceIdentity recovery, byte[] salt) => Base64UrlEncoder.Encode(SHA256.HashData(
+        [.. "novalist/v1/device-enrollment"u8, .. EncodeServerUrl(server), .. EncodeKeys(ExportKeys(device)), .. EncodeKeys(ExportKeys(recovery)), .. salt]));
+
+    private static byte[] EncodeKeys(PublicKeys keys) =>
+        [.. keys.DeviceId.ToByteArray(bigEndian: true), .. keys.SigningPublicKey, .. keys.ReceivingPublicKey];
 
     private Registration CreateRegistration(Guid user, DeviceIdentity? linkedBy, DeviceIdentity? recovery)
     {
@@ -99,5 +114,5 @@ internal sealed class HostedDeviceRegistration(Uri server, DeviceIdentity device
     private sealed record Registration(PublicKeys Keys, byte[] Signature, Guid? LinkedByDeviceId, byte[]? LinkingSignature,
         RecoveryRegistration? RecoveryDevice, EnrollmentProof? EnrollmentProof = null);
     private sealed record EnrollmentChallenge(Guid Id, string Nonce, DateTimeOffset ExpiresAt);
-    private sealed record EnrollmentProof(Guid ChallengeId, string IdentityToken);
+    private sealed record EnrollmentProof(Guid ChallengeId, string IdentityToken, byte[]? Salt = null);
 }

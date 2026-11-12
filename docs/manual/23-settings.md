@@ -59,11 +59,15 @@ native-client configuration. See the server's
 [self-hosting guide](https://github.com/QF0xB/novalist-sync-server/blob/main/docs/self-hosting.md).
 A relay-only deployment cannot store persistent projects.
 
-Enter its base URL, sign in, then expand **Account details** and choose
-**Register this device** before the first persistent connection on this device.
-Registration opens the browser for fresh multi-factor authentication. Keep your
-app's secure credential store: it holds device keys, project keys and the recovery
-identity. Signing in on another computer does not transfer those project keys.
+Enter its base URL and sign in. The first sign-in on a device asks for fresh
+multi-factor authentication in the browser and registers the device in the same
+step; **Account details** then shows that the device is registered. Later
+sign-ins on that device do not force multi-factor authentication again. If
+registration did not complete (for example, the server is older, or this device
+already had keys for the account), **Account details** offers
+**Register this device**, which opens the browser for fresh multi-factor
+authentication once more. Keep your app's secure credential store: it holds
+device keys, project keys and the recovery identity. Signing in on another computer does not transfer those project keys.
 
 Choose **Share** to upload an encrypted checkpoint of the open project, then
 **Create invitation**. The private, single-use link contains project keys and

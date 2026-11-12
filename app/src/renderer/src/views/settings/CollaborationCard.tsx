@@ -79,11 +79,10 @@ export function CollaborationCard(): React.JSX.Element {
           onChange={event => { setName(event.target.value); localStorage.setItem('novalist.collaboration.name', event.target.value) }} />
       </> : account.account ? <details open={persistent}><summary tabIndex={0}>{t('collaboration.accountDetails')}</summary>
         <p className="settings-hint">{t('collaboration.nameHint')}</p>
-        {persistent && <>
+        {persistent && (account.account.deviceRegistered ? <p role="status">{t('collaboration.deviceEnrolled')}</p> : <>
           <p className="settings-hint">{t('collaboration.enrollHint')}</p>
           <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.enrollDevice()}>{t('collaboration.enrollDevice')}</button>
-          {account.enrolled && <p role="status">{t('collaboration.deviceEnrolled')}</p>}
-        </>}
+        </>)}
         <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.signOut()}>{t('collaboration.signOut')}</button>
       </details> : account.configuration ? <div className="settings-button-row">
         <button className="dialog-button primary" disabled={account.busy !== null || sharing || !account.server.trim()}

@@ -10,7 +10,9 @@ The two modes share the existing editor, encrypted session model, field leases,
 presence and local project copies. They use separate desktop entry points and
 saved connection records so a relay project cannot silently switch to server
 storage. Persistent hosting requires account sign-in and verified device
-enrollment with fresh MFA. Project keys and recovery identities stay in the
+enrollment with fresh MFA. On servers that accept key-bound proofs, the first
+sign-in on a device enrolls it in the same browser visit: the client creates its
+identities first and derives the sign-in nonce from their public keys. Project keys and recovery identities stay in the
 client's secure credential store. Membership removal rotates the encryption
 epoch against a server-reserved history boundary before publishing a new
 checkpoint. Compaction reuses that boundary without a key change, so any writer

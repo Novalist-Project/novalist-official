@@ -39,9 +39,10 @@ public sealed partial class DesktopSharingTests
             await project.WriteSceneContentAsync(chapter, scene, "<p>Original writing.</p>");
             await using var owner = new DesktopParticipant(Path.Combine(folder, "owner-settings"), issuer);
             await owner.Rpc.InvokeWithParameterObjectAsync("project/open", new { path = project.ProjectRoot }, ct);
-            await owner.Rpc.InvokeWithParameterObjectAsync("collaboration/account/signIn", new { server = server.Address }, ct);
-            await owner.Rpc.InvokeWithParameterObjectAsync("collaboration/account/enrollDevice", new { server = server.Address }, ct);
+            var ownerAccount = await owner.Rpc.InvokeWithParameterObjectAsync<HostedAccountDto>("collaboration/account/signIn", new { server = server.Address }, ct);
+            Assert.True(ownerAccount.DeviceRegistered);
             Assert.Equal("0", issuer.RequestedMaxAge);
+            Assert.Equal(1, issuer.Authorizations);
             var hosted = await owner.Rpc.InvokeWithParameterObjectAsync<HostedSessionDto>("collaboration/persistent/create", new { server = server.Address }, ct);
             Assert.Equal("persistent", hosted.Mode);
             var ownerRead = await owner.Rpc.InvokeWithParameterObjectAsync<SceneContentDto>("scenes/read", new { chapterGuid = chapter.Guid, sceneId = scene.Id }, ct);
@@ -53,8 +54,8 @@ public sealed partial class DesktopSharingTests
 
             issuer.Subject = "guest";
             await using var guest = new DesktopParticipant(Path.Combine(folder, "guest-settings"), issuer);
-            await guest.Rpc.InvokeWithParameterObjectAsync("collaboration/account/signIn", new { server = server.Address }, ct);
-            await guest.Rpc.InvokeWithParameterObjectAsync("collaboration/account/enrollDevice", new { server = server.Address }, ct);
+            Assert.True((await guest.Rpc.InvokeWithParameterObjectAsync<HostedAccountDto>("collaboration/account/signIn", new { server = server.Address }, ct)).DeviceRegistered);
+            Assert.Equal(2, issuer.Authorizations);
             var destination = Path.Combine(folder, "Joined novel");
             var joined = await guest.Rpc.InvokeWithParameterObjectAsync<HostedSessionDto>("collaboration/persistent/join", new { server = server.Address, link, destination }, ct);
             var read = await guest.Rpc.InvokeWithParameterObjectAsync<SceneContentDto>("scenes/read", new { chapterGuid = chapter.Guid, sceneId = scene.Id }, ct);

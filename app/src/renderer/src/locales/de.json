@@ -28,7 +28,7 @@
     "persistentInvitationHint": "Halte diesen Link geheim: Er enthält die Projektschlüssel. Der Eigentümer muss nicht online bleiben.",
     "persistentRequiresAccount": "Persistentes Hosting erfordert einen Server mit Kontoanmeldung und verifizierten Geräten.",
     "enrollDevice": "Dieses Gerät registrieren",
-    "enrollHint": "Registriere ein neues Gerät vor der ersten Nutzung des persistenten Hostings im Browser mit frischer Mehrfaktor-Authentifizierung. Die Wiederherstellungsidentität bleibt im sicheren Anmeldedatenspeicher dieser App.",
+    "enrollHint": "Dieses Gerät ist noch nicht registriert. Normalerweise registriert die Anmeldung es; falls nicht, registriere es im Browser mit frischer Mehrfaktor-Authentifizierung, bevor du persistente Projekte teilst oder ihnen beitrittst. Die Wiederherstellungsidentität bleibt im sicheren Anmeldedatenspeicher dieser App.",
     "deviceEnrolled": "Gerät registriert. Du kannst jetzt persistente Projekte teilen oder ihnen beitreten.",
     "modeTcp": "Direkte Verbindung (TCP)",
     "modeSteam": "Steam",

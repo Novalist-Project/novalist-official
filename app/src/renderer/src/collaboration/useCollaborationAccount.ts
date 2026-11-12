@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { rpc } from '../rpc/client'
 import { useHostedSessionStore } from './hostedSessionStore'
 
-interface Account { subject: string; displayName: string }
+interface Account { subject: string; displayName: string; deviceRegistered: boolean }
 interface Configuration { authenticationRequired: boolean }
 const preference = 'novalist.collaboration.server'
 
@@ -12,7 +12,6 @@ export function useCollaborationAccount(enabled: boolean) {
   const [configuration, setConfiguration] = useState<Configuration | null>(null)
   const [busy, setBusy] = useState<'checking' | 'connecting' | 'signIn' | 'signOut' | null>(null)
   const [error, setError] = useState('')
-  const [enrolled, setEnrolled] = useState(false)
   const [retry, setRetry] = useState(0)
   const generation = useRef(0)
   const active = useRef(false)
@@ -44,7 +43,7 @@ export function useCollaborationAccount(enabled: boolean) {
     if (active.current) return false
     active.current = true
     generation.current++
-    setError(''); setBusy('connecting'); setEnrolled(false)
+    setError(''); setBusy('connecting')
     try {
       const policy = await rpc.request<Configuration>('collaboration/account/configuration', [address])
       setConfiguration(policy)
@@ -68,20 +67,23 @@ export function useCollaborationAccount(enabled: boolean) {
     setError(''); setBusy('signOut')
     try {
       await rpc.request('collaboration/account/signOut', [server.trim()])
-      setAccount(null); setEnrolled(false)
+      setAccount(null)
     } catch (reason) { setError(String(reason)) }
     finally { setBusy(null) }
   }
   const changeServer = (value: string): void => {
     generation.current++
-    setServer(value); setAccount(null); setConfiguration(null); setError(''); setBusy(null); setEnrolled(false)
+    setServer(value); setAccount(null); setConfiguration(null); setError(''); setBusy(null)
   }
   const enrollDevice = async (): Promise<void> => {
     if (active.current) return
     active.current = true
     generation.current++
-    setError(''); setEnrolled(false); setBusy('signIn')
-    try { await rpc.request('collaboration/account/enrollDevice', [server.trim()]); setEnrolled(true) }
+    setError(''); setBusy('signIn')
+    try {
+      await rpc.request('collaboration/account/enrollDevice', [server.trim()])
+      setAccount(current => current && { ...current, deviceRegistered: true })
+    }
     catch (reason) { setError(String(reason)) }
     finally { active.current = false; setBusy(null) }
   }
@@ -89,5 +91,5 @@ export function useCollaborationAccount(enabled: boolean) {
     try { await rpc.request('collaboration/account/cancel') }
     catch (reason) { setError(String(reason)) }
   }
-  return { server, account, configuration, busy, error, enrolled, enrollDevice, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
+  return { server, account, configuration, busy, error, enrollDevice, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
 }

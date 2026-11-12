@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 
 namespace Novalist.Sync.Client;
 
-public sealed record RelayServerConfiguration(bool AuthenticationRequired, HostedSignInOptions? SignIn);
+public sealed record RelayServerConfiguration(bool AuthenticationRequired, HostedSignInOptions? SignIn, bool KeyBoundEnrollment = false);
 
 public static class RelayServerDiscovery
 {
@@ -26,9 +26,9 @@ public static class RelayServerDiscovery
             throw new InvalidDataException("The server returned an incomplete sign-in configuration.");
         var settings = new HostedSignInOptions(configuration.Authority, configuration.ClientId, configuration.Scope);
         HostedSignIn.Validate(settings);
-        return new(true, settings);
+        return new(true, settings, configuration.KeyBoundEnrollment is true);
     }
 
     private sealed record NativeConfiguration(byte ProtocolVersion, Uri? Authority, string? ClientId, string? Scope,
-        bool? AuthenticationRequired);
+        bool? AuthenticationRequired, bool? KeyBoundEnrollment);
 }
