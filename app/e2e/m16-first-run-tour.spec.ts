@@ -70,6 +70,15 @@ test('the tour offers itself once and walks through real views', async () => {
   // empty editor or pretending Focus Peek can be demonstrated without a scene.
   await page.getByRole('button', { name: 'Next' }).click()
   await expect(page.locator('.tour-task')).toContainText('Open a scene from the binder first')
+
+  // The writing view asks the tour's one question: one scene, the chapter, or
+  // the whole manuscript. The answer is the editor setting itself.
+  await expect(page.locator('.tour-question')).toContainText('How do you want to write?')
+  // The radio follows the saved setting, so it turns on once the backend has answered.
+  await page.getByRole('radio', { name: /^Chapter/ }).click()
+  await expect
+    .poll(() => page.evaluate(() => window.novalistStores.settings.getState().view?.effective.editorScope))
+    .toBe('chapter')
   await expect
     .poll(() => page.evaluate(() => window.novalistStores.shell.getState().mainView))
     .toBe('manuscript')

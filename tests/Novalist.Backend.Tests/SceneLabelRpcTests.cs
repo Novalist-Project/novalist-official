@@ -68,6 +68,7 @@ public sealed class SceneLabelRpcTests : IDisposable
 
         var scene = result.State.Chapters.Single().Scenes.Single();
         Assert.Equal("#ff0000", scene.LabelColor);
+        Assert.Equal("beta", scene.LabelKey);
     }
 
     [Fact]
@@ -91,6 +92,7 @@ public sealed class SceneLabelRpcTests : IDisposable
         var result = await _rpc.SetSceneLabelAsync(_scene, null);
 
         Assert.Null(result.State.Chapters.Single().Scenes.Single().LabelColor);
+        Assert.Null(result.State.Chapters.Single().Scenes.Single().LabelKey);
     }
 
     [Fact]

@@ -1,6 +1,6 @@
 import { rpc } from '../rpc/client'
 import { paneLeaves, useShellStore } from './shellStore'
-import { EMPTY_EDITOR, editorPane, mirror, mapEditors, patchEditor, writePaneIds, targetEditorPane } from './projectStore'
+import { EMPTY_EDITOR, editorPane, mirror, mapEditors, patchEditor, writePaneIds, targetEditorPane, useProjectStore } from './projectStore'
 import { autosaveTimers, autosaveWrites, flushEditor, stripHtml, scheduleSave } from './projectPersistence'
 import { runSceneContext } from './projectSceneActions'
 import { type ProjectSlice } from './projectTypes'
@@ -9,6 +9,8 @@ import { enqueueSceneWrite } from './sceneWriteQueue'
 import { retainMobileSceneRecovery } from '../mobile/recovery'
 import { cancelBackgroundReads } from '../rpc/backgroundReads'
 import type { SharedSceneIdentity } from '../../../shared/sharedScene'
+import { hostPaneId, stackedPaneId, stackMembers } from './stackedPaneIds'
+import { activateEditorPane, currentEditorScope, useStackedEditorStore } from './stackedEditors'
 
 export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn' | 'openSceneInSplit' | 'resolveSceneConflict' | 'dismissSceneConflict' | 'closeTab' | 'moveTabToOtherPane' | 'onEditorContentChanged' | 'syncEditorPanes' | 'flushPane' | 'flushPendingSave' | 'applyManuscriptSceneWrite'> = (set, get) => ({
   openScene: async (chapterGuid, sceneId) => {
@@ -26,6 +28,9 @@ export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn
       shell.guardLeave(() => void get().openSceneIn(paneId, chapterGuid, sceneId))
       return
     }
+    // A scene already in this pane's stack is scrolled to rather than opened:
+    // loading it into the pane's own editor would hold it twice.
+    if (revealInStack(paneId, sceneId)) return
     // The pane holds the editor from here on, and it is the one the writer is
     // now in: opening a scene somewhere the caret is not is how the old split
     // pane lost people.
@@ -192,12 +197,13 @@ export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn
     // two different things, and treating them as one is how a trip to the
     // Timeline closed the scene the writer was in. Only the first forgets an
     // editor; the second is a writer looking at their outline for a moment.
+    // Stacked scene editors live and die with the pane holding their stack.
     const leaves = paneLeaves(shell.panes)
     const present = leaves.map((leaf) => leaf.id)
     const showingEditor = leaves.filter((leaf) => leaf.view === 'write').map((leaf) => leaf.id)
     const s = get()
     let editors = s.editors
-    const stale = Object.keys(editors).filter((id) => !present.includes(id))
+    const stale = Object.keys(editors).filter((id) => !present.includes(hostPaneId(id)))
     if (stale.length > 0) {
       editors = { ...editors }
       for (const id of stale) {
@@ -214,18 +220,22 @@ export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn
     // finish the pending save, so it is written out now rather than left to a
     // timer nobody can see. The scene stays open behind it either way.
     for (const id of Object.keys(editors)) {
-      if (!showingEditor.includes(id)) void get().flushPane(id)
+      if (!showingEditor.includes(hostPaneId(id))) void get().flushPane(id)
     }
 
     // The shell follows the pane the writer is in when that pane is an editor,
     // and otherwise stays on the editor they were last in - which, while every
     // pane is showing something else, is what the inspector and the status bar
     // go on describing.
-    const active = showingEditor.includes(shell.activePaneId)
+    const host = showingEditor.includes(shell.activePaneId)
       ? shell.activePaneId
-      : s.activeEditorPaneId && present.includes(s.activeEditorPaneId)
-        ? s.activeEditorPaneId
+      : s.activeEditorPaneId && present.includes(hostPaneId(s.activeEditorPaneId))
+        ? hostPaneId(s.activeEditorPaneId)
         : (showingEditor[0] ?? null)
+    // Inside a stack the shell follows the scene with the caret, not the pane.
+    const active = host && s.activeEditorPaneId && hostPaneId(s.activeEditorPaneId) === host && editors[s.activeEditorPaneId]
+      ? s.activeEditorPaneId
+      : host
     if (editors === s.editors && active === s.activeEditorPaneId) return
     set({ editors, activeEditorPaneId: active, ...mirror(editors, active) })
   },
@@ -293,3 +303,23 @@ export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn
     })
   }
 })
+
+/**
+ * Scrolls a pane's stack to a scene it already holds and gives that scene the
+ * caret. False when the pane edits one scene at a time or the scene is not in
+ * its stack, so the caller opens it the ordinary way.
+ */
+function revealInStack(paneId: string, sceneId: string): boolean {
+  const scope = currentEditorScope()
+  if (scope === 'scene') return false
+  const state = useProjectStore.getState()
+  const host = state.editors[paneId]
+  if (!host?.sceneId) return false
+  const member = stackMembers(state.chapters, scope, paneId, host).find((entry) => entry.sceneId === sceneId)
+  if (!member) return false
+  useShellStore.getState().setPaneView(paneId, 'write')
+  useStackedEditorStore.getState().revealScene(sceneId)
+  const loaded = member.paneId === paneId || state.editors[stackedPaneId(paneId, sceneId)]?.sceneId === sceneId
+  if (loaded) activateEditorPane(member.paneId)
+  return true
+}

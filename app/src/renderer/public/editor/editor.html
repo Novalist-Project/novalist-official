@@ -121,6 +121,13 @@ body { display: flex; justify-content: center; }
     overflow-wrap: break-word;
     white-space: pre-wrap;
 }
+/* Chapter and manuscript scopes: the host scrolls a stack of these frames, so
+   each one is as tall as its prose instead of scrolling inside itself. */
+html.nv-stacked,
+html.nv-stacked body { height: auto; overflow: hidden; }
+html.nv-stacked body { align-items: flex-start; }
+html.nv-stacked #editor-wrapper { height: auto; overflow: visible; }
+html.nv-stacked #editor { min-height: 6em; padding-block: var(--nl-space-lg); }
 #editor:empty::before {
     content: '';
     display: block;
@@ -882,6 +889,7 @@ body.proofing-status-hosted #grammar-status-bar { display: none; }
 <script src="inline-action-state.js"></script>
 <script src="dictation-bridge.js"></script>
 <script src="writing-zoom.js"></script>
+<script src="stacked-layout.js"></script>
 <script src="editor-ready.js"></script>
 </body>
 </html>

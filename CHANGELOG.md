@@ -21,6 +21,10 @@ could encounter in a previously released version.
 
 ## [Unreleased]
 
+### Added
+
+- **Chapter and manuscript writing views** — choose Scene, Chapter or Manuscript above the editor to write one scene at a time or keep every scene of the chapter or the book in one scrolling view. Each scene keeps its own full editor, with comments, footnotes, grammar checking and automatic saving, so you can write from one scene into the next without opening anything. A column beside each scene shows its title, live word count, editable synopsis and label, and a button between scenes starts a new one in place. The choice is in Settings → Editor, can be set per project, and the first-run tour asks for it.
+
 ### Fixed
 
 - The scene notes placement picker no longer opens over Dashboard or Manuscript when a saved dock position is missing, or reappears after cancellation. Choose Notes to set its position again.

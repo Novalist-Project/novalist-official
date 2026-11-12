@@ -4861,5 +4861,33 @@
     "add": "添加场景目标",
     "saveFailed": "更改仍然保留，但无法保存。请在关闭前重试。",
     "loadFailed": "无法加载场景笔记。"
+  },
+  "stackedEditor": {
+    "scopeLabel": "写作视图",
+    "scope": {
+      "scene": "场景",
+      "chapter": "章节",
+      "manuscript": "全稿"
+    },
+    "scopeHint": {
+      "scene": "一次编辑一个场景。",
+      "chapter": "本章所有场景上下排列。",
+      "manuscript": "全书所有场景上下排列。"
+    },
+    "command": {
+      "scene": "写作视图：单个场景",
+      "chapter": "写作视图：整章",
+      "manuscript": "写作视图：全稿"
+    },
+    "settingLabel": "写作视图",
+    "settingDesc": "写作视图一次显示多少内容。选择章节或全稿时，每个场景都有自己的编辑器并上下排列，你可以从一个场景直接接着写到下一个场景，无需打开任何内容。每个场景仍会单独保存、单独添加批注和脚注，并单独检查。",
+    "tourQuestion": "你想怎样写作？",
+    "sceneHeading": "{{chapter}} – {{scene}}",
+    "words": "{{count}} 字",
+    "synopsisPlaceholder": "这个场景发生了什么？",
+    "removeLabel": "移除标签 {{label}}",
+    "newScene": "新场景",
+    "newSceneTitle": "场景 {{number}}",
+    "frameTitle": "场景编辑器：{{scene}}"
   }
 }

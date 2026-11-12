@@ -2,6 +2,7 @@ import ReactMarkdown from 'react-markdown'
 import { type SettingsBodyContext } from './settingsBodyContext'
 import { SettingInput, SettingNumber } from './SettingsInputs'
 import { PAGE_FORMATS, estimateCharsPerLine } from './settingsTypography'
+import { EDITOR_SCOPES, normalizeEditorScope } from '../../stores/stackedPaneIds'
 
 export function editorSettingsBody(context: SettingsBodyContext): React.ReactNode {
   const { scopeToggle, fontDatalist, t, eff, update, scopeFor } = context
@@ -13,6 +14,7 @@ export function editorSettingsBody(context: SettingsBodyContext): React.ReactNod
       {editorSpacingSettings(context)}
       {readAloudSettings(context)}
       {editorFocusSettings(context)}
+      {editorScopeSettings(context)}
       <label className="relationships-toggle">
         <input
           id="set-page-view"
@@ -39,6 +41,29 @@ export function editorSettingsBody(context: SettingsBodyContext): React.ReactNod
       {bookWidthSettings(context)}
     </>
   )
+}
+
+/** One scene, the chapter or the manuscript in the writing view. A phone always
+ * edits one scene, so the choice is not offered there. */
+function editorScopeSettings(context: SettingsBodyContext): React.ReactNode {
+  const { t, eff, update, scopeFor, isMobile } = context
+  if (isMobile) return null
+  return <>
+    <label className="inspector-label" htmlFor="set-editor-scope">
+      {t('stackedEditor.settingLabel')}
+    </label>
+    <select
+      id="set-editor-scope"
+      className="dialog-input"
+      value={normalizeEditorScope(eff.editorScope)}
+      onChange={(e) => void update(scopeFor('editor'), { editorScope: e.target.value })}
+    >
+      {EDITOR_SCOPES.map((scope) => (
+        <option key={scope} value={scope}>{t(`stackedEditor.scope.${scope}`)}</option>
+      ))}
+    </select>
+    <div className="settings-hint">{t('stackedEditor.settingDesc')}</div>
+  </>
 }
 
 function editorFontSettings(context: SettingsBodyContext): React.ReactNode {

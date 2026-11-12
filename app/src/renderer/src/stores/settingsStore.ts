@@ -22,6 +22,9 @@ export interface EffectiveSettings {
   typewriterScrollEnabled: boolean
   typewriterScrollAnchor: string
   pageViewEnabled: boolean
+  /** How much of the book the writing view holds: one scene, the chapter, or
+   * the whole manuscript, each scene in its own editor. */
+  editorScope: 'scene' | 'chapter' | 'manuscript'
   enableBookParagraphSpacing: boolean
   enableBookWidth: boolean
   bookPageFormat: string

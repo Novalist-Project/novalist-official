@@ -87,7 +87,7 @@ export const SETTINGS_REGISTRY: readonly SettingsSectionMetadata[] = [
     category: 'writing',
     titleKey: 'settings.editor',
     scope: 'overridable',
-    keywords: ['editor', 'font', 'book', 'width', 'page', 'paragraph', 'spacing', 'speech'],
+    keywords: ['editor', 'font', 'book', 'width', 'page', 'paragraph', 'spacing', 'speech', 'scene', 'chapter', 'manuscript', 'continuous'],
     controls: [
       control('font-family', 'settings.fontFamily', 'set-font', ['settings.fontFamilyDesc']),
       control('font-size', 'settings.fontSize', 'set-fontsize', ['settings.fontSizeDesc']),
@@ -112,6 +112,7 @@ export const SETTINGS_REGISTRY: readonly SettingsSectionMetadata[] = [
       control('typewriter-scrolling', 'settings.typewriterScroll', 'set-typewriter-scroll', [
         'settings.typewriterScrollDesc'
       ]),
+      control('editor-scope', 'stackedEditor.settingLabel', 'set-editor-scope', ['stackedEditor.settingDesc']),
       control('page-view', 'settings.pageView', 'set-page-view', ['settings.pageViewDesc']),
       control('book-paragraph-spacing', 'settings.bookSpacing', 'set-book-spacing', [
         'settings.bookSpacingDesc'

@@ -39,6 +39,7 @@ public sealed class EffectiveSettings : IEffectiveSettings
     public bool TypewriterScrollEnabled => O?.TypewriterScrollEnabled ?? G.TypewriterScrollEnabled;
     public string TypewriterScrollAnchor => O?.TypewriterScrollAnchor ?? G.TypewriterScrollAnchor;
     public bool PageViewEnabled => O?.PageViewEnabled ?? G.PageViewEnabled;
+    public string EditorScope => EditorScopes.Normalize(O?.EditorScope ?? G.EditorScope);
 
     public bool EnableBookParagraphSpacing => O?.EnableBookParagraphSpacing ?? G.EnableBookParagraphSpacing;
     public bool EnableBookWidth => O?.EnableBookWidth ?? G.EnableBookWidth;

@@ -4819,5 +4819,33 @@
     "add": "Add a scene goal",
     "saveFailed": "Your changes are still here, but could not be saved. Retry before closing.",
     "loadFailed": "Scene notes could not be loaded."
+  },
+  "stackedEditor": {
+    "scopeLabel": "Writing view",
+    "scope": {
+      "scene": "Scene",
+      "chapter": "Chapter",
+      "manuscript": "Manuscript"
+    },
+    "scopeHint": {
+      "scene": "Edit one scene at a time.",
+      "chapter": "Every scene of the chapter, one below the other.",
+      "manuscript": "Every scene of the book, one below the other."
+    },
+    "command": {
+      "scene": "Writing view: one scene",
+      "chapter": "Writing view: whole chapter",
+      "manuscript": "Writing view: whole manuscript"
+    },
+    "settingLabel": "Writing view",
+    "settingDesc": "How much of the book the writing view holds. Chapter and Manuscript put every scene in its own editor, one below the other, so you can write on from one scene into the next without opening anything. Each scene still saves, takes comments and footnotes, and is checked on its own.",
+    "tourQuestion": "How do you want to write?",
+    "sceneHeading": "{{chapter}} – {{scene}}",
+    "words": "{{count}} words",
+    "synopsisPlaceholder": "What happens in this scene?",
+    "removeLabel": "Remove the label {{label}}",
+    "newScene": "New scene",
+    "newSceneTitle": "Scene {{number}}",
+    "frameTitle": "Scene editor: {{scene}}"
   }
 }

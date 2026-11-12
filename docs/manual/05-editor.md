@@ -12,6 +12,30 @@ Click any scene in the **binder**. The main area switches to the Editor view and
 
 The Editor is the first entry in the **Write** mode's panel, and `Ctrl+1` goes there — but with no scene chosen there is nothing to write in, so opening one from the binder is the usual way in.
 
+## One scene, the chapter, or the manuscript
+
+The switch above the editor, **Scene · Chapter · Manuscript**, decides how much of the book the writing view holds:
+
+- **Scene** — one scene at a time, the way the editor has always worked.
+- **Chapter** — every scene of the open scene's chapter, one below the other.
+- **Manuscript** — every scene of the book, one below the other, each chapter under its heading.
+
+In **Chapter** and **Manuscript**, each scene still has its own editor. Scroll or click from the end of one scene into the next and keep typing; the Up and Down arrow keys on a scene's first or last line carry the caret into the scene above or below. Each scene saves on its own, with its own comments, footnotes, suggested edits, grammar check and conflict handling, just as if you had opened it alone. One writing bar sits above the whole stack and acts on the scene with the caret. The inspector, status bar and find-and-replace follow that scene too.
+
+Beside each scene is a column with:
+
+- The chapter and scene title and a live **word count**. Click it to move the caret into that scene.
+- The scene's **synopsis**, editable in place. It saves when you click away.
+- The scene's **label**, with **×** to remove it and **Label** to choose another from the book's [scene labels](23-settings.md#scene-labels).
+
+Between two scenes, **New scene** adds a scene straight after the one above it and puts the caret in it.
+
+Clicking a scene in the binder that is already in the stack scrolls to it rather than opening it a second time. In **Chapter**, clicking a scene from another chapter switches the stack to that chapter. In a long book, scenes far off screen let go of their editor (after their last words are saved) and load again as you scroll back, so the stack stays quick.
+
+Typewriter scrolling and page view are off while the writing view holds more than one scene, so the stack reads as continuous prose; both come back when you return to **Scene**. The same choice is in **Settings → Editor → Writing view**, can be set per project, and is asked once during the [first-run tour](01-getting-started.md). The command palette has **Writing view: one scene**, **Writing view: whole chapter** and **Writing view: whole manuscript**. The scope is a desktop feature; the phone editor always shows one scene.
+
+The [Manuscript view](10-manuscript.md) remains the place for read-throughs, corkboard and outline work. Its continuous mode is a lighter editor without the scene editor's tools.
+
 ## Scene tabs
 
 Each editor pane keeps the scenes you have opened as a **tab strip** across the top of the pane. Clicking another scene in the binder adds it as a new tab instead of replacing the current one, so you can keep several scenes open and jump between them.
