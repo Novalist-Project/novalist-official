@@ -28,7 +28,7 @@ internal sealed class HostedDeviceRegistration(Uri server, DeviceIdentity device
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = JsonContent.Create(new { registration.Keys, recoveryKeys = ExportKeys(recovery) });
         using var response = await http.SendAsync(request, ct);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, ct);
         var challenge = await response.Content.ReadFromJsonAsync<EnrollmentChallenge>(ct);
         if (challenge is null || challenge.Id == Guid.Empty || string.IsNullOrEmpty(challenge.Nonce) || challenge.Nonce.Length > 256 ||
             challenge.ExpiresAt <= DateTimeOffset.UtcNow)
@@ -66,15 +66,33 @@ internal sealed class HostedDeviceRegistration(Uri server, DeviceIdentity device
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = JsonContent.Create(registration);
         using var response = await http.SendAsync(request, ct);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, ct);
     }
+
+    // Device endpoints explain refusals in a problem-details body (fixed server texts, no account data).
+    // Without it a refused registration only reads "403 (Forbidden)".
+    internal static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.IsSuccessStatusCode) return;
+        string? detail = null;
+        if (response.Content.Headers.ContentType?.MediaType is "application/problem+json" or "application/json")
+        {
+            try { detail = (await response.Content.ReadFromJsonAsync<Problem>(ct))?.Detail; }
+            catch (System.Text.Json.JsonException) { detail = null; } // An unreadable body falls back to the status line.
+        }
+        var status = $"{(int)response.StatusCode} ({response.ReasonPhrase})";
+        throw new HttpRequestException(string.IsNullOrWhiteSpace(detail) ? $"The server refused the request: {status}."
+            : $"{detail.Trim()} ({status})", null, response.StatusCode);
+    }
+
+    private sealed record Problem(string? Detail);
 
     private async Task<Guid> DiscoverAsync(HttpClient http, string token, Guid expectedUser, CancellationToken ct)
     {
         using var discovery = new HttpRequestMessage(HttpMethod.Get, new Uri(server, "devices/registration"));
         discovery.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var response = await http.SendAsync(discovery, ct);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, ct);
         var registration = await response.Content.ReadFromJsonAsync<RegistrationContext>(ct);
         if (registration is null || registration.ServerUrl != server.AbsoluteUri || registration.UserId == Guid.Empty ||
             (expectedUser != Guid.Empty && registration.UserId != expectedUser))

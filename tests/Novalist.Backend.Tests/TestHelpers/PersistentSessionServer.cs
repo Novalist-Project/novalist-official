@@ -27,6 +27,7 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
     internal bool KeyBoundEnrollment { get; set; }
     internal bool RejectRegistration { get; set; }
     internal List<Registration> Registrations { get; } = [];
+    internal List<Registration> Rejected { get; } = [];
 
     private PersistentSessionServer(Uri authority)
     {
@@ -36,7 +37,7 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
         builder.Services.AddSingleton(this);
         builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 4 * 1024 * 1024).AddMessagePackProtocol();
         app = builder.Build();
-        app.MapGet("/client-configuration", () => new { protocolVersion = 1, authority = authority.AbsoluteUri, clientId = "novalist", scope = "openid profile sync offline_access", keyBoundEnrollment = KeyBoundEnrollment });
+        app.MapGet("/client-configuration", () => new { protocolVersion = 1, authority = authority.AbsoluteUri, clientId = "novalist", scope = "openid profile sync offline_access", keyBoundEnrollment = KeyBoundEnrollment, accountIdentityReset = ResetSupported });
         app.MapGet("/devices/registration", async (HttpContext context) =>
         {
             if (Connecting is { } entered) { entered.TrySetResult(); await Task.Delay(Timeout.Infinite, context.RequestAborted); }
@@ -44,7 +45,11 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
         });
         app.MapPut("/devices/verified", (HttpContext context, Registration registration) =>
         {
-            if (RejectRegistration) return Results.StatusCode(StatusCodes.Status403Forbidden);
+            if (RejectRegistration)
+            {
+                lock (gate) Rejected.Add(registration);
+                return Results.Problem(detail: "Injected refusal.", statusCode: StatusCodes.Status403Forbidden);
+            }
             lock (gate)
             {
                 devices[registration.Keys.DeviceId] = Account(context);
@@ -53,6 +58,7 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
             return Results.Ok();
         });
         app.MapPost("/devices/enrollment", () => new { id = Guid.NewGuid(), nonce = Guid.NewGuid().ToString("N"), expiresAt = DateTimeOffset.UtcNow.AddMinutes(5) });
+        MapIdentityResetEndpoints();
         app.MapHub<SessionHub>("/sync");
     }
 

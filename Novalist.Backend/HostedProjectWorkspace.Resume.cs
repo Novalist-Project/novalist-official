@@ -114,7 +114,7 @@ internal sealed partial class HostedProjectWorkspace
     private async Task<Runtime> ReopenAsync(SavedProject saved, CancellationToken ct)
     {
         var account = await accounts.RestoreAsync(saved.Server, ct) ?? throw new InvalidOperationException("Sign in to the saved server first.");
-        var device = await devices.GetOrCreateAsync(account.Authority, account.Subject, ct);
+        var device = await devices.GetOrCreateAsync(account.Authority, account.DeviceSubject, ct);
         HostedProjectAccess? access = null;
         HostedProjectSession? session = null;
         try

@@ -123,7 +123,7 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
     private async Task<Runtime> PrepareAsync(Uri server, string? link, CancellationToken ct)
     {
         var account = await accounts.RestoreAsync(server, ct) ?? throw new InvalidOperationException("Sign in to the persistent server first.");
-        var device = await devices.GetOrCreateAsync(account.Authority, account.Subject, ct);
+        var device = await devices.GetOrCreateAsync(account.Authority, account.DeviceSubject, ct);
         HostedProjectAccess? access = null;
         try
         {

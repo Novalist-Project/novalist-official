@@ -46,6 +46,7 @@ For extension authors, the [Extension Guide](docs/extension-guide.md) walks thro
   The relay forwards encrypted packets without storing projects or edit history; the host stays online.
   Desktop **Persistent server** mode stores encrypted checkpoints and updates instead, so invited writers can join and catch up while the owner is offline.
   It requires account sign-in; the first sign-in on a device registers it with fresh MFA. Project keys stay on clients.
+  If all devices and recovery credentials are lost, supporting servers offer a fresh-MFA identity reset that forfeits old project access while preserving shared history.
   Sign-in renews without replacing the session or invitations, with a bounded grace period for provider outages.
   Connection and traffic limits protect hosts from repeated join requests.
   Joining reuses matching files in an existing local copy by relative path and SHA-256, with progress and cancellation.

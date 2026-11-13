@@ -20,11 +20,15 @@ export function CollaborationCard(): React.JSX.Element {
   const interacted = useRef(false)
   const [steamAvailable, setSteamAvailable] = useState(false)
   const [name, setName] = useState(() => localStorage.getItem('novalist.collaboration.name') ?? '')
+  const [resetConfirm, setResetConfirm] = useState(false)
+  const [forfeitAccess, setForfeitAccess] = useState(false)
+  const [resetComplete, setResetComplete] = useState(false)
   const persistent = mode === 'persistent'
   const serverMode = mode === 'hosted' || persistent
   const account = useCollaborationAccount(serverMode && !session)
   const anonymous = account.configuration?.authenticationRequired === false
   const canConnect = account.configuration !== null && account.busy === null && (persistent ? !anonymous : !anonymous || Boolean(name.trim()))
+  useEffect(() => { setResetConfirm(false); setForfeitAccess(false); setResetComplete(false) }, [account.server, account.account?.subject, mode])
   useEffect(() => {
     if (session) { interacted.current = true; setMode(session.mode); setIntent('share') }
     // Preserve reconnect controls and any choice or input made during Steam detection.
@@ -81,7 +85,22 @@ export function CollaborationCard(): React.JSX.Element {
         <p className="settings-hint">{t('collaboration.nameHint')}</p>
         {persistent && (account.account.deviceRegistered ? <p role="status">{t('collaboration.deviceEnrolled')}</p> : <>
           <p className="settings-hint">{t('collaboration.enrollHint')}</p>
+          {account.account.deviceRegistrationError && <p role="alert">{t('collaboration.registrationFailed', { reason: account.account.deviceRegistrationError })}</p>}
           <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.enrollDevice()}>{t('collaboration.enrollDevice')}</button>
+          {resetComplete && <p role="status">{t('collaboration.resetComplete')}</p>}
+          {account.configuration?.accountIdentityReset && (resetConfirm ? <div role="group" aria-label={t('collaboration.resetIdentity')}>
+            <p role="alert">{t('collaboration.resetWarning')}</p>
+            <label className="settings-hint"><input type="checkbox" checked={forfeitAccess} disabled={account.busy !== null || sharing}
+              onChange={event => setForfeitAccess(event.target.checked)} /> {t('collaboration.resetForfeit')}</label>
+            <div className="settings-button-row">
+              <button className="dialog-button" disabled={!forfeitAccess || account.busy !== null || sharing}
+                onClick={() => void account.resetIdentity(forfeitAccess).then(ok => {
+                  if (ok) { setResetConfirm(false); setForfeitAccess(false); setResetComplete(true) }
+                })}>{t('collaboration.resetConfirm')}</button>
+              <button className="dialog-button" disabled={account.busy !== null} onClick={() => { setResetConfirm(false); setForfeitAccess(false) }}>{t('dialog.cancel')}</button>
+            </div>
+          </div> : <button className="dialog-button" disabled={account.busy !== null || sharing}
+            onClick={() => { setResetConfirm(true); setForfeitAccess(false) }}>{t('collaboration.resetIdentity')}</button>)}
         </>)}
         <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.signOut()}>{t('collaboration.signOut')}</button>
       </details> : account.configuration ? <div className="settings-button-row">

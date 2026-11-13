@@ -214,7 +214,7 @@ internal sealed partial class PeerProjectWorkspace : IDisposable
     }
 
     private Task<DeviceIdentity> DeviceAsync(HostedAccount? account, CancellationToken ct) => devices.GetOrCreateAsync(
-        account?.Authority ?? new("https://novalist.invalid/peer-device"), account?.Subject ?? "desktop", ct);
+        account?.Authority ?? new("https://novalist.invalid/peer-device"), account?.DeviceSubject ?? "desktop", ct);
 
     private FileStream OpenArchive(Guid id)
     {

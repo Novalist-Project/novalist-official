@@ -16,7 +16,7 @@ internal sealed partial class HostedProjectWorkspace
         var runtime = RequireOwner();
         var account = await accounts.RestoreAsync(runtime.Access.Server, ct)
             ?? throw new InvalidOperationException("Sign in before changing shared access.");
-        using var device = await devices.GetOrCreateAsync(account.Authority, account.Subject, ct);
+        using var device = await devices.GetOrCreateAsync(account.Authority, account.DeviceSubject, ct);
         using var access = await accessStore.LoadAsync(runtime.Access.Server, runtime.Access.ProjectId, device, ct)
             ?? throw new InvalidOperationException("The saved project credentials are missing.");
         await workspace.FlushSharedProjectFilesAsync();

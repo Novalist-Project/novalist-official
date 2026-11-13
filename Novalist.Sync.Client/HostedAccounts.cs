@@ -41,6 +41,7 @@ public sealed partial class HostedAccounts : IAsyncDisposable
                 : browser is null ? await HostedSignIn.SignInAsync(settings, openBrowser, ct) : await HostedSignIn.SignInAsync(settings, browser, ct);
             try
             {
+                await RestoreDeviceSubjectAsync(server, account, ct);
                 await account.RememberAsync(credentials, key, ct);
                 ct.ThrowIfCancellationRequested();
                 accounts.Add(key, account);
@@ -85,6 +86,7 @@ public sealed partial class HostedAccounts : IAsyncDisposable
             if (accounts.TryGetValue(key, out var account)) await account.ForgetAsync(ct);
             else await credentials.RemoveAsync(key, ct);
             accounts.Remove(key);
+            registrationErrors.TryRemove(key, out _);
         }
         finally { gate.Release(); }
     }
@@ -95,7 +97,7 @@ public sealed partial class HostedAccounts : IAsyncDisposable
         ct = operation.Token;
         var account = await RestoreAsync(server, ct) ?? throw new InvalidOperationException("Sign in before registering this device.");
         var devices = new DeviceIdentityStore(credentials);
-        using var device = await devices.GetOrCreateAsync(account.Authority, account.Subject, ct);
+        using var device = await devices.GetOrCreateAsync(account.Authority, account.DeviceSubject, ct);
         var key = RecoveryKey(account);
         var saved = await credentials.ReadAsync(key, ct);
         var recoveryKey = saved is null ? System.Security.Cryptography.RandomNumberGenerator.GetBytes(32) : Convert.FromBase64String(saved);
@@ -153,6 +155,7 @@ internal sealed class HostedAccountState
     public int Version { get; init; } = 1;
     public HostedSignInOptions? Settings { get; init; }
     public string Subject { get; init; } = string.Empty;
+    public string? DeviceSubject { get; init; }
     public string DisplayName { get; init; } = string.Empty;
     public string Nonce { get; init; } = string.Empty;
     public string RefreshToken { get; init; } = string.Empty;

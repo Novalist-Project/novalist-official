@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { rpc } from '../rpc/client'
 import { useHostedSessionStore } from './hostedSessionStore'
 
-interface Account { subject: string; displayName: string; deviceRegistered: boolean }
-interface Configuration { authenticationRequired: boolean }
+interface Account { subject: string; displayName: string; deviceRegistered: boolean; deviceRegistrationError?: string | null }
+interface Configuration { authenticationRequired: boolean; accountIdentityReset?: boolean }
 const preference = 'novalist.collaboration.server'
 
 export function useCollaborationAccount(enabled: boolean) {
@@ -82,7 +82,7 @@ export function useCollaborationAccount(enabled: boolean) {
     setError(''); setBusy('signIn')
     try {
       await rpc.request('collaboration/account/enrollDevice', [server.trim()])
-      setAccount(current => current && { ...current, deviceRegistered: true })
+      setAccount(current => current && { ...current, deviceRegistered: true, deviceRegistrationError: null })
     }
     catch (reason) { setError(String(reason)) }
     finally { active.current = false; setBusy(null) }
@@ -91,5 +91,17 @@ export function useCollaborationAccount(enabled: boolean) {
     try { await rpc.request('collaboration/account/cancel') }
     catch (reason) { setError(String(reason)) }
   }
-  return { server, account, configuration, busy, error, enrollDevice, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
+  const resetIdentity = async (forfeitProjectAccess: boolean): Promise<boolean> => {
+    if (active.current || !forfeitProjectAccess) return false
+    active.current = true
+    generation.current++
+    setError(''); setBusy('signIn')
+    try {
+      const value = await rpc.request<Account>('collaboration/account/resetIdentity', [server.trim(), true])
+      setAccount(value)
+      return true
+    } catch (reason) { setError(String(reason)); return false }
+    finally { active.current = false; setBusy(null) }
+  }
+  return { server, account, configuration, busy, error, enrollDevice, resetIdentity, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
 }

@@ -69,6 +69,22 @@ already had keys for the account), **Account details** offers
 authentication once more. Keep your app's secure credential store: it holds
 device keys, project keys and the recovery identity. Signing in on another computer does not transfer those project keys.
 
+If every authorized device and the recovery credentials are lost, supporting
+servers offer **Reset lost-device identity** under **Account details** when the
+device is unregistered. Read the warning and tick the confirmation that you are
+giving up all previous project access and ownership, then choose **Reset identity
+with fresh MFA**. Complete fresh multi-factor authentication in your browser.
+The server archives your old identity, revokes its devices and creates a fresh
+one for the same sign-in; it preserves shared history and your local files.
+This does not recover encryption keys or transfer ownership. A project whose
+only owner was the old identity may no longer have an accessible owner.
+
+After the reset, choose **Register this device** and complete the separate
+browser-MFA enrollment. Ask project owners for new invitations. Old local
+credentials are retained separately, and signing into other servers is
+unaffected. End any active collaboration session before resetting. Servers that
+do not advertise this capability do not show the reset action.
+
 Choose **Share** to upload an encrypted checkpoint of the open project, then
 **Create invitation**. The private, single-use link contains project keys and
 must only be sent to the intended writer. The invited writer selects the same
