@@ -41,6 +41,7 @@ interface Window {
     onboarding: typeof import('./stores/onboardingStore').useOnboardingStore
     narration: typeof import('./stores/narrationStore').useNarrationStore
     manuscript: typeof import('./stores/manuscriptStore').useManuscriptStore
+    hostedSession: typeof import('./collaboration/hostedSessionStore').useHostedSessionStore
   }
   novalistRpc: import('./rpc/client').RpcClient
   novalistExtensionTheme: {

@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: novalist_test
+      POSTGRES_DB: novalist_test
+      POSTGRES_PASSWORD: ${NOVALIST_COLLAB_POSTGRES_PASSWORD:?Provided by the local test launcher}
+    ports:
+      - "127.0.0.1:${NOVALIST_COLLAB_POSTGRES_PORT:-42674}:5432"
+    volumes:
+      - data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U novalist_test -d novalist_test"]
+      interval: 1s
+      timeout: 5s
+      retries: 60
+volumes:
+  data:

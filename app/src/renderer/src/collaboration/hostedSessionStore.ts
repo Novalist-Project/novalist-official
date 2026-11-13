@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { rpc } from '../rpc/client'
 import { useHostBridgeStore } from '../stores/hostBridgeStore'
+import { readPreference } from './projectPreferences'
 
 interface HostedSession {
   sessionId: string
@@ -9,10 +10,11 @@ interface HostedSession {
   connection: string
   isOwner: boolean
   recoveryPath: string | null
-  mode: 'hosted' | 'tcp' | 'steam'
+  mode: 'hosted' | 'persistent' | 'tcp' | 'steam'
+  hasPendingUpdates?: boolean
 }
 
-interface SavedHostedProject { server: string; projectId: string; recoveryPath: string | null }
+interface SavedHostedProject { server: string; projectId: string; recoveryPath: string | null; mode: 'hosted' | 'persistent' }
 export interface CollaborationTransferProgress {
   phase: 'scanning' | 'connecting' | 'comparing' | 'transferring' | 'installing' | 'complete'
   completedFiles: number
@@ -21,7 +23,7 @@ export interface CollaborationTransferProgress {
   totalBytes: number
   reusedFiles: number
 }
-type Operation = 'create' | 'join' | 'invite' | 'end' | 'resume' | 'copy' | 'peerHost' | 'peerJoin' | 'steamHost' | 'steamJoin'
+type Operation = 'create' | 'join' | 'invite' | 'end' | 'resume' | 'persistentCreate' | 'persistentJoin' | 'persistentResume' | 'copy' | 'peerHost' | 'peerJoin' | 'steamHost' | 'steamJoin'
 interface HostedSessionState {
   session: HostedSession | null
   saved: SavedHostedProject | null
@@ -37,6 +39,7 @@ interface HostedSessionState {
   cancel(): Promise<void>
   reportPresence(sessionId: string, viewId: string, unavailable: boolean): void
   refresh(isCurrent?: () => boolean): Promise<void>
+  autoReconnect(project: string): Promise<void>
   run(operation: Operation, params?: unknown[]): Promise<void>
 }
 
@@ -73,7 +76,20 @@ export const useHostedSessionStore = create<HostedSessionState>((set, get) => ({
       ])
       if (isCurrent() && !get().busy) set({ session, saved, ...(!session ? { invitation: '' } : {}),
         ...(session?.sessionId !== get().session?.sessionId ? { presenceFailures: [], presenceUnavailable: false } : {}) })
+      // Another writer compacted the shared history while this session was behind. With nothing waiting to
+      // be sent, reloading from the newest checkpoint loses nothing, so do it without asking.
+      if (isCurrent() && session?.mode === 'persistent' && session.connection === 'CheckpointRefreshRequired' && !session.hasPendingUpdates) {
+        await get().run('end')
+        if (!get().session) await get().run('persistentResume')
+      }
     } catch (error) { if (isCurrent()) set({ error: String(error) }) }
+  },
+  // Called once per project open. Relay and persistent sessions can resume from their saved connection;
+  // direct and Steam sessions cannot.
+  async autoReconnect(project) {
+    const { session, saved, busy } = get()
+    if (session || busy || !saved || !readPreference(project).autoReconnect) return
+    await get().run(saved.mode === 'persistent' ? 'persistentResume' : 'resume', [])
   },
   async run(operation, params) {
     if (get().busy) return
@@ -87,6 +103,10 @@ export const useHostedSessionStore = create<HostedSessionState>((set, get) => ({
       else if (operation === 'end') {
         await rpc.request('collaboration/end')
         set({ session: null, presenceFailures: [], presenceUnavailable: false })
+      } else if (operation === 'persistentCreate' || operation === 'persistentJoin' || operation === 'persistentResume') {
+        const method = operation === 'persistentCreate' ? 'collaboration/persistent/create' : operation === 'persistentJoin'
+          ? 'collaboration/persistent/join' : 'collaboration/persistent/resume'
+        set({ session: await rpc.request<HostedSession>(method, params), presenceFailures: [], presenceUnavailable: false })
       } else if (operation === 'resume') {
         set({ session: await rpc.request<HostedSession>('collaboration/resume', params), presenceFailures: [], presenceUnavailable: false })
       } else if (operation === 'peerHost') {

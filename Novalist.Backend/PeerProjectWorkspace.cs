@@ -5,8 +5,8 @@ using Novalist.Sync.Client;
 
 namespace Novalist.Backend;
 
-public sealed record HostedSessionDto(Guid SessionId, Guid ProjectId, string Server, string Connection, bool IsOwner, string? RecoveryPath = null, string Mode = "hosted");
-public sealed record SavedHostedProjectDto(string Server, Guid ProjectId, string? RecoveryPath);
+public sealed record HostedSessionDto(Guid SessionId, Guid ProjectId, string Server, string Connection, bool IsOwner, string? RecoveryPath = null, string Mode = "hosted", bool HasPendingUpdates = false);
+public sealed record SavedHostedProjectDto(string Server, Guid ProjectId, string? RecoveryPath, string Mode = "hosted", DateTimeOffset LastUsed = default);
 
 internal sealed partial class PeerProjectWorkspace : IDisposable
 {
@@ -214,7 +214,7 @@ internal sealed partial class PeerProjectWorkspace : IDisposable
     }
 
     private Task<DeviceIdentity> DeviceAsync(HostedAccount? account, CancellationToken ct) => devices.GetOrCreateAsync(
-        account?.Authority ?? new("https://novalist.invalid/peer-device"), account?.Subject ?? "desktop", ct);
+        account?.Authority ?? new("https://novalist.invalid/peer-device"), account?.DeviceSubject ?? "desktop", ct);
 
     private FileStream OpenArchive(Guid id)
     {

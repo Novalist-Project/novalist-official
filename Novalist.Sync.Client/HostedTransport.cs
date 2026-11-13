@@ -53,6 +53,7 @@ public sealed partial class HostedTransport : IUpdateTransport, IPresenceTranspo
         hub.Closed += _ => { ready = false; return Task.CompletedTask; };
         hub.On<Guid>("ProjectAccessEnded", project => { ready = false; AccessEnded?.Invoke(project); });
         hub.On<Guid, uint>("ProjectEpochChanged", (project, epoch) => { ready = false; EpochChanged?.Invoke(project, epoch); });
+        hub.On<Guid, long>("ProjectHistoryCompacted", (project, historyStartsAt) => HistoryCompacted?.Invoke(project, historyStartsAt));
         hub.On<SequencedUpdate>("ReceiveUpdate", async update =>
         {
             if (Received is { } handlers)

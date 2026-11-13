@@ -24,7 +24,58 @@ in its cleanup. Node receives the same certificate through `NODE_EXTRA_CA_CERTS`
 This validates local HTTPS/WSS; a public deployment still needs its own trusted
 certificate, public sign-in provider and WebSocket-capable HTTPS endpoint.
 
-## VS Code launch configurations (Windows)
+## VS Code launch configurations
+
+### Persistent server and two desktop apps
+
+Install the app dependencies, .NET 10 SDK, and Docker with Compose support. Start
+Docker Desktop (or the Docker daemon) before launching.
+
+Select **Collaboration: Persistent server + 2 apps** in **Run and Debug**, then
+press **F5**. Enter the absolute path to your **novalist-sync-server** checkout
+when prompted. This builds the desktop, starts a local PostgreSQL container,
+applies the server's migrations, starts browser sign-in and the persistent
+server, and opens separate owner and guest profiles. The new persistent launch
+supports Windows, Linux and macOS.
+
+Wait until the server terminal prints `Local test server: http://127.0.0.1:42672`.
+In each app, open **Collaborate** and choose **Persistent server** with that URL.
+
+- Owner: open a test copy of a project and sign in as **Morgan**. The first
+  sign-in also registers the device; **Account details** shows it as registered.
+- Guest: sign in as **Alex**; that sign-in registers the guest device.
+- Owner: share the project and create an invitation. End the owner's session to
+  test owner-offline availability.
+- Guest: paste the invitation, choose a new folder and join. Edit the project,
+  end the session, then reconnect the owner to check catch-up.
+
+The local sign-in page lets you choose Morgan, Alex or Sam for every sign-in and
+registration. It simulates fresh MFA for testing; it is not a real identity
+provider. Choose the same writer for sign-in and device registration.
+
+The owner and guest use `app/out/manual-persistent-owner` and
+`app/out/manual-persistent-guest`. The database uses a workspace-specific Docker
+volume. Keep these profiles and `app/out/manual-persistent-server/postgres-password`
+when testing restarts. Signing keys for the local sign-in provider change when
+the helper restarts, so sign out and sign in again with the same test writer.
+Device and project keys remain in each profile.
+
+Enter `quit` in the server terminal to stop the server, sign-in provider and
+PostgreSQL. Test projects and database contents remain available on the next
+launch. Closing one desktop does not stop the other app or the server.
+
+For server-only testing, run from `app`:
+
+```sh
+npm run collab:persistent -- --server-source /absolute/path/to/novalist-sync-server
+```
+
+Alternatively set `NOVALIST_SYNC_SERVER_SOURCE` to that checkout. Override ports
+with `NOVALIST_COLLAB_PERSISTENT_PORT` (42672),
+`NOVALIST_COLLAB_PERSISTENT_IDENTITY_PORT` (42673), and
+`NOVALIST_COLLAB_POSTGRES_PORT` (42674). PostgreSQL binds only to loopback.
+
+### Live relay sessions (Windows)
 
 For a server without accounts, choose **Collaboration: Local server (no account) + 2 apps**
 and press **F5**. Use `http://127.0.0.1:42670` under **Collaborate** in both apps,
@@ -143,6 +194,33 @@ already running app still shows an account from the previous run, sign out first
 Do not use the sign-in provider's port as the collaboration server address.
 
 ## Things to exercise
+
+### Persistent hosting
+
+The client also supports persistent mode from `novalist-sync-server`. Point
+`SyncServerSource` at that repository when running the integration suite:
+
+```sh
+dotnet test tests/Novalist.Sync.IntegrationTests/Novalist.Sync.IntegrationTests.csproj \
+  -p:SyncServerSource=/path/to/novalist-sync-server
+```
+
+Set `ConnectionStrings__Default` to an isolated PostgreSQL instance first. Each
+persistent fixture creates and deletes its own uniquely named database. The
+desktop RPC tests exercise the real backend with a headless document peer; they
+do not open Electron windows. The ordinary backend suite also covers persistent
+lifecycle and recovery using an in-process server seam.
+
+For isolated desktop acceptance, configure a persistent server with HTTPS, OIDC,
+native-client sign-in, fresh MFA enrollment, and PostgreSQL. Select **Persistent
+server** in both apps and sign in on both; each first sign-in registers its device. Upload a populated project,
+create an invitation, close the owner's session, and join from the other app
+into a new folder. Edit and disconnect, reconnect the owner to catch up, and test
+removal of a third member while another writer has queued prose. Confirm failed
+joining leaves the previous workspace usable and reconnect failures preserve
+local writing. These are separate checks from the relay-only scenarios below.
+
+### Relay and direct sessions
 
 - Type and format in the same scene from both apps. Check cursors and each writer's
   undo. Open different scenes and inspect presence badges in the binder/outliner.

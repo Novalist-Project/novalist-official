@@ -4,7 +4,7 @@ using StreamJsonRpc;
 
 namespace Novalist.Backend.Rpc;
 
-public sealed record HostedAccountDto(string Subject, string DisplayName);
+public sealed record HostedAccountDto(string Subject, string DisplayName, bool DeviceRegistered, string? DeviceRegistrationError = null);
 
 public sealed class HostedAccountRpc : IAsyncDisposable
 {
@@ -30,7 +30,7 @@ public sealed class HostedAccountRpc : IAsyncDisposable
             if (signIn is not null) throw new InvalidOperationException("A sign-in is already in progress.");
             signIn = operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         }
-        try { return View(await accounts.SignInAsync(server, openBrowser, operation.Token)); }
+        try { return await ViewAsync(server, await accounts.SignInAsync(server, openBrowser, operation.Token), operation.Token); }
         finally
         {
             lock (gate) { signIn = null; operation.Dispose(); }
@@ -41,6 +41,37 @@ public sealed class HostedAccountRpc : IAsyncDisposable
     public Task<RelayServerConfiguration> ConfigurationAsync(Uri server, CancellationToken cancellationToken = default) =>
         RelayServerDiscovery.DiscoverAsync(server, cancellationToken);
 
+    [JsonRpcMethod("collaboration/account/enrollDevice")]
+    public async Task EnrollDeviceAsync(Uri server, CancellationToken cancellationToken = default)
+    {
+        CancellationTokenSource operation;
+        lock (gate)
+        {
+            if (signIn is not null) throw new InvalidOperationException("A sign-in is already in progress.");
+            signIn = operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        }
+        try { await accounts.EnrollDeviceAsync(server, openBrowser, operation.Token); }
+        finally { lock (gate) { signIn = null; operation.Dispose(); } }
+    }
+
+    [JsonRpcMethod("collaboration/account/resetIdentity")]
+    public async Task<HostedAccountDto> ResetIdentityAsync(Uri server, bool forfeitProjectAccess, CancellationToken cancellationToken = default)
+    {
+        if (isSharing(server)) throw new InvalidOperationException("End the collaboration session before resetting this identity.");
+        CancellationTokenSource operation;
+        lock (gate)
+        {
+            if (signIn is not null) throw new InvalidOperationException("A sign-in is already in progress.");
+            signIn = operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        }
+        try
+        {
+            var account = await accounts.ResetIdentityAsync(server, forfeitProjectAccess, openBrowser, operation.Token);
+            return await ViewAsync(server, account, operation.Token);
+        }
+        finally { lock (gate) { signIn = null; operation.Dispose(); } }
+    }
+
     [JsonRpcMethod("collaboration/account/status")]
     public async Task<HostedAccountDto?> StatusAsync(Uri server, CancellationToken cancellationToken = default)
     {
@@ -49,7 +80,7 @@ public sealed class HostedAccountRpc : IAsyncDisposable
         try
         {
             if (!isSharing(server)) _ = await account.GetAccessTokenAsync(cancellationToken);
-            return View(account);
+            return await ViewAsync(server, account, cancellationToken);
         }
         catch (UnauthorizedAccessException)
         {
@@ -68,7 +99,10 @@ public sealed class HostedAccountRpc : IAsyncDisposable
     [JsonRpcMethod("collaboration/account/cancel")]
     public void Cancel() { lock (gate) signIn?.Cancel(); }
 
-    private static HostedAccountDto View(HostedAccount account) => new(account.Subject, account.DisplayName);
+    private async Task<HostedAccountDto> ViewAsync(Uri server, HostedAccount account, CancellationToken ct) =>
+        await accounts.IsDeviceRegisteredAsync(server, account, ct)
+            ? new(account.Subject, account.DisplayName, true)
+            : new(account.Subject, account.DisplayName, false, accounts.DeviceRegistrationError(server));
 
     public async ValueTask DisposeAsync()
     {

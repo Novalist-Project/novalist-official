@@ -1,11 +1,10 @@
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
 namespace Novalist.Sync.Client;
 
 public sealed class HostedProjectRotation(string storage, DeviceIdentity owner, HostedTransport transport)
 {
-    public async Task RotateAsync(HostedProjectAccess access, Guid removedMember,
+    public async Task RotateAsync(HostedProjectAccess access, Guid? removedMember,
         Func<long, CancellationToken, Task<Stream>> createCheckpoint, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(createCheckpoint);
@@ -38,7 +37,7 @@ public sealed class HostedProjectRotation(string storage, DeviceIdentity owner, 
         }
     }
 
-    private async Task CompleteAsync(HostedProjectAccess access, Guid removedMember, Guid rotation,
+    private async Task CompleteAsync(HostedProjectAccess access, Guid? removedMember, Guid rotation,
         long observedSequence, Stream checkpoint, CancellationToken ct)
     {
         var devices = await transport.ListProjectDevicesAsync(access.ProjectId, ct);
@@ -67,23 +66,12 @@ public sealed class HostedProjectRotation(string storage, DeviceIdentity owner, 
         using var sequence = new DeviceSequence(Path.Combine(storage, "devices", owner.Id.ToString("N") + ".sqlite"), owner.Id);
         using var journal = new SessionJournal(Path.Combine(storage, "rotations", rotation.ToString("N"), "journal.sqlite"), rotation, access.ProjectId, sequence);
         using var cipher = access.CreateCipher();
-        await using var staged = new StagedTransport(transport, rotation);
+        await using var staged = new StagedCheckpointTransport(transport, "epoch/" + rotation, (envelope, token) => transport.StageProjectEpochAsync(rotation, envelope, token));
         await using var session = new CollaborationSession(new(access.ProjectId, owner.Id, access.Epoch), journal, cipher, access.CreateSessionIdentity(owner), staged);
-        return await CheckpointTransfer.PublishAsync(session, checkpoint, ct);
-    }
-
-    private sealed class StagedTransport(HostedTransport hosted, Guid rotation) : IUpdateTransport
-    {
-        public event Func<SequencedUpdate, Task>? Received { add { } remove { } }
-        public bool IsConnected => hosted.IsConnected;
-        public string ConnectionIdentity => hosted.ConnectionIdentity + "/epoch/" + rotation;
-        public Task ConnectAsync(CancellationToken ct) => Task.CompletedTask;
-        public Task CreateProjectAsync(Guid project, CancellationToken ct) => throw new InvalidOperationException("A transition cannot create a project.");
-        public Task JoinAsync(Guid project, CancellationToken ct) => Task.CompletedTask;
-        public Task<long> PushAsync(UpdateEnvelope envelope, CancellationToken ct) => hosted.StageProjectEpochAsync(rotation, envelope, ct);
-        public async IAsyncEnumerable<SequencedUpdate> CatchUpAsync(Guid project, long after, [EnumeratorCancellation] CancellationToken ct)
-        { ct.ThrowIfCancellationRequested(); await Task.CompletedTask; yield break; }
-        public Task DisconnectAsync(CancellationToken ct) => Task.CompletedTask;
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        var reference = await CheckpointTransfer.PublishAsync(session, checkpoint, ct);
+        // Grants carry the reference too; the pointer lets compactions and joins find it in the log.
+        CheckpointPointer.Save(session, new(reference, access.FirstServerSequence));
+        await session.SynchronizeAsync(createProject: false, ct);
+        return reference;
     }
 }

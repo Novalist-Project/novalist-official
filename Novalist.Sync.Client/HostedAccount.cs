@@ -22,6 +22,8 @@ public sealed class HostedAccount : IAsyncDisposable
     private bool forgotten;
     public Uri Authority => settings.Authority;
     public string Subject { get; }
+    // Separate local keys after an identity reset without disturbing another server using the same OIDC login.
+    public string DeviceSubject { get; private set; }
     public string DisplayName { get; }
     internal HostedSignInOptions SignInSettings => settings;
 
@@ -30,6 +32,7 @@ public sealed class HostedAccount : IAsyncDisposable
     {
         settings = state.Settings ?? throw new InvalidDataException("The account has no identity provider.");
         Subject = state.Subject;
+        DeviceSubject = state.DeviceSubject ?? state.Subject;
         DisplayName = state.DisplayName;
         nonce = state.Nonce;
         refresh = state.RefreshToken;
@@ -62,6 +65,17 @@ public sealed class HostedAccount : IAsyncDisposable
         credentials = store;
         credentialKey = key;
         await PersistAsync(ct);
+    }
+
+    internal async Task ResetDeviceSubjectAsync(Guid user, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        try
+        {
+            DeviceSubject = "reset:" + user;
+            await PersistAsync(ct);
+        }
+        finally { gate.Release(); }
     }
 
     internal async Task ForgetAsync(CancellationToken ct)
@@ -98,7 +112,7 @@ public sealed class HostedAccount : IAsyncDisposable
         dirty = true;
         await credentials.WriteAsync(credentialKey, JsonSerializer.Serialize(new HostedAccountState
         {
-            Settings = settings, Subject = Subject, DisplayName = DisplayName, Nonce = nonce, RefreshToken = refresh
+            Settings = settings, Subject = Subject, DeviceSubject = DeviceSubject, DisplayName = DisplayName, Nonce = nonce, RefreshToken = refresh
         }), ct);
         dirty = false;
     }

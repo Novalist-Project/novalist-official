@@ -219,6 +219,18 @@ public sealed partial class SessionJournal : IDisposable
         }
     }
 
+    internal long FirstServerSequence
+    {
+        get
+        {
+            lock (gate)
+            {
+                using var read = Command("SELECT server_seq FROM checkpoint_base WHERE id = 1");
+                return read.ExecuteScalar() is long checkpoint ? checkpoint + 1 : 1;
+            }
+        }
+    }
+
     internal void BindFirstServerSequence(long first) => Atomic(() =>
     {
         if (first < 1) throw new ArgumentOutOfRangeException(nameof(first));
@@ -297,6 +309,41 @@ public sealed partial class SessionJournal : IDisposable
         using var command = Command("UPDATE session SET closed = 1 WHERE id = 1");
         return command.ExecuteNonQuery();
     });
+
+    internal bool HasPendingUpdates
+    {
+        get
+        {
+            lock (gate)
+            {
+                using var command = Command("""
+                    SELECT EXISTS (SELECT 1 FROM changes c WHERE sender = $device AND pending = 1 AND
+                        NOT EXISTS (SELECT 1 FROM field_edits f WHERE f.sender_seq = c.sender_seq))
+                    """, ("$device", device.ToString("D")));
+                return Equals(command.ExecuteScalar(), 1L);
+            }
+        }
+    }
+
+    internal IReadOnlyList<PendingSessionUpdate> PendingUpdates()
+    {
+        lock (gate)
+        {
+            using var command = Command("""
+                SELECT item, payload, pending FROM changes c WHERE sender = $device AND
+                    item IN (SELECT item FROM changes WHERE sender = $device AND pending = 1) AND
+                    NOT EXISTS (SELECT 1 FROM field_edits f WHERE f.sender_seq = c.sender_seq)
+                ORDER BY sender_seq
+                """, ("$device", device.ToString("D")));
+            using var reader = command.ExecuteReader();
+            var packets = new List<(Guid Item, UpdatePacket Packet, bool Pending)>();
+            while (reader.Read()) packets.Add((Guid.Parse(reader.GetString(0)), UpdatePacket.Parse((byte[])reader[1]), reader.GetInt64(2) != 0));
+            return packets.GroupBy(value => (value.Item, value.Packet.MessageId)).Where(group => group.Any(value => value.Pending))
+                .Select(group => new PendingSessionUpdate(group.Key.Item,
+                    UpdatePacket.Assemble(group.Select(value => value.Packet))
+                    ?? throw new InvalidDataException("A queued project update is incomplete."))).ToArray();
+        }
+    }
 
     private void EnsureOpen()
     {

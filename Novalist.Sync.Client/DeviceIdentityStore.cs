@@ -10,21 +10,13 @@ public sealed class DeviceIdentityStore(ICollaborationCredentials credentials)
 
     public async Task<DeviceIdentity> GetOrCreateAsync(Uri authority, string subject, CancellationToken ct)
     {
-        HostedSignIn.ValidateAddress(authority);
-        if (string.IsNullOrWhiteSpace(subject)) throw new ArgumentException("An authenticated account is required.", nameof(subject));
-        var key = "device:" + JsonSerializer.Serialize(new[] { authority.AbsoluteUri.TrimEnd('/'), subject });
+        var key = CredentialKey(authority, subject);
         await gate.WaitAsync(ct);
         try
         {
             var saved = await credentials.ReadAsync(key, ct);
             if (saved is not null) return Load(saved);
-            using var signing = Key.Create(SignatureAlgorithm.Ed25519, new() { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
-            using var receiving = Key.Create(KeyAgreementAlgorithm.X25519, new() { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
-            var state = new StoredDevice
-            {
-                Id = DeviceIdentity.IdForKeys(signing.PublicKey, receiving.PublicKey),
-                Signing = signing.Export(KeyBlobFormat.RawPrivateKey), Receiving = receiving.Export(KeyBlobFormat.RawPrivateKey)
-            };
+            var state = NewState();
             try
             {
                 await credentials.WriteAsync(key, JsonSerializer.Serialize(state), ct);
@@ -33,6 +25,62 @@ public sealed class DeviceIdentityStore(ICollaborationCredentials credentials)
             finally { Clear(state); }
         }
         finally { gate.Release(); }
+    }
+
+    public async Task<bool> ExistsAsync(Uri authority, string subject, CancellationToken ct) =>
+        await credentials.ReadAsync(CredentialKey(authority, subject), ct) is not null;
+
+    // An identity created before sign-in, when the account it will belong to is not known yet.
+    internal static DeviceCandidate CreateCandidate() => new(NewState());
+
+    // Saves the candidate as the account's identity unless the account already has one.
+    internal async Task<bool> TryAdoptAsync(Uri authority, string subject, DeviceCandidate candidate, CancellationToken ct)
+    {
+        var key = CredentialKey(authority, subject);
+        await gate.WaitAsync(ct);
+        try
+        {
+            if (await credentials.ReadAsync(key, ct) is not null) return false;
+            await credentials.WriteAsync(key, JsonSerializer.Serialize(candidate.State), ct);
+            return true;
+        }
+        finally { gate.Release(); }
+    }
+
+    private static string CredentialKey(Uri authority, string subject)
+    {
+        HostedSignIn.ValidateAddress(authority);
+        if (string.IsNullOrWhiteSpace(subject)) throw new ArgumentException("An authenticated account is required.", nameof(subject));
+        return "device:" + JsonSerializer.Serialize(new[] { authority.AbsoluteUri.TrimEnd('/'), subject });
+    }
+
+    private static StoredDevice NewState()
+    {
+        using var signing = Key.Create(SignatureAlgorithm.Ed25519, new() { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        using var receiving = Key.Create(KeyAgreementAlgorithm.X25519, new() { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return new StoredDevice
+        {
+            Id = DeviceIdentity.IdForKeys(signing.PublicKey, receiving.PublicKey),
+            Signing = signing.Export(KeyBlobFormat.RawPrivateKey), Receiving = receiving.Export(KeyBlobFormat.RawPrivateKey)
+        };
+    }
+
+    internal sealed class DeviceCandidate : IDisposable
+    {
+        internal StoredDevice State { get; }
+        public DeviceIdentity Identity { get; }
+
+        internal DeviceCandidate(StoredDevice state)
+        {
+            State = state;
+            Identity = Import(state);
+        }
+
+        public void Dispose()
+        {
+            Identity.Dispose();
+            Clear(State);
+        }
     }
 
     private static DeviceIdentity Load(string saved)
@@ -71,7 +119,7 @@ public sealed class DeviceIdentityStore(ICollaborationCredentials credentials)
         if (state.Receiving is not null) CryptographicOperations.ZeroMemory(state.Receiving);
     }
 
-    private sealed class StoredDevice
+    internal sealed class StoredDevice
     {
         public int Version { get; init; } = 2;
         public Guid Id { get; init; }

@@ -35,8 +35,21 @@ Settings. Select **Share** for the open project or **Join** for an invitation.
 With no project open, only joining is available. Connection choices follow the
 runtime: **Direct connection (TCP)** is selected by default in the regular app
 and on mobile; Steam-enabled builds select **Steam** when its runtime is available.
-**Relay server** remains an option in both editions. Active sessions keep their
-connection type, and a retained relay project opens its reconnect controls.
+**Relay server** remains an option in both editions. Desktop also offers
+**Persistent server** for encrypted server storage and owner-offline access.
+Active sessions keep their connection type, and retained projects open the
+reconnect controls for their saved mode. Each project remembers the connection
+type and server you last picked for it on this device; a project you have not
+set up yet starts from the last connection type and server you picked anywhere.
+
+Projects with a saved **Persistent server** or **Relay server** connection
+reconnect on their own when you open them. Turn this off for one project by
+clearing **Reconnect automatically when this project opens**, shown next to
+**Reconnect** and during the session. The setting is per project and per device,
+and it is on by default. Novalist tries once each time the project opens: ending
+the session yourself does not trigger another attempt, and a relay reconnect
+still needs the host to be online. Direct (TCP) and Steam sessions cannot be
+resumed and are not reconnected.
 During a session, the panel shows connection status, invitations and the end-session
 action. Owners can expand **Manage shared access** for membership controls.
 
@@ -48,6 +61,75 @@ Keep Novalist in the foreground during collaboration: iOS can suspend network ac
 when you switch apps or lock the device. Pending edits are saved before suspension,
 and the connection retries when the app runs again. A mobile host must remain open
 and active for other writers to join or synchronize.
+
+### Persistent server
+
+Choose **Persistent server** when your administrator runs the community server
+in persistent mode (`Relay__Enabled=false`), with PostgreSQL, HTTPS, OIDC and its
+native-client configuration. See the server's
+[self-hosting guide](https://github.com/QF0xB/novalist-sync-server/blob/main/docs/self-hosting.md).
+A relay-only deployment cannot store persistent projects.
+
+Enter its base URL and sign in. The first sign-in on a device asks for fresh
+multi-factor authentication in the browser and registers the device in the same
+step; **Account details** then shows that the device is registered. Later
+sign-ins on that device do not force multi-factor authentication again. If
+registration did not complete (for example, the server is older, or this device
+already had keys for the account), **Account details** offers
+**Register this device**, which opens the browser for fresh multi-factor
+authentication once more. Keep your app's secure credential store: it holds
+device keys, project keys and the recovery identity. Signing in on another computer does not transfer those project keys.
+
+If every authorized device and the recovery credentials are lost, supporting
+servers offer **Reset lost-device identity** under **Account details** when the
+device is unregistered. Read the warning and tick the confirmation that you are
+giving up all previous project access and ownership, then choose **Reset identity
+with fresh MFA**. Complete fresh multi-factor authentication in your browser.
+The server archives your old identity, revokes its devices and creates a fresh
+one for the same sign-in; it preserves shared history and your local files.
+This does not recover encryption keys or transfer ownership. A project whose
+only owner was the old identity may no longer have an accessible owner.
+
+After the reset, choose **Register this device** and complete the separate
+browser-MFA enrollment. Ask project owners for new invitations. Old local
+credentials are retained separately, and signing into other servers is
+unaffected. End any active collaboration session before resetting. Servers that
+do not advertise this capability do not show the reset action.
+
+Choose **Share** to upload an encrypted checkpoint of the open project, then
+**Create invitation**. The private, single-use link contains project keys and
+must only be sent to the intended writer. The invited writer selects the same
+mode and server, registers their device, pastes the link and chooses a **new**
+folder. Existing-copy joining remains available in relay and direct modes.
+
+The server stores only encrypted project content and update history. Invited
+writers can join and catch up while the owner is offline. Ending your local
+session disconnects that device; it does not delete the hosted project or end
+other writers' sessions. Reopen the retained project and use **Reconnect** to
+download missed changes. Novalist preserves local differences in a recovery
+archive; **Show retained copy** reveals it. Pending synchronized prose remains
+in the local journal for reconnection.
+
+Owners manage membership through **Manage shared access**. Removing a writer
+rotates project keys and publishes a fresh encrypted checkpoint. Remaining
+writers use **Refresh keys** to reconnect. Deleting the shared project removes
+its server copy; participants keep their local copies.
+
+Novalist keeps the server's update history small on its own. Your edits are
+grouped for a quarter of a second before they are saved. When the history since
+the last checkpoint grows to more than four times the checkpoint's size (and at
+least 1 MB), the app of any connected writer with nothing left to send uploads a
+fresh encrypted checkpoint, at most once a day; the server then discards the
+replaced history after its grace period. Keys and invitations stay valid, and
+nobody is interrupted. A writer who was offline while this happened reconnects
+from the newest checkpoint automatically when nothing of theirs is waiting to be
+sent; otherwise **Refresh keys** appears and unshared writing goes into a
+recovery copy. Older servers without this feature keep their full history.
+
+The following relay instructions describe live-host sessions, not persistent
+hosting.
+
+### Relay server
 
 **Getting a relay server:** the community implementation is
 [QF0xB/novalist-sync-server](https://github.com/QF0xB/novalist-sync-server).

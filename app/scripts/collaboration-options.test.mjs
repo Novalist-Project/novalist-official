@@ -25,7 +25,7 @@ const bundle = await build({
       path.endsWith('/hostedSessionStore') ? `import { create } from 'zustand'; export const useHostedSessionStore = create(() => window.initialSession); window.sessions = useHostedSessionStore` :
       path.endsWith('/projectStore') ? 'export const useProjectStore = selector => selector({ isLoaded: window.projectLoaded })' :
       path.endsWith('/CollaborationTransferStatus') ? 'export const CollaborationTransferStatus = () => null' :
-      'export const SharedProjectCard = () => <div data-shared />', resolveDir: fileURLToPath(new URL('..', import.meta.url)) }))
+      'export const SharedProjectCard = ({ persistent, canConnect }) => <div data-shared data-persistent={persistent} data-can-connect={canConnect} />', resolveDir: fileURLToPath(new URL('..', import.meta.url)) }))
   } }]
 })
 
@@ -118,4 +118,25 @@ test('ending an active relay session keeps its connection type despite Steam ava
   f.dom.window.sessions.setState({ session: null })
   await f.waitFor(() => f.dom.window.document.querySelector('option[value="steam"]'))
   assert.equal(f.mode().value, 'hosted')
+})
+
+test('persistent hosting uses its saved mode, documents server storage, and rejects anonymous relays', async t => {
+  const f = await fixture(t, { saved: { mode: 'persistent', server: 'https://stored.example', projectId: 'saved-project' } })
+  assert.equal(f.mode().value, 'persistent')
+  assert.equal(f.dom.window.document.querySelector('[data-shared]').dataset.persistent, 'true')
+  assert.equal(f.dom.window.document.querySelector('#collaboration-server-help').textContent, 'collaboration.persistentServerHint')
+  const guide = [...f.dom.window.document.querySelectorAll('button')].find(button => button.textContent === 'collaboration.persistentSetupGuide')
+  guide.click()
+  assert.deepEqual(f.links, ['https://github.com/QF0xB/novalist-sync-server/blob/main/docs/self-hosting.md'])
+  await f.waitFor(() => f.dom.window.document.querySelector('[role="alert"]'))
+  assert.equal(f.dom.window.document.querySelector('[role="alert"]').textContent, 'collaboration.persistentRequiresAccount')
+  assert.equal(f.dom.window.document.querySelector('[data-shared]').dataset.canConnect, 'false')
+  f.resolveSteam({ available: true })
+  await f.waitFor(() => f.dom.window.document.querySelector('option[value="steam"]'))
+  assert.equal(f.mode().value, 'persistent')
+})
+
+test('mobile keeps its current connection choices without offering persistent hosting', async t => {
+  const f = await fixture(t, { mobile: true })
+  assert.equal(f.dom.window.document.querySelector('option[value="persistent"]'), null)
 })

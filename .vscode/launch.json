@@ -2,6 +2,53 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Collaboration: Persistent server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/app/scripts/collaboration-manual-server.mjs",
+      "runtimeArgs": ["--experimental-strip-types"],
+      "args": ["--persistent", "--server-source", "${input:novalistSyncServerSource}"],
+      "cwd": "${workspaceFolder}/app",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Collaboration: Persistent owner",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/app/node_modules/electron/dist/electron",
+      "windows": { "runtimeExecutable": "${workspaceFolder}/app/node_modules/electron/dist/electron.exe" },
+      "osx": { "runtimeExecutable": "${workspaceFolder}/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron" },
+      "program": "${workspaceFolder}/app/out/main/index.js",
+      "args": ["--user-data-dir=${workspaceFolder}/app/out/manual-persistent-owner/profile"],
+      "cwd": "${workspaceFolder}/app",
+      "console": "integratedTerminal",
+      "env": {
+        "ELECTRON_RUN_AS_NODE": null,
+        "NOVALIST_SETTINGS_DIR": "${workspaceFolder}/app/out/manual-persistent-owner/settings",
+        "NOVALIST_DISABLE_SELF_UPDATE": "1"
+      },
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Collaboration: Persistent guest",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/app/node_modules/electron/dist/electron",
+      "windows": { "runtimeExecutable": "${workspaceFolder}/app/node_modules/electron/dist/electron.exe" },
+      "osx": { "runtimeExecutable": "${workspaceFolder}/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron" },
+      "program": "${workspaceFolder}/app/out/main/index.js",
+      "args": ["--user-data-dir=${workspaceFolder}/app/out/manual-persistent-guest/profile"],
+      "cwd": "${workspaceFolder}/app",
+      "console": "integratedTerminal",
+      "env": {
+        "ELECTRON_RUN_AS_NODE": null,
+        "NOVALIST_SETTINGS_DIR": "${workspaceFolder}/app/out/manual-persistent-guest/settings",
+        "NOVALIST_DISABLE_SELF_UPDATE": "1"
+      },
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
       "name": "Android: Phone (Android 16, Play Store)",
       "type": "node-terminal",
       "request": "launch",
@@ -141,6 +188,12 @@
   ],
   "compounds": [
     {
+      "name": "Collaboration: Persistent server + 2 apps",
+      "configurations": ["Collaboration: Persistent server", "Collaboration: Persistent owner", "Collaboration: Persistent guest"],
+      "preLaunchTask": "prepare collaboration desktop",
+      "stopAll": false
+    },
+    {
       "name": "Collaboration: Local server (no account) + 2 apps",
       "configurations": ["Collaboration: Local server (no account)", "Collaboration: Owner", "Collaboration: Guest"],
       "preLaunchTask": "prepare collaboration desktop",
@@ -156,6 +209,13 @@
       "name": "New UI: Full Stack (main + renderer)",
       "configurations": ["New UI: Main Process", "New UI: Renderer Process"],
       "stopAll": true
+    }
+  ],
+  "inputs": [
+    {
+      "id": "novalistSyncServerSource",
+      "type": "promptString",
+      "description": "Absolute path to your novalist-sync-server checkout"
     }
   ]
 }

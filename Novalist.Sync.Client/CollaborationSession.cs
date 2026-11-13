@@ -30,6 +30,7 @@ public sealed partial class CollaborationSession : IAsyncDisposable
     internal event Action? Stopping;
     public Exception? ReceiveError { get; private set; }
     public bool IsConnected => !closed && transport.IsConnected;
+    public bool HasPendingUpdates => journal.HasPendingUpdates;
     public SessionContext Context => new(project, device, epoch);
     internal CertifiedSessionIdentity? Identity => identity;
     public long LastServerSequence => journal.LastServerSequence;

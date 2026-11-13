@@ -9,7 +9,7 @@ public interface ICollaborationCredentials
     Task RemoveAsync(string key, CancellationToken ct);
 }
 
-public sealed class HostedAccounts : IAsyncDisposable
+public sealed partial class HostedAccounts : IAsyncDisposable
 {
     private readonly ICollaborationCredentials credentials;
     private readonly SemaphoreSlim gate = new(1, 1);
@@ -34,11 +34,14 @@ public sealed class HostedAccounts : IAsyncDisposable
         try
         {
             if (accounts.ContainsKey(key)) throw new InvalidOperationException("Sign out of this server before signing in again.");
-            var settings = await HostedSignIn.DiscoverAsync(server, ct);
-            var account = browser is null ? await HostedSignIn.SignInAsync(settings, openBrowser, ct)
-                : await HostedSignIn.SignInAsync(settings, browser, ct);
+            var configuration = await RelayServerDiscovery.DiscoverAsync(server, ct);
+            var settings = configuration.SignIn ?? throw new InvalidOperationException("This server does not require sign-in.");
+            var account = configuration.KeyBoundEnrollment && !await HasRegisteredDeviceAsync(server, ct)
+                ? await SignInAndRegisterAsync(server, settings, openBrowser, ct)
+                : browser is null ? await HostedSignIn.SignInAsync(settings, openBrowser, ct) : await HostedSignIn.SignInAsync(settings, browser, ct);
             try
             {
+                await RestoreDeviceSubjectAsync(server, account, ct);
                 await account.RememberAsync(credentials, key, ct);
                 ct.ThrowIfCancellationRequested();
                 accounts.Add(key, account);
@@ -83,8 +86,30 @@ public sealed class HostedAccounts : IAsyncDisposable
             if (accounts.TryGetValue(key, out var account)) await account.ForgetAsync(ct);
             else await credentials.RemoveAsync(key, ct);
             accounts.Remove(key);
+            registrationErrors.TryRemove(key, out _);
         }
         finally { gate.Release(); }
+    }
+
+    public async Task EnrollDeviceAsync(Uri server, Func<Uri, CancellationToken, Task> openBrowser, CancellationToken ct)
+    {
+        using var operation = BeginOperation(ct);
+        ct = operation.Token;
+        var account = await RestoreAsync(server, ct) ?? throw new InvalidOperationException("Sign in before registering this device.");
+        var devices = new DeviceIdentityStore(credentials);
+        using var device = await devices.GetOrCreateAsync(account.Authority, account.DeviceSubject, ct);
+        var key = RecoveryKey(account);
+        var saved = await credentials.ReadAsync(key, ct);
+        var recoveryKey = saved is null ? System.Security.Cryptography.RandomNumberGenerator.GetBytes(32) : Convert.FromBase64String(saved);
+        try
+        {
+            if (saved is null) await credentials.WriteAsync(key, Convert.ToBase64String(recoveryKey), ct);
+            using var recovery = RecoveryDeviceIdentity.Derive(recoveryKey);
+            if (browser is null) await HostedDeviceEnrollment.EnrollAsync(server, device, recovery, account, openBrowser, ct);
+            else await HostedDeviceEnrollment.EnrollAsync(server, device, recovery, account, browser, ct);
+            await MarkRegisteredAsync(server, account, ct);
+        }
+        finally { System.Security.Cryptography.CryptographicOperations.ZeroMemory(recoveryKey); }
     }
 
     private CancellationTokenSource BeginOperation(CancellationToken ct)
@@ -130,6 +155,7 @@ internal sealed class HostedAccountState
     public int Version { get; init; } = 1;
     public HostedSignInOptions? Settings { get; init; }
     public string Subject { get; init; } = string.Empty;
+    public string? DeviceSubject { get; init; }
     public string DisplayName { get; init; } = string.Empty;
     public string Nonce { get; init; } = string.Empty;
     public string RefreshToken { get; init; } = string.Empty;

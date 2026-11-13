@@ -190,3 +190,52 @@ test('switching into a shared scene loads its own annotations before saving a ne
     document.destroy()
   }
 })
+
+test('typing in a shared scene merges keystrokes into a few saved updates', async () => {
+  const h = await launchApp('nl-shared-editor-batching-')
+  const document = new Y.Doc()
+  const prose = document.getText('prose')
+  prose.insert(0, 'The story.')
+  prose.insert(prose.length, '\n', { block: JSON.stringify([{ id: 'paragraph', tag: 'p', attributes: {} }]) })
+  let writes = 0
+  try {
+    const book = await seedBook(h, { Chapter: ['Shared'] })
+    const chapter = book.chapters[0]
+    await dismissTour(h.page)
+    await h.page.exposeFunction('readSharedTestScene', () => Buffer.from(Y.encodeStateAsUpdate(document)).toString('base64'))
+    await h.page.exposeFunction('writeSharedTestScene', (update: string) => {
+      writes++
+      Y.applyUpdate(document, new Uint8Array(Buffer.from(update, 'base64')))
+    })
+    await h.page.evaluate(({ chapter, initial }) => {
+      const original = window.novalistRpc.request.bind(window.novalistRpc)
+      const read = Reflect.get(window, 'readSharedTestScene') as () => Promise<string>
+      const write = Reflect.get(window, 'writeSharedTestScene') as (update: string) => Promise<void>
+      window.sharedPersistenceTest = { read, write, ordinaryWrites: 0 }
+      window.novalistRpc.request = async <T,>(method: string, params?: unknown): Promise<T> => {
+        const args = params as unknown[] | undefined
+        if (method === 'collaboration/readScene') return await read() as T
+        if (method === 'collaboration/writeScene') return await write(String(args?.[2])) as T
+        const result = await original<T>(method, params)
+        if (method === 'scenes/read' && args?.[1] === chapter.scenes[0].id) {
+          return { ...result, html: '<p>The story.</p>', shared: { sessionId: 'session-one', itemId: 'item-one', state: initial } }
+        }
+        return result
+      }
+    }, { chapter, initial: Buffer.from(Y.encodeStateAsUpdate(document)).toString('base64') })
+    await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), chapter)
+    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    await expect(editor).toHaveText('The story.')
+    await editor.click()
+    await h.page.keyboard.press('Control+End')
+    const typed = ' It rained all night.'
+    await h.page.keyboard.type(typed, { delay: 25 })
+    await expect.poll(() => prose.toString()).toBe(`The story.${typed}\n`)
+    // About half a second of typing at 25 ms per key: each 250 ms window saves one merged update.
+    expect(writes).toBeGreaterThan(0)
+    expect(writes).toBeLessThanOrEqual(4)
+  } finally {
+    await h.close()
+    document.destroy()
+  }
+})

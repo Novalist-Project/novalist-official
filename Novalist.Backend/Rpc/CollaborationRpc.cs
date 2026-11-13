@@ -16,16 +16,21 @@ public sealed partial class CollaborationRpc
     }
 
     [JsonRpcMethod("collaboration/cancel")]
-    public void Cancel() => workspace.PeerProjects?.Cancel();
+    public void Cancel() { workspace.PeerProjects?.Cancel(); workspace.HostedProjects?.Cancel(); }
 
     [JsonRpcMethod("collaboration/end")]
     public Task EndAsync() => workspace.DetachSharedScenesAsync();
 
     [JsonRpcMethod("collaboration/status")]
-    public HostedSessionDto? Status() => workspace.PeerProjects?.Status;
+    public HostedSessionDto? Status() => workspace.HostedProjects?.Status ?? workspace.PeerProjects?.Status;
 
     [JsonRpcMethod("collaboration/saved")]
-    public Task<SavedHostedProjectDto?> SavedAsync() => workspace.PeerProjects?.SavedAsync() ?? Task.FromResult<SavedHostedProjectDto?>(null);
+    public async Task<SavedHostedProjectDto?> SavedAsync()
+    {
+        var hosted = workspace.HostedProjects is { } persistent ? await persistent.SavedAsync() : null;
+        var relay = workspace.PeerProjects is { } peers ? await peers.SavedAsync() : null;
+        return relay is not null && (hosted is null || relay.LastUsed > hosted.LastUsed) ? relay : hosted;
+    }
 
     [JsonRpcMethod("collaboration/resume")]
     public Task<HostedSessionDto> ResumeAsync(string? name = null, CancellationToken cancellationToken = default) => Peers().ResumeAsync(cancellationToken, name);
@@ -40,7 +45,19 @@ public sealed partial class CollaborationRpc
 
     [JsonRpcMethod("collaboration/invite")]
     public Task<string> InviteAsync(DateTimeOffset expiresAt, CancellationToken cancellationToken = default) =>
-        Task.FromResult(Peers().Invite(expiresAt));
+        workspace.HostedProjects?.IsActive == true ? Hosted().InviteAsync(expiresAt, cancellationToken) : Task.FromResult(Peers().Invite(expiresAt));
+
+    [JsonRpcMethod("collaboration/persistent/create")]
+    public Task<HostedSessionDto> CreatePersistentAsync(Uri server, CancellationToken cancellationToken = default) => Hosted().CreateAsync(server, cancellationToken);
+
+    [JsonRpcMethod("collaboration/persistent/join")]
+    public Task<HostedSessionDto> JoinPersistentAsync(Uri server, string link, string destination, CancellationToken cancellationToken = default) =>
+        Hosted().JoinAsync(server, link, destination, cancellationToken);
+
+    [JsonRpcMethod("collaboration/persistent/resume")]
+    public Task<HostedSessionDto> ResumePersistentAsync(CancellationToken cancellationToken = default) => Hosted().ResumeAsync(cancellationToken);
+
+    private HostedProjectWorkspace Hosted() => workspace.HostedProjects ?? throw new InvalidOperationException("Desktop collaboration is unavailable.");
 
     [JsonRpcMethod("collaboration/peer/host")]
     public Task<HostedSessionDto> HostPeerAsync(string address, int port, string name, CancellationToken cancellationToken = default) =>
@@ -99,11 +116,12 @@ public sealed partial class CollaborationRpc
 
     [JsonRpcMethod("collaboration/presence")]
     public Task PublishPresenceAsync(Guid sessionId, Guid itemId, Guid viewId, CursorSelection? selection, bool active, CancellationToken cancellationToken = default) =>
-        Peers().PublishPresenceAsync(sessionId, itemId, viewId, selection, active, cancellationToken);
+        workspace.HostedProjects?.IsActive == true ? Hosted().PublishPresenceAsync(sessionId, itemId, viewId, selection, active, cancellationToken) :
+            Peers().PublishPresenceAsync(sessionId, itemId, viewId, selection, active, cancellationToken);
 
     [JsonRpcMethod("collaboration/participants")]
     public IReadOnlyList<SharedParticipantDto> Participants(Guid sessionId) => workspace.DescribeSharedParticipants(
-        Peers().Participants(sessionId));
+        workspace.CollaborationParticipants(sessionId) ?? throw new InvalidOperationException("This collaboration session is no longer active."));
 
     [JsonRpcMethod("collaboration/readScene")]
     public async Task<byte[]> ReadSceneAsync(Guid sessionId, Guid itemId, CancellationToken cancellationToken = default)

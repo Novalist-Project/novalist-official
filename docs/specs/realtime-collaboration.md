@@ -2,9 +2,10 @@
 
 Integration branch: `feature/realtime-collaboration`, based on main.
 Requirements: the user's accepted decisions in
-the acceptance criteria below and [ADR 0007](../adr/0007-relay-only-collaboration.md).
-ADR 0007 supersedes earlier owner-offline hosting decisions in ADRs 0003–0004
-and the feasibility assessment.
+the acceptance criteria below and [ADR 0008](../adr/0008-persistent-and-relay-collaboration.md).
+ADR 0008 adds persistent hosting alongside the existing relay mode.
+For relay sessions, ADR 0007 supersedes earlier owner-offline hosting decisions
+in ADRs 0003–0004 and the feasibility assessment.
 Existing implementation evidence: `docs/research/collaboration-implementation.md`.
 No external issue tracker is configured; this file records the task graph.
 
@@ -20,7 +21,7 @@ named in the lock message. Scene rows show presence badges with writer names in
 the binder, outliner and corkboard, including scenes the local writer is not
 viewing. Disconnected editing is
 limited to synchronized prose. Deleted content stays deleted and concurrent edits
-are recoverable. The server relays packets between connected clients and persists
+are recoverable. In relay mode the server relays packets between connected clients and persists
 no project files, snapshots or edit history. Joining requires an online host.
 Clients compare project-relative paths and SHA-256 hashes and transfer only
 missing or changed files, reusing an existing local copy when available. Scanning,
@@ -54,6 +55,18 @@ collaboration or incremental joining is complete.
 | C14 | Complete | C11 | Codex list, table and detail show named viewing/editing presence. Styled hosting/joining controls, a default new-folder name, destination feedback and centered progress pass real desktop checks. |
 | C15 | Complete | C11 | Stable local helper addresses survive restart. Sign-in and relay failures occur before preparation; rejected accounts offer fresh sign-in, temporary outages retain credentials and unavailable accounts can be forgotten. Four desktop account scenarios pass. |
 | C16 | Complete | C12, C13, C14, C15 | Populated two-window relay acceptance passes through Settings, new-folder joining, stable typing, all 116 active Manuscript scenes and normal close of both windows. All 69 desktop scenarios have passing evidence; Backend 2,160 tests and Core 3,949 tests retain 100% coverage. Standards/spec reviews have zero findings. Evidence is archived, temporary implementation branches/worktrees are removed, and all changes remain local. |
+
+Persistent hosting now shares the desktop editor and project model while using
+the persistent protocol from `novalist-sync-server`. Automated backend and real
+server tests cover registration, owner-offline joining and catch-up, retained
+copies, failed-join cleanup, reconnect rollback, pending prose across key refresh,
+member removal with a reserved rotation boundary, deletion, and mode selection.
+Any writer compacts the server history without a key change once it outgrows the
+last checkpoint fourfold: a fresh checkpoint and a pointer to it join the log at a
+new boundary, and devices behind that boundary restart from it on resume or join.
+Backend, sync-client and real-server integration tests cover compaction by a
+non-owner, offline resume, invitations from before a compaction and old servers.
+Isolated two-desktop acceptance for the new persistent controls remains pending.
 
 Approved test boundaries: editor API, collaboration session API, real transports.
 Implementation agents use isolated worktrees from the integration branch;
