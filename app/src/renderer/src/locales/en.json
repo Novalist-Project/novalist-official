@@ -64,6 +64,7 @@
     "editorError": "Shared writing needs attention. Retry saving before closing this project.",
     "resume": "Reconnect to shared project",
     "refreshKeys": "Refresh shared access",
+    "autoReconnect": "Reconnect automatically when this project opens",
     "resumeHint": "Reconnects to the same live session while its host is online. Matching local files are reused; local differences are preserved.",
     "savedServer": "Saved shared project: {{server}}",
     "copy": "Create independent copy",

@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { rpc } from '../rpc/client'
 import { useHostedSessionStore } from './hostedSessionStore'
+import { readPreference, writePreference } from './projectPreferences'
 
 interface Account { subject: string; displayName: string; deviceRegistered: boolean; deviceRegistrationError?: string | null }
 interface Configuration { authenticationRequired: boolean; accountIdentityReset?: boolean }
-const preference = 'novalist.collaboration.server'
-
-export function useCollaborationAccount(enabled: boolean) {
-  const [server, setServer] = useState(() => localStorage.getItem(preference) ?? '')
+export function useCollaborationAccount(enabled: boolean, project: string | null = null) {
+  const [server, setServer] = useState(() => readPreference(project).server ?? '')
   const [account, setAccount] = useState<Account | null>(null)
   const [configuration, setConfiguration] = useState<Configuration | null>(null)
   const [busy, setBusy] = useState<'checking' | 'connecting' | 'signIn' | 'signOut' | null>(null)
@@ -16,9 +15,9 @@ export function useCollaborationAccount(enabled: boolean) {
   const generation = useRef(0)
   const active = useRef(false)
   const savedServer = useHostedSessionStore(state => state.saved?.server)
-  useEffect(() => {
-    if (savedServer) setServer(current => current || savedServer)
-  }, [savedServer])
+  useEffect(() => { setServer(readPreference(project).server ?? '') }, [project])
+  // A project's saved session names the server it reconnects to.
+  useEffect(() => { if (savedServer) setServer(savedServer) }, [savedServer])
   useEffect(() => {
     if (!enabled || !server.trim()) return
     const current = ++generation.current
@@ -56,7 +55,7 @@ export function useCollaborationAccount(enabled: boolean) {
           value = await rpc.request<Account>('collaboration/account/signIn', [address])
         }
       }
-      localStorage.setItem(preference, address)
+      writePreference(project, { server: address })
       setServer(address); setAccount(value)
       return true
     } catch (reason) { setError(String(reason)); return false }

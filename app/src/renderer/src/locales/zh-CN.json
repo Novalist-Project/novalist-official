@@ -64,6 +64,7 @@
     "editorError": "协作内容需要处理。关闭项目前请重试保存。",
     "resume": "重新连接共享项目",
     "refreshKeys": "刷新共享访问权限",
+    "autoReconnect": "打开此项目时自动重新连接",
     "resumeHint": "主持人在线时可重新连接同一个会话。将复用匹配的本地文件，并保留本地差异。",
     "savedServer": "已保存的共享项目：{{server}}",
     "copy": "创建独立副本",

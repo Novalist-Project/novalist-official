@@ -6,17 +6,19 @@ import { PeerProjectCard } from './PeerProjectCard'
 import { useHostedSessionStore } from '../../collaboration/hostedSessionStore'
 import { useProjectStore } from '../../stores/projectStore'
 import { useCollaborationAccount } from '../../collaboration/useCollaborationAccount'
+import { readPreference, writePreference } from '../../collaboration/projectPreferences'
 
 export type CollaborationIntent = 'share' | 'join'
 
 export function CollaborationCard(): React.JSX.Element {
   const { t } = useTranslation()
   const loaded = useProjectStore(state => state.isLoaded)
+  const project = useProjectStore(state => state.projectPath)
   const session = useHostedSessionStore(state => state.session)
   const saved = useHostedSessionStore(state => state.saved)
   const sharing = useHostedSessionStore(state => state.busy !== null)
   const [intent, setIntent] = useState<CollaborationIntent>(loaded ? 'share' : 'join')
-  const [mode, setMode] = useState<string>(session?.mode ?? saved?.mode ?? (saved ? 'hosted' : 'tcp'))
+  const [mode, setMode] = useState<string>(session?.mode ?? saved?.mode ?? remembered(project, false) ?? 'tcp')
   const interacted = useRef(false)
   const [steamAvailable, setSteamAvailable] = useState(false)
   const [name, setName] = useState(() => localStorage.getItem('novalist.collaboration.name') ?? '')
@@ -25,15 +27,15 @@ export function CollaborationCard(): React.JSX.Element {
   const [resetComplete, setResetComplete] = useState(false)
   const persistent = mode === 'persistent'
   const serverMode = mode === 'hosted' || persistent
-  const account = useCollaborationAccount(serverMode && !session)
+  const account = useCollaborationAccount(serverMode && !session, project)
   const anonymous = account.configuration?.authenticationRequired === false
   const canConnect = account.configuration !== null && account.busy === null && (persistent ? !anonymous : !anonymous || Boolean(name.trim()))
   useEffect(() => { setResetConfirm(false); setForfeitAccess(false); setResetComplete(false) }, [account.server, account.account?.subject, mode])
   useEffect(() => {
-    if (session) { interacted.current = true; setMode(session.mode); setIntent('share') }
+    if (session) { interacted.current = true; setMode(session.mode); setIntent('share'); writePreference(project, { mode: session.mode }) }
     // Preserve reconnect controls and any choice or input made during Steam detection.
-    else if (!interacted.current) setMode(saved?.mode ?? (saved ? 'hosted' : steamAvailable ? 'steam' : 'tcp'))
-  }, [session?.sessionId, session?.mode, saved?.projectId, saved?.server, saved?.mode, steamAvailable])
+    else if (!interacted.current) setMode(saved?.mode ?? remembered(project, steamAvailable) ?? (steamAvailable ? 'steam' : 'tcp'))
+  }, [session?.sessionId, session?.mode, saved?.projectId, saved?.server, saved?.mode, steamAvailable, project])
   useEffect(() => {
     if (window.novalist.isMobile) return
     let current = true
@@ -54,7 +56,7 @@ export function CollaborationCard(): React.JSX.Element {
     </div>
     <label className="inspector-label" htmlFor="set-collaboration-mode">{t('collaboration.mode')}</label>
     <select id="set-collaboration-mode" className="dialog-input" value={mode} disabled={sharing || account.busy !== null}
-      onChange={event => setMode(event.target.value)}>
+      onChange={event => { setMode(event.target.value); writePreference(project, { mode: event.target.value }) }}>
       {steamAvailable && <option value="steam">{t('collaboration.modeSteam')}</option>}
       <option value="tcp">{t('collaboration.modeTcp')}</option>
       <option value="hosted">{t('collaboration.modeHosted')}</option>
@@ -112,4 +114,12 @@ export function CollaborationCard(): React.JSX.Element {
         prepareConnection={account.signIn} persistent={persistent} key={mode} />
     </>}
   </div>
+}
+
+// The connection type picked for this project, or the last one picked anywhere, when this device offers it.
+function remembered(project: string | null, steamAvailable: boolean): string | undefined {
+  const mode = readPreference(project).mode
+  if (mode === 'steam' && !steamAvailable) return undefined
+  if (mode === 'persistent' && window.novalist.isMobile) return undefined
+  return mode === 'tcp' || mode === 'hosted' || mode === 'persistent' || mode === 'steam' ? mode : undefined
 }

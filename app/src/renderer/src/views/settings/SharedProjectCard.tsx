@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useHostedSessionStore } from '../../collaboration/hostedSessionStore'
 import { useProjectStore } from '../../stores/projectStore'
@@ -7,6 +7,7 @@ import { CollaborationDestination, type CollaborationDestinationValue } from './
 import { CollaborationTransferStatus } from './CollaborationTransferStatus'
 import { SteamFriendsInvite } from './SteamFriendsInvite'
 import type { CollaborationIntent } from './CollaborationCard'
+import { readPreference, writePreference } from '../../collaboration/projectPreferences'
 
 export function SharedProjectCard({ server, canConnect, intent, name, prepareConnection, persistent = false }: {
   server: string; canConnect: boolean; intent: CollaborationIntent; name?: string
@@ -16,6 +17,14 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
   const { t } = useTranslation()
   const { session, saved, copied, busy, invitation, error, presenceUnavailable, run } = useHostedSessionStore()
   const loaded = useProjectStore(state => state.isLoaded)
+  const project = useProjectStore(state => state.projectPath)
+  const [autoReconnect, setAutoReconnect] = useState(() => readPreference(project).autoReconnect ?? true)
+  useEffect(() => { setAutoReconnect(readPreference(project).autoReconnect ?? true) }, [project])
+  const reconnectOption = project && saved ? <label className="collaboration-checkbox" htmlFor="set-collaboration-auto-reconnect">
+    <input id="set-collaboration-auto-reconnect" type="checkbox" checked={autoReconnect}
+      onChange={event => { setAutoReconnect(event.target.checked); writePreference(project, { autoReconnect: event.target.checked }) }} />
+    {t('collaboration.autoReconnect')}
+  </label> : null
   const [link, setLink] = useState('')
   const [destination, setDestination] = useState<CollaborationDestinationValue>({ path: '', valid: false, existing: false })
   const [localError, setLocalError] = useState('')
@@ -46,6 +55,7 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
           void run('end').then(() => { if (!useHostedSessionStore.getState().session) return run(session.mode === 'persistent' ? 'persistentResume' : 'resume') })
         }}>{t('collaboration.refreshKeys')}</button>}
       </div>
+      {(session.mode === 'persistent' || session.mode === 'hosted') && reconnectOption}
       {session.mode === 'steam' && session.isOwner && <SteamFriendsInvite disabled={busy !== null || session.connection !== 'Connected'} />}
       {invitation && <>
         <label className="inspector-label" htmlFor="set-collaboration-invitation">{t('collaboration.invitation')}</label>
@@ -61,6 +71,7 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
         <button className="dialog-button primary" disabled={!canConnect || !loaded || busy !== null}
           onClick={() => void connect('resume', [name], saved.server)}>{t('collaboration.resume')}</button>
         <p className="settings-hint">{t(persistent ? 'collaboration.persistentResumeHint' : 'collaboration.resumeHint')}</p>
+        {reconnectOption}
       </>}
       <div className="collaboration-options">
       {intent === 'share' ? <section className="collaboration-option" aria-labelledby="collaboration-host-title">

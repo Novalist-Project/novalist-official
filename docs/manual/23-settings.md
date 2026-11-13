@@ -38,7 +38,18 @@ and on mobile; Steam-enabled builds select **Steam** when its runtime is availab
 **Relay server** remains an option in both editions. Desktop also offers
 **Persistent server** for encrypted server storage and owner-offline access.
 Active sessions keep their connection type, and retained projects open the
-reconnect controls for their saved mode.
+reconnect controls for their saved mode. Each project remembers the connection
+type and server you last picked for it on this device; a project you have not
+set up yet starts from the last connection type and server you picked anywhere.
+
+Projects with a saved **Persistent server** or **Relay server** connection
+reconnect on their own when you open them. Turn this off for one project by
+clearing **Reconnect automatically when this project opens**, shown next to
+**Reconnect** and during the session. The setting is per project and per device,
+and it is on by default. Novalist tries once each time the project opens: ending
+the session yourself does not trigger another attempt, and a relay reconnect
+still needs the host to be online. Direct (TCP) and Steam sessions cannot be
+resumed and are not reconnected.
 During a session, the panel shows connection status, invitations and the end-session
 action. Owners can expand **Manage shared access** for membership controls.
 

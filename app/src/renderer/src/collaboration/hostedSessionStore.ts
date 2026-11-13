@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { rpc } from '../rpc/client'
 import { useHostBridgeStore } from '../stores/hostBridgeStore'
+import { readPreference } from './projectPreferences'
 
 interface HostedSession {
   sessionId: string
@@ -38,6 +39,7 @@ interface HostedSessionState {
   cancel(): Promise<void>
   reportPresence(sessionId: string, viewId: string, unavailable: boolean): void
   refresh(isCurrent?: () => boolean): Promise<void>
+  autoReconnect(project: string): Promise<void>
   run(operation: Operation, params?: unknown[]): Promise<void>
 }
 
@@ -81,6 +83,13 @@ export const useHostedSessionStore = create<HostedSessionState>((set, get) => ({
         if (!get().session) await get().run('persistentResume')
       }
     } catch (error) { if (isCurrent()) set({ error: String(error) }) }
+  },
+  // Called once per project open. Relay and persistent sessions can resume from their saved connection;
+  // direct and Steam sessions cannot.
+  async autoReconnect(project) {
+    const { session, saved, busy } = get()
+    if (session || busy || !saved || !readPreference(project).autoReconnect) return
+    await get().run(saved.mode === 'persistent' ? 'persistentResume' : 'resume', [])
   },
   async run(operation, params) {
     if (get().busy) return

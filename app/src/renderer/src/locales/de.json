@@ -64,6 +64,7 @@
     "editorError": "Das gemeinsame Schreiben benötigt Aufmerksamkeit. Versuche vor dem Schließen des Projekts erneut zu speichern.",
     "resume": "Erneut mit gemeinsamem Projekt verbinden",
     "refreshKeys": "Gemeinsamen Zugriff aktualisieren",
+    "autoReconnect": "Beim Öffnen dieses Projekts automatisch erneut verbinden",
     "resumeHint": "Verbindet erneut mit derselben laufenden Sitzung, während der Host online ist. Übereinstimmende Dateien werden wiederverwendet; lokale Unterschiede bleiben erhalten.",
     "savedServer": "Gespeichertes gemeinsames Projekt: {{server}}",
     "copy": "Unabhängige Kopie erstellen",
