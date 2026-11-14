@@ -483,7 +483,7 @@ public sealed partial class SharedProjectWriteGuardTests
         var recovery = Path.Combine(fixture.Root, "Recovered edits");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(5));
-        while (!Directory.Exists(recovery) || !Directory.GetFiles(recovery, "*.json", SearchOption.AllDirectories).Any(path => File.ReadAllText(path).Contains("Late ", StringComparison.Ordinal)))
+        while (SharedFileReader.FilesContaining(recovery, "Late ").Length == 0)
             await Task.Delay(20, timeout.Token);
         Assert.False(File.Exists(Path.Combine(fixture.Root, field.Path)));
         Assert.Empty((await fixture.Desktop.InvokeAsync<JsonElement>("entities/list", "character")).EnumerateArray());

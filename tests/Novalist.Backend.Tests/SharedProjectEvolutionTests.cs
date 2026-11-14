@@ -90,11 +90,7 @@ public sealed class SharedProjectEvolutionTests
     }
 
     private static bool ContainsRecovery(string root, string text)
-    {
-        var path = Path.Combine(root, "Recovered edits");
-        return Directory.Exists(path) && Directory.GetFiles(path, "*", SearchOption.AllDirectories)
-            .Any(file => File.ReadAllText(file).Contains(text, StringComparison.Ordinal));
-    }
+        => SharedFileReader.FilesContaining(Path.Combine(root, "Recovered edits"), text).Length > 0;
 
     private static async Task WaitAsync(Func<Task<bool>> condition)
     {
