@@ -38,6 +38,7 @@ could encounter in a previously released version.
 - Restarting an audiobook export immediately after it finishes reliably starts the new render.
 - Clicking a spelling or grammar count keeps the issue popup open after scrolling to the marked text.
 - The editor follows the configured proofing language without replacing it with the interface language or quote preset.
+- An export that has already written its file no longer ends with a "file in use" error when a temporary copy of one of its images cannot be removed right away.
 
 ---
 

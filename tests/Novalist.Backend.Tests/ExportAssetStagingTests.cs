@@ -69,4 +69,48 @@ public sealed class ExportAssetStagingTests
         }
         Assert.False(File.Exists(staged));
     }
+
+    [Fact]
+    public async Task AStagedFileHeldOpenDuringDisposalDoesNotFailTheExport()
+    {
+        using var temp = new TempDir();
+        var files = Substitute.For<IFileService>();
+        var source = temp.Combine("held.png");
+        files.ExistsAsync(Arg.Any<string>()).Returns(true);
+        files.ReadBytesAsync(source).Returns([1]);
+        var staging = new ExportAssetStaging(files, 3, 1);
+        var staged = await staging.MaterializeAsync(source);
+
+        using (new FileStream(staged, FileMode.Open, FileAccess.Read, FileShare.None))
+            staging.Dispose();
+
+        Assert.True(File.Exists(staged));
+    }
+
+    [Fact]
+    public async Task AStagedFileReleasedWhileRetryingIsStillRemoved()
+    {
+        using var temp = new TempDir();
+        var files = Substitute.For<IFileService>();
+        var source = temp.Combine("late.png");
+        files.ExistsAsync(Arg.Any<string>()).Returns(true);
+        files.ReadBytesAsync(source).Returns([1]);
+        var staging = new ExportAssetStaging(files, 50, 20);
+        var staged = await staging.MaterializeAsync(source);
+        var holder = new FileStream(staged, FileMode.Open, FileAccess.Read, FileShare.None);
+        var release = Task.Run(async () => { await Task.Delay(100); holder.Dispose(); });
+
+        staging.Dispose();
+        await release;
+
+        Assert.False(File.Exists(staged));
+    }
+
+    [Fact]
+    public void DisposingWithNothingStagedIsANoOp()
+    {
+        var staging = new ExportAssetStaging(Substitute.For<IFileService>());
+        staging.Dispose();
+        staging.Dispose();
+    }
 }
