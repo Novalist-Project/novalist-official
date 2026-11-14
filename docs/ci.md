@@ -12,12 +12,36 @@ into them. Its jobs run in parallel:
 | 100% coverage | measures the cobertura results of the test jobs, publishes the badge on `main`, enforces 100% |
 | Electron app checks | packaging and transport tests, typecheck, `tools/check-source.py`, desktop and mobile builds |
 | E2E launch and credential-store smoke | the Linux launcher and keyring specs, once |
-| E2E shard 1/4 to 4/4 | the Playwright suite against the real app, split with `--shard` |
+| E2E shard 1/4 to 4/4 | the `app` Playwright project against the real app, split by measured time |
+| E2E writing-browser | the `writing-browser` project (headless Chromium, no backend or renderer build) |
 | CI gate | fails unless every job above succeeded; the one check to require |
 
 A new push to a pull request cancels that pull request's earlier run. Runs for
 pushes to `main` and `dev` are never cancelled: the release workflow waits for the run
 on the release commit.
+
+## E2E shard balance
+
+Playwright's own `--shard` splits by test count, which leaves the heavy specs clustered in a
+few shards. The four shards instead take their spec files from
+`app/scripts/e2e-shard.mjs`, which asks Playwright for the files of the `app` project
+(so `testIgnore` and project filters apply), assigns them by longest-first greedy packing
+using the per-file seconds in `app/e2e/shard-timings.json`, and prints the files of one
+shard. Files missing from the timings get the median duration; every job computes the same
+plan, and the shards together contain every file exactly once. Each shard prints its planned
+minutes for all shards in the log and the job summary, so drift is visible.
+
+Refresh the timings after adding heavy specs, or when the "E2E shard" jobs drift apart.
+Download the `playwright-report/results.json` of each shard (the `playwright-traces-shard-N`
+artifacts) and run, from `app/`:
+
+```bash
+node scripts/e2e-shard.mjs --refresh shard1/results.json shard2/results.json shard3/results.json shard4/results.json
+```
+
+Existing entries for files absent from the reports are kept. Stale timings only cost
+balance, never coverage. The `writing-browser` project runs in its own job and is not
+sharded.
 
 ## Flaky tests
 

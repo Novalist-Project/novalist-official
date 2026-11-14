@@ -349,18 +349,54 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      # Shards are balanced by measured time (app/e2e/shard-timings.json), not
+      # by test count; see docs/ci.md. The writing-browser project has its own job.
+      - name: Plan shard
+        id: plan
+        working-directory: app
+        run: |
+          files=$(node scripts/e2e-shard.mjs --shard ${{ matrix.shard }}/4)
+          # An empty list would make Playwright run the whole project.
+          test -n "$files"
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+
       - name: Run shard
         uses: ./.github/actions/e2e-run
         with:
-          playwright-args: --shard=${{ matrix.shard }}/4
+          playwright-args: --project=app ${{ steps.plan.outputs.files }}
           label: ${{ matrix.shard }}/4
           artifact-name: playwright-traces-shard-${{ matrix.shard }}
+
+  # Headless Chromium against fixtures the specs bundle from source: no backend,
+  # no renderer build. It still runs inside the session script, which sets the
+  # desktop permission the Playwright global setup requires.
+  e2e-browser:
+    name: E2E writing-browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up the app
+        uses: ./.github/actions/e2e-setup
+        with:
+          build-app: 'false'
+
+      - name: Run writing-browser specs
+        uses: ./.github/actions/e2e-run
+        with:
+          playwright-args: --project=writing-browser
+          label: browser
+          artifact-name: playwright-traces-browser
 
   # One stable check to require: it fails unless every job above succeeded.
   ci-gate:
     name: CI gate
     if: always()
-    needs: [test-sdk-core, test-backend, test-sync-tooling, e2e-native-window, coverage, checks, e2e-smoke, e2e]
+    needs: [test-sdk-core, test-backend, test-sync-tooling, e2e-native-window, coverage, checks, e2e-smoke, e2e-browser, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
