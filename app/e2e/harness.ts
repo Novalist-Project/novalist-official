@@ -209,6 +209,20 @@ export async function resizeWindow(
 export async function dismissTour(page: Page): Promise<void> {
   const tour = page.locator('.tour-card')
   try {
+    // The shell offers the tour from an effect once a project is open, and a
+    // loaded CI runner can take longer than any fixed look at the page to get
+    // there. A tour that opened after this returned then covered the editor and
+    // swallowed the next click. Once a project is open, wait for the decision
+    // itself: the tour is open, or this profile has already been through it.
+    const loaded = await page.evaluate(() => window.novalistStores.project.getState().isLoaded)
+    if (loaded) {
+      await page.waitForFunction(
+        () => window.novalistStores.shell.getState().tourOpen
+          || window.novalistStores.onboarding.getState().tour !== 'unseen',
+        undefined,
+        { timeout: 5_000 }
+      )
+    }
     await tour.waitFor({ state: 'visible', timeout: 2_000 })
     await tour.locator('.tour-close').click()
     await tour.waitFor({ state: 'hidden', timeout: 5_000 })

@@ -34,8 +34,8 @@ const markedLength = (page: import('@playwright/test').Page): Promise<number> =>
 test('hard-to-read marks survive the prose being re-laid-out', async () => {
   test.setTimeout(180_000)
   const h = await launchApp('nl-readability-')
-  await dismissTour(h.page)
   await seedBook(h, { 'Chapter One': ['Scene One'] })
+  await dismissTour(h.page)
 
   await h.page.locator('.binder-scene-row').first().click()
   await h.page.getByRole('button', { name: 'Page view', exact: true }).click()

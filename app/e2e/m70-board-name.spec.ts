@@ -12,8 +12,8 @@ import { launchApp, seedBook, dismissTour } from './harness'
 test('a planning board can be named and renamed', async () => {
   test.setTimeout(180_000)
   const h = await launchApp('nl-board-name-')
-  await dismissTour(h.page)
   await seedBook(h, { 'Chapter One': ['Scene One'] })
+  await dismissTour(h.page)
 
   await h.page.evaluate(() => window.novalistStores.shell.getState().setMainView('canvas'))
   const toolbar = h.page.locator('.canvas-toolbar')

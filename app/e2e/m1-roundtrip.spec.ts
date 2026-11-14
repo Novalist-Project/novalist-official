@@ -106,13 +106,14 @@ test('project + binder + editor round-trip', async () => {
   // Type prose and let the 2s autosave fire.
   await editor.click()
   await page.keyboard.type('It was a dark and stormy night.')
-  await page.waitForTimeout(4000)
 
-  // The scene file on disk now contains the typed text.
+  // The scene file on disk now contains the typed text. The autosave runs on a
+  // timer and a slow machine can take longer than any fixed wait to finish it.
   const projectRoot = join(workDir, 'E2E Novel')
-  const sceneFiles = findSceneFiles(projectRoot)
-  const hit = sceneFiles.find((f) => readFileSync(f, 'utf8').includes('dark and stormy night'))
-  expect(hit, `scene files searched: ${sceneFiles.join(', ')}`).toBeTruthy()
+  await expect.poll(() => {
+    const sceneFiles = findSceneFiles(projectRoot)
+    return sceneFiles.some((f) => readFileSync(f, 'utf8').includes('dark and stormy night'))
+  }, { message: 'the typed prose should reach a scene file', timeout: 30_000 }).toBe(true)
 
   // Reopen the project fresh: state round-trips with a persisted word count.
   const reopened = (await page.evaluate((root) => {

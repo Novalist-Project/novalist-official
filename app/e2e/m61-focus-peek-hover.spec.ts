@@ -65,12 +65,10 @@ async function wordBox(page: Page, word: string, firstFragment = false): Promise
     }).NovalistEditorState.isFocusing
   )).toBe(false)
   await editor.locator('p').filter({ hasText: word }).first().scrollIntoViewIfNeeded()
-  const frame = await page.locator('.editor-frame').boundingBox()
-  if (!frame) throw new Error('the editor frame has no box')
-  const inFrame = await page
-    .frameLocator('.editor-frame')
-    .locator('[data-writing-scene]')
-    .evaluate((el, { needle, firstFragment }) => {
+  const measure = async (): Promise<{ box: Box; inside: boolean }> => {
+    const frame = await page.locator('.editor-frame').boundingBox()
+    if (!frame) throw new Error('the editor frame has no box')
+    const inFrame = await editor.evaluate((el, { needle, firstFragment }) => {
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
       let node = walker.nextNode()
       while (node) {
@@ -86,14 +84,28 @@ async function wordBox(page: Page, word: string, firstFragment = false): Promise
       }
       return null
     }, { needle: word, firstFragment })
-  if (!inFrame) throw new Error(`"${word}" is not in the prose`)
-  const box = { ...inFrame, x: frame.x + inFrame.x, y: frame.y + inFrame.y }
-  const point = centre(box)
-  expect(point.x).toBeGreaterThan(frame.x)
-  expect(point.x).toBeLessThan(frame.x + frame.width)
-  expect(point.y).toBeGreaterThan(frame.y)
-  expect(point.y).toBeLessThan(frame.y + frame.height)
-  return box
+    if (!inFrame) throw new Error(`"${word}" is not in the prose`)
+    const box = { ...inFrame, x: frame.x + inFrame.x, y: frame.y + inFrame.y }
+    const point = centre(box)
+    return {
+      box,
+      inside: point.x > frame.x && point.x < frame.x + frame.width &&
+        point.y > frame.y && point.y < frame.y + frame.height
+    }
+  }
+  // The scroll that reveals the word, and any layout the editor does after it,
+  // finish on frames of their own. Measuring once, straight after the call, can
+  // read the word where it was before the scroll landed. Take the box once it
+  // is inside the frame and has stopped moving between two reads.
+  let previous: Box | null = null
+  await expect.poll(async () => {
+    const { box, inside } = await measure()
+    const settled = inside && previous !== null &&
+      Math.abs(previous.x - box.x) < 0.5 && Math.abs(previous.y - box.y) < 0.5
+    previous = box
+    return settled
+  }, { message: `"${word}" should settle inside the editor frame` }).toBe(true)
+  return (await measure()).box
 }
 
 const centre = (box: Box): { x: number; y: number } => ({

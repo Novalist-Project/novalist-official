@@ -64,6 +64,7 @@ test('Harper checks British English offline and keeps learned words after reopen
     // Before the lazy engine has loaded: first use cannot rely on a CDN/cache.
     await h.page.context().setOffline(true)
     const book = await seedBook(h, { One: ['Scene'] }, 'Offline grammar fixture', false)
+    await dismissTour(h.page)
     await h.rpc('entities/create', ['character', 'Nemorra'])
     const text = String.fromCodePoint(0x1D11E) + ' This is a example. I realise it now. Aelthorn lives here. Nemorra lives here.'
     await h.rpc('scenes/write', [book.chapters[0].guid, book.chapters[0].scenes[0].id, `<p>${text}</p>`, text])
@@ -130,8 +131,8 @@ test('Harper checks British English offline and keeps learned words after reopen
 test('the grammar provider control follows global and project scope', async () => {
   const h = await launchApp('nl-grammar-provider-')
   try {
-    await dismissTour(h.page)
     await seedBook(h, {})
+    await dismissTour(h.page)
     await h.page.evaluate(() => {
       window.novalist.spellCheckLanguages = async () => ['en', 'en-GB', 'en-GB-oxendict', 'de-DE']
       window.novalistStores.shell.getState().openSettings('writingAssistance')
@@ -191,6 +192,7 @@ test('learning a word clears LanguageTool spelling warnings without a paid accou
       grammarCheckApiUrl: url, grammarCheckApiKey: null, grammarCheckUsername: null
     }), server.url)
     const book = await seedBook(h, { One: ['Scene'] }, 'Dictionary fixture', false)
+    await dismissTour(h.page)
     await h.rpc('scenes/write', [book.chapters[0].guid, book.chapters[0].scenes[0].id, '<p>Aelthorn sees the wrold.</p>', 'Aelthorn sees the wrold.'])
     await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), book.chapters[0])
     const frame = h.page.frameLocator('.editor-frame')
