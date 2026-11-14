@@ -31,7 +31,6 @@ could encounter in a previously released version.
 
 ### Fixed
 
-- Collaboration can use the system Secret Service keyring on Linux desktops such as Hyprland and Sway, while preserving explicit password-store choices.
 - Views added by extensions, such as the AI Assistant's chat and analysis panels, now show their names in the interface language and switch immediately when you change language.
 - Application and editor shortcuts work with Arabic and other non-Latin keyboard layouts, including custom shortcut recording, while preserving Latin-layout bindings and composition input.
 
