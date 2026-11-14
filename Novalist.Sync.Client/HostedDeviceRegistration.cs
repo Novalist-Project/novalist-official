@@ -8,7 +8,7 @@ using NSec.Cryptography;
 
 namespace Novalist.Sync.Client;
 
-internal sealed class HostedDeviceRegistration(Uri server, DeviceIdentity device)
+internal sealed partial class HostedDeviceRegistration(Uri server, DeviceIdentity device)
 {
     public async Task<Guid> RegisterAsync(HttpClient http, string token, Guid expectedUser,
         DeviceIdentity? linkedBy, DeviceIdentity? recovery, CancellationToken ct)

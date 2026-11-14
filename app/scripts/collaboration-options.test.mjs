@@ -20,7 +20,7 @@ const bundle = await build({
       path: args.path.endsWith('/hostedSessionStore') ? '/hostedSessionStore' : args.path, namespace: 'fixture'
     }))
     build.onLoad({ filter: /.*/, namespace: 'fixture' }, ({ path }) => ({ loader: 'tsx', contents:
-      path === 'react-i18next' ? 'export const useTranslation = () => ({ t: key => key })' :
+      path === 'react-i18next' ? 'export const useTranslation = () => ({ t: (key, values) => values ? key + JSON.stringify(values) : key })' :
       path.endsWith('/rpc/client') ? 'export const rpc = window.rpc' :
       path.endsWith('/hostedSessionStore') ? `import { create } from 'zustand'; export const useHostedSessionStore = create(() => window.initialSession); window.sessions = useHostedSessionStore` :
       path.endsWith('/projectStore') ? 'export const useProjectStore = selector => selector({ isLoaded: window.projectLoaded })' :
@@ -272,4 +272,74 @@ test('a saved token authorizes an unregistered device without an identity reset'
     { method: 'collaboration/account/recoverDevice', params: ['https://stored.example', 'wrong-token'] },
     { method: 'collaboration/account/recoverDevice', params: ['https://stored.example', 'saved-token'] }
   ])
+})
+
+test('a new device generates a pairing request and waits for approval before project controls appear', async t => {
+  const account = { subject: 'writer', displayName: 'Writer', deviceRegistered: false, hasRecoveryToken: false }
+  const pairing = { request: 'novalist-device:request', deviceName: 'Writing laptop', fingerprint: 'ABCD 1234', expiresAt: new Date(Date.now() + 900_000).toISOString() }
+  let approved = false
+  const f = await fixture(t, { authenticationRequired: true, restored: account,
+    saved: { mode: 'persistent', server: 'https://stored.example', projectId: 'saved-project' },
+    request: async (method, params) => {
+      if (method === 'collaboration/account/createDevicePairing') {
+        assert.deepEqual(Array.from(params), ['https://stored.example', 'Writing laptop'])
+        return pairing
+      }
+      assert.equal(method, 'collaboration/account/completeDevicePairing')
+      if (!approved) throw new Error('Device has not been approved')
+      return { ...account, deviceRegistered: true }
+    } })
+  const document = f.dom.window.document
+  const button = key => [...document.querySelectorAll('button')].find(item => item.textContent === 'collaboration.' + key)
+  await f.waitFor(() => document.querySelector('#device-pairing-name'))
+  assert.equal(button('pairingGenerate').disabled, true)
+  const input = document.querySelector('#device-pairing-name')
+  Object.getOwnPropertyDescriptor(f.dom.window.HTMLInputElement.prototype, 'value').set.call(input, 'Writing laptop')
+  input.dispatchEvent(new f.dom.window.Event('input', { bubbles: true }))
+  await f.waitFor(() => !button('pairingGenerate').disabled)
+  button('pairingGenerate').click()
+  await f.waitFor(() => document.querySelector('#device-pairing-request'))
+  assert.equal(document.querySelector('#device-pairing-request').value, pairing.request)
+  assert.ok(document.body.textContent.includes(pairing.fingerprint))
+  button('pairingCheck').click()
+  await f.waitFor(() => [...document.querySelectorAll('[role="alert"]')].some(item => item.textContent.includes('Device has not been approved')))
+  assert.equal(document.querySelector('[data-shared]'), null)
+  approved = true
+  button('pairingCheck').click()
+  await f.waitFor(() => document.querySelector('[data-shared]'))
+  assert.equal(document.querySelector('#device-pairing-request'), null)
+  assert.equal(document.querySelector('#collaboration-recovery-token'), null)
+  assert.equal(button('saveRecoveryTokenFile'), undefined)
+})
+
+for (const connected of [false, true]) test(`device approval requires reviewing the request, with an active session=${connected}`, async t => {
+  const pairing = { request: 'novalist-device:request', deviceName: 'Second laptop', fingerprint: '1234 ABCD', expiresAt: new Date(Date.now() + 900_000).toISOString() }
+  const requests = []
+  const f = await fixture(t, { authenticationRequired: true,
+    restored: { subject: 'writer', displayName: 'Writer', deviceRegistered: true, hasRecoveryToken: true },
+    session: connected ? { sessionId: 'active', mode: 'persistent', server: 'https://stored.example' } : null,
+    saved: { mode: 'persistent', server: 'https://stored.example', projectId: 'saved-project' },
+    request: async (method, params) => {
+      requests.push(method)
+      assert.deepEqual(Array.from(params), ['https://stored.example', pairing.request])
+      if (method === 'collaboration/account/reviewDevicePairing') return pairing
+      assert.equal(method, 'collaboration/account/approveDevicePairing')
+      return true
+    } })
+  const document = f.dom.window.document
+  const button = key => [...document.querySelectorAll('button')].find(item => item.textContent === 'collaboration.' + key)
+  await f.waitFor(() => document.querySelector('#device-pairing-approval'))
+  assert.equal(button('pairingApprove'), undefined)
+  const input = document.querySelector('#device-pairing-approval')
+  Object.getOwnPropertyDescriptor(f.dom.window.HTMLTextAreaElement.prototype, 'value').set.call(input, pairing.request)
+  input.dispatchEvent(new f.dom.window.Event('input', { bubbles: true }))
+  await f.waitFor(() => !button('pairingReview').disabled)
+  button('pairingReview').click()
+  await f.waitFor(() => button('pairingApprove'))
+  assert.ok(document.body.textContent.includes(pairing.fingerprint))
+  assert.deepEqual(requests, ['collaboration/account/reviewDevicePairing'])
+  button('pairingApprove').click()
+  await f.waitFor(() => [...document.querySelectorAll('[role="status"]')].some(item => item.textContent === 'collaboration.pairingApproved'))
+  assert.equal(button('pairingApprove'), undefined)
+  assert.deepEqual(requests, ['collaboration/account/reviewDevicePairing', 'collaboration/account/approveDevicePairing'])
 })

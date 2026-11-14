@@ -5,9 +5,9 @@ using StreamJsonRpc;
 namespace Novalist.Backend.Rpc;
 
 public sealed record HostedAccountDto(string Subject, string DisplayName, bool DeviceRegistered, string? DeviceRegistrationError = null,
-    string? RecoveryToken = null);
+    string? RecoveryToken = null, bool HasRecoveryToken = false);
 
-public sealed class HostedAccountRpc : IAsyncDisposable
+public sealed partial class HostedAccountRpc : IAsyncDisposable
 {
     private readonly HostedAccounts accounts;
     private readonly Func<Uri, CancellationToken, Task> openBrowser;
@@ -128,10 +128,13 @@ public sealed class HostedAccountRpc : IAsyncDisposable
     [JsonRpcMethod("collaboration/account/cancel")]
     public void Cancel() { lock (gate) signIn?.Cancel(); }
 
-    private async Task<HostedAccountDto> ViewAsync(Uri server, HostedAccount account, CancellationToken ct, bool includeRecovery = false) =>
-        await accounts.IsDeviceRegisteredAsync(server, account, ct)
-            ? new(account.Subject, account.DisplayName, true, RecoveryToken: includeRecovery ? await accounts.GetRecoveryTokenAsync(account, ct) : null)
-            : new(account.Subject, account.DisplayName, false, accounts.DeviceRegistrationError(server));
+    private async Task<HostedAccountDto> ViewAsync(Uri server, HostedAccount account, CancellationToken ct, bool includeRecovery = false)
+    {
+        if (!await accounts.IsDeviceRegisteredAsync(server, account, ct))
+            return new(account.Subject, account.DisplayName, false, accounts.DeviceRegistrationError(server));
+        var recovery = await accounts.GetRecoveryTokenAsync(account, ct);
+        return new(account.Subject, account.DisplayName, true, RecoveryToken: includeRecovery ? recovery : null, HasRecoveryToken: recovery is not null);
+    }
 
     public async ValueTask DisposeAsync()
     {

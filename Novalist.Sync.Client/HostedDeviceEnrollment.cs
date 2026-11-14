@@ -79,6 +79,6 @@ public static class HostedDeviceEnrollment
         return new(server.AbsoluteUri.TrimEnd('/') + '/');
     }
 
-    private static HttpClient CreateHttpClient() => new(new HttpClientHandler { AllowAutoRedirect = false })
+    internal static HttpClient CreateHttpClient() => new(new HttpClientHandler { AllowAutoRedirect = false })
         { MaxResponseContentBufferSize = 64 * 1024 };
 }

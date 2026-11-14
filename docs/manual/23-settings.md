@@ -96,6 +96,23 @@ does not register the device or replace saved recovery credentials. This avoids
 an identity reset; it does not restore project encryption keys. Obtain those
 from a new invitation or a backup.
 
+If you still have a registered device, use device pairing instead of sharing
+your recovery token. Sign in to the same account and server on the new device,
+open **Get approval from another device**, give it a name, and choose **Generate
+device request**. Copy the request to the registered device. Under **Account →
+Approve another device**, paste it and choose **Review device request**. Compare
+the name and fingerprint shown on both devices, then choose **Approve this
+device**. Return to the new device and choose **Check approval** to finish.
+
+Requests expire after 15 minutes and are signed for the exact server, account,
+and new device keys. Private keys stay on their device. Pending requests survive
+an app restart; generating with the same name restores a still-valid request.
+Expired requests require a new request and approval. A registered device can
+approve requests while its persistent project session is open. Pairing keeps
+old local keys and the server identity intact. It does not copy project files
+or recovery secrets; keep the original recovery-token backup. A paired device
+without that token does not offer recovery-token export.
+
 If every authorized device and the recovery credentials are lost, supporting
 servers offer **Reset lost-device identity** under **Lost access to all your devices?** when the
 device is unregistered. Read the warning and tick the confirmation that you are

@@ -3,7 +3,8 @@ import { rpc } from '../rpc/client'
 import { useHostedSessionStore } from './hostedSessionStore'
 import { readPreference, writePreference } from './projectPreferences'
 
-interface Account { subject: string; displayName: string; deviceRegistered: boolean; deviceRegistrationError?: string | null; recoveryToken?: string | null }
+export interface CollaborationAccount { subject: string; displayName: string; deviceRegistered: boolean; hasRecoveryToken: boolean; deviceRegistrationError?: string | null; recoveryToken?: string | null }
+type Account = CollaborationAccount
 interface Configuration { authenticationRequired: boolean; accountIdentityReset?: boolean }
 export function useCollaborationAccount(enabled: boolean, project: string | null = null) {
   const [server, setServer] = useState(() => readPreference(project).server ?? '')
@@ -137,5 +138,6 @@ export function useCollaborationAccount(enabled: boolean, project: string | null
     finally { active.current = false; setBusy(null) }
   }
   return { server, account, configuration, busy, error, recoveryToken, dismissRecoveryToken: () => setRecoveryToken(''),
+    devicePaired: (value: Account) => { setAccount(value); setRecoveryToken('') },
     enrollDevice, resetIdentity, recoverDevice, saveRecoveryToken, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
 }

@@ -4,6 +4,7 @@ import { rpc } from '../../rpc/client'
 import { SharedProjectCard } from './SharedProjectCard'
 import { PeerProjectCard } from './PeerProjectCard'
 import { DeviceRecovery } from './DeviceRecovery'
+import { DevicePairingRequest, DevicePairingApproval } from './DevicePairing'
 import { useHostedSessionStore } from '../../collaboration/hostedSessionStore'
 import { useProjectStore } from '../../stores/projectStore'
 import { useCollaborationAccount } from '../../collaboration/useCollaborationAccount'
@@ -47,6 +48,9 @@ export function CollaborationCard(): React.JSX.Element {
   }, [])
   if (session) return <div className="collaboration-settings">
     <p className="settings-hint">{t('collaboration.mode' + (session.mode === 'persistent' ? 'Persistent' : session.mode === 'hosted' ? 'Hosted' : session.mode === 'steam' ? 'Steam' : 'Tcp'))}</p>
+    {session.mode === 'persistent' && <details><summary>{t('collaboration.accountDetails')}</summary>
+      <DevicePairingApproval key={session.server} server={session.server} disabled={sharing} />
+    </details>}
     <SharedProjectCard server={session.server} canConnect={false} intent={intent} persistent={persistent} />
   </div>
   return <div className="collaboration-settings" onChangeCapture={() => { interacted.current = true }}
@@ -94,7 +98,9 @@ export function CollaborationCard(): React.JSX.Element {
       </> : account.account ? <>
         <details><summary tabIndex={0}>{t('collaboration.accountDetails')}</summary>
         <p className="settings-hint">{t('collaboration.nameHint')}</p>
-        {persistent && account.account.deviceRegistered && <button className="dialog-button" disabled={account.busy !== null || sharing}
+        {persistent && account.account.deviceRegistered && <DevicePairingApproval key={account.server + account.account.subject}
+          server={account.server} disabled={account.busy !== null || sharing} />}
+        {persistent && account.account.deviceRegistered && account.account.hasRecoveryToken && <button className="dialog-button" disabled={account.busy !== null || sharing}
           onClick={() => void account.saveRecoveryToken()}>{t('collaboration.saveRecoveryTokenFile')}</button>}
         <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.signOut()}>{t('collaboration.signOut')}</button>
         </details>
@@ -102,6 +108,8 @@ export function CollaborationCard(): React.JSX.Element {
           <p className="settings-hint">{t('collaboration.enrollHint')}</p>
           {account.account.deviceRegistrationError && <p role="alert">{t('collaboration.registrationFailed', { reason: account.account.deviceRegistrationError })}</p>}
           <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.enrollDevice()}>{t('collaboration.enrollDevice')}</button>
+          <DevicePairingRequest key={account.server + account.account.subject} server={account.server}
+            disabled={account.busy !== null || sharing} onPaired={account.devicePaired} />
           <DeviceRecovery busy={account.busy !== null || sharing} recover={account.recoverDevice} />
           {account.configuration?.accountIdentityReset && <details><summary>{t('collaboration.lostDevices')}</summary>
           <p className="settings-hint">{t('collaboration.resetHint')}</p>
