@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { rpc } from '../../rpc/client'
 import { SharedProjectCard } from './SharedProjectCard'
 import { PeerProjectCard } from './PeerProjectCard'
+import { DeviceRecovery } from './DeviceRecovery'
 import { useHostedSessionStore } from '../../collaboration/hostedSessionStore'
 import { useProjectStore } from '../../stores/projectStore'
 import { useCollaborationAccount } from '../../collaboration/useCollaborationAccount'
@@ -93,12 +94,15 @@ export function CollaborationCard(): React.JSX.Element {
       </> : account.account ? <>
         <details><summary tabIndex={0}>{t('collaboration.accountDetails')}</summary>
         <p className="settings-hint">{t('collaboration.nameHint')}</p>
+        {persistent && account.account.deviceRegistered && <button className="dialog-button" disabled={account.busy !== null || sharing}
+          onClick={() => void account.saveRecoveryToken()}>{t('collaboration.saveRecoveryTokenFile')}</button>}
         <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.signOut()}>{t('collaboration.signOut')}</button>
         </details>
         {persistent && !account.account.deviceRegistered && <section aria-label={t('collaboration.enrollDevice')}>
           <p className="settings-hint">{t('collaboration.enrollHint')}</p>
           {account.account.deviceRegistrationError && <p role="alert">{t('collaboration.registrationFailed', { reason: account.account.deviceRegistrationError })}</p>}
           <button className="dialog-button" disabled={account.busy !== null || sharing} onClick={() => void account.enrollDevice()}>{t('collaboration.enrollDevice')}</button>
+          <DeviceRecovery busy={account.busy !== null || sharing} recover={account.recoverDevice} />
           {account.configuration?.accountIdentityReset && <details><summary>{t('collaboration.lostDevices')}</summary>
           <p className="settings-hint">{t('collaboration.resetHint')}</p>
           {resetConfirm ? <div role="group" aria-label={t('collaboration.resetIdentity')}>
@@ -128,7 +132,10 @@ export function CollaborationCard(): React.JSX.Element {
         <label className="inspector-label" htmlFor="collaboration-recovery-token">{t('collaboration.recoveryToken')}</label>
         <textarea id="collaboration-recovery-token" className="dialog-input" readOnly value={account.recoveryToken}
           autoComplete="off" spellCheck={false} onFocus={event => event.target.select()} />
-        <button className="dialog-button primary" onClick={account.dismissRecoveryToken}>{t('collaboration.recoveryTokenSaved')}</button>
+        <div className="settings-button-row">
+          <button className="dialog-button primary" disabled={account.busy !== null} onClick={() => void account.saveRecoveryToken()}>{t('collaboration.saveRecoveryTokenFile')}</button>
+          <button className="dialog-button" disabled={account.busy !== null} onClick={account.dismissRecoveryToken}>{t('collaboration.recoveryTokenSaved')}</button>
+        </div>
       </section> : ready && <SharedProjectCard server={account.server} canConnect={canConnect} intent={intent} name={anonymous ? name.trim() : undefined}
         prepareConnection={account.signIn} persistent={persistent} key={mode} />}
     </>}

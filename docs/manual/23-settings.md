@@ -72,8 +72,11 @@ A relay-only deployment cannot store persistent projects.
 
 Enter its base URL and sign in. The first sign-in on a device asks for fresh
 multi-factor authentication in the browser and registers the device in the same
-step. Novalist then shows your **Recovery token**. Save it outside the app (for
-example, in a password manager), then choose **I have saved the token — continue**.
+step. Novalist then shows your **Recovery token**. Choose **Save recovery token to
+file…** to write it to a location you choose. Cancelling the dialog or a failed
+write keeps the token visible. If you save it in a password manager instead,
+choose **I have saved the token — continue**. **Account** also offers file saving
+later, using the token kept in the app's secure credential store.
 The token proves your recovery identity; it is not a backup of project files or
 project encryption keys. Later
 sign-ins on that device do not force multi-factor authentication again. If
@@ -82,6 +85,16 @@ already had keys for the account), Novalist offers
 **Register this device**, which opens the browser for fresh multi-factor
 authentication once more. Keep your app's secure credential store: it holds
 device keys, project keys and the recovery identity. Signing in on another computer does not transfer those project keys.
+
+To authorize a replacement device, sign in to the same server and choose **Use a
+recovery token** below **Register this device**. Paste the saved token and choose
+**Register with recovery token**. The server verifies the recovery identity and
+links new device keys to your existing account. Novalist stores the token and
+replacement keys in its secure credential store, retains previous local keys,
+and leaves other servers' identities unchanged. An invalid or rejected token
+does not register the device or replace saved recovery credentials. This avoids
+an identity reset; it does not restore project encryption keys. Obtain those
+from a new invitation or a backup.
 
 If every authorized device and the recovery credentials are lost, supporting
 servers offer **Reset lost-device identity** under **Lost access to all your devices?** when the

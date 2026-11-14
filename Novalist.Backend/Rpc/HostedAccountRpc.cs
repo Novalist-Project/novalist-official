@@ -100,6 +100,24 @@ public sealed class HostedAccountRpc : IAsyncDisposable
         }
     }
 
+    [JsonRpcMethod("collaboration/account/recoverDevice")]
+    public async Task<HostedAccountDto> RecoverDeviceAsync(Uri server, string recoveryToken, CancellationToken cancellationToken = default)
+    {
+        if (isSharing(server)) throw new InvalidOperationException("End the collaboration session before recovering this device.");
+        CancellationTokenSource operation;
+        lock (gate)
+        {
+            if (signIn is not null) throw new InvalidOperationException("A sign-in is already in progress.");
+            signIn = operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        }
+        try { return await ViewAsync(server, await accounts.RecoverDeviceAsync(server, recoveryToken, operation.Token), operation.Token); }
+        finally { lock (gate) { signIn = null; operation.Dispose(); } }
+    }
+
+    [JsonRpcMethod("collaboration/account/saveRecoveryToken")]
+    public Task SaveRecoveryTokenAsync(Uri server, string outputPath, CancellationToken cancellationToken = default) =>
+        accounts.SaveRecoveryTokenAsync(server, outputPath, cancellationToken);
+
     [JsonRpcMethod("collaboration/account/signOut")]
     public Task SignOutAsync(Uri server, CancellationToken cancellationToken = default)
     {

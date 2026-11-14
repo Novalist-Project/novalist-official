@@ -40,13 +40,18 @@ public sealed partial class HostedAccounts
             if (reset is null || reset.UserId == Guid.Empty) throw new InvalidDataException("The server returned an invalid reset identity.");
             // Keep the old keys for local copies and other servers. New enrollment gets a separate namespace.
             using var saveTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            await credentials.WriteAsync(DeviceNamespaceKey(server, account), reset.UserId.ToString(), saveTimeout.Token);
-            await account.ResetDeviceSubjectAsync(reset.UserId, saveTimeout.Token);
+            await SaveDeviceNamespaceAsync(server, account, reset.UserId, saveTimeout.Token);
             await credentials.RemoveAsync(PendingKey(server), saveTimeout.Token);
             registrationErrors.TryRemove(AccountKey(server), out _);
             return account;
         }
         finally { gate.Release(); }
+    }
+
+    private async Task SaveDeviceNamespaceAsync(Uri server, HostedAccount account, Guid deviceNamespace, CancellationToken ct)
+    {
+        await credentials.WriteAsync(DeviceNamespaceKey(server, account), deviceNamespace.ToString(), ct);
+        await account.ResetDeviceSubjectAsync(deviceNamespace, ct);
     }
 
     private async Task RestoreDeviceSubjectAsync(Uri server, HostedAccount account, CancellationToken ct)

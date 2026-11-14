@@ -82,7 +82,8 @@ internal sealed partial class PersistentSessionServer : IAsyncDisposable
     internal sealed record PublicKeys(Guid DeviceId, byte[] SigningPublicKey, byte[] ReceivingPublicKey);
     internal sealed record EnrollmentProof(Guid ChallengeId, string IdentityToken, byte[]? Salt);
     internal sealed record RecoveryRegistration(PublicKeys Keys);
-    internal sealed record Registration(PublicKeys Keys, byte[] Signature, RecoveryRegistration? RecoveryDevice, EnrollmentProof? EnrollmentProof);
+    internal sealed record Registration(PublicKeys Keys, byte[] Signature, RecoveryRegistration? RecoveryDevice, EnrollmentProof? EnrollmentProof,
+        Guid? LinkedByDeviceId = null, byte[]? LinkingSignature = null);
     public async ValueTask DisposeAsync() => await app.DisposeAsync();
 
     public sealed partial class SessionHub(PersistentSessionServer server) : Hub

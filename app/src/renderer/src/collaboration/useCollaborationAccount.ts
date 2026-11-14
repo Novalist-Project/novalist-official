@@ -9,7 +9,7 @@ export function useCollaborationAccount(enabled: boolean, project: string | null
   const [server, setServer] = useState(() => readPreference(project).server ?? '')
   const [account, setAccount] = useState<Account | null>(null)
   const [configuration, setConfiguration] = useState<Configuration | null>(null)
-  const [busy, setBusy] = useState<'checking' | 'connecting' | 'signIn' | 'signOut' | null>(null)
+  const [busy, setBusy] = useState<'checking' | 'connecting' | 'signIn' | 'signOut' | 'saving' | null>(null)
   const [error, setError] = useState('')
   const [recoveryToken, setRecoveryToken] = useState('')
   const [retry, setRetry] = useState(0)
@@ -93,6 +93,30 @@ export function useCollaborationAccount(enabled: boolean, project: string | null
     try { await rpc.request('collaboration/account/cancel') }
     catch (reason) { setError(String(reason)) }
   }
+  const saveRecoveryToken = async (): Promise<void> => {
+    if (active.current) return
+    active.current = true
+    setError(''); setBusy('saving')
+    try {
+      const path = await window.novalist.saveFile('novalist-recovery-token.txt')
+      if (!path) return
+      await rpc.request('collaboration/account/saveRecoveryToken', [server.trim(), path])
+      setRecoveryToken('')
+    } catch (reason) { setError(String(reason)) }
+    finally { active.current = false; setBusy(null) }
+  }
+  const recoverDevice = async (token: string): Promise<boolean> => {
+    if (active.current) return false
+    active.current = true
+    generation.current++
+    setError(''); setBusy('connecting')
+    try {
+      const value = await rpc.request<Account>('collaboration/account/recoverDevice', [server.trim(), token.trim()])
+      setAccount(value); setRecoveryToken('')
+      return true
+    } catch (reason) { setError(String(reason)); return false }
+    finally { active.current = false; setBusy(null) }
+  }
   const resetIdentity = async (forfeitProjectAccess: boolean): Promise<boolean> => {
     if (active.current || !forfeitProjectAccess) return false
     active.current = true
@@ -113,5 +137,5 @@ export function useCollaborationAccount(enabled: boolean, project: string | null
     finally { active.current = false; setBusy(null) }
   }
   return { server, account, configuration, busy, error, recoveryToken, dismissRecoveryToken: () => setRecoveryToken(''),
-    enrollDevice, resetIdentity, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
+    enrollDevice, resetIdentity, recoverDevice, saveRecoveryToken, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
 }

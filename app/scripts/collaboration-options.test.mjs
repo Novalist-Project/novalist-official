@@ -37,7 +37,11 @@ async function fixture(t, { mobile = false, loaded = true, session = null, saved
   const steam = new Promise(resolve => { resolveSteam = resolve })
   dom.window.initialSession = { session, saved, busy: null }
   dom.window.projectLoaded = loaded
-  dom.window.novalist = { isMobile: mobile, pickFolder: async () => '/chosen-folder', openExternal: async url => { links.push(url); return true } }
+  dom.window.savePath = '/chosen/recovery-token.txt'
+  dom.window.saveDialogs = 0
+  dom.window.novalist = { isMobile: mobile, pickFolder: async () => '/chosen-folder',
+    saveFile: async () => { dom.window.saveDialogs++; return dom.window.savePath },
+    openExternal: async url => { links.push(url); return true } }
   dom.window.rpc = { request: async (method, params) => {
     calls.push(method)
     if (method === 'collaboration/steam/status') return steam
@@ -196,4 +200,76 @@ test('reset finishes with the automatically registered device and its new recove
 test('mobile keeps its current connection choices without offering persistent hosting', async t => {
   const f = await fixture(t, { mobile: true })
   assert.equal(f.dom.window.document.querySelector('option[value="persistent"]'), null)
+})
+
+test('saving writes the recovery token through the backend and keeps it visible on cancellation or failure', async t => {
+  const account = { subject: 'writer', displayName: 'Writer', deviceRegistered: true, recoveryToken: 'private-token' }
+  let reject = true
+  const saves = []
+  const f = await fixture(t, { authenticationRequired: true,
+    saved: { mode: 'persistent', server: 'https://stored.example', projectId: 'saved-project' },
+    request: async (method, params) => {
+      if (method === 'collaboration/account/signIn') return account
+      assert.equal(method, 'collaboration/account/saveRecoveryToken')
+      saves.push(Array.from(params))
+      if (reject) throw new Error('Disk full')
+    } })
+  const document = f.dom.window.document
+  const button = key => [...document.querySelectorAll('button')].find(item => item.textContent === 'collaboration.' + key)
+  await f.waitFor(() => button('signIn'))
+  button('signIn').click()
+  await f.waitFor(() => document.querySelector('#collaboration-recovery-token'))
+  f.dom.window.savePath = null
+  button('saveRecoveryTokenFile').click()
+  await new Promise(resolve => setImmediate(resolve))
+  await f.waitFor(() => f.dom.window.saveDialogs === 1 && !button('saveRecoveryTokenFile').disabled)
+  assert.equal(saves.length, 0)
+  assert.equal(document.querySelector('#collaboration-recovery-token').value, 'private-token')
+  f.dom.window.savePath = '/chosen/recovery-token.txt'
+  button('saveRecoveryTokenFile').click()
+  await f.waitFor(() => document.querySelector('[role="alert"]')?.textContent.includes('Disk full'))
+  assert.equal(document.querySelector('#collaboration-recovery-token').value, 'private-token')
+  assert.equal(document.querySelector('[data-shared]'), null)
+  reject = false
+  button('saveRecoveryTokenFile').click()
+  await f.waitFor(() => document.querySelector('[data-shared]'))
+  assert.equal(document.querySelector('#collaboration-recovery-token'), null)
+  assert.deepEqual(saves, Array(2).fill(['https://stored.example', '/chosen/recovery-token.txt']))
+})
+
+test('a saved token authorizes an unregistered device without an identity reset', async t => {
+  const account = { subject: 'writer', displayName: 'Writer', deviceRegistered: false }
+  const requests = []
+  const f = await fixture(t, { authenticationRequired: true, restored: account,
+    saved: { mode: 'persistent', server: 'https://stored.example', projectId: 'saved-project' },
+    request: async (method, params) => {
+      requests.push({ method, params: Array.from(params) })
+      assert.equal(method, 'collaboration/account/recoverDevice')
+      if (params[1] === 'wrong-token') throw new Error('Recovery token was refused')
+      return { ...account, deviceRegistered: true }
+    } })
+  const document = f.dom.window.document
+  const button = () => [...document.querySelectorAll('button')].find(item => item.textContent === 'collaboration.recoverDevice')
+  await f.waitFor(() => document.querySelector('#collaboration-restore-token'))
+  const input = document.querySelector('#collaboration-restore-token')
+  assert.equal(button().disabled, true)
+  const enter = value => {
+    Object.getOwnPropertyDescriptor(f.dom.window.HTMLInputElement.prototype, 'value').set.call(input, value)
+    input.dispatchEvent(new f.dom.window.Event('input', { bubbles: true }))
+  }
+  enter('wrong-token')
+  await f.waitFor(() => !button().disabled)
+  button().click()
+  await f.waitFor(() => document.querySelector('[role="alert"]')?.textContent.includes('Recovery token was refused'))
+  assert.equal(input.value, 'wrong-token')
+  assert.equal(document.querySelector('[data-shared]'), null)
+  enter('saved-token')
+  await f.waitFor(() => !button().disabled)
+  button().click()
+  await f.waitFor(() => document.querySelector('[data-shared]'))
+  assert.equal(document.querySelector('#collaboration-restore-token'), null)
+  assert.deepEqual(requests, [
+    { method: 'collaboration/account/recoverDevice', params: ['https://stored.example', 'wrong-token'] },
+    { method: 'collaboration/account/recoverDevice', params: ['https://stored.example', 'saved-token'] }
+  ])
 })
