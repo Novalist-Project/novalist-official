@@ -22,7 +22,7 @@ buildNpmPackage (finalAttrs: {
   __structuredAttrs = true;
   sourceRoot = "${finalAttrs.src.name}/app";
   nodejs = nodejs_24;
-  npmDepsHash = "sha256-Pl1RI3sKWnx4vsu/93Rhf+SP/D/oZNfYxAjWrHBJ5OU=";
+  npmDepsHash = "sha256-+uB/iF61cVhweQVwKI2Hfakmjod+hC0sAxBQ7fcaNdQ=";
   npmFlags = [ "--ignore-scripts" ];
   makeCacheWritable = true;
   env.ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
