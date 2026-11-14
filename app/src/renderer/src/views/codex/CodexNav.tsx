@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import { useCodexStore, type EntitySummary } from "../../stores/codexStore";
 import { ContextMenu, type ContextMenuItem } from '../../shell/ContextMenu'
 import { MotionPresence } from '../../shell/MotionPresence'
+import { contentDirection } from '../../shell/contentDirection'
 import { useProjectStore } from '../../stores/projectStore'
 import { rpc } from '../../rpc/client'
 import { metadataBinding } from '../../collaboration/SharedMetadataField'
@@ -69,7 +70,7 @@ function EntityRow({
         </span>
       )}
       <span className="codex-row-text">
-        <span dir="auto" className="codex-row-name">{entity.name}</span>
+        <span dir={contentDirection(entity.name)} className="codex-row-name">{entity.name}</span>
         {entity.detail && <span className="codex-row-detail">{entity.detail}</span>}
       </span>
       {entity.gender && <span className="codex-gender">{entity.gender.slice(0, 1).toUpperCase()}</span>}
@@ -188,7 +189,7 @@ export function CodexNav({
         <div key={label} className="codex-group">
           <button className="codex-group-head" onClick={() => toggle(label)}>
             {collapsed.has(label) ? (
-              <ChevronRight size={12} strokeWidth={2} />
+              <ChevronRight size={12} strokeWidth={2} className="icon-directional" />
             ) : (
               <ChevronDown size={12} strokeWidth={2} />
             )}

@@ -68,19 +68,33 @@ interface EditorToolbarProps {
 // placement-container: viewBar
 const PARAGRAPH_STYLES = ['', 'heading', 'subheading', 'blockquote', 'poetry'] as const
 
+type ToolbarButton = {
+  command: string
+  labelKey: string
+  active: boolean
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
+}
+
+/**
+ * Left and right stay physical. In a right-to-left interface the group reads
+ * Right, Center, Left, Justify so each icon sits on the side it aligns to.
+ */
+function alignmentButtons(alignment: FormattingState['alignment'], rtl: boolean): ToolbarButton[] {
+  const left = { command: 'paragraph.alignLeft', labelKey: 'blockStyle.left', active: alignment === 'left', icon: AlignLeft }
+  const center = { command: 'paragraph.alignCenter', labelKey: 'blockStyle.center', active: alignment === 'center', icon: AlignCenter }
+  const right = { command: 'paragraph.alignRight', labelKey: 'blockStyle.right', active: alignment === 'right', icon: AlignRight }
+  const justify = { command: 'paragraph.alignJustify', labelKey: 'blockStyle.justify', active: alignment === 'justify', icon: AlignJustify }
+  return rtl ? [right, center, left, justify] : [left, center, right, justify]
+}
+
 function useEditorToolbar(formatting: FormattingState, writing?: WritingFrameAdapter) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [optionsOpen, setOptionsOpen] = useState(false)
   const recording = useDictation((s) => s.recording || s.starting)
   const suggesting = useShellStore((s) => s.suggestionMode)
   const effective = useSettingsStore((s) => s.view?.effective)
 
-  const buttons: {
-    command: string
-    labelKey: string
-    active: boolean
-    icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
-  }[] = [
+  const buttons: ToolbarButton[] = [
     {
       command: 'paragraph.bulletList',
       labelKey: 'blockStyle.bulletList',
@@ -93,30 +107,7 @@ function useEditorToolbar(formatting: FormattingState, writing?: WritingFrameAda
       active: formatting.numberList,
       icon: ListOrdered
     },
-    {
-      command: 'paragraph.alignLeft',
-      labelKey: 'blockStyle.left',
-      active: formatting.alignment === 'left',
-      icon: AlignLeft
-    },
-    {
-      command: 'paragraph.alignCenter',
-      labelKey: 'blockStyle.center',
-      active: formatting.alignment === 'center',
-      icon: AlignCenter
-    },
-    {
-      command: 'paragraph.alignRight',
-      labelKey: 'blockStyle.right',
-      active: formatting.alignment === 'right',
-      icon: AlignRight
-    },
-    {
-      command: 'paragraph.alignJustify',
-      labelKey: 'blockStyle.justify',
-      active: formatting.alignment === 'justify',
-      icon: AlignJustify
-    }
+    ...alignmentButtons(formatting.alignment, i18n.dir() === 'rtl')
   ]
 
   /** One writing preference, flipped where the writer is already editing. */

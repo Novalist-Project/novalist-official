@@ -15,6 +15,7 @@ import { SECTION_STORAGE_KEY, readCollapsed, loc, CollapsibleSection, EntitySect
 import { metadataBinding, SharedMetadataField } from '../collaboration/SharedMetadataField'
 import { MetadataInput } from '../collaboration/MetadataInput'
 import { ContentSelect } from './ContentSelect'
+import { contentDirection } from './contentDirection'
 
 /** Scene context/analysis panel: entities present in the scene, cross-chapter
  * mention matrix, and the auto-computed scene analysis. POV, emotion, intensity,
@@ -404,7 +405,7 @@ export function ContextPanel({
             >
               <option value="">{t('context.none')}</option>
               {a.pov && !a.povOptions.includes(a.pov) && (
-                <option dir="auto" value={a.pov}>{loc(t, a.pov)}</option>
+                <option dir={contentDirection(loc(t, a.pov))} value={a.pov}>{loc(t, a.pov)}</option>
               )}
               {a.povOptions.map((p) => (
                 <option key={p} value={p}>

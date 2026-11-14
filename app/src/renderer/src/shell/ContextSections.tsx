@@ -55,7 +55,7 @@ export function CollapsibleSection({
         onClick={() => onToggle(sectionKey)}
       >
         {collapsed ? (
-          <ChevronRight className="ctx-section-chevron" size={12} strokeWidth={2} />
+          <ChevronRight className="icon-directional ctx-section-chevron" size={12} strokeWidth={2} />
         ) : (
           <ChevronDown className="ctx-section-chevron" size={12} strokeWidth={2} />
         )}

@@ -12,7 +12,7 @@
 
 .languages-table td,
 .languages-table th {
-  text-align: left;
+  text-align: start;
   padding: var(--nl-space-tighter) var(--nl-space-sm);
 }
 

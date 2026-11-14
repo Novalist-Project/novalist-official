@@ -192,7 +192,7 @@ function LayerTreeRow({ state, actions: props, row: { node, depth, visible } }: 
                   props.onToggleExpand(node.id)
                 }}
               >
-                {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                {open ? <ChevronDown size={13} /> : <ChevronRight size={13} className="icon-directional" />}
               </button>
 
               {renamingId === node.id ? (

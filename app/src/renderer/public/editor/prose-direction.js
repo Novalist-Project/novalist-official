@@ -1,9 +1,10 @@
 'use strict';
 
+const PROSE_SELECTOR = 'p,div,h1,h2,h3,h4,h5,h6,blockquote,li,ul,ol,pre';
+
 function applyProseDirection(root) {
-    const selector = 'p,div,h1,h2,h3,h4,h5,h6,blockquote,li,ul,ol,pre';
-    const blocks = Array.from(root.querySelectorAll(selector));
-    if (root.matches?.(selector)) blocks.unshift(root);
+    const blocks = Array.from(root.querySelectorAll(PROSE_SELECTOR));
+    if (root.matches?.(PROSE_SELECTOR)) blocks.unshift(root);
     for (const block of blocks) {
         if (block.id === 'editor' || block.closest('[data-editor-chrome]') ||
             block.matches('.nv-page,.writing-scene,.scene-editor,.nl-prose,[data-writing-scene]') ||
@@ -22,13 +23,58 @@ function applyProseDirection(root) {
     }
 }
 
-function updateProseContainer(block) {
-    if (!block.matches('ul,ol,li,blockquote') || !block.hasAttribute('data-nv-auto-direction')) return;
-    if (block.style.direction === 'ltr' || block.style.direction === 'rtl') return;
+function interfaceDirection() {
+    return document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr';
+}
+
+function hasLetter(text) {
+    return /\p{L}/u.test(text);
+}
+
+function resolvedDirection(element) {
+    if (element.isConnected) return getComputedStyle(element).direction === 'rtl' ? 'rtl' : 'ltr';
+    const explicit = element.style.direction || element.getAttribute('dir');
+    if (explicit === 'rtl' || explicit === 'ltr') return explicit;
+    return textDirection(element.textContent);
+}
+
+function textDirection(text) {
     const probe = document.createElement('bdi');
     probe.dir = 'auto';
-    probe.textContent = block.textContent;
-    block.dir = probe.matches(':dir(rtl)') ? 'rtl' : 'ltr';
+    probe.textContent = text;
+    return probe.matches(':dir(rtl)') ? 'rtl' : 'ltr';
+}
+
+// Chromium resolves dir="auto" to LTR for a block with no letter, whatever the
+// parent says. A letterless block continues the script the writer is in: the
+// nearest preceding block of the same scene that has a letter, else the interface.
+function fallbackDirection(block) {
+    const scene = block.closest('[data-writing-scene],.scene-editor,.nl-prose,#editor,#manuscript-content') || block.getRootNode();
+    const blocks = Array.from(scene.querySelectorAll(PROSE_SELECTOR));
+    for (let index = blocks.indexOf(block) - 1; index >= 0; index--) {
+        const previous = blocks[index];
+        if (previous.matches('ul,ol') || previous.contains(block) || !hasLetter(previous.textContent)) continue;
+        return resolvedDirection(previous);
+    }
+    return interfaceDirection();
+}
+
+function updateProseContainer(block) {
+    if (!block.hasAttribute('data-nv-auto-direction')) return;
+    if (block.style.direction === 'ltr' || block.style.direction === 'rtl') return;
+    if (!hasLetter(block.textContent)) {
+        block.dir = fallbackDirection(block);
+        return;
+    }
+    if (!block.matches('ul,ol,li,blockquote')) {
+        block.dir = 'auto';
+        return;
+    }
+    block.dir = textDirection(block.textContent);
+}
+
+function refreshProseDirection() {
+    for (const block of document.querySelectorAll('[data-nv-auto-direction]')) updateProseContainer(block);
 }
 
 function stripRuntimeProseDirection(root) {
@@ -41,6 +87,7 @@ function stripRuntimeProseDirection(root) {
 
 window.applyProseDirection = applyProseDirection;
 window.stripRuntimeProseDirection = stripRuntimeProseDirection;
+window.refreshProseDirection = refreshProseDirection;
 const proseDirectionObserver = new MutationObserver(records => {
     for (const record of records) {
         for (const node of record.addedNodes) {

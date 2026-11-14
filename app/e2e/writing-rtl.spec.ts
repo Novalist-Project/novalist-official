@@ -4,8 +4,31 @@ import { pathToFileURL } from 'node:url'
 import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 
 const html = '<p>مرحبا بالعالم English 123.</p><p>English العربية 123.</p><p dir="ltr" style="text-align:right">مرحبا explicit</p>'
-async function load(page: Page, content = html): Promise<void> {
+async function setInterfaceDirection(page: Page, direction: 'ltr' | 'rtl'): Promise<void> {
+  await page.evaluate(direction => (window as unknown as EditorWindow).setInterfaceLanguage(direction === 'rtl' ? 'ar' : 'en', direction), direction)
+}
+
+async function pressEndEnter(page: Page): Promise<void> {
+  await page.locator('[data-writing-scene] p').first().click()
+  await page.keyboard.press('Control+End')
+  await page.keyboard.press('Enter')
+}
+
+async function caretOffsetFromParagraphEnd(page: Page): Promise<{ right: number, left: number }> {
+  return page.evaluate(() => {
+    const range = window.getSelection()!.getRangeAt(0)
+    const paragraph = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement!).closest('p')!
+    const marker = document.createRange()
+    marker.selectNode(paragraph.querySelector('br')!)
+    const rect = marker.getBoundingClientRect()
+    const box = paragraph.getBoundingClientRect()
+    return { right: box.right - rect.right, left: rect.left - box.left }
+  })
+}
+
+async function load(page: Page, content = html, interfaceDirection: 'ltr' | 'rtl' = 'ltr'): Promise<void> {
   await page.goto(pathToFileURL(resolve('src/renderer/public/editor/editor.html')).href)
+  await setInterfaceDirection(page, interfaceDirection)
   await page.evaluate(content => {
     const editor = window as unknown as EditorWindow
     editor.setWritingContext({ workspaceId: 'rtl', workspaceEpoch: 1, bookId: 'b', draftId: 'd' }, 'rtl')
@@ -131,3 +154,68 @@ for (const width of [480, 1200]) for (const mode of ['ordinary', 'book', 'page']
     await expect(page.locator('[data-writing-scene] p').last()).toHaveCSS('direction', 'ltr')
   })
 }
+
+test('new empty paragraph continues the script of the paragraph before it', async ({ page }) => {
+  const paragraphs = page.locator('[data-writing-scene] p')
+  await load(page, '<p>مرحبا بالعالم</p>', 'rtl')
+  await pressEndEnter(page)
+  await expect(paragraphs).toHaveCount(2)
+  await expect(paragraphs.last()).toHaveCSS('direction', 'rtl')
+  const caret = await caretOffsetFromParagraphEnd(page)
+  expect(caret.right).toBeLessThan(caret.left)
+  expect(caret.right).toBeLessThanOrEqual(2)
+  await page.screenshot({ path: 'out/issue78/editor/arabic-enter-caret.png', caret: 'initial', clip: { x: 0, y: 0, width: 1440, height: 120 } })
+  await page.keyboard.insertText('Latin')
+  await expect(paragraphs.last()).toHaveCSS('direction', 'ltr')
+  for (let index = 0; index < 5; index++) await page.keyboard.press('Backspace')
+  await expect(paragraphs.last()).toHaveCSS('direction', 'rtl')
+  await page.keyboard.insertText('12')
+  await expect(paragraphs.last()).toHaveCSS('direction', 'rtl')
+  await page.keyboard.insertText('عربي')
+  await expect(paragraphs.last()).toHaveAttribute('dir', 'auto')
+  await page.keyboard.press('Enter')
+  await expect(paragraphs.last()).toHaveCSS('direction', 'rtl')
+  const saved = await page.evaluate(() => (window as unknown as EditorWindow).serializeWritingScene('s'))
+  expect(saved).not.toContain('data-nv-auto-direction')
+  expect(saved).not.toContain('dir=')
+})
+
+test('an empty paragraph follows the previous script, then the interface', async ({ page }) => {
+  const paragraphs = page.locator('[data-writing-scene] p')
+  await load(page, '<p>English text</p>', 'rtl')
+  await pressEndEnter(page)
+  await expect(paragraphs.last()).toHaveCSS('direction', 'ltr')
+  await load(page, '<p>مرحبا بالعالم</p>', 'ltr')
+  await pressEndEnter(page)
+  await expect(paragraphs.last()).toHaveCSS('direction', 'rtl')
+  await load(page, '<p><br></p>', 'rtl')
+  await expect(paragraphs.first()).toHaveCSS('direction', 'rtl')
+  await setInterfaceDirection(page, 'ltr')
+  await expect(paragraphs.first()).toHaveCSS('direction', 'ltr')
+  await setInterfaceDirection(page, 'rtl')
+  await expect(paragraphs.first()).toHaveCSS('direction', 'rtl')
+  expect(await page.evaluate(() => (window as unknown as EditorWindow).serializeWritingScene('s'))).toBe('<p><br></p>')
+})
+
+test('empty headings and list items take a fallback direction and save pristine', async ({ page }) => {
+  const original = '<p>مرحبا</p><h2><br></h2><ul><li><br></li></ul>'
+  await load(page, original, 'ltr')
+  await expect(page.locator('[data-writing-scene] h2')).toHaveCSS('direction', 'rtl')
+  await expect(page.locator('[data-writing-scene] li')).toHaveCSS('direction', 'rtl')
+  expect(await page.evaluate(() => (window as unknown as EditorWindow).serializeWritingScene('s'))).toBe(original)
+})
+
+test('formatting state reports the alignment the writer sees', async ({ page }) => {
+  const alignment = (): Promise<string> => page.evaluate(() => (window as unknown as { getFormattingState(): { alignment: string } }).getFormattingState().alignment)
+  const original = '<p>مرحبا</p><p>English</p><p dir="rtl" style="text-align:left">مرحبا</p><p style="text-align:center">English</p><p style="text-align:justify">English</p><p dir="rtl" style="text-align:right">مرحبا</p>'
+  await load(page, original, 'rtl')
+  const paragraphs = page.locator('[data-writing-scene] p')
+  const expected = ['right', 'left', 'left', 'center', 'justify', 'right']
+  for (const [index, value] of expected.entries()) {
+    await paragraphs.nth(index).click()
+    expect(await alignment()).toBe(value)
+  }
+  await paragraphs.nth(1).click()
+  await page.evaluate(() => (window as unknown as EditorWindow).alignRight())
+  expect(await alignment()).toBe('right')
+})

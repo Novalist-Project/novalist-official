@@ -161,12 +161,14 @@
   --nl-book-cover-rose: #754b44;
   --nl-book-cover-ink: var(--nv-text);
   --nl-book-cover-dark-ink: var(--nv-ground);
-  --nl-book-cover-shading: linear-gradient(90deg, rgb(0 0 0 / 0.3), transparent 3%, rgb(255 255 255 / 0.12) 4%, rgb(0 0 0 / 0.24) 6%, transparent 10%, transparent 96%, rgb(255 255 255 / 0.16));
+  --nl-book-cover-shading: linear-gradient(var(--nl-book-spine-angle), rgb(0 0 0 / 0.3), transparent 3%, rgb(255 255 255 / 0.12) 4%, rgb(0 0 0 / 0.24) 6%, transparent 10%, transparent 96%, rgb(255 255 255 / 0.16));
   --nl-book-cover-edge: inset 0 0 0 1px rgb(255 255 255 / 0.12);
   --nl-book-page-paper: var(--nv-text);
   --nl-book-page-edge: color-mix(in srgb, var(--nv-text) 78%, var(--nv-muted));
-  --nl-book-page-shading: linear-gradient(90deg, rgb(0 0 0 / 0.25), transparent 18%, transparent 90%, rgb(0 0 0 / 0.12));
+  --nl-book-page-shading: linear-gradient(var(--nl-book-spine-angle), rgb(0 0 0 / 0.25), transparent 18%, transparent 90%, rgb(0 0 0 / 0.12));
   --nl-book-cover-opening: -28deg;
+  --nl-book-cover-turn: 1;
+  --nl-book-spine-angle: 90deg;
   --nl-book-cover-duration: 360ms;
   --nl-library-shelf-edge: color-mix(in srgb, var(--nl-text) 30%, var(--nl-surface-card));
   --nl-library-shelf-face: var(--nl-surface-card);

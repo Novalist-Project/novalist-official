@@ -15,7 +15,7 @@ export function BinderPinned({ state }: { state: BinderState }): React.JSX.Eleme
               <ChevronRight
                 size={13}
                 strokeWidth={2}
-                className={`binder-chevron${pinnedOpen ? ' open' : ''}`}
+                className={`icon-directional binder-chevron${pinnedOpen ? ' open' : ''}`}
               />
               {t('binder.pinned', { count: pinned.length })}
             </button>

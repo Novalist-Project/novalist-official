@@ -66,7 +66,7 @@ export function UnifiedWritingEditor({ paneId }: { paneId: string }): React.JSX.
       <button className="writing-toolbar-icon" type="button" aria-pressed={pageView} title={t('blockStyle.pageView')}
         aria-label={t('blockStyle.pageView')} onClick={() => writing.adapter.changePageView?.(!pageView)}><Layers size={17} /></button>
       <button className="writing-toolbar-icon" type="button" title={t('desktopRefresh.sceneDetails')}
-        aria-label={t('desktopRefresh.sceneDetails')} onClick={() => useShellStore.getState().toggleInspector()}><PanelRight size={17} /></button>
+        aria-label={t('desktopRefresh.sceneDetails')} onClick={() => useShellStore.getState().toggleInspector()}><PanelRight size={17} className="icon-directional" /></button>
       {(writing.selectedSceneIds !== null || !isEmptyFilter(filter)) && <>
         <span>{t('unifiedWriting.limitedRun')}</span>
         <button type="button" onClick={() => {

@@ -17,7 +17,7 @@ export function StructureChapter({ chapter, collapsed, selected, onToggle, onSel
       <GripVertical aria-hidden="true" />
       <input type="checkbox" checked={selected} onChange={onSelect} aria-label={t('structure.selectChapter', { title: chapter.title })} />
       <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={chapter.title}>
-        {collapsed ? <ChevronRight /> : <ChevronDown />}<strong>{chapter.title}</strong>
+        {collapsed ? <ChevronRight className="icon-directional" /> : <ChevronDown />}<strong>{chapter.title}</strong>
       </button>
       <span className="structure-count">{t('unifiedWriting.words', { count: chapter.scenes.reduce((sum, scene) => sum + scene.wordCount, 0) })}</span>
       <button type="button" onClick={onMove} title={t('structure.move')}><Move /><span>{t('structure.move')}</span></button>

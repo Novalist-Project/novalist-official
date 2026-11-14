@@ -116,7 +116,7 @@ export function InboxPanel(): React.JSX.Element {
 
           {item.replies.map((reply) => (
             <div key={reply.id} className="inbox-reply">
-              <CornerDownRight size={11} strokeWidth={2} />
+              <CornerDownRight size={11} strokeWidth={2} className="icon-directional" />
               <span className="inbox-reply-text">{reply.text}</span>
               {reply.author && <span className="inbox-author">{reply.author}</span>}
             </div>
@@ -155,7 +155,7 @@ export function InboxPanel(): React.JSX.Element {
                 setReplyText('')
               }}
             >
-              <CornerDownRight size={12} />
+              <CornerDownRight size={12} className="icon-directional" />
             </button>
           </div>
 

@@ -173,6 +173,23 @@ function toggleNumberList() {
 
 // ── Formatting State ────────────────────────────────────────────
 
+// What the writer sees: start and end resolve against the block's own direction.
+function getAlignment() {
+    const anchor = window.getSelection()?.anchorNode;
+    const block = anchor && window.blockOf(anchor);
+    if (!block) return 'left';
+    const style = getComputedStyle(block);
+    const rtl = style.direction === 'rtl';
+    switch (style.textAlign) {
+        case 'center': return 'center';
+        case 'right': return 'right';
+        case 'justify': return 'justify';
+        case 'end': return rtl ? 'left' : 'right';
+        case 'start': return rtl ? 'right' : 'left';
+        default: return 'left';
+    }
+}
+
 function getFormattingState() {
     const selection = window.getSelection();
     const hasSelection = !!selection && !selection.isCollapsed && selection.toString().trim() !== '';
@@ -188,10 +205,7 @@ function getFormattingState() {
     const bold = document.queryCommandState('bold');
     const italic = document.queryCommandState('italic');
     const underline = document.queryCommandState('underline');
-    let alignment = 'left';
-    if (document.queryCommandState('justifyCenter')) alignment = 'center';
-    else if (document.queryCommandState('justifyRight')) alignment = 'right';
-    else if (document.queryCommandState('justifyFull')) alignment = 'justify';
+    const alignment = getAlignment();
     return {
         bold,
         italic,

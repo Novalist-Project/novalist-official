@@ -47,7 +47,7 @@
   font-family: inherit;
   font-size: var(--nl-font-ui);
   padding: var(--nl-space-tightest) var(--nl-space-tighter);
-  text-align: left;
+  text-align: start;
   white-space: pre-wrap;
 }
 

@@ -169,9 +169,24 @@ button:focus-visible,
   background: var(--nl-surface-card);
 }
 
-:where(input:not([type]), input[type='text'], input[type='search'], textarea, option):not([dir='ltr'], [dir='rtl']) {
+:where(input:not([type]), input[type='text'], input[type='search'], textarea):not([dir='ltr'], [dir='rtl']) {
   unicode-bidi: plaintext;
   text-align: start;
+}
+
+:where(option):not([dir='ltr'], [dir='rtl']) {
+  unicode-bidi: plaintext;
+}
+
+/* A closed select paints its selected option's bidi and alignment. The bidi
+   isolates around translated labels hide their letters from unicode-bidi:
+   plaintext, so the option's start edge is taken from the select instead. */
+:where(select:dir(rtl) option) {
+  text-align: right;
+}
+
+:where(select:dir(ltr) option) {
+  text-align: left;
 }
 
 :where(input, select, textarea):focus-visible {

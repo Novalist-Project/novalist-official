@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+import { mkdir } from 'node:fs/promises'
 import { buildRtlContent } from './fixtures/rtlContent'
 
 let url: string
@@ -100,7 +101,7 @@ test('Wiki keeps mixed paragraphs independent, Arabic letters joined and code LT
   await expect(page.locator('.wiki-article h1')).toHaveCSS('direction', 'rtl')
   await expect(page.locator('.wiki-prose p').first()).toHaveCSS('direction', 'rtl')
   await expect(page.locator('.wiki-prose p').nth(1)).toHaveCSS('direction', 'ltr')
-  await expect(page.locator('.wiki-infobox dd')).toHaveCSS('direction', 'rtl')
+  await expect(page.locator('.wiki-article .wiki-infobox dd')).toHaveCSS('direction', 'rtl')
   await expect(page.locator('.wiki-prose code')).toHaveCSS('direction', 'ltr')
   await expect(page.locator('.wiki-prose blockquote')).toHaveCSS('direction', 'rtl')
   await expect(page.locator('.wiki-prose ul')).toHaveCSS('direction', 'rtl')
@@ -135,4 +136,63 @@ test('Wiki loose and nested lists and quotations retain Arabic markers without c
   await expect(page.locator('.wiki-prose td').last()).toHaveCSS('text-align', 'right')
   await page.getByRole('button', { name: 'English Wiki content' }).click()
   for (const block of await page.locator('.wiki-prose ul,.wiki-prose li,.wiki-prose blockquote').all()) await expect(block).toHaveCSS('direction', 'ltr')
+})
+
+async function setInterface(page: Page, direction: 'rtl' | 'ltr'): Promise<void> {
+  await page.evaluate(direction => {
+    document.documentElement.lang = direction === 'rtl' ? 'ar' : 'en'
+    document.documentElement.dir = direction
+  }, direction)
+}
+
+for (const direction of ['rtl', 'ltr'] as const) {
+  test(`empty fields inherit the ${direction} interface and follow typed letters`, async ({ page }) => {
+    await setInterface(page, direction)
+    const fields = [page.getByLabel('Empty metadata'), page.getByRole('textbox', { name: 'Nickname' }), page.getByRole('textbox', { name: 'Notes' })]
+    for (const field of fields) {
+      await expect(field).not.toHaveAttribute('dir', /.*/)
+      await expect(field).toHaveCSS('direction', direction)
+      await field.fill('123')
+      await expect(field).not.toHaveAttribute('dir', /.*/)
+      await expect(field).toHaveCSS('direction', direction)
+      await field.fill('ليلى')
+      await expect(field).toHaveCSS('direction', 'rtl')
+      await field.fill('Layla')
+      await expect(field).toHaveCSS('direction', 'ltr')
+      await field.fill('')
+      await expect(field).not.toHaveAttribute('dir', /.*/)
+      await expect(field).toHaveCSS('direction', direction)
+    }
+  })
+
+  test(`number-only infobox values and select options start on the ${direction} side`, async ({ page }) => {
+    await setInterface(page, direction)
+    const age = page.locator('#numeric-infobox dd').first()
+    await expect(age).toHaveText('46')
+    await expect(age).toHaveCSS('direction', direction)
+    const edge = direction === 'rtl' ? 'right' : 'left'
+    for (const name of ['Arabic select', 'Percent select', 'Latin select']) {
+      await expect(page.getByRole('combobox', { name }).locator('option').first()).toHaveCSS('text-align', edge)
+    }
+    await expect(page.getByRole('combobox', { name: 'Latin select' }).locator('option').nth(1)).toHaveCSS('unicode-bidi', 'plaintext')
+  })
+
+  test(`an empty Markdown line carries no direction and its placeholder starts on the ${direction} side`, async ({ page }) => {
+    await setInterface(page, direction)
+    const editor = page.getByRole('textbox', { name: 'Empty Markdown' })
+    await expect(editor.locator('.cm-line').first()).not.toHaveAttribute('dir', /.*/)
+    const box = (await editor.locator('.cm-placeholder').boundingBox())!
+    const surface = (await editor.boundingBox())!
+    const middle = surface.x + surface.width / 2
+    expect(direction === 'rtl' ? box.x + box.width / 2 > middle : box.x + box.width / 2 < middle).toBe(true)
+  })
+}
+
+test('Arabic interface fields render with their text on the start side', async ({ page }) => {
+  await setInterface(page, 'rtl')
+  const directory = 'out/issue78/fields'
+  await mkdir(directory, { recursive: true })
+  await page.setViewportSize({ width: 900, height: 1500 })
+  await page.locator('#fields').screenshot({ path: `${directory}/arabic-fields.png` })
+  await page.locator('#numeric-infobox').screenshot({ path: `${directory}/arabic-infobox.png` })
 })

@@ -113,7 +113,7 @@ function StructureRowView({ row, state, model }: { row: StructureRow; state: Pla
   if (row.kind === 'act') return <header className="structure-act">
     {row.act.name && <GripVertical aria-hidden="true" />}
     <button type="button" aria-expanded={!model.collapsed.has(row.key)} onClick={() => model.toggleCollapse(row.key)}>
-      {model.collapsed.has(row.key) ? <ChevronRight /> : <ChevronDown />}<strong>{row.act.name ?? t('structure.unassigned')}</strong>
+      {model.collapsed.has(row.key) ? <ChevronRight className="icon-directional" /> : <ChevronDown />}<strong>{row.act.name ?? t('structure.unassigned')}</strong>
     </button>
     <span className="structure-count">{t('structure.chapters', { count: row.act.chapterGuids.length })}</span>
     <button type="button" onClick={insertChapter}><Plus />{t('unifiedWriting.insertChapter')}</button>

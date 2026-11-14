@@ -100,7 +100,7 @@
   flex: 1;
   font-size: var(--nl-font-caption);
   overflow: hidden;
-  text-align: left;
+  text-align: start;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

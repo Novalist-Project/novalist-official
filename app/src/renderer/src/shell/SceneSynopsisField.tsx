@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../stores/projectStore'
 import { MarkdownEditor } from './MarkdownEditor'
+import { contentDirection } from './contentDirection'
 import { useSceneNotesDocument } from './useSceneNotesDocument'
 
 interface SceneSynopsisFieldProps {
@@ -42,7 +43,7 @@ function LocalSceneSynopsisField({ chapterGuid, sceneId, multiline = false, ...p
     onBlur: save
   }
   return <>
-    {multiline ? <textarea dir="auto" {...inputProps} /> : <input dir="auto" {...inputProps} />}
+    {multiline ? <textarea dir={contentDirection(state.text)} {...inputProps} /> : <input dir={contentDirection(state.text)} {...inputProps} />}
     {state.error && <span role="alert">
       {t('toast.saveFailed').replace('{0}', state.error)}
       <button type="button" className="btn-secondary" onClick={() => state.loaded ? save() : void document.load()}>{t('shell.retry')}</button>

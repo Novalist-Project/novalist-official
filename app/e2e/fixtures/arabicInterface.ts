@@ -1,4 +1,4 @@
-import { build } from 'esbuild'
+import { build, type PluginBuild } from 'esbuild'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -53,6 +53,72 @@ export const useShellStore = create(set => ({
 export const dock = (id, edge) => useShellStore.setState(state => ({ panes: dockNotesPane(state.panes, id, edge), placingNotes: false }))
 `
 
+function localeLoader(builder: PluginBuild, locales: string[]): void {
+  builder.onLoad({ filter: /i18n[\\/]index\.ts$/ }, async args => {
+    const source = await readFile(args.path, 'utf8')
+    const imports = locales.map((file, index) => `import locale${index} from '../locales/${file}';`).join('\n')
+    const modules = locales.map((file, index) => `'../locales/${file}': { default: locale${index} }`).join(',')
+    return { contents: imports + '\n' + source.replace(/import\.meta\.glob[\s\S]*?\n\)/, `{ ${modules} }`), loader: 'ts' }
+  })
+}
+
+const detailsEntry = String.raw`
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronRight, CornerDownRight } from 'lucide-react'
+import i18n from './src/renderer/src/i18n'
+window.setLanguage = language => i18n.changeLanguage(language)
+const mark = 'icon-directional'
+function Details() {
+  return <div className="project-library">
+    <section id="icons" className="fixture-icons">
+      <button className="settings-back"><ArrowLeft id="settings-back" size={16} className={mark} />Settings</button>
+      <button className="open-book"><span>Open book</span><ArrowRight id="open-book" size={17} className={mark} /></button>
+      <button className="ctx-section-head" aria-expanded="false"><ChevronRight id="ctx-collapsed" className={mark + ' ctx-section-chevron'} size={12} /><span>Collapsed</span></button>
+      <button className="ctx-section-head" aria-expanded="true"><ChevronDown id="ctx-open" className="ctx-section-chevron" size={12} /><span>Open</span></button>
+      <ChevronRight id="binder-closed" size={13} className={mark + ' binder-chevron'} />
+      <ChevronRight id="binder-open" size={13} className={mark + ' binder-chevron open'} />
+      <CornerDownRight id="reply" size={11} className={mark} />
+      <ArrowLeft id="plain" size={16} />
+    </section>
+    <section id="recent" className="dashboard-card dashboard-recent">
+      <button className="dashboard-activity-row dashboard-activity-link">
+        <div className="dashboard-activity-main"><div className="dashboard-activity-scene">خروج الأمر عن السيطرة وما بعده</div><div className="dashboard-activity-chapter">مشروع جلمود</div></div>
+        <div className="dashboard-activity-time">11:09</div>
+      </button>
+    </section>
+    <section id="wiki" className="wiki-index">
+      <ul className="wiki-entry-list"><li><button className="wiki-entry"><span className="wiki-entry-thumb wiki-entry-thumb-empty" />
+        <span className="wiki-entry-text"><span className="wiki-entry-title">ألكسندر إلياس الطويل جدا</span><span className="wiki-entry-subtitle">الأمن والسلطة العسكرية</span></span></button></li></ul>
+    </section>
+    <section id="scenes" className="binder">
+      <button className="binder-scene-row"><span className="binder-scene-title">حين سبقت الطموحات الاحتياطات كلها</span><span className="binder-scene-words">412</span></button>
+    </section>
+    <section id="shelf" className="library-book" style={{ '--shelf-row-height': '260px', '--library-cover-w': '140px', '--library-cover-h': '200px' }}>
+      <button className="start-recent-card" aria-pressed="false" aria-label="Book"><div className="start-recent-cover volume-cover"><div className="volume-cover-front" /></div></button>
+    </section>
+  </div>
+}
+createRoot(document.getElementById('root')).render(<Details />)
+`
+
+export async function buildArabicDetails(): Promise<string> {
+  const directory = resolve('out/arabic-details')
+  await mkdir(directory, { recursive: true })
+  const locales = (await readdir(resolve('src/renderer/src/locales'))).filter(file => file.endsWith('.json'))
+  await build({ stdin: { contents: detailsEntry, resolveDir: process.cwd(), loader: 'tsx' }, bundle: true,
+    outfile: resolve(directory, 'details.js'), platform: 'browser', jsx: 'automatic',
+    define: { 'process.env.NODE_ENV': '"development"' }, loader: { '.css': 'empty' }, logLevel: 'silent',
+    plugins: [{ name: 'locales', setup: builder => localeLoader(builder, locales) }] })
+  const css = ['styles/tokens.css', 'styles/base.css', 'shell/shell.css', 'styles/desktop.css', 'shell/inspector.css', 'shell/bookshelf.css',
+    'views/dashboard/dashboard.css', 'views/wiki/wiki.css', 'styles/rtl.css']
+    .map(path => `<link rel="stylesheet" href="${pathToFileURL(resolve('src/renderer/src', path)).href}">`).join('')
+  await writeFile(resolve(directory, 'index.html'), `<!doctype html><html data-shell="desktop"><head><meta charset="utf-8">${css}
+    <style>body{padding:var(--nl-space-xl)}#recent,#wiki,#scenes{width:260px;position:static}.library-book{width:220px}.fixture-icons{display:flex;flex-direction:column;align-items:flex-start}</style>
+    </head><body><div id="root"></div><script src="details.js"></script></body></html>`)
+  return pathToFileURL(resolve(directory, 'index.html')).href
+}
+
 export async function buildArabicInterface(): Promise<string> {
   const directory = resolve('out/arabic-interface')
   await mkdir(directory, { recursive: true })
@@ -92,12 +158,7 @@ export async function buildArabicInterface(): Promise<string> {
       })
       builder.onLoad({ filter: /.*/, namespace: 'stub' }, args => ({ contents: stubs.get(args.path)!, loader: 'js', resolveDir: process.cwd() }))
       builder.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({ contents: store, loader: 'js', resolveDir: process.cwd() }))
-      builder.onLoad({ filter: /i18n[\\/]index\.ts$/ }, async args => {
-        const source = await readFile(args.path, 'utf8')
-        const imports = locales.map((file, index) => `import locale${index} from '../locales/${file}';`).join('\n')
-        const modules = locales.map((file, index) => `'../locales/${file}': { default: locale${index} }`).join(',')
-        return { contents: imports + '\n' + source.replace(/import\.meta\.glob[\s\S]*?\n\)/, `{ ${modules} }`), loader: 'ts' }
-      })
+      localeLoader(builder, locales)
     } }] })
   const css = ['styles/tokens.css', 'styles/base.css', 'shell/shell.css', 'styles/desktop.css', 'shell/sceneChecklist.css', 'shell/focus-mode.css', 'styles/rtl.css']
     .map(path => `<link rel="stylesheet" href="${pathToFileURL(resolve('src/renderer/src', path)).href}">`).join('')

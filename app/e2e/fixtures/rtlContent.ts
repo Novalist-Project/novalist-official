@@ -13,6 +13,7 @@ import { EntityDetailFields } from './src/renderer/src/views/codex/EntityDetailF
 import { MarkdownEditor } from './src/renderer/src/shell/MarkdownEditor'
 import { WikiArticle } from './src/renderer/src/views/wiki/WikiArticle'
 import { ContentSelect } from './src/renderer/src/shell/ContentSelect'
+import { WikiInfobox } from './src/renderer/src/views/wiki/WikiInfobox'
 import en from './src/renderer/src/locales/en.json'
 const article = { id: 'arabic', typeKey: 'character', title: 'ليلى', aliases: [], lead: {},
  description: 'كانت ليلى تقرأ في المدينة.', infobox: { images: [], fields: [{ literalLabel: 'Name', value: 'ليلى' }] },
@@ -35,12 +36,37 @@ function ContentDirectionFixture() {
   <button onClick={() => setDirection(undefined)}>Use content direction</button>
  </section>
 }
+const RLI = '⁧'
+const PDI = '⁩'
+const isolated = text => RLI + text + PDI
+const infobox = { images: [], fields: [{ literalLabel: isolated('العمر'), value: '46' }, { literalLabel: isolated('الاسم'), value: 'ليلى' }] }
+const fieldRecord = { id: 'fields', name: '', fields: { notes: '', nickname: '', mood: isolated('مزاج هادئ') } }
+const fieldDefinition = { defaultFields: [
+ { key: 'notes', displayName: 'Notes', type: 'Text' }, { key: 'nickname', displayName: 'Nickname', type: 'String' },
+ { key: 'mood', displayName: 'Mood', type: 'Enum', enumOptions: [isolated('مزاج هادئ'), isolated('مزاج غاضب')] }] }
+function FieldsFixture() {
+ const [empty, setEmpty] = useState('')
+ const [percent, setPercent] = useState('90%')
+ const [latin, setLatin] = useState('Latin label')
+ const [markdown, setMarkdown] = useState('')
+ return <section id="fields">
+  <MetadataInput aria-label="Empty metadata" placeholder={isolated('الدور (مثال)')} list="role-names" value={empty} editable change={setEmpty} format={value => value} parse={value => value} />
+  <datalist id="role-names"><option value="صديق" /><option value="Friend" /></datalist>
+  <EntityDetailFields entityType="custom" record={fieldRecord} customDef={fieldDefinition} updateField={async () => {}} />
+  <select aria-label="Arabic select" value="a"><option value="a">{isolated('الحالة الحالية')}</option><option value="b">{isolated('أخرى')}</option></select>
+  <select aria-label="Percent select" value={percent} onChange={event => setPercent(event.target.value)}><option value="90%">90%</option><option value="100%">100%</option></select>
+  <select aria-label="Latin select" value={latin} onChange={event => setLatin(event.target.value)}><option>Latin label</option><option>(Other) label</option></select>
+  <ContentSelect aria-label="Isolated content select" defaultValue="a"><option value="a">{isolated('الحالة الحالية')}</option></ContentSelect>
+  <MarkdownEditor ariaLabel="Empty Markdown" placeholder={isolated('اكتب هنا')} value={markdown} onChange={setMarkdown} />
+  <div id="numeric-infobox"><WikiInfobox infobox={infobox} onImageClick={() => {}} /></div>
+ </section>
+}
 function Fixture() {
  const [name, setName] = useState('ليلى')
  const [record, setRecord] = useState({ id: 'custom', name: 'ليلى', fields: { language: 'English' } })
  const [markdown, setMarkdown] = useState('مرحبا بالعالم\nEnglish paragraph')
  const [wikiContent, setWikiContent] = useState(article.sections[0].content)
- return <><header>English interface</header><ContentDirectionFixture />
+ return <><header>English interface</header><ContentDirectionFixture /><FieldsFixture />
  <MetadataInput aria-label="Scene name" value={name} editable change={setName} format={value => value} parse={value => value} />
  <EntityDetailFields entityType="custom" record={record} customDef={{ defaultFields: [{ key: 'language', displayName: 'Language', type: 'Enum', enumOptions: ['English', 'العربية'] }] }}
  updateField={async (key, value) => setRecord(previous => ({ ...previous, fields: { ...previous.fields, [key]: value } }))} />

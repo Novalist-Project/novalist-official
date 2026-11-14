@@ -91,7 +91,7 @@
   cursor: pointer;
   font: inherit;
   padding: var(--nl-space-none);
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 

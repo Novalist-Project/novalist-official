@@ -109,7 +109,7 @@
 }
 
 .settings-nav-item {
-  text-align: left;
+  text-align: start;
   background: transparent;
   border: none;
   color: var(--nl-text-dim);
@@ -216,7 +216,7 @@
   flex-direction: column;
   gap: var(--nl-space-tightest);
   padding: var(--nl-space-sm) var(--nl-space-md);
-  text-align: left;
+  text-align: start;
 }
 
 .settings-result:hover,
@@ -628,7 +628,7 @@
 .tag-name {
   color: var(--nl-text);
   font-size: var(--nl-font-body);
-  text-align: left;
+  text-align: start;
   flex: 1;
 }
 
@@ -796,7 +796,7 @@
 .rule-tryit-label {
   color: var(--nl-text-dim);
   font-size: var(--nl-font-caption);
-  text-align: right;
+  text-align: end;
 }
 
 .rule-tryit-out {
@@ -867,7 +867,7 @@
   }
 
   .rule-tryit-label {
-    text-align: left;
+    text-align: start;
   }
 
   .rule-tryit-out {

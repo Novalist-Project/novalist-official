@@ -122,7 +122,7 @@ export function CollectionsPanel(): React.JSX.Element {
               <ChevronRight
                 size={13}
                 strokeWidth={2}
-                className={`binder-chevron${collapsed[collection.id] ? '' : ' open'}`}
+                className={`icon-directional binder-chevron${collapsed[collection.id] ? '' : ' open'}`}
               />
             </button>
             {renamingId === collection.id ? (

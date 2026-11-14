@@ -10,6 +10,7 @@ import type { WritingDocumentRegistry } from '../../stores/writingDocuments'
 import type { EditorWindow } from './editorBridge'
 import type { SceneRef, SceneSnapshot, WritingScope } from './writingTypes'
 import type { WritingStructureRequest } from './writingPaneController'
+import { contentDirection } from '../../shell/contentDirection'
 import { useStageStore } from '../../stores/stageStore'
 import { useProjectStore } from '../../stores/projectStore'
 import { WritingMetadataName } from './WritingMetadataName'
@@ -65,8 +66,8 @@ export const WritingCanvasChrome = memo(function WritingCanvasChrome({ live, reg
   const insertBefore = (beforeChapterGuid: string | null, actName: string | null): void => onStructure({ command: 'insertChapter', selection: null, anchor: null, destination: { beforeChapterGuid, actName } })
   return <>
     {introTarget && createPortal(<header className="writing-book-heading">
-      <h1 dir="auto">{bookTitle}</h1>
-      {draftName && <p dir="auto">{draftName}</p>}
+      <h1 dir={contentDirection(bookTitle)}>{bookTitle}</h1>
+      {draftName && <p dir={contentDirection(draftName)}>{draftName}</p>}
     </header>, introTarget)}
     {targets.map(({ scene, element }, index) => {
       const chapter = chapters.find(value => value.guid === scene.chapterGuid)
@@ -81,7 +82,7 @@ export const WritingCanvasChrome = memo(function WritingCanvasChrome({ live, reg
           <span className="writing-eyebrow">{t('unifiedWriting.chapterNumber', { number: String(chapterOrder.indexOf(chapter) + 1).padStart(2, '0') })}</span>
           <h2>{registry ? <WritingMetadataName value={chapter.title} label={t('dialog.chapterName')} context={registry.context}
             save={title => useProjectStore.getState().renameChapter(chapter.guid, title)} /> : chapter.title}</h2>
-          {(chapter.description || chapter.subtitle) && <p dir="auto">{chapter.description || chapter.subtitle}</p>}
+          {(chapter.description || chapter.subtitle) && <p dir={contentDirection(chapter.description || chapter.subtitle)}>{chapter.description || chapter.subtitle}</p>}
         </header>}
         {registry && <WritingSceneMargin scene={scene} registry={registry} wordCount={metadata?.wordCount ?? 0}
           number={(chapter?.scenes.findIndex(value => value.id === scene.sceneId) ?? index) + 1} title={metadata?.title ?? ''} stage={stages.find(stage => stage.key === metadata?.stage)}
@@ -96,7 +97,7 @@ export const WritingCanvasChrome = memo(function WritingCanvasChrome({ live, reg
           context={registry.context} save={newName => executeWritingStructure({ kind: 'renameAct', oldName: chapter.act, newName })} /></div>}
         <h2>{registry ? <WritingMetadataName value={chapter.title} label={t('dialog.chapterName')} context={registry.context}
           save={title => useProjectStore.getState().renameChapter(chapter.guid, title)} /> : chapter.title}</h2>
-        {chapter.subtitle && <p dir="auto">{chapter.subtitle}</p>}</header>}
+        {chapter.subtitle && <p dir={contentDirection(chapter.subtitle)}>{chapter.subtitle}</p>}</header>}
       <button type="button" className="writing-boundary-insert" data-writing-insert="scene" onClick={() => onStructure({ command: 'insertScene', selection: null, anchor: null,
         sceneDestination: { chapterGuid: chapter.guid, beforeSceneId: null } })}>+ {t('shell.newScene')}</button>
     </>, element, chapter.guid))}

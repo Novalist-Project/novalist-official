@@ -5,6 +5,7 @@ import { rpc } from '../../rpc/client'
 import { useCodexStore } from '../../stores/codexStore'
 import { persistPendingWrite, registerPendingWrite } from '../../stores/pendingWrites'
 import { MarkdownEditor } from '../../shell/MarkdownEditor'
+import { contentDirection } from '../../shell/contentDirection'
 import type { CustomTypeDefinition } from './CustomTypeManager'
 import { useEntitySections } from './useEntitySections'
 import { useEntityFieldSuggestions } from './useEntityFieldSuggestions'
@@ -263,7 +264,7 @@ export function EntityListsEditor({
               change(current => (current ?? []).map((r, i) => (i === index ? { ...r, ...p } : r)))
             return (
               <div key={index} className="entity-rel-row">
-                <input dir="auto"
+                <input dir={contentDirection(rel.role)}
                   className="outliner-input"
                   list="codex-rel-roles"
                   onFocus={suggestions.loadRelationships}
@@ -283,7 +284,7 @@ export function EntityListsEditor({
                     if (!metadataBinding(record, 'relationships')) persistRelationships()
                   }}
                 />
-                <input dir="auto"
+                <input dir={contentDirection(rel.target)}
                   className="outliner-input"
                   list="codex-rel-names"
                   onFocus={suggestions.loadRelationships}
@@ -313,7 +314,7 @@ export function EntityListsEditor({
                     </option>
                   ))}
                 </select>
-                <input dir="auto"
+                <input dir={contentDirection(rel.inverseRole)}
                   className="outliner-input codex-rel-inverse"
                   placeholder={t('entityEditor.inverseRole')}
                   list="codex-rel-roles"
@@ -363,7 +364,7 @@ export function EntityListsEditor({
             <div className="entity-section-head">
               <SharedMetadataField<string | null> binding={section.id ? metadataBinding(record, `section:${section.id}:title`) : undefined}
                 value={section.title} onChange={next => setSections(current => current.map((s, i) => i === index ? { ...s, title: next ?? '' } : s))}>
-                {({ value, editable, change }) => <input dir="auto" className="outliner-input entity-section-title"
+                {({ value, editable, change }) => <input dir={contentDirection(value)} className="outliner-input entity-section-title"
                   value={value ?? ''} readOnly={!editable} onChange={event => change(event.target.value)}
                   onBlur={() => { if (!section.id || !metadataBinding(record, `section:${section.id}:title`)) void flushSections().catch(() => {}) }} />}
               </SharedMetadataField>

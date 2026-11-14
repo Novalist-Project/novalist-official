@@ -814,7 +814,7 @@
   border-bottom: 1px solid var(--nl-border-subtle);
   color: var(--nl-text-dim);
   font-size: var(--nl-font-ui);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 
@@ -891,7 +891,7 @@
     border-bottom: 1px solid var(--nl-border-subtle);
     color: var(--nl-text-dim);
     font-size: var(--nl-font-ui);
-    text-align: left;
+    text-align: start;
     cursor: pointer;
   }
 

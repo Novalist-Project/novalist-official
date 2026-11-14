@@ -119,7 +119,7 @@
   border: none;
   color: var(--nl-text);
   font-size: var(--nl-font-body);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   /* A row is a control, not a paragraph. Pressing one on iOS raised the text
      selection loupe over its label, which put a magnifier on screen instead of

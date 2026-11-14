@@ -96,25 +96,27 @@
   box-shadow: inset calc(-1 * var(--nl-space-hairline)) 0 0 var(--nl-accent);
 }
 
-:root[dir='rtl'] .binder-chevron { transform: rotate(180deg); }
-:root[dir='rtl'] .binder-chevron.open { transform: rotate(90deg); }
+:root[dir='rtl'] .icon-directional { scale: -1 1; }
+
+:root[dir='rtl'] {
+  --nl-book-cover-turn: -1;
+  --nl-book-spine-angle: 270deg;
+}
+
+:root[dir='rtl'] .volume-cover {
+  border-radius: var(--nl-radius-md) var(--nl-radius-sm) var(--nl-radius-sm) var(--nl-radius-md);
+  perspective-origin: right center;
+}
+
+:root[dir='rtl'] .volume-cover-front { transform-origin: right center; }
 
 :root[dir='rtl'] .editor-tab {
   border-right: 0;
   border-left: var(--nl-rule-width) solid var(--nl-border-subtle);
 }
 
-:root[dir='rtl'] :is(.binder-scene-row, .binder-chapter-row, .mode-panel-row,
-  .codex-row, .settings-nav-item, .pane-header-view, .pane-picker-item,
-  .editor-tab-menu button, .library-more-menu button, .library-related button,
-  .layouts-apply, .corkboard-card-title, .outliner-scene-title, .matter-toggle,
-  .research-action-btn, .codex-table th) {
+:root[dir='rtl'] :is(.binder-chapter-row, .pane-header-view) {
   text-align: start;
-}
-
-:root[dir='rtl'] :is(.outliner-words, .outliner-target, .analytics-total,
-  .status-overview-pages, .dashboard-avg-grid > div:last-child, .map-prop-value) {
-  text-align: end;
 }
 
 :root[dir='rtl'] :is(.chart-axis, .analytics-cells, .plot-lanes,

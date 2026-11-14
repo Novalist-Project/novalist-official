@@ -1,4 +1,5 @@
 import { MotionPresence } from '../../shell/MotionPresence'
+import { contentDirection } from '../../shell/contentDirection'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
@@ -140,7 +141,7 @@ export function WikiArticle({ article }: { article: Article }): React.JSX.Elemen
     <article className="wiki-article">
       <header className="wiki-article-header">
         <div className="wiki-article-heading">
-          <h1 dir="auto">{article.title}</h1>
+          <h1 dir={contentDirection(article.title)}>{article.title}</h1>
           <div className="wiki-article-meta">
             <span className="wiki-type-chip">{typeLabel(article, t)}</span>
             <span className={`wiki-scope-chip${article.isWorldBible ? ' worldbible' : ''}`}>
@@ -166,7 +167,7 @@ export function WikiArticle({ article }: { article: Article }): React.JSX.Elemen
             )}
             {lead && <span> {'—'} {lead}</span>}
           </p>
-          {article.description && <p dir="auto" className="wiki-lead">{article.description}</p>}
+          {article.description && <p dir={contentDirection(article.description)} className="wiki-lead">{article.description}</p>}
 
           {(article.generatorAvailable || article.generated) && (
             <div className="wiki-summary">
@@ -178,7 +179,7 @@ export function WikiArticle({ article }: { article: Article }): React.JSX.Elemen
                       <span className="wiki-summary-stale">{t('wiki.summaryStale')}</span>
                     )}
                   </div>
-                  <p dir="auto" className="wiki-summary-text">{article.generated.summary}</p>
+                  <p dir={contentDirection(article.generated.summary)} className="wiki-summary-text">{article.generated.summary}</p>
                 </>
               )}
               {article.generatorAvailable && (
@@ -246,7 +247,7 @@ export function WikiArticle({ article }: { article: Article }): React.JSX.Elemen
 
           {article.sections.map((section, i) => (
             <section className="wiki-section" id={`sec-${i}`} key={`${section.title}-${i}`}>
-              {section.title && <h2 dir="auto">{section.title}</h2>}
+              {section.title && <h2 dir={contentDirection(section.title)}>{section.title}</h2>}
               {/* Section content is authored Markdown in the Codex; rendered read-only.
                   Entity references are pre-linked by the backend as `nventity:` links. */}
               <div className="wiki-prose">

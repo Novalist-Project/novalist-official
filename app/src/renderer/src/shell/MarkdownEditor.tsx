@@ -35,6 +35,7 @@ import type { SharedMarkdownSession } from '../collaboration/SharedMarkdownSessi
 import { SharedEditorPresence } from '../collaboration/SharedEditorPresence'
 import { registerPendingWrite, retainPendingWrite } from '../stores/pendingWrites'
 import { markdownShortcutKeys } from './markdownShortcuts'
+import { contentDirection } from './contentDirection'
 
 /**
  * The markdown fields in this app (Codex sections and overrides, research
@@ -125,7 +126,7 @@ function concealDecorations(view: EditorView): DecorationSet {
   const directedLines = new Set<number>()
   for (const { from, to } of view.visibleRanges) {
     for (let line = view.state.doc.lineAt(from); line.from <= to;) {
-      if (!directedLines.has(line.from)) {
+      if (!directedLines.has(line.from) && contentDirection(line.text)) {
         found.push(AUTO_DIRECTION.range(line.from))
         directedLines.add(line.from)
       }
@@ -390,7 +391,7 @@ export function MarkdownEditor({
         concealSyntax,
         EditorView.lineWrapping,
         EditorView.perLineTextDirection.of(true),
-        EditorView.theme({ '.cm-line': { unicodeBidi: 'plaintext' } }),
+        EditorView.theme({ '.cm-line[dir]': { unicodeBidi: 'plaintext' } }),
         ...(placeholder ? [cmPlaceholder(placeholder)] : []),
         EditorView.updateListener.of((update) => {
           if (!collaboration && update.docChanged) onChangeRef.current(update.state.doc.toString())

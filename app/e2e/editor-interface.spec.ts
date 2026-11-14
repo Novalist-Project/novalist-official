@@ -185,3 +185,38 @@ test('unified scene rail mirrors with interface direction while book width and z
     expect(await canvas.locator('#editor-wrapper').evaluate(root => root.scrollWidth - root.clientWidth)).toBeLessThanOrEqual(1)
   }
 })
+
+test('alignment buttons put each icon on the side it aligns to in both interface directions', async ({ page }) => {
+  await page.goto(await buildWritingAppearance())
+  const commands = page.locator('.editor-toolbar [data-command^="paragraph.align"]')
+  await expect(commands.first()).toBeVisible()
+  const change = (language: string): Promise<unknown> => page.evaluate(language => (window as unknown as { changeLanguage(language: string): Promise<unknown> }).changeLanguage(language), language)
+  for (const [language, order] of [
+    ['en', ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify']],
+    ['ar', ['alignRight', 'alignCenter', 'alignLeft', 'alignJustify']],
+    ['de', ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify']]
+  ] as const) {
+    await change(language)
+    await expect.poll(() => commands.evaluateAll(buttons => buttons.map(button => button.getAttribute('data-command')!.replace('paragraph.', '')))).toEqual(order)
+  }
+  await change('ar')
+  await page.evaluate(() => { document.documentElement.dir = 'rtl' })
+  const [right, left] = await Promise.all([commands.nth(0).boundingBox(), commands.nth(2).boundingBox()])
+  expect(right!.x).toBeGreaterThan(left!.x)
+  await page.locator('.editor-toolbar-primary').screenshot({ path: 'out/issue78/editor/toolbar-arabic.png' })
+})
+
+for (const kind of ['manuscript', 'narration']) {
+  test(`${kind} editor gives an empty paragraph the preceding script`, async ({ page }) => {
+    await page.goto(pathToFileURL(resolve(`src/renderer/public/editor/${kind}-editor.html`)).href)
+    await setInterface(page, 'en')
+    const empty = '<p>مرحبا</p><p><br></p>'
+    await page.evaluate(({ kind, empty }) => {
+      const frame = window as unknown as { setManuscript(json: string): void; setBook(json: string): void }
+      const scene = { sceneId: 's', chapterGuid: 'c', html: empty, title: 'Scene', wordCount: 1 }
+      if (kind === 'manuscript') frame.setManuscript(JSON.stringify([{ chapterGuid: 'c', chapterTitle: 'Chapter', scenes: [scene] }]))
+      else frame.setBook(JSON.stringify({ chapters: [{ guid: 'c', title: 'Chapter', scenes: [{ ...scene, sceneTitle: 'Scene' }] }] }))
+    }, { kind, empty })
+    await expect(page.locator(kind === 'manuscript' ? '.scene-editor p' : '.nl-prose p').last()).toHaveCSS('direction', 'rtl')
+  })
+}

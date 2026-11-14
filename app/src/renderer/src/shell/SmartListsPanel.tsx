@@ -103,7 +103,7 @@ export function SmartListsPanel(): React.JSX.Element {
               <ChevronRight
                 size={13}
                 strokeWidth={2}
-                className={`binder-chevron${expanded[list.id] ? ' open' : ''}`}
+                className={`icon-directional binder-chevron${expanded[list.id] ? ' open' : ''}`}
               />
             </button>
             <span className="binder-chapter-title">{list.name}</span>

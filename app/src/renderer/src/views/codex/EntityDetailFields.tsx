@@ -10,6 +10,7 @@ import { EntityReferenceList } from './EntityReferenceList'
 import { useEntityFieldSuggestions } from './useEntityFieldSuggestions'
 import { SharedEntityReferenceList } from './SharedEntityReferenceList'
 import { ContentSelect } from '../../shell/ContentSelect'
+import { contentDirection, syncContentDirection } from '../../shell/contentDirection'
 
 const LORE_CATEGORIES = ['Organization', 'Culture', 'History', 'Other']
 const refTargetType = (field: CustomTypeDefinition['defaultFields'][number]): string =>
@@ -175,8 +176,8 @@ export function EntityDetailFields({
     if (control === 'plainText') {
       if (shared && itemId) return <SharedFieldControl key={itemId} binding={{ sessionId: shared.sessionId, itemId }}
         value={value} label={label} multiline disabled={record.locked === true} />
-      return <textarea dir="auto" className="dialog-input codex-field-input" aria-label={label} rows={5}
-        key={`${record.id}:${key}:${value}`} defaultValue={value} onBlur={(event) => commit(event.target.value)} />
+      return <textarea dir={contentDirection(value)} className="dialog-input codex-field-input" aria-label={label} rows={5}
+        key={`${record.id}:${key}:${value}`} defaultValue={value} onInput={event => syncContentDirection(event.currentTarget)} onBlur={(event) => commit(event.target.value)} />
     }
     if (control === 'category' || (options && options.length > 0)) {
       const opts = options ?? LORE_CATEGORIES
@@ -189,7 +190,7 @@ export function EntityDetailFields({
           onChange={(e) => commit(e.target.value)}
         >
           {opts.map((o) => (
-            <option dir="auto" key={o} value={o}>
+            <option dir={contentDirection(o)} key={o} value={o}>
               {o}
             </option>
           ))}
@@ -211,11 +212,12 @@ export function EntityDetailFields({
         {shared && itemId ? <SharedFieldControl key={itemId} binding={{ sessionId: shared.sessionId, itemId }}
           value={value} label={label} type={inputType} list={listId} disabled={record.locked === true}
           onFocus={listId ? () => suggestions.load(suggestionType) : undefined} /> : <input
-          dir="auto" className="outliner-input codex-field-input"
+          dir={contentDirection(value)} className="outliner-input codex-field-input"
           type={inputType}
           aria-label={label}
           list={listId}
           defaultValue={value}
+          onInput={event => syncContentDirection(event.currentTarget)}
           key={`${key}:${value}`}
           onFocus={listId ? () => suggestions.load(suggestionType) : undefined}
           title={listId ? suggestions.errors[suggestionType ?? ''] : undefined}

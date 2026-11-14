@@ -65,7 +65,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--nl-space-tightest);
-  text-align: left;
+  text-align: start;
   padding: var(--nl-space-sm) var(--nl-space-md);
   border-radius: var(--nl-radius-md);
   color: var(--nl-text-dim);
@@ -269,7 +269,7 @@
 .help-content td {
   padding: var(--nl-space-sm) var(--nl-space-md);
   border: var(--nl-rule-width) solid var(--nl-border);
-  text-align: left;
+  text-align: start;
   vertical-align: top;
 }
 

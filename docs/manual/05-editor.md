@@ -109,7 +109,7 @@ From the left:
 
 - **Paragraph style** (drop-down) — what the paragraph under the caret *is*: Body, Heading, Subheading, Block quote or Verse. See [Paragraph styles](#paragraph-styles) below.
 - **Bulleted list** and **Numbered list** — turn the paragraph into a list item, or turn a list back into paragraphs.
-- **Align left / center / right / justify** — set paragraph alignment. Alignment is a property of the paragraph, not of the words you highlighted, so it lives here rather than on the toolbar that appears over a selection.
+- **Align left / center / right / justify** — set paragraph alignment. Alignment is a property of the paragraph, not of the words you highlighted, so it lives here rather than on the toolbar that appears over a selection. In the Arabic interface the group reads Align right, center, left, justify from the right, so each icon sits on the side it aligns to. The highlighted button always matches what you see: an Arabic paragraph with default alignment highlights Align right.
 
 At the right-hand end:
 
