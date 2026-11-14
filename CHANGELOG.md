@@ -30,6 +30,7 @@ could encounter in a previously released version.
 
 ### Fixed
 
+- Views added by extensions, such as the AI Assistant's chat and analysis panels, now show their names in the interface language and switch immediately when you change language.
 - Application and editor shortcuts work with Arabic and other non-Latin keyboard layouts, including custom shortcut recording, while preserving Latin-layout bindings and composition input.
 
 - Opening a project or changing collaboration sessions no longer shows a spurious workspace-changed error from background invitation polling.

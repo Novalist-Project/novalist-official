@@ -100,6 +100,8 @@ async function applySideEffects(view: SettingsView): Promise<void> {
   const revision = ++appearanceRevision
   if (i18next.language !== view.effective.language) {
     await i18next.changeLanguage(view.effective.language)
+    const { useExtensionsStore } = await import('./extensionsStore')
+    if (useExtensionsStore.getState().loaded) await useExtensionsStore.getState().refreshViews()
   }
   if (revision !== appearanceRevision) return
   // Built-in, folder, and extension themes all resolve through the catalog; an

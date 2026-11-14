@@ -131,7 +131,7 @@ public sealed class ExtensionsRpc : IDisposable
                 ? contributions.Views.Select(v => new WebViewInfoDto(
                 e.Manifest.Id,
                 v.Key,
-                v.Title,
+                _workspace.ExtensionsHost.Host.ResolveText(e.Manifest.Id, v.Title),
                 v.IconPath,
                 v.Placement,
                 v.Mode,
