@@ -276,10 +276,12 @@ For optional hot-reload development, run `npm --prefix app run dev` inside
 This is a separate development-server path; use `devenv shell run` to test the
 packaged application and its runtime environment.
 
-The package's npm dependency hash lives in `nix/package.nix`; its NuGet dependency
-manifest is `nix/deps.json`. Update these when the corresponding dependencies
-change. The backend's `fetch-deps` helper is exposed as
-`outputs.novalist.backend.fetch-deps` for regenerating the NuGet manifest.
+The package reads npm dependencies straight from `app/package-lock.json`, so
+lockfile changes need no extra Nix step. Its NuGet dependency manifest is
+`nix/deps.json`; regenerate it when NuGet packages change with the backend's
+`fetch-deps` helper, exposed as `outputs.novalist.backend.fetch-deps`. The
+*Nix package build* check builds the package on every pull request into `dev`
+or `main`, so a forgotten manifest update fails before merging.
 
 For Rider, select `.devenv/state/dotnet` as the .NET CLI directory after entering
 the shell once. Keep `devenv.lock` committed so contributors resolve the same

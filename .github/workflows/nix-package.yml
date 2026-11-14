@@ -1,0 +1,58 @@
+name: Nix package
+
+# Builds the Linux Nix package from the committed lockfiles, so a change that
+# breaks it (for example a NuGet update without regenerating nix/deps.json)
+# cannot merge unnoticed.
+#
+# Runs on every pull request update without a path filter: a required check
+# with a path filter stays pending forever on pull requests it skips.
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+concurrency:
+  group: nix-package-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Branch protection requires this check by name; keep it stable.
+    name: Nix package build
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      # On pull_request this is the proposed merge result, not the bare head.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
+
+      - name: Use the devenv binary cache
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: devenv
+
+      # Keeps Electron, .NET and the npm/NuGet downloads between runs. A miss
+      # restores the newest cache so only changed derivations rebuild.
+      - name: Restore the Nix store cache
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-package-${{ runner.os }}-${{ hashFiles('devenv.lock', 'devenv.nix', 'nix/**', 'app/package-lock.json') }}
+          restore-prefixes-first-match: nix-package-${{ runner.os }}-
+          gc-max-store-size-linux: 8G
+
+      - name: Install devenv
+        run: nix profile add nixpkgs#devenv
+
+      - name: Build the package
+        run: devenv --no-tui build outputs.novalist
