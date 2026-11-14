@@ -82,5 +82,5 @@ public sealed class SharedMetadataReadTests : IDisposable
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => SharedCodexFields.ReadAsync(root, fields, new CancellationToken(true)));
     }
 
-    public void Dispose() { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    public void Dispose() { TestFiles.DeleteTree(root); }
 }

@@ -58,10 +58,6 @@ public sealed class SharedMediaMetadataTests
         Assert.Single(guestRecord.GetProperty("chapterOverrides")[0].GetProperty("images").EnumerateArray());
     }
 
-    private static async Task WaitAsync(Func<Task<bool>> condition, CancellationToken ct)
-    {
-        var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (DateTime.UtcNow < deadline) { if (await condition()) return; await Task.Delay(20, ct); }
-        Assert.True(await condition());
-    }
+    private static Task WaitAsync(Func<Task<bool>> condition, CancellationToken ct)
+        => TestWait.UntilAsync(condition, "the shared image binding to reach the guest", ct);
 }

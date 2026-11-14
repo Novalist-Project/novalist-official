@@ -99,7 +99,7 @@ public sealed class RelayCapacityTests
     private static CancellationTokenSource TestDeadline()
     {
         var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        deadline.CancelAfter(TimeSpan.FromSeconds(10));
+        deadline.CancelAfter(TestWait.Deadline);
         return deadline;
     }
 

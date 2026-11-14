@@ -43,9 +43,7 @@ public sealed class SharedCodexDeletionTests
         else await owner.Rpc.InvokeAsync("entities/delete", "character", id, false);
         await guest.Rpc.InvokeAsync("collaboration/recoverField", joined.SessionId, field, focus, value);
         var recovery = Path.Combine(directory.Path, "Joined", "Recovered edits");
-        for (var attempt = 0; attempt < 100 && SharedFileReader.FilesContaining(recovery, "42 after deletion").Length == 0; attempt++)
-            await Task.Delay(20, ct);
-        Assert.NotEmpty(SharedFileReader.FilesContaining(recovery, "42 after deletion"));
+        await TestWait.UntilAsync(() => SharedFileReader.FilesContaining(recovery, "42 after deletion").Length > 0, "the deleted field's edit to be recovered to disk", ct);
         if (fieldKey.StartsWith("section:", StringComparison.Ordinal))
         {
             Assert.Empty((await owner.Rpc.InvokeAsync<JsonElement>("entities/get", "character", id)).GetProperty("sections").EnumerateArray());

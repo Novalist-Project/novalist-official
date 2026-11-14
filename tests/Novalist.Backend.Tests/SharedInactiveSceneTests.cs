@@ -44,7 +44,7 @@ public sealed class SharedInactiveSceneTests
 
         const string changed = "Four newly written words.";
         await owner.Rpc.InvokeAsync("collaboration/writeScene", session.SessionId, document.ItemId, Encoding.UTF8.GetBytes("<p>" + changed + "</p>"));
-        var guestScene = await SharedFileReader.WaitForTextAsync(Path.Combine(guestRoot, relative), changed, 100, TimeSpan.FromMilliseconds(20), ct);
+        var guestScene = await SharedFileReader.WaitForTextAsync(Path.Combine(guestRoot, relative), changed, ct);
         Assert.Contains(changed, guestScene);
         if (anotherDraft)
         {

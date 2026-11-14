@@ -11,7 +11,8 @@ using NSec.Cryptography;
 
 namespace Novalist.Sync.Client;
 
-public sealed record PeerHostOptions(Guid ProjectId, uint Epoch, byte[] EpochKey, DeviceIdentity Owner);
+/// <param name="Clock">Decides when an invitation or a membership certificate has expired; the system clock when null.</param>
+public sealed record PeerHostOptions(Guid ProjectId, uint Epoch, byte[] EpochKey, DeviceIdentity Owner, TimeProvider? Clock = null);
 
 public sealed partial class TcpPeerHost : IAsyncDisposable
 {
@@ -23,6 +24,7 @@ public sealed partial class TcpPeerHost : IAsyncDisposable
     private readonly object gate = new();
     private readonly PeerUpdateLog log;
     private readonly ProjectMembership membership;
+    private readonly TimeProvider clock;
     private readonly EnvelopeCipher cipher;
     private readonly DeviceIdentity owner;
     private readonly byte[] epochKey;
@@ -41,7 +43,8 @@ public sealed partial class TcpPeerHost : IAsyncDisposable
         epoch = options.Epoch;
         owner = options.Owner;
         epochKey = options.EpochKey.ToArray();
-        membership = new(project, epoch, owner.SigningKey.PublicKey);
+        clock = options.Clock ?? TimeProvider.System;
+        membership = new(project, epoch, owner.SigningKey.PublicKey, clock);
         cipher = new(project, epoch, epochKey);
         tlsCertificate = CreateTlsCertificate();
         listener = new(endpoint);

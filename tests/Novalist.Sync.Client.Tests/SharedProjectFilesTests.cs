@@ -401,7 +401,7 @@ public sealed class SharedProjectFilesTests
         {
             foreach (var session in Sessions) await session.DisposeAsync();
             foreach (var resource in resources.AsEnumerable().Reverse()) resource.Dispose();
-            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            TestFiles.DeleteTree(folder);
         }
     }
 }

@@ -18,7 +18,7 @@ public sealed partial class AndroidDocumentTreeTests
         void Block()
         {
             entered.TrySetResult();
-            if (!fallback.Wait(TimeSpan.FromSeconds(5), DocumentTreeReadCancellation.Current)) throw new TimeoutException();
+            if (!fallback.Wait(TestWait.Deadline, DocumentTreeReadCancellation.Current)) throw new TimeoutException();
         }
         if (listing) fixture.Tree.GetChildrenOverride = _ => { Block(); return []; };
         else fixture.Tree.ReadOverride = path => { Block(); return File.ReadAllBytes(path); };
@@ -28,14 +28,14 @@ public sealed partial class AndroidDocumentTreeTests
         var backup = archives.CreateFromDirectoryAsync(fixture.Mount, output, [], cancellation.Token);
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            await entered.Task.WaitAsync(TestWait.Deadline);
             var foreground = fixture.Files.GetFilesAsync(fixture.Mount);
             Assert.False(foreground.IsCompleted);
             fixture.Tree.GetChildrenOverride = null;
             fixture.Tree.ReadOverride = null;
             cancellation.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => backup.WaitAsync(TimeSpan.FromSeconds(2)));
-            Assert.Single(await foreground.WaitAsync(TimeSpan.FromSeconds(2)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => backup.WaitAsync(TestWait.Deadline));
+            Assert.Single(await foreground.WaitAsync(TestWait.Deadline));
             Assert.False(File.Exists(output));
             Assert.Empty(Directory.GetDirectories(staging));
             Assert.Equal(1, await archives.CreateFromDirectoryAsync(fixture.Mount, output, [], CancellationToken.None));
@@ -57,17 +57,17 @@ public sealed partial class AndroidDocumentTreeTests
         {
             Interlocked.Increment(ref calls);
             entered.TrySetResult();
-            if (!release.Wait(TimeSpan.FromSeconds(5))) throw new TimeoutException();
+            if (!release.Wait(TestWait.Deadline)) throw new TimeoutException();
             return File.ReadAllBytes(source);
         };
         var active = fixture.Files.ReadTextAsync(path);
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            await entered.Task.WaitAsync(TestWait.Deadline);
             Task<string> queued;
             using (DocumentTreeReadCancellation.Enter(cancellation.Token)) queued = fixture.Files.ReadTextAsync(path);
             cancellation.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => queued.WaitAsync(TimeSpan.FromSeconds(2)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => queued.WaitAsync(TestWait.Deadline));
             Assert.False(active.IsCompleted);
             Assert.Equal(1, calls);
             release.Set();
@@ -92,14 +92,14 @@ public sealed partial class AndroidDocumentTreeTests
         fixture.Tree.ReadOverride = _ =>
         {
             entered.TrySetResult();
-            if (!release.Wait(TimeSpan.FromSeconds(5))) throw new TimeoutException();
+            if (!release.Wait(TestWait.Deadline)) throw new TimeoutException();
             return System.Text.Encoding.UTF8.GetBytes("before");
         };
         Task<string> reading;
         using (DocumentTreeReadCancellation.Enter(cancellation.Token)) reading = fixture.Files.ReadTextAsync(path);
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            await entered.Task.WaitAsync(TestWait.Deadline);
             cancellation.Cancel();
             using var cached = fixture.Files.UseCachedReads();
             var next = fixture.Files.ReadTextAsync(path);
@@ -111,7 +111,7 @@ public sealed partial class AndroidDocumentTreeTests
             fixture.Tree.ReadOverride = null;
             release.Set();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => reading);
-            Assert.Equal("after!", await next.WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.Equal("after!", await next.WaitAsync(TestWait.Deadline));
         }
         finally { release.Set(); await ObserveCompletionAsync(reading); }
     }
@@ -129,7 +129,7 @@ public sealed partial class AndroidDocumentTreeTests
         fixture.Tree.ReadOverride = _ =>
         {
             entered.TrySetResult();
-            if (!fallback.Wait(TimeSpan.FromSeconds(5), DocumentTreeReadCancellation.Current)) throw new TimeoutException();
+            if (!fallback.Wait(TestWait.Deadline, DocumentTreeReadCancellation.Current)) throw new TimeoutException();
             return [];
         };
         var paths = new[] { Path.Combine(fixture.Mount, "scene.txt") };
@@ -137,9 +137,9 @@ public sealed partial class AndroidDocumentTreeTests
             : fixture.Files.ReadTextsAsync(paths, cancellation.Token);
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            await entered.Task.WaitAsync(TestWait.Deadline);
             cancellation.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => reading.WaitAsync(TimeSpan.FromSeconds(2)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => reading.WaitAsync(TestWait.Deadline));
             fixture.Tree.ReadOverride = null;
             Assert.Equal("text", await fixture.Files.ReadTextAsync(paths[0]));
         }
@@ -197,7 +197,7 @@ public sealed partial class AndroidDocumentTreeTests
 
     private static async Task ObserveCompletionAsync(Task operation)
     {
-        var error = await Record.ExceptionAsync(() => operation.WaitAsync(TimeSpan.FromSeconds(5)));
+        var error = await Record.ExceptionAsync(() => operation.WaitAsync(TestWait.Deadline));
         Assert.True(error is null or OperationCanceledException or TimeoutException);
     }
 }

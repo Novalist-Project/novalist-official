@@ -24,12 +24,12 @@ public sealed partial class AudiobookRpcTests
         try
         {
             starting = Task.Run(() => _rpc.StartAsync("WavPerChapter", Output));
-            await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await completed.Task.WaitAsync(TestWait.Deadline);
             Assert.Equal("done", _rpc.Status().Phase);
             _engine.Started = restarted;
             restarting = Task.Run(() => _rpc.StartAsync("WavPerChapter", Output, fromScratch: true));
 
-            await restarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await restarted.Task.WaitAsync(TestWait.Deadline);
 
             Assert.Equal(2, _engine.Renders);
         }
@@ -53,7 +53,7 @@ public sealed partial class AudiobookRpcTests
             if (value?.StartsWith("[INFO] audiobook rendered", StringComparison.Ordinal) == true)
             {
                 completed.TrySetResult();
-                if (!release.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Completion log was not released.");
+                if (!release.Wait(TestWait.Deadline)) throw new TimeoutException("Completion log was not released.");
             }
             output.WriteLine(value);
         }

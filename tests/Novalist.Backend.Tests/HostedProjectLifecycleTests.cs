@@ -86,10 +86,10 @@ public sealed class HostedProjectLifecycleTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         owner.Documents.BeforeSeed = async token => { entered.TrySetResult(); await Task.Delay(Timeout.Infinite, token); };
         var sharing = owner.Rpc.InvokeAsync("collaboration/create", server.Address);
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
+        await entered.Task.WaitAsync(TestWait.Deadline, ct);
         Assert.Contains(owner.Progress, progress => progress.Phase == "scanning");
-        await owner.Rpc.InvokeAsync("collaboration/cancel").WaitAsync(TimeSpan.FromSeconds(5), ct);
-        await Assert.ThrowsAnyAsync<Exception>(() => sharing.WaitAsync(TimeSpan.FromSeconds(5), ct));
+        await owner.Rpc.InvokeAsync("collaboration/cancel").WaitAsync(TestWait.Deadline, ct);
+        await Assert.ThrowsAnyAsync<Exception>(() => sharing.WaitAsync(TestWait.Deadline, ct));
         Assert.Null(await owner.Rpc.InvokeAsync<HostedSessionDto?>("collaboration/status"));
         owner.Documents.BeforeSeed = null;
         await owner.Rpc.InvokeAsync("collaboration/create", server.Address);
@@ -121,12 +121,9 @@ public sealed class HostedProjectLifecycleTests
         var member = Assert.Single(members, item => item.Role == "Contributor");
         await Assert.ThrowsAsync<RemoteInvocationException>(() => owner.Rpc.InvokeAsync("collaboration/removeMember", Assert.Single(members, item => item.Role == "Owner").UserId));
         await owner.Rpc.InvokeAsync("collaboration/removeMember", member.UserId);
-        using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
-        {
-            timeout.CancelAfter(TimeSpan.FromSeconds(5));
-            while ((await guest.Rpc.InvokeAsync<HostedSessionDto>("collaboration/status")).Connection != "AccessEnded")
-                await Task.Delay(20, timeout.Token);
-        }
+        await TestWait.UntilAsync(
+            async () => (await guest.Rpc.InvokeAsync<HostedSessionDto>("collaboration/status")).Connection == "AccessEnded",
+            "the removed writer to be told its access ended", ct);
         Assert.Single(await owner.Rpc.InvokeAsync<HostedProjectMember[]>("collaboration/members"));
         await guest.Rpc.InvokeAsync("collaboration/end");
         await Assert.ThrowsAsync<RemoteInvocationException>(() => guest.Rpc.InvokeAsync("collaboration/resume"));
@@ -136,10 +133,8 @@ public sealed class HostedProjectLifecycleTests
         Assert.Equal(0, server.StorageRequests);
     }
 
-    private static async Task WaitForSceneAsync(HostedDesktop desktop, string chapter, string scene, string text)
-    {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        while (!(await desktop.Rpc.InvokeAsync<SceneContentDto>("scenes/read", chapter, scene)).Html.Contains(text, StringComparison.Ordinal))
-            await Task.Delay(20, timeout.Token);
-    }
+    private static Task WaitForSceneAsync(HostedDesktop desktop, string chapter, string scene, string text)
+        => TestWait.UntilAsync(
+            async () => (await desktop.Rpc.InvokeAsync<SceneContentDto>("scenes/read", chapter, scene)).Html.Contains(text, StringComparison.Ordinal),
+            "the shared scene text to arrive", TestContext.Current.CancellationToken);
 }

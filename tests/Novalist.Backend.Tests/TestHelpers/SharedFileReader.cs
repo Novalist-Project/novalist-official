@@ -42,6 +42,13 @@ public static class SharedFileReader
         }
     }
 
+    /// <summary>Waits up to the shared test deadline for the file to hold the text; see the overload for what is returned.</summary>
+    public static Task<string> WaitForTextAsync(string path, string text, CancellationToken cancellationToken)
+    {
+        var delay = TimeSpan.FromMilliseconds(20);
+        return WaitForTextAsync(path, text, (int)(TestWait.Deadline / delay), delay, cancellationToken);
+    }
+
     /// <summary>Polls until the file holds the text, then returns what was last read so a timeout can say what arrived instead.</summary>
     public static async Task<string> WaitForTextAsync(string path, string text, int attempts, TimeSpan delay, CancellationToken cancellationToken)
     {

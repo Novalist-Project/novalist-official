@@ -29,19 +29,19 @@ public sealed partial class AndroidDocumentTreeTests
             var count = Interlocked.Increment(ref active);
             lock (paths) peak = Math.Max(peak, count);
             if (count >= 2) entered.TrySetResult();
-            if (!release.Wait(TimeSpan.FromSeconds(10))) throw new TimeoutException();
+            if (!release.Wait(TestWait.Deadline)) throw new TimeoutException();
             try { return File.ReadAllBytes(path); }
             finally { Interlocked.Decrement(ref active); }
         };
         var reading = existingOnly ? fixture.Files.ReadExistingTextsAsync(paths) : fixture.Files.ReadTextsAsync(paths);
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await entered.Task.WaitAsync(TestWait.Deadline);
             var writing = fixture.Files.WriteTextAsync(paths[0], "changed");
             Assert.False(writing.IsCompleted);
             release.Set();
-            var result = await reading.WaitAsync(TimeSpan.FromSeconds(5));
-            await writing.WaitAsync(TimeSpan.FromSeconds(5));
+            var result = await reading.WaitAsync(TestWait.Deadline);
+            await writing.WaitAsync(TestWait.Deadline);
             Assert.Equal("text 0", result[paths[0]]);
             Assert.Equal(8, result.Count);
             Assert.InRange(peak, 2, 4);

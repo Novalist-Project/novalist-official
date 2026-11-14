@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Novalist.Backend.Tests;
 
+[Collection("BackendStatics")]
 public sealed class WritingRpcReviewTests
 {
     [Fact]
