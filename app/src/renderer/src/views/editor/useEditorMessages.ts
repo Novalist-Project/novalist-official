@@ -3,7 +3,7 @@ import { listenToEditor, editorWindow, pushEditorTheme } from './editorBridge'
 import { useShellStore } from '../../stores/shellStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useWritingZoomStore } from '../../stores/writingZoomStore'
-import { pushEditorSettings, pushEditorConfig } from './editorConfiguration'
+import { pushEditorSettings, pushEditorConfig, pushEditorLanguage } from './editorConfiguration'
 import type { EditorMessageContext, EditorHandlerContext } from './editorMessageContext'
 import { createEditorMessageHandlers } from './editorMessageHandlers'
 import { detachSharedEditor, syncSharedEditor } from '../../collaboration/sharedEditors'
@@ -15,7 +15,10 @@ export function useEditorMessages(context: EditorMessageContext): void {
     if (!iframe) return
 
     const handlers = createEditorMessageHandlers(createHandlerContext(context, iframe))
-    const dispose = listenToEditor(iframe, (message) => handlers.get(message.type)?.(message))
+    const dispose = listenToEditor(iframe, (message) => {
+      if (context.writing?.message(message)) return
+      handlers.get(message.type)?.(message)
+    })
 
     // Re-push theme when the OS/light-dark theme flips under the editor.
     const observer = new MutationObserver(() => {
@@ -29,7 +32,7 @@ export function useEditorMessages(context: EditorMessageContext): void {
     // Live-apply settings changes (font, typewriter, page view, config) to the editor.
     const unsubscribeSettings = useSettingsStore.subscribe(() => {
       if (editorRef.current) {
-        pushEditorSettings(editorRef.current)
+        pushEditorSettings(editorRef.current, false)
         pushEditorConfig(editorRef.current, t)
         pushEditorTheme(editorRef.current)
       }
@@ -49,12 +52,14 @@ export function useEditorMessages(context: EditorMessageContext): void {
     const existing = editorWindow(iframe)
     if (existing && typeof existing.setContent === 'function') {
       editorRef.current = existing
-      existing.setLanguage(i18n.language.startsWith('de') ? 'de' : 'en')
-      syncSharedEditor(context.pane, existing)
+      pushEditorLanguage(existing)
+      pushEditorConfig(existing, t)
+      if (context.writing) context.writing.ready(existing)
+      else syncSharedEditor(context.pane, existing)
     }
 
     return () => {
-      detachSharedEditor(context.pane)
+      if (!context.writing) detachSharedEditor(context.pane)
       dispose()
       observer.disconnect()
       unsubscribeSettings()

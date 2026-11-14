@@ -109,7 +109,7 @@ function BinderHeader({ state }: { state: BinderState }): React.JSX.Element {
           aria-expanded={controlsOpen}
           onClick={() => setControlsOpen((open) => !open)}
         >
-          {controlsOpen ? <ChevronDown size={15} strokeWidth={2} /> : <ChevronRight size={15} strokeWidth={2} />}
+          {controlsOpen ? <ChevronDown size={15} strokeWidth={2} /> : <ChevronRight size={15} strokeWidth={2} className="icon-directional" />}
           {t('binder.sceneFilter')}
         </button>
       )}

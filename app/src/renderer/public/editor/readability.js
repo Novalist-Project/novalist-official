@@ -1,5 +1,17 @@
 'use strict';
 
+let readabilityRequestId = 0;
+let pendingReadabilityRequest = null;
+
+function readabilitySceneIdentity() {
+    const writing = window.NovalistWritingDocument;
+    if (!writing?.enabled) return null;
+    const id = window.getWritingSceneRoot()?.dataset.writingScene;
+    const snapshot = writing.scenes.get(id)?.snapshot;
+    return snapshot ? JSON.stringify([writing.context, snapshot.bookId, snapshot.draftId,
+        snapshot.chapterGuid, snapshot.sceneId, snapshot.revision]) : null;
+}
+
 /** Host pushes localized picker labels. */
 function setMentionLabels(labelsJson) {
     try { window.NovalistEditorState.mentionLabels = Object.assign(window.NovalistEditorState.mentionLabels, JSON.parse(labelsJson) || {}); }
@@ -9,6 +21,10 @@ function setMentionLabels(labelsJson) {
 function setReadabilityEnabled(enabled) {
     window.NovalistEditorState.readabilityEnabled = !!enabled;
     if (!window.NovalistEditorState.readabilityEnabled) {
+        pendingReadabilityRequest = null;
+        readabilityRequestId++;
+        if (window.NovalistEditorState.readabilityTimer) clearTimeout(window.NovalistEditorState.readabilityTimer);
+        window.NovalistEditorState.readabilityTimer = null;
         window.NovalistEditorState.lastReadabilityGrading = null;
         clearReadability();
         return;
@@ -48,10 +64,14 @@ function reapplyReadability() {
  */
 function requestReadability(delay) {
     if (!window.NovalistEditorState.readabilityEnabled || window.NovalistEditorState.isComposing) return;
+    const requestId = ++readabilityRequestId;
+    pendingReadabilityRequest = null;
     if (window.NovalistEditorState.readabilityTimer) clearTimeout(window.NovalistEditorState.readabilityTimer);
     window.NovalistEditorState.readabilityTimer = setTimeout(function () {
         const map = window.buildGrammarPlainTextMap();
-        window.sendMessage({ type: 'readabilityRequest', plainText: map.plainText });
+        pendingReadabilityRequest = { requestId, plainText: map.plainText, identity: readabilitySceneIdentity() };
+        window.sendMessage({ type: 'readabilityRequest', requestId, plainText: map.plainText,
+            sceneId: window.NovalistWritingDocument?.enabled ? window.getWritingSceneRoot()?.dataset.writingScene : undefined });
     }, delay === 0 ? 0 : 700);
 }
 
@@ -60,7 +80,14 @@ function requestReadability(delay) {
  * document has no access to the shell's design tokens, and hardcoding five
  * colours here would put them outside the token scale.
  */
-function setReadability(json) {
+function setReadability(json, requestId) {
+    if (window.NovalistEditorState.isComposing) return;
+    if (requestId !== undefined) {
+        const pending = pendingReadabilityRequest;
+        if (!pending || pending.requestId !== requestId || pending.identity !== readabilitySceneIdentity() ||
+            pending.plainText !== window.buildGrammarPlainTextMap().plainText) return;
+        pendingReadabilityRequest = null;
+    }
     clearReadability();
     window.NovalistEditorState.lastReadabilityGrading = null;
     if (!window.NovalistEditorState.readabilityEnabled) return;

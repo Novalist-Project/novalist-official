@@ -3,6 +3,7 @@ import { type EditorPaneState, type EditingSceneClaim } from './projectTypes'
 import { useProjectStore, mirror } from './projectStore'
 import { enqueueSceneWrite } from './sceneWriteQueue'
 import { flushSharedEditor } from '../collaboration/sharedEditors'
+import { writingEditingClaims } from './writingEditingClaims'
 
 const AUTOSAVE_DELAY_MS = 2000
 
@@ -146,6 +147,7 @@ function saveScene(
 let manuscriptClaims: EditingSceneClaim[] = []
 
 let reported = ''
+let reportGeneration = 0
 
 export function reportManuscriptEditing(claims: EditingSceneClaim[]): void {
   manuscriptClaims = claims
@@ -155,6 +157,13 @@ export function reportManuscriptEditing(claims: EditingSceneClaim[]): void {
 export function reportEditingScenes(force = false): void {
   const state = useProjectStore.getState()
   if (state.workspaceSuspended && !force) return
+  if (typeof window !== 'undefined' && !window.novalist.isMobile) {
+    const context = { workspaceId: state.projectPath ?? '', workspaceEpoch: state.workspaceEpoch,
+      bookId: state.activeBookId ?? '', draftId: state.activeDraftId ?? '' }
+    const scenes = state.isLoaded ? writingEditingClaims.read(context, window.document.hasFocus()) : []
+    sendEditingScenes(scenes, JSON.stringify(context), force)
+    return
+  }
   const claims = new Map<string, EditingSceneClaim>()
   for (const editor of Object.values(state.editors)) {
     if (!editor.sceneId || !editor.chapterGuid) continue
@@ -166,11 +175,18 @@ export function reportEditingScenes(force = false): void {
     claims.set(claim.sceneId, { ...claim, dirty: claim.dirty || !!prior?.dirty })
   }
   const scenes = [...claims.values()].sort((left, right) => left.sceneId.localeCompare(right.sceneId))
-  const next = JSON.stringify(scenes)
+  sendEditingScenes(scenes, JSON.stringify([state.projectPath, state.workspaceEpoch, state.activeBookId, state.activeDraftId]), force)
+}
+
+function sendEditingScenes(scenes: EditingSceneClaim[], context: string, force: boolean): void {
+  const next = JSON.stringify([context, scenes])
   if (!force && next === reported) return
   reported = next
+  const generation = ++reportGeneration
   const request = scenes.length > 1
     ? rpc.request('scenes/setEditingMany', [scenes])
     : rpc.request('scenes/setEditing', [scenes[0]?.chapterGuid ?? null, scenes[0]?.sceneId ?? null, scenes[0]?.dirty ?? false])
-  void request.catch(() => { if (reported === next) reported = '' })
+  void request.catch(() => { if (reportGeneration === generation) reported = '' })
 }
+
+writingEditingClaims.subscribe(changed => { if (changed || !reported) reportEditingScenes() })

@@ -25,29 +25,38 @@ public static class SharedCodexFields
     private sealed record FolderSchema(string[] Keys, bool Custom);
     private sealed record Value(SharedFieldBinding Binding, string Text);
 
-    public static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, CancellationToken ct)
+    public static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, CancellationToken ct,
+        Func<string, CancellationToken, Task<byte[]>>? read = null)
     {
-        var basic = (await EnumerateAsync(root, paths, ct)).Select(value => value.Binding with { ItemId = Guid.NewGuid() }).ToArray();
-        var metadata = await SharedMetadataFields.CaptureAsync(root, paths, basic.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct);
+        var basic = (await EnumerateAsync(root, paths, ct, read)).Select(value => value.Binding with { ItemId = Guid.NewGuid() }).ToArray();
+        var metadata = await SharedMetadataFields.CaptureAsync(root, paths, basic.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct, read);
         return [.. basic, .. metadata];
     }
 
-    public static async Task<IReadOnlyDictionary<Guid, string>> ReadAsync(string root, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct, bool verifySource = true)
+    public static Task<IReadOnlyDictionary<Guid, string>> ReadAsync(string root, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct, bool verifySource = true)
+        => ReadAsync(root, bindings, ct, verifySource, null);
+
+    internal static async Task<IReadOnlyDictionary<Guid, string>> ReadAsync(string root, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct,
+        bool verifySource, Func<string, CancellationToken, Task<byte[]>>? read)
     {
         ValidateBindings(bindings);
         if (bindings.Count == 0) return new Dictionary<Guid, string>();
+        var batch = new SharedFieldReadBatch(read ?? ((path, token) => ReadBytesAsync(root, path, token)));
         var paths = bindings.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray();
-        var basic = await EnumerateAsync(root, paths, ct);
+        var basic = await EnumerateAsync(root, paths, ct, batch.ReadAsync);
         var values = basic.ToDictionary(value => (value.Binding.Path, value.Binding.Key, value.Binding.Custom));
-        var metadata = await SharedMetadataFields.CaptureAsync(root, paths, basic.Select(value => value.Binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct);
+        var metadata = (await SharedMetadataFields.CaptureAsync(root, paths,
+            basic.Select(value => value.Binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct, batch.ReadAsync))
+            .Select(binding => (binding.Path, binding.Key, binding.Metadata)).ToHashSet();
         var result = new Dictionary<Guid, string>();
         foreach (var binding in bindings)
         {
+            ct.ThrowIfCancellationRequested();
             if (binding.Metadata is not null)
             {
-                if (!metadata.Any(candidate => candidate.Path == binding.Path && candidate.Key == binding.Key && candidate.Metadata == binding.Metadata))
+                if (!metadata.Contains((binding.Path, binding.Key, binding.Metadata)))
                     throw new InvalidDataException("A shared metadata binding is outside its editable schema.");
-                result.Add(binding.ItemId, await SharedMetadataFields.ReadAsync(root, binding, verifySource, ct));
+                result.Add(binding.ItemId, await batch.ReadMetadataAsync(binding, verifySource, ct));
                 continue;
             }
             if (!values.TryGetValue((binding.Path, binding.Key, binding.Custom), out var value))
@@ -56,6 +65,7 @@ public static class SharedCodexFields
                 throw new IOException("A Codex entry changed while sharing was starting. Its local changes have been kept.");
             result.Add(binding.ItemId, value.Text);
         }
+        await batch.VerifyAsync(ct);
         return result;
     }
 
@@ -74,16 +84,18 @@ public static class SharedCodexFields
         }
     }
 
-    private static async Task<IReadOnlyList<Value>> EnumerateAsync(string root, IReadOnlyList<string> paths, CancellationToken ct)
+    private static async Task<IReadOnlyList<Value>> EnumerateAsync(string root, IReadOnlyList<string> paths, CancellationToken ct,
+        Func<string, CancellationToken, Task<byte[]>>? read = null)
     {
-        using var project = JsonDocument.Parse(await ReadBytesAsync(root, ".novalist/project.json", ct));
+        read ??= (path, token) => ReadBytesAsync(root, path, token);
+        using var project = JsonDocument.Parse(await read(".novalist/project.json", ct));
         var folders = Folders(project.RootElement);
         var result = new List<Value>();
         foreach (var path in paths)
         {
             var slash = path.LastIndexOf('/');
             if (slash < 0 || !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || !folders.TryGetValue(path[..slash], out var schema)) continue;
-            var bytes = await ReadBytesAsync(root, path, ct);
+            var bytes = await read(path, ct);
             using var entity = JsonDocument.Parse(bytes);
             var id = Text(entity.RootElement, "id");
             if (string.IsNullOrEmpty(id) || !string.Equals(Path.GetFileNameWithoutExtension(path), id, StringComparison.Ordinal))

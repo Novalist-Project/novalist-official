@@ -90,7 +90,7 @@ function isKnownEntity(text) {
     return false;
 }
 
-function clearGrammarHighlights(root = window.NovalistEditorState.editor) {
+function clearGrammarHighlights(root = window.getWritingServiceRoot?.() || window.NovalistEditorState.editor) {
     const marks = root.querySelectorAll('.grammar-issue, .proofing-dismissed');
     for (const mark of marks) {
         const parent = mark.parentNode;
@@ -145,8 +145,9 @@ function buildGrammarPlainTextMap() {
         }
     }
 
-    for (let i = 0; i < window.NovalistEditorState.editor.childNodes.length; i++) {
-        walk(window.NovalistEditorState.editor.childNodes[i]);
+    const root = window.getWritingServiceRoot?.() || window.NovalistEditorState.editor;
+    for (let i = 0; i < root.childNodes.length; i++) {
+        walk(root.childNodes[i]);
     }
     return { plainText: parts.join(''), textNodes };
 }

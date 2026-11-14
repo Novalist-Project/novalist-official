@@ -6,11 +6,12 @@ import { registerPendingWrite } from '../../stores/pendingWrites'
 import { type EditorFrameModel } from './useEditorFrameModel'
 import { captureSharedEditor, syncSharedEditor } from '../../collaboration/sharedEditors'
 
-export function useEditorPersistence({ editorRef, pane, openSceneId, lastReportedHtmlRef }: Pick<EditorFrameModel, 'editorRef' | 'pane' | 'openSceneId' | 'lastReportedHtmlRef'>): void {
+export function useEditorPersistence({ editorRef, pane, openSceneId, lastReportedHtmlRef }: Pick<EditorFrameModel, 'editorRef' | 'pane' | 'openSceneId' | 'lastReportedHtmlRef'>, enabled = true): void {
 // The iframe normally reports an edit after 50 ms and the project store
   // writes it after two seconds. An update may already be cached, so capture
   // the live DOM and drain both delays before the installer is allowed to run.
   useEffect(() => {
+    if (!enabled) return
     const capture = (): void => {
       if (captureSharedEditor(pane)) return
       const live = editorRef.current
@@ -28,16 +29,16 @@ export function useEditorPersistence({ editorRef, pane, openSceneId, lastReporte
       capture()
       await useProjectStore.getState().flushPane(pane)
     }, capture)
-  }, [pane, openSceneId, editorRef, lastReportedHtmlRef])
+  }, [pane, openSceneId, editorRef, lastReportedHtmlRef, enabled])
 }
 
-export function useEditorScene({ pane, editorRef, sceneHtml, lastReportedHtmlRef, loadingRef, loadAnnotations, applyFootnoteOrder, openSceneId, annotationsRevision, ownAnnotationsRef, pendingSuggestion, isActiveEditor, pushEntityNames }: Pick<EditorFrameModel, 'pane' | 'editorRef' | 'sceneHtml' | 'lastReportedHtmlRef' | 'loadingRef' | 'loadAnnotations' | 'applyFootnoteOrder' | 'openSceneId' | 'annotationsRevision' | 'ownAnnotationsRef' | 'pendingSuggestion' | 'isActiveEditor' | 'pushEntityNames'>): void {
+export function useEditorScene({ pane, editorRef, sceneHtml, lastReportedHtmlRef, loadingRef, loadAnnotations, applyFootnoteOrder, openSceneId, annotationsRevision, ownAnnotationsRef, pendingSuggestion, isActiveEditor, pushEntityNames }: Pick<EditorFrameModel, 'pane' | 'editorRef' | 'sceneHtml' | 'lastReportedHtmlRef' | 'loadingRef' | 'loadAnnotations' | 'applyFootnoteOrder' | 'openSceneId' | 'annotationsRevision' | 'ownAnnotationsRef' | 'pendingSuggestion' | 'isActiveEditor' | 'pushEntityNames'>, enabled = true): void {
 // Push content on scene switch and on genuine external changes (snapshot
   // restore, live disk edits), but NOT when sceneHtml is merely the echo of the
   // edit the editor just reported - that would reset the caret and kill undo.
   useLayoutEffect(() => {
     const editor = editorRef.current
-    if (!editor || sceneHtml === null) return
+    if (!enabled || !editor || sceneHtml === null) return
     editor.setSceneContext(openSceneId ?? '')
     const shared = syncSharedEditor(pane, editor)
     if (shared === 'active') {
@@ -58,7 +59,7 @@ export function useEditorScene({ pane, editorRef, sceneHtml, lastReportedHtmlRef
       if (ids.length > 0) applyFootnoteOrder(ids)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openSceneId, sceneHtml])
+  }, [openSceneId, sceneHtml, enabled])
 
 // Somebody else wrote the scene's annotations - the Footnotes panel editing a
   // note or deleting one - so the copy this pane holds is out of date and the
@@ -149,6 +150,9 @@ export function useEditorControls({ editorRef, isActiveEditor, openSceneId, sugg
       // A footnote or another text field may have taken the caret while the
       // scene loaded. Its later editing gesture owns focus now.
       const active = document.activeElement
+      if (active instanceof HTMLIFrameElement && active !== iframeRef.current) return
+      if ([...document.querySelectorAll<HTMLIFrameElement>('iframe[title="editor"]')]
+        .some(frame => frame !== iframeRef.current && frame.contentDocument?.hasFocus())) return
       if (active instanceof HTMLElement &&
         (active.isContentEditable || active.matches('input, textarea, select'))) return
       // The iframe first. Focusing an element inside a frame does nothing for

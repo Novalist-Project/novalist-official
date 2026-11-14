@@ -107,7 +107,7 @@ export function FilterBar(): React.JSX.Element {
         aria-expanded={false}
         onClick={() => setOpen(true)}
       >
-        <ChevronRight size={15} strokeWidth={2} />
+        <ChevronRight size={15} strokeWidth={2} className="icon-directional" />
         {isEmptyFilter(filter)
           ? t('filters.title')
           : t('filters.clear', { count: activeCount(filter) })}

@@ -54,7 +54,8 @@
             : Math.max(margin, Math.min(caretAnchor.y, wrapper.clientHeight - caret.rect.height - margin));
         if (window.NovalistEditorState) window.NovalistEditorState.programmaticScrollUntil = Date.now() + 150;
         wrapper.scrollTop += caret.rect.top - viewport.top - y;
-        wrapper.scrollLeft += caret.rect.left - viewport.left - x;
+        if (!document.body.classList.contains('unified-writing-canvas'))
+            wrapper.scrollLeft += caret.rect.left - viewport.left - x;
     }
 
     function clearLayout() {
@@ -67,7 +68,8 @@
     }
 
     function resizeSurface() {
-        if (scale !== 1) surface.style.height = content.getBoundingClientRect().height + 'px';
+        if (scale !== 1 && !document.body.classList.contains('unified-writing-canvas'))
+            surface.style.height = content.getBoundingClientRect().height + 'px';
     }
 
     function measureLayoutWidth() {
@@ -77,12 +79,32 @@
             // Empty space beside a fixed-width paper is not part of the page
             // being magnified. Preserve its prose measure and a small surround.
             const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nl-space-xl'));
-            width = Math.min(width, page.offsetWidth + 2 * gap);
+            const contentStyle = getComputedStyle(content);
+            const inlinePadding = parseFloat(contentStyle.paddingLeft) + parseFloat(contentStyle.paddingRight);
+            width = Math.min(width, page.offsetWidth + inlinePadding + 2 * gap);
         }
         return width;
     }
 
     window.getWritingZoomToFit = () => {
+        if (document.body.classList.contains('unified-writing-canvas')) {
+            const page = content.querySelector('.nv-page');
+            const style = getComputedStyle(content);
+            const margin = content.querySelector('.writing-scene-margin');
+            // Spare space occupied by the panel remains available when fitting the page.
+            const rail = margin && !document.body.classList.contains('writing-narrow')
+                ? parseFloat(getComputedStyle(margin).minWidth) / scale : 0;
+            const outer = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) - rail * scale;
+            if (page && document.body.classList.contains('page-view'))
+                return (wrapper.clientWidth - outer) / (page.offsetWidth / scale + rail);
+            if (document.body.classList.contains('book-width')) {
+                const width = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--writing-book-text-width'));
+                const scene = content.querySelector('.writing-scene');
+                const inset = scene ? parseFloat(getComputedStyle(scene).paddingInlineStart) + parseFloat(getComputedStyle(scene).borderInlineStartWidth) : 0;
+                return (wrapper.clientWidth - outer - inset) / (width + rail);
+            }
+            return 1;
+        }
         const style = getComputedStyle(document.body);
         const available = document.body.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
             - (wrapper.offsetWidth - wrapper.clientWidth);
@@ -91,13 +113,15 @@
     };
 
     function refresh() {
+        const textZoom = document.body.classList.contains('unified-writing-canvas');
+        document.body.style.setProperty('--writing-text-scale', textZoom ? String(scale) : '1');
         const root = getComputedStyle(document.documentElement);
         const key = ['--book-width', '--font-size', '--font-family'].map(name => root.getPropertyValue(name)).join('|') +
             ['page-view', 'has-comments', 'mobile'].map(name => document.body.classList.contains(name)).join('|');
         const scrollTop = wrapper.scrollTop;
         const scrollLeft = wrapper.scrollLeft;
         const ratio = scale / appliedScale;
-        if (scale === 1) {
+        if (scale === 1 || textZoom) {
             clearLayout();
             layoutWidth = 0;
         } else {
@@ -107,19 +131,22 @@
                 layoutWidth = measureLayoutWidth();
             }
             const scrollbar = wrapper.offsetWidth - wrapper.clientWidth;
-            wrapper.style.maxWidth = (layoutWidth * scale + scrollbar) + 'px';
-            wrapper.style.setProperty('--writing-layout-width', layoutWidth + 'px');
-            surface.style.width = (layoutWidth * scale) + 'px';
-            content.style.width = layoutWidth + 'px';
+            const rtl = content.querySelector(':dir(rtl)') !== null;
+            const visibleWidth = document.body.clientWidth - scrollbar;
+            const width = rtl ? Math.min(layoutWidth, visibleWidth / scale) : layoutWidth;
+            wrapper.style.maxWidth = (width * scale + scrollbar) + 'px';
+            wrapper.style.setProperty('--writing-layout-width', width + 'px');
+            surface.style.width = (width * scale) + 'px';
+            content.style.width = width + 'px';
             // CSS zoom reshapes glyphs at the scaled font size and can rewrap lines.
             content.style.transform = 'scale(' + scale + ')';
         }
-        content.style.minHeight = (wrapper.clientHeight / scale) + 'px';
+        content.style.minHeight = (wrapper.clientHeight / (textZoom ? 1 : scale)) + 'px';
         resizeSurface();
         layoutKey = key;
         appliedScale = scale;
         wrapper.scrollTop = scrollTop * ratio;
-        wrapper.scrollLeft = scrollLeft * ratio;
+        wrapper.scrollLeft = textZoom ? 0 : scrollLeft * ratio;
         restoreCaretAnchor();
         window.scheduleCommentRender?.();
         window.schedulePageViewRepaginate?.();
@@ -142,6 +169,7 @@
         content.style.setProperty('--writing-zoom-scale', String(scale));
         document.body.classList.toggle('zoom-typewriter', typewriterAnchor !== null);
         refresh();
+        window.dispatchEvent(new Event('writingzoomchange'));
     };
     // Pagination and Focus Mode can finish resizing after the zoom message.
     // Keep the anchor until the writer scrolls, edits or moves the caret.
@@ -154,8 +182,11 @@
         if (!event.ctrlKey) clearCaretAnchor();
     }, { passive: true, capture: true });
     const observer = new MutationObserver(scheduleRefresh);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'dir'] });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    content.addEventListener('input', () => {
+        if (scale !== 1 && !document.body.classList.contains('unified-writing-canvas')) scheduleRefresh();
+    });
     new ResizeObserver(resizeSurface).observe(content);
     window.addEventListener('resize', scheduleRefresh);
 })();

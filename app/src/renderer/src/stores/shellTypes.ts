@@ -1,4 +1,5 @@
 import { type Mode } from '../shell/modes'
+import type { WritingScope } from '../views/editor/writingTypes'
 
 /**
  * Everything the main area can show.
@@ -12,6 +13,7 @@ export type MainView =
   | 'write'
   | 'dashboard'
   | 'manuscript'
+  | 'structure'
   | 'drafts'
   | 'narration'
   | 'timeline'
@@ -87,7 +89,7 @@ export type MobileTab = 'dashboard' | 'manuscript' | 'codex' | 'planning' | 'set
 export type PaneView = MainView | 'sceneNotes'
 export type DockEdge = 'left' | 'right' | 'top' | 'bottom'
 export type PaneNode =
-  | { kind: 'leaf'; id: string; view: PaneView }
+  | { kind: 'leaf'; id: string; view: PaneView; writingScope?: WritingScope }
   | { kind: 'split'; id: string; direction: 'row' | 'column'; children: PaneNode[]; sizes: number[] }
 
 /** A layout the writer named and can come back to. */
@@ -266,6 +268,7 @@ export interface ShellState {
   setActivePane(id: string): void
   /** Points one pane at a view without moving the writer into it. */
   setPaneView(id: string, view: MainView): void
+  setPaneWritingScope(id: string, scope: WritingScope): void
   splitActivePane(direction: 'row' | 'column'): void
   /** Splits a named pane and returns the id of the pane that appeared. */
   splitPaneById(id: string, direction: 'row' | 'column'): string | null

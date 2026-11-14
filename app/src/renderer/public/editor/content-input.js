@@ -6,8 +6,8 @@ function setSceneContext(id) {
     if (id === sceneIdentity) return;
     sceneIdentity = id;
     window.NovalistEditorState.dismissedGrammarIssues.clear();
-    window.NovalistEditorState.imageTargetBlock = null;
-    window.NovalistEditorState.pendingInlineAction = null;
+    if (!window.NovalistWritingDocument?.enabled) window.NovalistEditorState.imageTargetBlock = null;
+    if (!window.NovalistWritingDocument?.enabled) window.NovalistEditorState.pendingInlineAction = null;
     // Two scenes can have identical HTML, in which case the host does not call
     // setContent. Invalidate the old result and counts on identity alone too.
     window.NovalistEditorState.grammarIssues = [];
@@ -22,12 +22,13 @@ function setSceneContext(id) {
 }
 
 function imageBlocks() {
-    return Array.from(window.NovalistEditorState.editor.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote'));
+    return Array.from(window.getWritingServiceRoot().querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote'));
 }
 
 function captureImageTarget(block = window.caretBlock()) {
     return block ? {
-        block, index: imageBlocks().indexOf(block), tag: block.tagName, text: block.textContent, scene: sceneIdentity
+        block, index: imageBlocks().indexOf(block), tag: block.tagName, text: block.textContent,
+        scene: window.writingSceneOf?.(block)?.dataset.writingScene || sceneIdentity
     } : null;
 }
 
@@ -39,6 +40,10 @@ function imageTarget() {
     const remembered = window.NovalistEditorState.imageTargetBlock;
     window.NovalistEditorState.imageTargetBlock = null;
     if (!remembered) return window.caretBlock();
+    if (window.NovalistWritingDocument?.enabled) {
+        const root = window.getWritingSceneRoot(remembered.scene);
+        return root?.isConnected && root.contains(remembered.block) ? remembered.block : null;
+    }
     if (remembered.scene !== sceneIdentity) return null;
     if (window.NovalistEditorState.editor.contains(remembered.block)) return remembered.block;
     const blocks = imageBlocks();
@@ -97,11 +102,19 @@ function insertImageAtCaret(storedPath, alt) {
 }
 
 function getCleanContentHtml() {
-    const clone = window.NovalistEditorState.editor.cloneNode(true);
+    const root = window.NovalistWritingDocument?.enabled
+        ? window.getWritingSceneRoot() : window.NovalistEditorState.editor;
+    return root ? cleanContentRoot(root) : '';
+}
+
+function cleanContentRoot(root) {
+    const clone = root.cloneNode(true);
+    window.stripRuntimeProseDirection?.(clone);
+    clone.querySelectorAll('[data-editor-chrome]').forEach(node => node.remove());
     window.clearGrammarHighlights(clone);
     // These are display decorations, not edits to the stored prose.
-    clone.querySelectorAll('.nv-focus-block').forEach(block => {
-        block.classList.remove('nv-focus-block');
+    clone.querySelectorAll('.nv-focus-block, .nv-scene-break').forEach(block => {
+        block.classList.remove('nv-focus-block', 'nv-scene-break');
     });
     clone.querySelectorAll('[class=""]').forEach(block => block.removeAttribute('class'));
     clone.querySelectorAll('sup.nv-fn[title]').forEach(note => note.removeAttribute('title'));
@@ -124,6 +137,7 @@ function getCleanContentHtml() {
 
 /** Captures real edits synchronously, comparing browser-normalized prose. */
 function capturePendingContentChange(lastReceivedHtml = window.NovalistEditorState.lastHtml) {
+    if (window.NovalistWritingDocument?.enabled) return null;
     if (window.NovalistEditorState.isComposing || window.NovalistEditorState.isSettingContent) return null;
     window.refreshSceneBreakClasses(window.NovalistEditorState.editor);
     const html = getCleanContentHtml();
@@ -138,6 +152,11 @@ function capturePendingContentChange(lastReceivedHtml = window.NovalistEditorSta
 }
 
 function reportContentChanged() {
+    if (window.NovalistWritingDocument?.enabled) {
+        window.queueWritingChanges();
+        if (window.NovalistWritingDocument.pending.length) window.sendMessage({ type: 'writingChanged' });
+        return;
+    }
     const change = capturePendingContentChange();
     if (change) window.sendMessage({ type: 'contentChanged', ...change });
 }
@@ -159,14 +178,18 @@ function isCompositionInput(event) {
 function handleEditorInput(event) {
     if (window.NovalistEditorState.isSettingContent || isCompositionInput(event)) return;
     window.NovalistEditorState.dismissedGrammarIssues.clear();
-    window.NovalistEditorState.editor.querySelectorAll('.proofing-dismissed')
+    const inputRoot = window.NovalistWritingDocument?.enabled
+        ? window.getWritingSceneRoot() : window.NovalistEditorState.editor;
+    if (!inputRoot) return;
+    window.refreshSceneBreakClasses(inputRoot);
+    inputRoot.querySelectorAll('.proofing-dismissed')
         .forEach(mark => mark.removeAttribute('spellcheck'));
     if (event && event.inputType === 'insertParagraph') {
         // Chromium clones inline spans into the empty paragraph after Enter.
         // A comment belongs to its words, not to the new paragraph. Keep the
         // nodes (and any bold/italic children) so native undo/redo and the caret
         // still point to the browser's own nodes.
-        window.NovalistEditorState.editor.querySelectorAll('span.nv-comment[data-comment-id]').forEach(span => {
+        inputRoot.querySelectorAll('span.nv-comment[data-comment-id]').forEach(span => {
             if (!span.textContent) window.clearCommentMark(span);
         });
     }
@@ -203,7 +226,10 @@ function forwardEditorHotkey(e) {
             ctrlKey: e.ctrlKey,
             metaKey: e.metaKey,
             shiftKey: e.shiftKey,
-            altKey: e.altKey
+            altKey: e.altKey,
+            isComposing: e.isComposing,
+            keyCode: e.keyCode,
+            altGraph: e.getModifierState?.('AltGraph') === true
         });
 }
 
@@ -215,6 +241,7 @@ Object.assign(window, {
     toDisplayImages,
     insertImageAtCaret,
     getCleanContentHtml,
+    cleanContentRoot,
     reportContentChanged,
     capturePendingContentChange,
     flushPendingContentChange,

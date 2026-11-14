@@ -91,6 +91,7 @@ internal sealed class HostedSessionServer : IAsyncDisposable
             var forward = CopyAsync(socket, host, lifetime.Token);
             var backward = CopyAsync(host, socket, lifetime.Token);
             await Task.WhenAny(forward, backward);
+            await DrainAsync(Task.WhenAll(forward, backward), lifetime.Token);
             await lifetime.CancelAsync();
             socket.Abort();
             host.Abort();
@@ -115,9 +116,23 @@ internal sealed class HostedSessionServer : IAsyncDisposable
         while (true)
         {
             var message = await source.ReceiveAsync(buffer.AsMemory(), ct);
-            if (message.MessageType == WebSocketMessageType.Close) return;
+            if (message.MessageType == WebSocketMessageType.Close)
+            {
+                // Pass the close on instead of resetting the peer: a reset discards what it has not read yet.
+                if (destination.State is WebSocketState.Open or WebSocketState.CloseReceived)
+                    await destination.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, null, ct);
+                return;
+            }
             await destination.SendAsync(buffer.AsMemory(0, message.Count), message.MessageType, message.EndOfMessage, ct);
         }
+    }
+
+    private static async Task DrainAsync(Task remaining, CancellationToken ct)
+    {
+        using var grace = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        grace.CancelAfter(TimeSpan.FromSeconds(2));
+        try { await remaining.WaitAsync(grace.Token); }
+        catch (Exception error) when (error is OperationCanceledException or WebSocketException) { }
     }
 
     public async ValueTask DisposeAsync()

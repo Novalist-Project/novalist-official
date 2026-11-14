@@ -321,7 +321,7 @@ Anything with a user interface is HTML rendered in a sandboxed frame. Declare it
 - `mode` names the workspace a `main` view joins: `"write"`, `"plan"`, `"world"`, `"publish"` or `"series"`. It is listed in that mode's panel, in a group of its own called **From extensions**, after the built-in views — so installing your extension never reorders one of Novalist's. Omit it (or name something that is not one of the five) and the view joins **World**, which is where a reference view usually belongs. The field is ignored for `"inspector"` views, which have only one place to go.
 - `entry` is an HTML file inside your extension folder. Ship its CSS and JS beside it; there is no network access.
 - `iconPath` is Lucide-style SVG path data. Novalist's interface uses no emoji anywhere; do not put one in a title either.
-- `title` may be a localization key, resolved through your extension's locales.
+- `title` is the name shown in the sidebar and mode panel. It may be a key from your extension's `Locales` files (for example `"chat.title"`); Novalist then shows that key's text in the interface language, updates it when the writer changes language, and falls back to `en.json` for a missing translation. A title that is not a key is shown exactly as written.
 
 Implement `IWebViewContributor` to receive messages from the frame and reply to them. That channel is the only way your HTML reaches your .NET code.
 

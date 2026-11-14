@@ -23,7 +23,7 @@
   color: var(--nl-text);
   font-size: var(--nl-font-ui);
   line-height: var(--nl-leading-tight);
-  text-align: left;
+  text-align: start;
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -194,7 +194,7 @@
   border: 1px solid var(--nl-border);
   border-radius: var(--nl-radius-md);
   background: var(--nl-surface-card);
-  text-align: left;
+  text-align: start;
 }
 
 .gallery-list-row:hover {
@@ -286,7 +286,7 @@
 .gallery-menu button {
   display: block;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: var(--nl-space-sm) var(--nl-space-md);
   border-radius: var(--nl-radius-sm);
   font-size: var(--nl-font-ui);

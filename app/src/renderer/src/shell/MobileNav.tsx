@@ -149,7 +149,7 @@ export function MobileNav({
           <>
             <header className="mobile-nav-bar">
               <button type="button" className="mobile-nav-back" onClick={pop}>
-                <ChevronLeft size={20} strokeWidth={2} />
+                <ChevronLeft size={20} strokeWidth={2} className="icon-directional" />
                 <span className="mobile-nav-back-label">{backTitle}</span>
               </button>
               <h1 className="mobile-nav-title">{top.title}</h1>
@@ -214,7 +214,7 @@ export function MobileRow({
       {value !== undefined && <span className="mobile-row-value">{value}</span>}
       {children}
       {onClick && variant !== 'action' && (
-        <ChevronRight size={18} strokeWidth={2} className="mobile-row-chevron" />
+        <ChevronRight size={18} strokeWidth={2} className="icon-directional mobile-row-chevron" />
       )}
     </>
   )

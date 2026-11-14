@@ -31,14 +31,19 @@ for (const next of ['new', 'existing', 'direct'] as const) {
         await h.page.evaluate((path) => window.novalistStores.project.getState().openProject(path), destination)
       }
       await enterWriting(h.page)
-      await expect(h.page.locator('.editor-frame')).toHaveCount(0)
+      const sourceIds = book.chapters.flatMap(chapter => chapter.scenes.map(scene => scene.id))
+      for (const sceneId of sourceIds) {
+        for (const frame of h.page.frames().filter(frame => frame.url().includes('/editor/editor.html'))) {
+          await expect(frame.locator(`[data-writing-scene="${sceneId}"]`)).toHaveCount(0)
+        }
+      }
       expect(await h.page.evaluate(() => {
         const s = window.novalistStores.project.getState()
         return { editors: s.editors, scene: s.openSceneId, tabs: s.openTabs, hashes: s.sceneHashes, conflict: s.sceneConflict }
       })).toEqual({ editors: {}, scene: null, tabs: [], hashes: {}, conflict: null })
       if (next !== 'new') {
         await h.page.locator('.binder-scene-row').first().click()
-        await expect(h.page.locator('.editor-frame')).toHaveCount(1)
+        await expect(h.page.frameLocator('.editor-frame').first().locator('[data-writing-scene]')).toHaveCount(1)
       }
     } finally {
       await h.close()
@@ -76,9 +81,16 @@ for (const action of ['close', 'open', 'create'] as const) {
       // change debounce nor the two-second autosave has had a chance to run.
       await h.page.evaluate(async ({ action, destination }) => {
         const frame = document.querySelector<HTMLIFrameElement>('.editor-frame')!
-        const editor = frame.contentDocument!.querySelector<HTMLElement>('#editor')!
-        editor.innerHTML = '<p>Last words before leaving.</p>'
-        editor.dispatchEvent(new Event('input', { bubbles: true }))
+        const editorDocument = frame.contentDocument!
+        const scene = editorDocument.querySelector<HTMLElement>('[data-writing-scene]')!
+        const range = editorDocument.createRange()
+        range.selectNodeContents(scene)
+        const selection = editorDocument.getSelection()!
+        selection.removeAllRanges()
+        selection.addRange(range)
+        const transfer = new DataTransfer()
+        transfer.setData('text/html', '<p>Last words before leaving.</p>')
+        scene.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }))
         const store = window.novalistStores.project.getState()
         if (action === 'close') await store.closeProject()
         else if (action === 'open') await store.openProject(destination)

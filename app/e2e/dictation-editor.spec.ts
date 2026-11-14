@@ -2,6 +2,9 @@ import { test, expect, type Page } from '@playwright/test'
 import { resolve } from 'node:path'
 import { launchApp, seedBook, type Harness } from './harness'
 import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
+import { flushWriting, replaceWritingScene } from './writingTestActions'
+
+type DictationHarness = Harness & { sceneId: string; otherSceneId: string }
 
 type Fake = { gain: GainNode; context: AudioContext; calls: number; fail: boolean; formatFail?: boolean; hold: boolean;
   release?: () => void; stopped: boolean; languages: string[];
@@ -12,11 +15,11 @@ type Fake = { gain: GainNode; context: AudioContext; calls: number; fail: boolea
 test('Windows voice typing restores the caret and preserves a selected passage', async () => {
   const h = await setup()
   try {
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
+    await replaceWritingScene(h.page, h.sceneId, '<p>Before selected after.</p>')
     await editor.evaluate((element) => {
       const w = element.ownerDocument.defaultView as unknown as EditorWindow
-      w.setContent('<p>Before selected after.</p>')
-      element.focus()
+      w.focusEditor()
       const range = element.ownerDocument.createRange()
       range.setStart(element.querySelector('p')!.firstChild!, 7)
       range.setEnd(element.querySelector('p')!.firstChild!, 15)
@@ -49,7 +52,7 @@ test('Windows voice typing restores the caret and preserves a selected passage',
 test('Apple system dictation inserts German text at the caret without dialogue inference', async () => {
   const h = await setup()
   try {
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await editor.click()
     await h.page.keyboard.type('Before. After.')
     await h.page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowLeft' : 'Home')
@@ -81,15 +84,19 @@ test('Apple system dictation inserts German text at the caret without dialogue i
   } finally { await h.close() }
 })
 
-async function setup(): Promise<Harness> {
+async function setup(): Promise<DictationHarness> {
   const h = await launchApp('nl-dictation-', {
     NOVALIST_BACKEND_PATH: resolve('../Novalist.Backend/bin/Debug/net10.0/Novalist.Backend' + (process.platform === 'win32' ? '.exe' : ''))
   })
-  const book = await seedBook(h, { Chapter: ['First', 'Second'] })
+  const book = await seedBook(h, { Chapter: ['First', 'Second'] }, 'Spec', false)
   await h.page.evaluate(async (chapter) => {
     await window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id)
   }, book.chapters[0])
-  await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toBeVisible()
+  await h.page.locator('.writing-scope-segments').getByRole('button', { name: 'Scene', exact: true }).click()
+  const scene = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
+  await expect(scene).toHaveCount(1)
+  await expect(scene).toHaveAttribute('data-writing-scene', book.chapters[0].scenes[0].id)
+  await scene.click()
   await h.page.evaluate(() => {
     const context = new AudioContext()
     const oscillator = context.createOscillator()
@@ -151,7 +158,7 @@ async function setup(): Promise<Harness> {
       return original<T>(method, params)
     }
   })
-  return h
+  return Object.assign(h, { sceneId: book.chapters[0].scenes[0].id, otherSceneId: book.chapters[0].scenes[1].id })
 }
 async function voice(page: Page, on: boolean): Promise<void> {
   await page.evaluate((enabled) => { (window as unknown as { dictationFake: Fake }).dictationFake.gain.gain.value = enabled ? 0.1 : 0 }, on)
@@ -184,7 +191,7 @@ test('book vocabulary reaches recognition and plain mode keeps speech unquoted w
     await voice(h.page, true)
     await h.page.waitForTimeout(400)
     await bar.getByRole('button', { name: 'Stop dictation', exact: true }).click()
-    await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toHaveText('Aeloria crossed Rübenbach.')
+    await expect(h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')).toHaveText('Aeloria crossed Rübenbach.')
     const result = await h.page.evaluate(() => {
       const fake = (window as unknown as { dictationFake: Fake }).dictationFake
       return { terms: fake.vocabulary, formatCalls: fake.formatCalls ?? 0 }
@@ -223,7 +230,7 @@ test('spoken controls start quoted dialogue and return to narration while ordina
     await voice(h.page, true)
     await h.page.waitForTimeout(400)
     await bar.getByRole('button', { name: 'Stop dictation', exact: true }).click()
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await expect(editor).toContainText('“Hello. I need a new paragraph.”')
     expect(await editor.innerText()).toMatch(/“Hello\. I need a new paragraph\.”\n+Er ging\./)
     expect(await h.page.evaluate(() => (window as unknown as { dictationFake: Fake }).dictationFake.formatCalls ?? 0)).toBe(0)
@@ -266,7 +273,7 @@ test('spoken commands continue across clips without inserting an empty paragraph
     await bar.locator('summary').click()
     await bar.getByLabel('Spoken paragraph and speaker commands', { exact: true }).check()
     await bar.getByRole('button', { name: 'Start dictation', exact: true }).click()
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     for (let clip = 1; clip <= 2; clip++) {
       await voice(h.page, true)
       await h.page.waitForTimeout(400)
@@ -290,7 +297,7 @@ test('resuming a partly inserted command clip inserts only its remaining passage
     await h.page.evaluate(() => {
       (window as unknown as { dictationFake: Fake }).dictationFake.transcripts = ['Before. New speaker. Hello. New paragraph. After.']
     })
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await editor.evaluate(element => {
       const w = element.ownerDocument.defaultView as unknown as EditorWindow
       const insert = w.insertDictationText.bind(w)
@@ -343,7 +350,7 @@ test('an unavailable selected microphone reports the problem and can recover usi
     await voice(h.page, true)
     await h.page.waitForTimeout(400)
     await bar.getByRole('button', { name: 'Stop dictation', exact: true }).click()
-    await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toContainText('“Hello,” she said.')
+    await expect(h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')).toContainText('“Hello,” she said.')
   } finally { await h.close() }
 })
 
@@ -364,7 +371,7 @@ test('model loading starts before any audio and capture continues while both mod
     await expect(h.page.getByText('Pending clips: 1', { exact: false })).toBeVisible()
     expect(await h.page.evaluate(() => (window as unknown as { dictationFake: Fake }).dictationFake.stopped)).toBe(true)
     await h.page.evaluate(() => (window as unknown as { dictationFake: Fake }).dictationFake.releaseWarmup?.())
-    await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toContainText('“Hello,” she said.')
+    await expect(h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')).toContainText('“Hello,” she said.')
     await expect(h.page.getByText('Loading dictation models…', { exact: false })).toHaveCount(0)
   } finally { await h.close() }
 })
@@ -396,14 +403,14 @@ test('a model loading failure retains already captured speech for retry', async 
     await expect(h.page.getByText('Pending clips: 1', { exact: false })).toBeVisible()
     await h.page.evaluate(() => { (window as unknown as { dictationFake: Fake }).dictationFake.warmReady = true })
     await h.page.getByRole('button', { name: 'Resume pending speech at the caret' }).click()
-    await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toContainText('“Hello,” she said.')
+    await expect(h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')).toContainText('“Hello,” she said.')
   } finally { await h.close() }
 })
 
 test('speech lands directly in the editor; stopping flushes the last clip without a preview', async () => {
   const h = await setup()
   try {
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await editor.click()
     await h.page.keyboard.type('Before.')
     await start(h.page)
@@ -425,7 +432,7 @@ test('speech lands directly in the editor; stopping flushes the last clip withou
 test('dictation starts at the caret between existing paragraphs and continues there', async () => {
   const h = await setup()
   try {
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await editor.click()
     await h.page.keyboard.type('Before.')
     await h.page.keyboard.press('Enter')
@@ -450,16 +457,16 @@ test('dictation starts at the caret between existing paragraphs and continues th
 test('pending speech keeps its place through proofing, page layout changes, and a moved caret', async () => {
   const h = await setup()
   try {
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await h.page.evaluate(() => {
       const fake = (window as unknown as { dictationFake: Fake }).dictationFake
       fake.hold = true
       fake.formatFail = true
     })
+    await replaceWritingScene(h.page, h.sceneId, '<p>Before the gap. After the gap.</p><p>Elsewhere.</p>')
     await editor.evaluate((element) => {
       const w = element.ownerDocument.defaultView as unknown as EditorWindow
-      w.setContent('<p>Before the gap. After the gap.</p><p>Elsewhere.</p>')
-      element.focus()
+      w.focusEditor()
       w.getSelection()!.setPosition(element.querySelector('p')!.firstChild!, 15)
     })
     await start(h.page)
@@ -496,14 +503,14 @@ test('failed transcription keeps audio for retry and German quotation style reac
       await window.novalistStores.settings.getState().update('global', { autoReplacementLanguage: 'de-guillemet' })
       ;(window as unknown as { dictationFake: Fake }).dictationFake.fail = true
     })
-    await h.page.frameLocator('.editor-frame').locator('#editor').click()
+    await h.page.frameLocator('.editor-frame').locator('[data-writing-scene]').click()
     await start(h.page)
     await voice(h.page, true)
     await h.page.waitForTimeout(400)
     await h.page.getByRole('button', { name: 'Stop dictation', exact: true }).click()
     await expect(h.page.getByRole('alert')).toContainText('Transcription failed', { timeout: 10000 })
     await h.page.getByRole('button', { name: 'Resume pending speech at the caret' }).click()
-    await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toContainText('»Hello«, she said.', { timeout: 10000 })
+    await expect(h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')).toContainText('»Hello«, she said.', { timeout: 10000 })
     expect(await h.page.evaluate(() => (window as unknown as { dictationFake: Fake }).dictationFake.languages)).toEqual(['de', 'de'])
   } finally { await h.close() }
 })
@@ -529,7 +536,7 @@ test('a heard voice and its continued speech reach German paragraphs correctly a
         return original<T>(method, params)
       }
     })
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await editor.click()
     await start(h.page)
     await voice(h.page, true)
@@ -552,7 +559,7 @@ test('a late result cannot write into another scene; pending speech resumes expl
   const h = await setup()
   try {
     await h.page.evaluate(() => { (window as unknown as { dictationFake: Fake }).dictationFake.hold = true })
-    await h.page.frameLocator('.editor-frame').locator('#editor').click()
+    await h.page.frameLocator('.editor-frame').locator('[data-writing-scene]').click()
     await start(h.page)
     await voice(h.page, true)
     await h.page.waitForTimeout(400)
@@ -564,42 +571,58 @@ test('a late result cannot write into another scene; pending speech resumes expl
       await project.openScene(chapter.guid, chapter.scenes[1].id)
       ;(window as unknown as { dictationFake: Fake }).dictationFake.release?.()
     })
-    await expect(h.page.frameLocator('.editor-frame').locator('#editor')).not.toContainText('Hello')
+    const other = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${h.otherSceneId}"]`)
+    await expect(other).toBeVisible()
+    await expect(other).not.toContainText('Hello')
     await expect(h.page.getByText('Dictation paused because you left the scene.', { exact: false })).toBeVisible()
     await h.page.evaluate(async () => {
       const project = window.novalistStores.project.getState()
       await project.openScene(project.chapters[0].guid, project.chapters[0].scenes[0].id)
     })
-    await h.page.frameLocator('.editor-frame').locator('#editor').click()
+    await h.page.frameLocator('.editor-frame').locator('[data-writing-scene]').click()
     await h.page.getByRole('button', { name: 'Resume pending speech at the caret' }).click()
-    await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toContainText('“Hello,” she said.', { timeout: 10000 })
+    await expect(h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')).toContainText('“Hello,” she said.', { timeout: 10000 })
   } finally { await h.close() }
 })
 
 test('dictation preserves a selection, merges continued speech, supports undo, and rejects a replaced document', async () => {
   const h = await setup()
   try {
-    const result = await h.page.frameLocator('.editor-frame').locator('#editor').evaluate((element) => {
+    const editor = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${h.sceneId}"]`)
+    await replaceWritingScene(h.page, h.sceneId, '<p>Keep these words.</p>')
+    const inserted = await editor.evaluate((element) => {
       const w = element.ownerDocument.defaultView as unknown as EditorWindow
-      w.setContent('<p>Keep these words.</p>')
+      w.focusEditor()
       const range = element.ownerDocument.createRange()
-      range.selectNodeContents(element.firstChild!)
+      range.selectNodeContents(element.querySelector('p')!)
       w.getSelection()!.removeAllRanges(); w.getSelection()!.addRange(range)
-      w.captureDictationAnchor('test')
-      w.insertDictationText('test', '“Hello.”', true, '', '“')
-      w.insertDictationText('test', 'Again.”', false, '”', '“')
-      const merged = element.textContent
-      element.ownerDocument.execCommand('undo')
-      const undone = element.textContent
-      w.setContent('<p>Another scene.</p>')
-      const stale = w.insertDictationText('test', 'Wrong!', false, '', '')
-      return { merged, undone, stale, final: element.textContent }
+      return w.captureDictationAnchor('test') && w.insertDictationText('test', '“Hello.”', true, '', '“')
     })
-    expect(result.merged).toContain('Keep these words.')
-    expect(result.merged).toContain('“Hello. Again.”')
-    expect(result.undone).not.toContain('Again.')
-    expect(result.stale).toBe(false)
-    expect(result.final).toBe('Another scene.')
+    expect(inserted).toBe(true)
+    await flushWriting(h.page)
+    expect(await editor.evaluate((element) => {
+      const w = element.ownerDocument.defaultView as unknown as EditorWindow
+      return w.insertDictationText('test', 'Again.”', false, '”', '“')
+    })).toBe(true)
+    await expect(editor).toContainText('Keep these words.')
+    await expect(editor).toContainText('“Hello. Again.”')
+    await flushWriting(h.page)
+    await h.page.keyboard.press('ControlOrMeta+z')
+    await expect(editor).not.toContainText('Again.')
+    await expect(editor).toContainText('Keep these words.')
+    await expect(editor).toContainText('“Hello.”')
+    expect(await editor.evaluate((element) => {
+      const w = element.ownerDocument.defaultView as unknown as EditorWindow
+      w.getSelection()!.setPosition(element.querySelector('p')!.firstChild!, 4)
+      return w.captureDictationAnchor('stale')
+    })).toBe(true)
+    await replaceWritingScene(h.page, h.sceneId, '<p>Another scene.</p>')
+    expect(await editor.evaluate((element) => {
+      const w = element.ownerDocument.defaultView as unknown as EditorWindow
+      return w.insertDictationText('stale', 'Wrong!', false, '', '')
+    })).toBe(false)
+    await expect(editor).toHaveText('Another scene.')
+    await expect(editor).toHaveAttribute('data-writing-scene', h.sceneId)
   } finally { await h.close() }
 })
 
@@ -611,7 +634,7 @@ test('formatting failure inserts the original transcript without stopping for a 
     await voice(h.page, true)
     await h.page.waitForTimeout(400)
     await h.page.getByRole('button', { name: 'Stop dictation', exact: true }).click()
-    await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toContainText('Hello she said.')
+    await expect(h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')).toContainText('Hello she said.')
     await expect(h.page.getByText('Dialogue formatting failed for a clip.', { exact: false })).toBeVisible()
   } finally { await h.close() }
 })
@@ -619,18 +642,21 @@ test('formatting failure inserts the original transcript without stopping for a 
 test('a speech tag after a pause repairs only the generated closing punctuation', async () => {
   const h = await setup()
   try {
-    const result = await h.page.frameLocator('.editor-frame').locator('#editor').evaluate((element) => {
-      const w = element.ownerDocument.defaultView as unknown as EditorWindow
-      const results: string[] = []
-      for (const [open, close, language, tag] of [['“', '”', 'en', 'she said.'], ['„', '“', 'de', 'sagte sie.']]) {
-        w.setContent('<p><br></p>')
-        w.captureDictationAnchor('test')
-        w.insertDictationText('test', open + 'Hallo.' + close, true, '', open)
-        w.insertDictationText('test', tag, false, '', open, { close, language })
-        results.push(element.textContent ?? '')
-      }
-      return results
-    })
+    const editor = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${h.sceneId}"]`)
+    const result: string[] = []
+    for (const [open, close, language, tag] of [['“', '”', 'en', 'she said.'], ['„', '“', 'de', 'sagte sie.']]) {
+      await replaceWritingScene(h.page, h.sceneId, '<p><br></p>')
+      const inserted = await editor.evaluate((element, { open, close, language, tag }) => {
+        const w = element.ownerDocument.defaultView as unknown as EditorWindow
+        w.focusEditor()
+        w.getSelection()!.setPosition(element.querySelector('p')!, 0)
+        return w.captureDictationAnchor('test') &&
+          w.insertDictationText('test', open + 'Hallo.' + close, true, '', open) &&
+          w.insertDictationText('test', tag, false, '', open, { close, language })
+      }, { open, close, language, tag })
+      expect(inserted).toBe(true)
+      result.push(await editor.textContent() ?? '')
+    }
     expect(result).toEqual(['“Hallo,” she said.', '„Hallo“, sagte sie.'])
   } finally { await h.close() }
 })

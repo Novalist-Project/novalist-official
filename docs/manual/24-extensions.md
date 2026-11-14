@@ -39,7 +39,7 @@ The **Installed** tab lists every installed extension with its name, version, au
 
 When an installed and enabled extension contributes views, where each view appears depends on its declared **placement** in the manifest:
 
-- **`main`** — the view is a full content view, and it joins one of the five [modes](02-interface-overview.md#the-mode-rail). It is listed in that mode's panel like Codex or Timeline, using the icon and title from the manifest.
+- **`main`** — the view is a full content view, and it joins one of the five [modes](02-interface-overview.md#the-mode-rail). It is listed in that mode's panel like Codex or Timeline, using the icon and title from the manifest. If the extension ships translations, the title is shown in the interface language.
 - **`inspector`** — the view appears in the right-hand **inspector** (context sidebar), alongside the built-in Context and Footnotes tabs.
 
 ### Which mode a view joins

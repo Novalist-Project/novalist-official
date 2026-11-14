@@ -1,0 +1,88 @@
+{
+  "kind": "fragment-foundation-review-round2",
+  "finding": "I3 hidden capitalization context",
+  "base": {
+    "revision": "e01dfb74c2fb1598b4c182fcd72d88cecc649f03",
+    "archive": "fragments-round1-evidence.json.gz",
+    "archiveSha256": "115a4ffd9332f63a894fe40dbb373b5be22f895d430ed643cfbc7ff4ff8e8d44",
+    "sourceSha256": "c06f9736884e99608ada1713658286147d27bfcf23c3d3cab7501926cd19780b"
+  },
+  "evidence": "Exact two-file overrides against the prior accepted archived source; unchanged baseline is referenced, not recopied. Embedded source digests, gzip round-trip, blob hashes and original result bytes verified. No post-capture redaction. Status-only records use frozen command/source bindings. Failure console log is referenced by digest only.",
+  "limits": "Test-only publication coverage; Unicode titlecase/NBSP, two comment hard REDs and wider Task1 gates remain open.",
+  "variants": [
+    {
+      "name": "red",
+      "sourceSha256": "5eb08f068237d2431c5f8fec040d2a2909648c5a1fe4fa2c453377035632f2df",
+      "overrides": [
+        {
+          "file": "e2e/fixtures/writingSceneText.ts",
+          "sha256": "509506047ab9c01119419422e87e69ec78636bb20b201aae23ec23c46723b48a"
+        },
+        {
+          "file": "e2e/writing-surface.spec.ts",
+          "sha256": "7e3cee2efed2e757b716183e80e416a685474b9ceaffb918b1b6856597141c2f"
+        }
+      ]
+    },
+    {
+      "name": "accepted",
+      "sourceSha256": "f4c3099b7db97b5480448aa5bc72d6d9b12928d05d976e57f0de96a07234f9e1",
+      "overrides": [
+        {
+          "file": "e2e/fixtures/writingSceneText.ts",
+          "sha256": "49fd4692636f6b5a08cbf4f51ead6253549b7c640cc057c0cd52b01ceb96296f"
+        },
+        {
+          "file": "e2e/writing-surface.spec.ts",
+          "sha256": "7e3cee2efed2e757b716183e80e416a685474b9ceaffb918b1b6856597141c2f"
+        }
+      ]
+    }
+  ],
+  "environment": {
+    "NOVALIST_WRITING_FRAGMENTS": "0",
+    "NOVALIST_WRITING_OPTIMIZE": "0",
+    "NOVALIST_WRITING_ENGINE": "electron",
+    "NOVALIST_E2E_ALLOW_DESKTOP": "1"
+  },
+  "runs": [
+    {
+      "name": "red",
+      "sourceSha256": "5eb08f068237d2431c5f8fec040d2a2909648c5a1fe4fa2c453377035632f2df",
+      "passed": 2,
+      "failed": 2,
+      "command": "npx playwright test --config playwright.writing-presentation.config.ts e2e/writing-surface.spec.ts --grep 'capitalize-(visible-separator|hidden-separator|hidden-prefix|display-none-separator)' --output test-results/writing-fragments-round2-publication-red --workers 1",
+      "log": {
+        "file": "fragments-round2-publication-red.log",
+        "sha256": "f94420a06047efcec5791593b3ce425d346a96f1f400c71535832928db70cfa0"
+      },
+      "records": 5,
+      "embeddedSourceRecords": 4
+    },
+    {
+      "name": "accepted",
+      "sourceSha256": "f4c3099b7db97b5480448aa5bc72d6d9b12928d05d976e57f0de96a07234f9e1",
+      "passed": 23,
+      "failed": 0,
+      "command": "npx playwright test --config playwright.writing-presentation.config.ts e2e/writing-surface.spec.ts --output test-results/writing-fragments-round2-publication-accepted --workers 1",
+      "log": {
+        "file": "fragments-round2-publication-accepted.log",
+        "sha256": "d51438937b4ba41e1d3a72beba6261a683e3cfe4cd94e7e6477025c1bd94b806"
+      },
+      "records": 24,
+      "embeddedSourceRecords": 23
+    }
+  ],
+  "checks": {
+    "typecheck": "web/node/e2e passed",
+    "doctors": "8/8",
+    "aislop": "100; 0 errors; 0 warnings; npm audit unavailable spawn npm ENOENT"
+  },
+  "archive": {
+    "file": "fragments-round2-evidence.json.gz",
+    "bytes": 20851,
+    "sha256": "b447fd51d323917b5eeab106498b9f2954392e0131cff038aa57f0bcfd15f13f",
+    "records": 29,
+    "blobs": 35
+  }
+}

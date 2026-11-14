@@ -6,7 +6,7 @@ test('two desktop writers host and join a direct session, edit together and reta
   try {
     const owner = await launchApp('novalist-peer-owner-')
     participants.push(owner)
-    const project = await seedBook(owner, { Opening: ['Arrival', 'Elsewhere'] })
+    const project = await seedBook(owner, { Opening: ['Arrival', 'Elsewhere'] }, 'Spec', false)
     const chapter = project.chapters.find(value => value.title === 'Opening')!
     const scene = chapter.scenes[0]
     await owner.rpc('scenes/write', [chapter.guid, scene.id, '<p>Our direct session.</p>', 'Our direct session.'])
@@ -37,34 +37,38 @@ test('two desktop writers host and join a direct session, edit together and reta
     await guest.page.waitForFunction(() => window.novalistStores.project.getState().isLoaded && !window.novalistStores.project.getState().workspaceBusy)
     await dismissTour(guest.page)
     for (const participant of participants) {
+      await participant.page.evaluate(() => {
+        const shell = window.novalistStores.shell.getState()
+        shell.setPaneWritingScope(shell.activePaneId, 'scene')
+      })
       await participant.page.evaluate(({ chapter, scene }) => window.novalistStores.project.getState().openScene(chapter, scene), { chapter: chapter.guid, scene: scene.id })
-      await expect(participant.page.frameLocator('.editor-frame').locator('#editor')).toHaveText('Our direct session.')
+      await expect(participant.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${scene.id}"]`)).toHaveText('Our direct session.')
     }
-    const ownerEditor = owner.page.frameLocator('.editor-frame').locator('#editor')
-    const guestEditor = guest.page.frameLocator('.editor-frame').locator('#editor')
+    const ownerEditor = owner.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${scene.id}"]`)
+    const guestEditor = guest.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${scene.id}"]`)
     await ownerEditor.click()
-    await owner.page.keyboard.press('Control+End')
+    await owner.page.keyboard.press('End')
     await owner.page.keyboard.type(' Together.')
     await expect(guestEditor).toHaveText('Our direct session. Together.', { timeout: 15_000 })
     await expect(guest.page.frameLocator('.editor-frame').locator('.nv-collaboration-label')).toHaveText('Owner')
     await guestEditor.click()
-    await guest.page.keyboard.press('Control+End')
+    await guest.page.keyboard.press('End')
     await guest.page.keyboard.type(' Realtime.')
     await expect(ownerEditor).toHaveText('Our direct session. Together. Realtime.', { timeout: 15_000 })
     const elsewhere = chapter.scenes.find(value => value.title === 'Elsewhere')!
     await owner.page.evaluate(({ chapter, scene }) => window.novalistStores.project.getState().openScene(chapter, scene),
       { chapter: chapter.guid, scene: elsewhere.id })
-    await owner.page.frameLocator('.editor-frame').locator('#editor').click()
+    await owner.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${elsewhere.id}"]`).click()
     const presence = guest.page.locator('.binder-scene-row').filter({ hasText: 'Elsewhere' }).locator('.collaboration-scene-badge')
     await expect(presence).toHaveAttribute('title', 'Editing: Owner')
     await expect(guest.page.locator('.binder-scene-row').filter({ hasText: 'Arrival' }).locator('.collaboration-scene-badge')).toHaveCount(0)
     await guest.page.evaluate(() => {
-      window.novalistStores.manuscript.getState().setMode('outliner')
-      window.novalistStores.shell.getState().setMainView('manuscript')
+      window.novalistStores.shell.getState().setMainView('structure')
     })
+    await guest.page.locator('.manuscript-modes').getByRole('button', { name: 'Outliner', exact: true }).click()
     await expect(guest.page.locator('.outliner-scene-title').filter({ hasText: 'Elsewhere' }).locator('.collaboration-scene-badge'))
       .toHaveAttribute('title', 'Editing: Owner')
-    await guest.page.evaluate(() => window.novalistStores.manuscript.getState().setMode('corkboard'))
+    await guest.page.locator('.manuscript-modes').getByRole('button', { name: 'Corkboard', exact: true }).click()
     await expect(guest.page.locator('.corkboard-card-title').filter({ hasText: 'Elsewhere' }).locator('.collaboration-scene-badge'))
       .toHaveAttribute('title', 'Editing: Owner')
     await owner.page.evaluate(() => window.novalistStores.shell.getState().setMainView('codex'))

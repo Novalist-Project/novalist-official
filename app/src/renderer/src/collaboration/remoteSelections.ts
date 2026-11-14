@@ -16,12 +16,16 @@ export interface ParticipantSelection {
 export class RemoteSelections {
   private readonly participants = new Map<string, ParticipantSelection>()
   private readonly markers = new Map<string, HTMLElement>()
-  private readonly style: HTMLStyleElement
+  private style: HTMLStyleElement | null = null
   private readonly document: Document
   private readonly highlight = `novalist-collaborators-${++nextHighlightId}`
 
   constructor(private readonly editor: Window, private readonly range: (selection: SharedSelection) => Range | null) {
     this.document = editor.document
+  }
+
+  private startRendering(): void {
+    if (this.style) return
     this.style = this.document.createElement('style')
     this.style.textContent = css.replaceAll('novalist-collaborators', this.highlight)
     this.document.head.append(this.style)
@@ -42,10 +46,12 @@ export class RemoteSelections {
   }
 
   readonly render = (): void => {
+    if (this.participants.size === 0) { this.stopRendering(); return }
     const view = this.editor as Window & typeof globalThis
     // Passive unmount can capture the final prose after its iframe is removed.
     // The DOM is still readable, but the old Window may have lost its APIs.
     if (!view.CSS?.highlights || !view.Highlight) return
+    this.startRendering()
     const ranges: Range[] = []
     for (const participant of this.participants.values()) {
       const range = this.range(participant.selection)
@@ -80,11 +86,18 @@ export class RemoteSelections {
     return marker
   }
 
-  destroy(): void {
+  private stopRendering(): void {
     this.document.removeEventListener('scroll', this.render, true)
     this.editor.removeEventListener('resize', this.render)
-    for (const marker of this.markers.values()) marker.remove()
-    this.style.remove()
+    this.style?.remove()
+    this.style = null
     ;(this.editor as Window & typeof globalThis).CSS?.highlights?.delete(this.highlight)
+  }
+
+  destroy(): void {
+    this.stopRendering()
+    for (const marker of this.markers.values()) marker.remove()
+    this.markers.clear()
+    this.participants.clear()
   }
 }

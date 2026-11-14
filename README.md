@@ -60,7 +60,7 @@ For extension authors, the [Extension Guide](docs/extension-guide.md) walks thro
 - **Desktop workspace layout** — horizontal navigation with the mode panel above the scene list even in narrow windows, system sans-serif controls and flat surfaces; a bookshelf library and dashboard artwork; consistent view headings and actions, tabbed Codex and Research, a cast-and-reading layout for Narration, and complete scene context beside the editor.
 
 - **Five workspaces** — Write, Plan, World, Publish and Series, each with the views it holds listed beside it, plus a Dashboard to come back to. Picking a workspace decides what the window looks like: the binder and inspector belong to Write. The floating Scene Notes checklist stays available across workspaces.
-- **One command, one place** — where a command lives follows from what it acts on. Selected text, the thing under the pointer, the paragraph, the project, the application: each has one home, everywhere in the app, and the build refuses a change that gives a command two.
+- **One persistent home per command** — where a command lives follows from what it acts on. Explicitly declared transient access, such as Quick edit beside the caret, keeps frequently used controls nearby. The build checks these placement rules.
 - **A menu bar that is an index of the application** — File, Edit, Go, View, Window and Help, generated from Novalist's own list of commands so it cannot drift out of step with the palette, and always visible on Windows and Linux.
 - **Scene context & analysis inspector** — the right sidebar's **Context** tab shows the entities present in the current scene, a cross-chapter mention matrix, and an auto-computed scene analysis (POV, emotion, intensity, conflict, tags) with manual overrides; the **Footnotes** tab lists footnotes and comments. The **Inbox** tab gathers suggestions, tasks and saved fragments; **Properties** provides synopsis, goal/outcome, timing, cast and custom fields.
 - **Dockable scene checklist** — dock notes above, below or beside any content pane using the existing resizable layouts, with docking placement and visibility remembered across restarts, or keep scene goals visible beside your writing or on another monitor in a compact panel that floats only above Novalist, with native Liquid Glass on supported macOS versions. Bullet lists automatically become checkboxes with expandable prose and nested subitems. Follow the active scene or hold one scene, pin the panel or auto-hide it, and edit the full notes text without losing its wording. Wide panels arrange goals left to right with the text editor below. Shared projects synchronize checklist ticks and note text with collaborators.
@@ -74,7 +74,8 @@ For extension authors, the [Extension Guide](docs/extension-guide.md) walks thro
 
 ### Writing
 
-- WYSIWYG editor that fits the first opened scene to the available width and preserves your subsequent zoom, with inline formatting, paragraph styles (heading, subheading, block quote, verse), bulleted and numbered lists, inline comments, and numbered footnotes — every style carried through to DOCX, EPUB, Markdown and LaTeX.
+- WYSIWYG editor that fits the first opened scene to the available width and preserves your subsequent zoom, with inline formatting, paragraph styles (heading, subheading, block quote, verse) in the fixed toolbar and Quick edit beside the caret, bulleted and numbered lists, inline comments, and numbered footnotes — every style carried through to DOCX, EPUB, Markdown and LaTeX.
+- **Arabic and RTL content** — write mixed Arabic/English paragraphs, Markdown sections and Codex fields, and read them in the Wiki independently of your interface language. Shortcuts work with non-Latin keyboards, and text zoom keeps prose within the writing pane.
 - Auto-save with per-scene **snapshot history** and a side-by-side compare view — revert a single scene without touching the rest of the project.
 - **Focus Mode** (`F11`) fills the screen with a centered page that widens as you zoom and hides the title and menu bars. Hover areas grow with the space beside the page; prepared binder and context panels slide in gently. Panels overlay the page and Scene Notes has its own floating window; your caret, split layout and previous window state survive the round trip. Choose page and surround colours or a background image in Settings → Focus.
 - **Project bookshelf** fills the workspace with covers on open shelves, shelf filters, search, adjustable cover size and sorting. Select a cover for its details, related books, World Bible and Series actions; double-click or choose **Open book** to open it. A project's books stay together when arranging shelves. Generated title covers and uploaded artwork share book shading, gently open at the spine on hover or keyboard focus, and stay open while selected. Remove individual books or whole projects without deleting files, and restore them from the library menu.
@@ -123,7 +124,8 @@ English and German **dictation** writes directly at the editor caret. Built-in s
 - **Dialogue** — every line one character speaks, gathered across the book and grouped by story time, so voice drift is readable end to end. Speakers are detected offline from entity mentions, speech verbs, same-paragraph continuation, pronoun tags the narration can only mean one way, and back-and-forth alternation; each line is labelled with how it was worked out, and anything less than certain offers its likely speakers with percentage shares you can click to assign. Lines can be rewritten in place and land straight in the scene file.
 - **Narration** — your book as it will be read aloud, cast and directed before a word is spoken. The prose appears as you wrote it, with every spoken line tinted in its speaker's colour and the narrator keeping everything between the quotes, dialogue tags included, so "she said" is never read in the character's voice. Each line carries a direction — angry, peaceful, sorrowful — taken from the speech verb you already wrote or from the scene's own emotion, and clicking any line opens its controls to overrule either. Speaker corrections are the same ones the Dialogue view stores. Where the sixteen emotions are not the delivery you want, eight sliders set it exactly, applied to one line or to a whole argument at once, and a character can carry a standing register for being always more clipped than the prose bothers to say. A character can be given a different voice over one act, chapter or scene — for ageing, for injury, for being remembered as a child — without losing the one they use everywhere else. Uses the voices already on your machine, or a speech engine you installed, and sends nothing anywhere; an engine that is already installed gets itself ready when the app opens. The Qwen Speech extension uses MLX on native Apple Silicon Macs, with lower-memory generation and buffering based on generation speed for normal-speed playback, and PyTorch on other platforms.
 - **Audiobook** — the whole book rendered to speech in the voices you cast, as an M4B with chapter marks and your cover, one MP3 per chapter, or unencoded WAV. Compiled from the same chapter selection, matter and replacements as every other export. It says how long it will take on your machine before it starts, keeps every chapter it finishes, and picks up where it left off.
-- **Manuscript view** — read the whole book end-to-end, switch to Corkboard for index-card planning, or Outliner for a sortable scene table.
+- **Unified writing** — write across scenes in one continuous surface, with Scene, Chapter, and Manuscript scopes remembered independently for each pane and saved layout. Switching scope keeps your place; outline navigation stays in the same editor. Edit scene, chapter, and act names in place; scene information follows the prose while scrolling, with expandable synopses and a stage selector. Inline controls add scenes and chapters. Document text zooms within the pane, with optional book width and pages using saved book typography and page settings. Selected scenes and Smart Lists form labelled limited runs with a Show whole manuscript action.
+- **Structure** — arrange ordered acts, chapters, and scenes in Plan, alongside Corkboard, Outliner, and Board. Scene breaks and chapter headings can also be inserted at the writing caret.
 - **Maps** — interactive layered map view: recursive layer tree with drag-and-drop nesting, per-layer opacity / lock / zoom-range / floor-stack mode; per-image rotate, resize, polygon clip mask; entity-linked colour pins; text labels; road & river spline tool with typed profiles (casing, fill, lane markings) and per-point width; terrain shapes (grass, forest, sand, …) with feathered, blendable edges and z-ordering; typed buildings (homes, schools, stations, …) with procedurally-generated footprints that snap to roads and optional multi-floor interior plans (walls, doors, windows, stairs); a freeform clip border that frames the whole map; **PNG export** at 1x/2x/4x for e-book or print, and a one-click **3D view** — a GPU-rendered, free-fly walkthrough of the whole map with extruded buildings, sloped roofs, interiors, terrain and roads.
 - **Planning board** — an infinite canvas of loose cards and author-drawn labelled connectors, for ideas that are not scenes yet. Promoting a card creates a scene with the card's text as its synopsis and keeps their titles in sync when renamed from either place. Many boards per project, stored as plain JSON beside the maps.
 - **Style report** — deterministic, offline craft checks over a scene, a chapter, or the whole book: adverbs, filter words, weak verbs, passive voice, stock phrases, sticky sentences, repeated sentence openers, and sentence-length variation. Word lists come from the same per-language analysis file as scene analysis, and a language without a list is reported as unsupported rather than shown as a clean zero. No AI, no network.
@@ -155,14 +157,14 @@ English and German **dictation** writes directly at the editor caret. Built-in s
 ### Find & Replace
 
 - Plain-text, whole-word, case-sensitive, or .NET regex search.
-- Scope to the current scene, the selection, the active book, or every book in the project.
-- Replace one or all matches; snapshots cover the replacements.
+- Start with the current writing view, including selected or filtered scenes; widen to a scene, chapter, book, or the whole project. Search includes unsaved and offscreen prose.
+- Navigate to exact matches, replace the current match, or replace all prose matches as one undoable action. Replacement text is literal, including in regex searches. Notes and synopses have a separate replacement action; comments and Codex entries are search-only.
 
 ### Customization
 
 - **Hotkeys** — every action is rebindable; defaults documented in [`docs/manual/26-hotkeys.md`](docs/manual/26-hotkeys.md).
 - **Command Palette** (`Ctrl+Shift+P`) — every action by name.
-- **Localization** — English, German, and Simplified Chinese ship in the box. Drop a JSON locale file into your `Locales/` folder to add a language or patch a bundled one; anything a partial translation omits falls back to English.
+- **Localization** — English, German, Simplified Chinese, and Arabic ship in the box. Choosing Arabic enables a right-to-left interface while prose follows its own language and direction. Drop a JSON locale file into your `Locales/` folder to add a language or patch a bundled one; anything a partial translation omits falls back to English.
 - **Theme** — the default palette is Novalist's own: deep "Ink Night" paper, parchment text, and gilt accents, set in Fraunces, Newsreader, and Courier Prime (all three ship with the app, so it looks the same offline and on every machine). Bundled Discord, High Contrast and Catppuccin Mocha palettes and a custom accent color are also available; on macOS 26+ the window uses native Liquid Glass, with a vibrancy fallback on older macOS.
 - **Custom themes** — write your own palette as a JSON design-token map or a CSS stylesheet, drop it into your `Themes/` folder, and it joins the theme picker. Extensions can contribute themes the same way. See [`docs/manual/34-custom-themes-and-languages.md`](docs/manual/34-custom-themes-and-languages.md).
 - **Global or per-project settings** — appearance, editor, and writing-assistance settings default to global but can be overridden per project (e.g. an English book and a German book each with their own language, quotes, and theme); project overrides live in `.novalist/` and sync via git.
@@ -296,6 +298,30 @@ cd app
 npm install
 npm run dev
 ```
+
+### Desktop E2E checks
+
+The default Playwright suite includes the 100-scene local and shared writing checks.
+The exhaustive 500/1,000-scene traversals and 20-repeat flake checks are local PC
+stress tests; GitHub Actions does not run them.
+
+After building the debug backend and running `npm run build` in `app`, use:
+
+```bash
+cd app
+npm run test:e2e:stress -- --list
+npm run test:e2e:stress -- --project=writing-benchmarks
+npm run test:e2e:stress -- --project=flake-stress
+```
+
+Listing tests opens no windows. Executing Electron tests requires a dedicated
+desktop session or explicit permission to use the interactive desktop, with
+`NOVALIST_E2E_ALLOW_DESKTOP=1` set for that run. The stress command does not set it.
+
+How CI shards and retries the suite, and how to stress a flaky spec on CI with a
+`ci-stress/*` branch, is described in [docs/ci.md](docs/ci.md).
+
+### Packaging
 
 To produce distributable installers for the current platform:
 

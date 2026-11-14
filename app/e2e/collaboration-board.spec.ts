@@ -18,7 +18,7 @@ test('Board POV and property drops honor named focus locks and synchronize after
   try {
     const owner = await launchApp('nl-board-owner-')
     writers.push(owner)
-    const project = await seedBook(owner, { Opening: ['Arrival', 'Departure'] })
+    const project = await seedBook(owner, { Opening: ['Arrival', 'Departure'] }, 'Spec', false)
     const chapter = project.chapters[0]
     const [first, second] = chapter.scenes
     await owner.rpc('scenes/setPov', [chapter.guid, second.id, 'Morgan'])
@@ -37,10 +37,10 @@ test('Board POV and property drops honor named focus locks and synchronize after
       await dismissTour(writer.page)
       await writer.page.evaluate(() => document.querySelector<HTMLButtonElement>('[data-collaboration-trigger][aria-expanded="false"]')?.click())
       await expect(writer.page.getByText('Connected to the shared project.', { exact: true })).toBeVisible()
-      await writer.page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
+      await writer.page.evaluate(() => window.novalistStores.shell.getState().setMainView('structure'))
     }
     await owner.page.getByRole('button', { name: 'Board', exact: true }).click()
-    await owner.page.locator('#board-group').selectOption('pov')
+    await owner.page.getByRole('combobox', { name: /^Group by/ }).selectOption('pov')
     await guest.page.getByRole('button', { name: 'Outliner', exact: true }).click()
     const pov = guest.page.locator('.outliner').getByPlaceholder('POV', { exact: true }).first()
     await pov.focus()
@@ -59,7 +59,7 @@ test('Board POV and property drops honor named focus locks and synchronize after
     await drop(card, target)
     await expect(target.locator('.board-card')).toHaveCount(2)
     await expect(pov).toHaveValue('Morgan')
-    await owner.page.locator('#board-group').selectOption('prop:weather')
+    await owner.page.getByRole('combobox', { name: /^Group by/ }).selectOption('prop:weather')
     const weather = guest.page.locator('.outliner').getByLabel('Weather', { exact: true }).first()
     await weather.focus()
     await expect(weather).toHaveAttribute('aria-disabled', 'false')

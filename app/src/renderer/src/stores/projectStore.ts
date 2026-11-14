@@ -204,6 +204,8 @@ useShellStore.subscribe((state, previous) => {
 })
 
 useProjectStore.subscribe(() => reportEditingScenes())
+window.addEventListener('focus', () => reportEditingScenes())
+window.addEventListener('blur', () => reportEditingScenes())
 
 export type { SceneDto, ChapterDto, ProjectStateDto, RecentProjectDto, SceneTabRef, EditorPaneState, SceneStructureMethod, EditingSceneClaim } from './projectTypes'
 export { prepareProjectLibrary } from './projectLibraryActions'

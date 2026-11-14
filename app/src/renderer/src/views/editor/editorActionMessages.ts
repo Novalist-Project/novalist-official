@@ -33,6 +33,9 @@ export function createEditorActionMessages(context: EditorHandlerContext): Edito
     inlineActionRequested: (message) => {
       const sceneId = paneIds().sceneId
       const frame = editorRef.current
+      const writing = context.writing
+      const isCurrent = (): boolean => frame === editorRef.current && (writing
+        ? writing === context.writing : paneIds().sceneId === sceneId)
       const requestId = message.requestId
       const actionId = String(message.actionId ?? '')
       const selected = String(message.selectedText ?? '')
@@ -43,9 +46,9 @@ export function createEditorActionMessages(context: EditorHandlerContext): Edito
         precedingText: String(message.precedingText ?? ''),
         directive: String(message.directive ?? '')
       }).then((result) => {
-        if (!frame || frame !== editorRef.current || paneIds().sceneId !== sceneId) return
+        if (!frame || !isCurrent()) return
         const apply = (text: string | null): void => {
-          if (frame !== editorRef.current || paneIds().sceneId !== sceneId) return
+          if (!isCurrent()) return
           frame.applyInlineActionResult(JSON.stringify({ ...result, actionId, requestId, text: text ?? '', cancelled: text === null }))
         }
         if (result.error || result.disposition === 'information' || result.alternatives?.length) reviewInlineAction(result, apply)
@@ -69,7 +72,10 @@ export function createEditorActionMessages(context: EditorHandlerContext): Edito
         ctrlKey: Boolean(message.ctrlKey),
         metaKey: Boolean(message.metaKey),
         shiftKey: Boolean(message.shiftKey),
-        altKey: Boolean(message.altKey)
+        altKey: Boolean(message.altKey),
+        isComposing: Boolean(message.isComposing),
+        keyCode: Number(message.keyCode ?? 0),
+        altGraph: Boolean(message.altGraph)
       })
       // Escape is not a registered hotkey - it is what dismisses whatever
       // overlay is up (mobile sheets, dialogs). Those listen on the window,

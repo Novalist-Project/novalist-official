@@ -348,6 +348,6 @@ public sealed class CheckpointTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        TestFiles.DeleteTree(root);
     }
 }

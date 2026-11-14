@@ -209,9 +209,27 @@ export async function resizeWindow(
 export async function dismissTour(page: Page): Promise<void> {
   const tour = page.locator('.tour-card')
   try {
+    // The shell offers the tour from an effect once a project is open, and a
+    // loaded CI runner can take longer than any fixed look at the page to get
+    // there. A tour that opened after this returned then covered the editor and
+    // swallowed the next click. Once a project is open, wait for the decision
+    // itself: the tour is open, or this profile has already been through it.
+    const loaded = await page.evaluate(() => window.novalistStores.project.getState().isLoaded)
+    if (loaded) {
+      await page.waitForFunction(
+        () => window.novalistStores.shell.getState().tourOpen
+          || window.novalistStores.onboarding.getState().tour !== 'unseen',
+        undefined,
+        { timeout: 5_000 }
+      )
+    }
     await tour.waitFor({ state: 'visible', timeout: 2_000 })
     await tour.locator('.tour-close').click()
     await tour.waitFor({ state: 'hidden', timeout: 5_000 })
+    // The pointer is left where the close button was, which is over the prose
+    // once the card is gone; a mention there opens a Focus Peek card that then
+    // covers whatever the spec clicks next. Park it in the corner.
+    await page.mouse.move(0, 0)
     // The tour walks the workspace and gives back the one it borrowed, and it
     // does that a task after it unmounts. Settling it here is what stops the
     // hand-back landing in the middle of whatever the spec set up next - which
@@ -290,7 +308,8 @@ export const state = (h: Harness): Promise<Book> => h.rpc<Book>('project/getStat
 export async function seedBook(
   h: Harness,
   layout: Record<string, string[]>,
-  projectName = 'Spec'
+  projectName = 'Spec',
+  openWriting = true
 ): Promise<Book> {
   await evaluateWhenReady(h.page, async (a: { dir: string; name: string }) => {
     await window.novalistRpc.request('project/create', [a.dir, a.name, 'Book One'])
@@ -310,7 +329,7 @@ export async function seedBook(
   )
   // A helper that creates chapters and scenes through the binder's own calls has
   // plainly put the spec in Write.
-  await enterWriting(h.page)
+  if (openWriting) await enterWriting(h.page)
   return book
 }
 

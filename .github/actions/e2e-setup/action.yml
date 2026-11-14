@@ -1,0 +1,91 @@
+name: E2E setup
+description: Build everything the Electron E2E suite runs against (debug backend, test extension, renderer) with caches keyed on the lockfile and project files.
+inputs:
+  dotnet-version:
+    description: .NET SDK version to install.
+    default: 10.0.x
+  node-version:
+    description: Node.js version to install.
+    default: '22'
+  build-app:
+    description: Build the debug backend, test extension and renderers. Browser-only specs that bundle their own fixtures from source do not need them.
+    default: 'true'
+  install-browsers:
+    description: Install Playwright Chromium (the Linux suite needs it; the native Windows window check does not).
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET and NuGet cache
+      if: inputs.build-app == 'true'
+      uses: ./.github/actions/dotnet-setup
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: app/package-lock.json
+
+    - name: Build backend
+      if: inputs.build-app == 'true'
+      shell: bash
+      run: dotnet build Novalist.Backend/Novalist.Backend.csproj -c Debug
+
+    - name: Build E2E test extension
+      if: inputs.build-app == 'true'
+      shell: bash
+      run: dotnet build tests/Novalist.TestExtension/Novalist.TestExtension.csproj -c Debug
+
+    - name: Cache Electron download
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/electron
+          ~/AppData/Local/electron/Cache
+        key: electron-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
+
+    - name: Install app dependencies
+      shell: bash
+      working-directory: app
+      run: npm ci
+
+    - name: Resolve Playwright version
+      id: playwright
+      shell: bash
+      working-directory: app
+      run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Playwright browsers
+      if: inputs.install-browsers == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/ms-playwright
+          ~/AppData/Local/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+    - name: Install Playwright Chromium
+      if: inputs.install-browsers == 'true'
+      shell: bash
+      working-directory: app
+      run: npx playwright install --with-deps --only-shell chromium
+
+    - name: Install isolated desktop credential service
+      if: runner.os == 'Linux'
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y dbus-x11 gnome-keyring libsecret-tools libglib2.0-bin
+
+    - name: Build renderer
+      if: inputs.build-app == 'true'
+      shell: bash
+      working-directory: app
+      run: npm run build
+
+    - name: Build mobile renderer
+      if: inputs.build-app == 'true'
+      shell: bash
+      working-directory: app
+      run: npm run build:mobile

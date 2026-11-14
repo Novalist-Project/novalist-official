@@ -9,8 +9,30 @@ import { enqueueSceneWrite } from './sceneWriteQueue'
 import { retainMobileSceneRecovery } from '../mobile/recovery'
 import { cancelBackgroundReads } from '../rpc/backgroundReads'
 import type { SharedSceneIdentity } from '../../../shared/sharedScene'
+import { getWritingDocumentRegistry, WritingCommitError } from './writingDocuments'
+import { revealWritingSceneInPane, widenWritingRunForScene } from './writingSceneNavigation'
+import { scheduleWritingSave } from './writingPersistence'
+import type { WritingCommitResult } from '../views/editor/writingTypes'
+import { writingSavedCounts } from './writingSavedCounts'
+import { flushWritingPane } from './writingPanePersistence'
+import { writingEditingClaims } from './writingEditingClaims'
 
-export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn' | 'openSceneInSplit' | 'resolveSceneConflict' | 'dismissSceneConflict' | 'closeTab' | 'moveTabToOtherPane' | 'onEditorContentChanged' | 'syncEditorPanes' | 'flushPane' | 'flushPendingSave' | 'applyManuscriptSceneWrite'> = (set, get) => ({
+export const createProjectEditorActions: ProjectSlice<'getWritingRegistry' | 'openScene' | 'openSceneIn' | 'openSceneInSplit' | 'resolveSceneConflict' | 'dismissSceneConflict' | 'closeTab' | 'moveTabToOtherPane' | 'onEditorContentChanged' | 'syncEditorPanes' | 'flushPane' | 'flushPendingSave' | 'applyManuscriptSceneWrite'> = (set, get) => ({
+  getWritingRegistry: (context) => {
+    const state = get()
+    if (!state.projectPath || !state.activeBookId || !state.activeDraftId) return null
+    const captured = context ?? { workspaceId: state.projectPath, workspaceEpoch: state.workspaceEpoch,
+      bookId: state.activeBookId, draftId: state.activeDraftId }
+    if (captured.workspaceId !== state.projectPath || captured.workspaceEpoch !== state.workspaceEpoch) return null
+    const registry = getWritingDocumentRegistry({ context: captured,
+      onSaved: (owner, snapshot) => set(state => writingSavedCounts(state, owner, snapshot)), isCurrent: (owner) => {
+      const current = get()
+      return current.projectPath === owner.workspaceId && current.workspaceEpoch === owner.workspaceEpoch
+    } })
+    if (!window.novalist.isMobile) writingEditingClaims.track(registry)
+    return registry
+  },
+
   openScene: async (chapterGuid, sceneId) => {
     await get().openSceneIn(targetEditorPane(), chapterGuid, sceneId)
   },
@@ -32,26 +54,35 @@ export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn
     shell.setPaneView(paneId, 'write')
     shell.setActivePane(paneId)
     capturePendingWrites()
-    await get().flushPane(paneId)
+    if (window.novalist.isMobile) await get().flushPane(paneId)
     if (get().sceneConflict || get().editors[paneId]?.isDirty) return
     cancelBackgroundReads()
-    const content = await rpc.request<{ sceneId: string; html: string; hash: string; shared?: SharedSceneIdentity | null }>(
+    const registry = window.novalist.isMobile ? null : get().getWritingRegistry()
+    const ref = registry ? { bookId: registry.context.bookId, draftId: registry.context.draftId, chapterGuid, sceneId } : null
+    if (!window.novalist.isMobile && (!registry || !get().chapters.some(chapter =>
+      chapter.guid === chapterGuid && chapter.scenes.some(scene => scene.id === sceneId)))) return
+    const current = (): boolean => get().workspaceEpoch === epoch && (!registry ||
+      get().projectPath === registry.context.workspaceId && get().activeBookId === registry.context.bookId && get().activeDraftId === registry.context.draftId)
+    const content = registry && ref ? await registry.read(ref) : await rpc.request<{ sceneId: string; html: string; hash: string; shared?: SharedSceneIdentity | null }>(
       'scenes/read',
       [chapterGuid, sceneId]
     )
-    if (get().workspaceEpoch !== epoch) return
+    if (!current()) return
+    if (registry && ref) await widenWritingRunForScene(registry.context, get().chapters, ref, current)
+    if (!current()) return
     set((s) => {
       const previous = editorPane(s, paneId)
       const editors = {
         ...s.editors,
         [paneId]: {
+          ...previous,
           chapterGuid,
           sceneId,
           html: content.html,
           hash: content.hash,
           shared: content.shared ?? null,
           plainText: stripHtml(content.html),
-          tabs: previous.tabs.some((t) => t.sceneId === sceneId)
+          tabs: !window.novalist.isMobile ? [] : previous.tabs.some((t) => t.sceneId === sceneId)
             ? previous.tabs
             : [...previous.tabs, { chapterGuid, sceneId }],
           isDirty: false
@@ -65,6 +96,8 @@ export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn
       }
     })
     if (window.novalist.isMobile) useShellStore.getState().setMobileTab('manuscript')
+    else if (registry && ref) await revealWritingSceneInPane(paneId, ref, registry.context,
+      () => current() && get().activeEditorPaneId === paneId && get().editors[paneId]?.sceneId === sceneId)
   }),
 
   openSceneInSplit: async (chapterGuid, sceneId) => {
@@ -79,6 +112,27 @@ export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn
   resolveSceneConflict: async (html) => {
     const conflict = get().sceneConflict
     if (!conflict) return
+    if (conflict.writing) {
+      const registry = get().getWritingRegistry({ ...conflict.writing.context, workspaceEpoch: get().workspaceEpoch })
+      if (!registry) throw new Error('The writing conflict belongs to an obsolete workspace.')
+      try {
+        await registry.resolveDiskConflict(conflict.writing, html,
+          request => rpc.request<WritingCommitResult>('writing/resolveConflict', [request]))
+      } catch (error) {
+        const pending = registry.getPendingDiskConflict()
+        if (pending && get().sceneConflict === conflict) set({ sceneConflict: { ...conflict, writing: pending } })
+        else if (error instanceof WritingCommitError && error.result.status === 'conflict') {
+          const refreshed = await registry.refreshFromDisk(conflict.writing.ref)
+          if (refreshed.status === 'conflict' && get().sceneConflict === conflict) set({ sceneConflict: {
+            ...conflict, mine: refreshed.conflict.mine, theirs: refreshed.conflict.theirs, writing: refreshed.conflict
+          } })
+        }
+        throw error
+      }
+      if (get().sceneConflict === conflict) set({ sceneConflict: null })
+      scheduleWritingSave(registry, 0)
+      return
+    }
     for (const [paneId, editor] of Object.entries(get().editors)) {
       if (editor.sceneId !== conflict.sceneId) continue
       const timer = autosaveTimers.get(paneId)
@@ -231,6 +285,16 @@ export const createProjectEditorActions: ProjectSlice<'openScene' | 'openSceneIn
   },
 
   flushPane: async (paneId) => {
+    if (!window.novalist.isMobile) {
+      const registry = get().getWritingRegistry()
+      if (registry) await flushWritingPane(registry, conflict => {
+        const state = get(), context = conflict.context
+        if (state.projectPath !== context.workspaceId || state.workspaceEpoch !== context.workspaceEpoch) return
+        set({ sceneConflict: { chapterGuid: conflict.ref.chapterGuid, sceneId: conflict.ref.sceneId,
+          mine: conflict.mine, theirs: conflict.theirs, plainText: stripHtml(conflict.mine), writing: conflict } })
+      })
+      return
+    }
     const timer = autosaveTimers.get(paneId)
     if (timer) clearTimeout(timer)
     autosaveTimers.delete(paneId)

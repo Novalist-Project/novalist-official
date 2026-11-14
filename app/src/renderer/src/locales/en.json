@@ -1,4 +1,21 @@
 {
+  "unifiedWriting": {
+    "write": "Write",
+    "sceneCount_one": "{{count}} scene",
+    "sceneCount_other": "{{count}} scenes",
+    "chapterNumber": "Chapter {{number}}",
+    "sceneNumber": "Scene {{number}}",
+    "synopsis": "Synopsis",
+    "focusScene": "Focus scene",
+    "metadataSaveFailed": "The change could not be saved. Your draft is kept here; try again.",
+    "finishMetadataEdit": "Save or cancel this name change before continuing.",
+    "chapterActMoveHint": "Changing the act moves this chapter into that group. Manage acts in Plan → Structure.",
+    "assignAct": "Assign act",
+    "limitedRun": "Limited scene run",
+    "scope": "Scope", "scene": "Scene", "chapter": "Chapter", "manuscript": "Manuscript",
+    "words": "{{count}} words", "showWhole": "Show whole manuscript",
+    "empty": "No scenes in this writing scope.", "insertChapter": "Insert chapter"
+  },
   "collaboration": {
     "open": "Collaborate",
     "sharing": "Sharing",
@@ -680,6 +697,8 @@
     "recovered": "Recovered"
   },
   "findReplace": {
+    "scopeProjection": "Current writing view", "previous": "Previous", "next": "Next", "replaceCurrent": "Replace current",
+    "replaceNotes": "Replace notes and synopses", "retryReplacement": "Retry replacement",
     "failed": "Search or replacement failed: {{message}}",
     "title": "Find and Replace",
     "find": "Find",
@@ -2760,6 +2779,7 @@
     "backendConnecting": "Connecting to core...",
     "viewPending": "This view arrives in a later milestone of the new interface.",
     "view": {
+      "structure": "Structure",
       "write": "Editor",
       "manuscript": "Manuscript",
       "dashboard": "Dashboard",
@@ -3220,6 +3240,7 @@
     "rescanned": "Rescanned. New themes, languages and lexicons are available now."
   },
   "conflict": {
+    "pendingResolution": "The save result could not be confirmed. Retry the version shown below to finish saving it.",
     "title": "This scene changed somewhere else",
     "explain": "Your copy and the one on disk both changed, in {{count}} places. Nothing has been saved yet. Pick the version you want for each line — Novalist will not merge your prose for you, because a sentence spliced from two drafts reads like neither.",
     "mine": "What you wrote",
@@ -3229,6 +3250,37 @@
     "snapshotNote": "Both versions are snapshotted before this is saved, so you can go back to either one.",
     "decideLater": "Decide later",
     "save": "Save this version"
+  },
+  "writing": {
+    "conflict": "This scene changed elsewhere. Review the newer version before saving.",
+    "saveFailed": "Your writing could not be saved. Your edits remain open; please retry.",
+    "commitFailed": "The changes could not be saved. Please retry.",
+    "workspaceChanged": "The workspace changed. Please retry in the current book.",
+    "workspaceUnavailable": "Open a book before editing its manuscript.",
+    "documentUnavailable": "This scene is no longer available in the current book.",
+    "sceneUnavailable": "Choose a scene in the editor first.",
+    "historyBlocked": "This change cannot be undone right now.",
+    "historyClosed": "This writing session has ended.",
+    "historyEmpty": "There are no more changes to undo or redo.",
+    "historyConflict": "The affected content changed elsewhere. Review it before undoing or redoing.",
+    "structureWorkspaceChanged": "The book changed while this action was open. Please try again.",
+    "structureConflict": "The manuscript structure changed. Review the current order before trying again.",
+    "structureRetry": "Finish retrying the pending structural change first.",
+    "structureCaret": "Place the cursor at a single point to create a scene break or chapter.",
+    "structureFailed": "The structural change could not finish. Please retry.",
+    "annotationConflict": "This comment or footnote changed elsewhere. Review it before saving.",
+    "annotationSaveFailed": "Comments or footnotes could not be saved. Your edits remain open.",
+    "annotationsUnavailable": "Comments and footnotes are not available yet. Please retry.",
+    "annotationSceneUnavailable": "The scene for this comment or footnote is no longer available.",
+    "sharedAnnotationsFailed": "Shared comments or footnotes could not be saved. Please retry.",
+    "sharedUnavailable": "The shared book is not connected. Reconnect before retrying.",
+    "sceneName": "Scene {{number}}",
+    "quickEdit": "Quick edit",
+    "mixedStyles": "Mixed styles",
+    "insertStructure": "Insert structure",
+    "sceneBreak": "Scene break",
+    "chapterHeading": "Chapter heading",
+    "insertChapter": "New chapter"
   },
   "blockStyle": {
     "label": "Paragraph style",
@@ -3342,6 +3394,14 @@
     "mergeWithNext": "Merge with next: {{title}}"
   },
   "structure": {
+    "introduction": "Arrange acts, chapters, and scenes in reading order. Edit summaries here, then open a scene to continue writing.",
+    "selectChapter": "Select {{title}}", "move": "Move", "newScene": "New scene",
+    "chapterSummary": "Chapter summary", "addChapterSummary": "Add chapter summary", "inactive": "Inactive", "addSynopsis": "Add synopsis",
+    "destination": "Destination", "chooseDestination": "Choose a destination", "position": "Position", "inside": "Inside", "before": "Before", "after": "After",
+    "unassigned": "Unassigned chapters", "newAct": "New act", "chapters": "{{count}} chapters", "renameAct": "Rename act", "removeAct": "Remove act",
+    "removeActMessage": "Remove this act? Its chapters stay in place as unassigned chapters.",
+    "repairExplanation": "This book contains older act assignments that do not form ordered groups. Review the proposed grouping before changing the chapter order.",
+    "reviewGrouping": "Review act grouping", "currentOrder": "Current order", "proposedOrder": "Proposed order", "applyGrouping": "Apply grouping",
     "title": "Structure",
     "none": "No structure",
     "pickOne": "Pick a story structure and every one of its beats appears here, ready to be pointed at the scene that fulfils it.",
@@ -3882,6 +3942,8 @@
     "manuscriptTitle": "The Manuscript",
     "manuscriptBody": "The book itself, four ways: as continuous prose, as index cards, as an outline you can type into, and as a board you can push scenes around on.",
     "manuscriptTask": "Switch to Cards or Outline and find the same scene in a different view.",
+    "desktopManuscriptBody": "Write the active book as one continuous document, or focus on a chapter or scene. Arrange chapters and scenes in Plan → Structure.",
+    "desktopManuscriptTask": "Open a scene from the binder and try Scene, Chapter, and Manuscript scopes. An empty book starts with Insert chapter.",
     "editorTitle": "The writing view",
     "editorBody": "Each scene opens in a focused editor. Novalist saves after you pause, so there is no save button to remember.",
     "editorTask": "Open any scene from the binder and write one sentence.",

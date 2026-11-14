@@ -27,7 +27,8 @@ internal sealed class WorkspaceCoordinator(Workspace workspace, SemaphoreSlim ga
         or "drafts/transfer" or "drafts/duplicate" or "sceneBulk/archive" or "sceneBulk/delete"
         or "sceneBulk/moveToChapter" or "project/deleteScene" or "project/deleteChapter"
         or "project/moveScenes" or "sceneSplit/split" or "sceneSplit/merge"
-        or "snapshots/restore" or "search/replaceAll"
+        or "snapshots/restore" or "search/replaceAll" or "review/applyComments"
+        or "writing/structure" or "writing/undoStructure" or "writing/redoStructure"
         or "collaboration/create" or "collaboration/join" or "collaboration/end" or "collaboration/resume" or "collaboration/copy"
         or "collaboration/deleteSharedProject" or "collaboration/removeMember"
         or "collaboration/peer/host" or "collaboration/peer/join" or "collaboration/steam/host" or "collaboration/steam/join";
@@ -174,6 +175,36 @@ internal sealed class WorkspaceCoordinator(Workspace workspace, SemaphoreSlim ga
     private bool HasClients()
     {
         lock (_sync) return _clients.Count > 0;
+    }
+
+    internal async Task<T> RunWritingAsync<T>(Func<Task<T>> action, CancellationToken ct)
+    {
+        var lease = WorkspaceRequestContext.Lease;
+        if (lease is { Held: false }) throw new InvalidOperationException("The workspace transaction has yielded its write gate.");
+        var ownsLease = lease is null;
+        if (lease is null)
+        {
+            await gate.WaitAsync(ct);
+            lease = new WorkspaceGateLease(gate);
+        }
+        using var context = WorkspaceRequestContext.Enter(WorkspaceRequestContext.Identity, lease);
+        try
+        {
+            lock (_sync)
+            {
+                if (_transition is not null && (WorkspaceRequestContext.Identity?.FlushToken != _transition.Token || _transition.Prepared.Task.IsCompleted))
+                    throw new InvalidOperationException("The workspace is preparing a context change.");
+            }
+            return await action();
+        }
+        finally
+        {
+            if (ownsLease)
+            {
+                lease.Active = false;
+                lease.Yield();
+            }
+        }
     }
 
     private sealed class Transition(string token, WorkspaceGateLease lease)

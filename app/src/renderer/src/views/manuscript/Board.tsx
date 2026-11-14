@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useManuscriptStore } from '../../stores/manuscriptStore'
+import type { PlanningSection } from '../../stores/planningTypes'
 import { useProjectStore } from '../../stores/projectStore'
 import { useStageStore } from '../../stores/stageStore'
 import { useManuscriptPropsStore } from '../../stores/manuscriptPropsStore'
@@ -26,9 +27,17 @@ interface Column {
  * Dropping a card in another column writes that field, which is the only thing
  * that makes a board different from a filter.
  */
-export function Board(): React.JSX.Element {
+interface BoardProps {
+  sections?: PlanningSection[]
+  onReload?: () => Promise<void>
+  onSetPov?: (chapterGuid: string, sceneId: string, value: string) => Promise<void>
+  onMoveScenes?: (sceneIds: string[], chapterGuid: string) => Promise<void>
+}
+
+export function Board({ sections: provided, onReload, onSetPov, onMoveScenes }: BoardProps = {}): React.JSX.Element {
   const { t } = useTranslation()
-  const sections = useManuscriptStore((s) => s.sections)
+  const stored = useManuscriptStore((s) => s.sections)
+  const sections = provided ?? stored
   const groupBy = useManuscriptStore((s) => s.groupBy)
   const chapters = useProjectStore((s) => s.chapters)
   const stages = useStageStore((s) => s.stages)
@@ -102,19 +111,20 @@ export function Board(): React.JSX.Element {
     if (groupBy === 'chapter') {
       const target = chapters.find((c) => c.guid === columnKey)
       if (!target) return
-      await useProjectStore.getState().moveScenes([sceneId], columnKey, target.scenes.length)
+      if (onMoveScenes) await onMoveScenes([sceneId], columnKey)
+      else await useProjectStore.getState().moveScenes([sceneId], columnKey, target.scenes.length)
     } else if (groupBy === 'stage') {
       await useStageStore
         .getState()
         .setSceneStage(scene.section.chapterGuid, sceneId, columnKey || null)
     } else if (groupBy === 'pov') {
-      await useManuscriptStore.getState().setPov(scene.section.chapterGuid, sceneId, columnKey)
+      await (onSetPov ?? useManuscriptStore.getState().setPov)(scene.section.chapterGuid, sceneId, columnKey)
     } else {
       await useManuscriptPropsStore
         .getState()
         .setSceneValue(sceneId, groupBy.slice(5), columnKey || null)
     }
-    await useManuscriptStore.getState().load()
+    await (onReload ?? useManuscriptStore.getState().load)()
   }
 
   return (

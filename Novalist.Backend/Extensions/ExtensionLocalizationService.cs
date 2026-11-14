@@ -67,6 +67,11 @@ public sealed class ExtensionLocalizationService : IExtensionLocalization
         _strings = LoadFile(path);
     }
 
+    /// <summary>Looks the key up without the missing-key logging of the indexer,
+    /// for callers that accept arbitrary text and only translate real keys.</summary>
+    internal bool TryResolve(string key, out string value)
+        => _strings.TryGetValue(key, out value!) || _fallback.TryGetValue(key, out value!);
+
     private string Resolve(string key)
     {
         if (_strings.TryGetValue(key, out var value))

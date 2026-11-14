@@ -76,7 +76,7 @@
   background: none;
   color: var(--nl-text);
   font-size: var(--nl-font-ui);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 
@@ -257,7 +257,7 @@
   font-family: inherit;
   font-size: var(--nl-font-body);
   line-height: 1.5;
-  text-align: left;
+  text-align: start;
   cursor: text;
 }
 

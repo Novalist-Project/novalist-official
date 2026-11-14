@@ -21,7 +21,8 @@ namespace Novalist.Backend.Tests;
 /// host's decisions rather than about anybody's speech model. The encoder is
 /// faked too, because the case that matters most is the machine that has none.
 /// </summary>
-public sealed class AudiobookRpcTests : IDisposable
+[Collection("BackendStatics")]
+public sealed partial class AudiobookRpcTests : IDisposable
 {
     private readonly string _root;
     private readonly Workspace _workspace;
@@ -82,13 +83,7 @@ public sealed class AudiobookRpcTests : IDisposable
     /// <summary>Waits for the job to stop running, which is what a poll would do.</summary>
     private async Task<AudiobookStatusDto> SettledAsync()
     {
-        for (var i = 0; i < 400; i++)
-        {
-            var status = _rpc.Status();
-            if (status.Phase is not ("rendering" or "packaging"))
-                return status;
-            await Task.Delay(20);
-        }
+        await TestWait.UntilAsync(() => _rpc.Status().Phase is not ("rendering" or "packaging"), "the audiobook job to stop running");
         return _rpc.Status();
     }
 
@@ -258,7 +253,7 @@ public sealed class AudiobookRpcTests : IDisposable
         var hold = _engine.Hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _engine.Started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         await _rpc.StartAsync("WavPerChapter", Output);
-        await _engine.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await _engine.Started.Task.WaitAsync(TestWait.Deadline);
         Assert.Null(_engine.Hold); // The engine has consumed it; release our retained reference.
 
         var second = await _rpc.StartAsync("WavPerChapter", Output);

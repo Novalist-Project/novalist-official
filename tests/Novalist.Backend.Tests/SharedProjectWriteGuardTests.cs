@@ -361,7 +361,7 @@ public sealed partial class SharedProjectWriteGuardTests
             for (var read = 0; read < 5; read++)
             {
                 var state = await fixture.Desktop.InvokeAsync<ProjectStateDto>("project/getState")
-                    .WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+                    .WaitAsync(TestWait.Deadline, TestContext.Current.CancellationToken);
                 Assert.Single(Assert.Single(state.Chapters).Scenes);
             }
         }
@@ -481,10 +481,7 @@ public sealed partial class SharedProjectWriteGuardTests
         await fixture.Desktop.InvokeAsync("entities/delete", "character", fixture.CharacterId, false);
         await fixture.Updates.CommitFieldAsync(field.ItemId, JsonSerializer.SerializeToUtf8Bytes(new { Version = 1, Value = value }), lease, ct);
         var recovery = Path.Combine(fixture.Root, "Recovered edits");
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromSeconds(5));
-        while (!Directory.Exists(recovery) || !Directory.GetFiles(recovery, "*.json", SearchOption.AllDirectories).Any(path => File.ReadAllText(path).Contains("Late ", StringComparison.Ordinal)))
-            await Task.Delay(20, timeout.Token);
+        await TestWait.UntilAsync(() => SharedFileReader.FilesContaining(recovery, "Late ").Length > 0, "the late edit to be recovered to disk", ct);
         Assert.False(File.Exists(Path.Combine(fixture.Root, field.Path)));
         Assert.Empty((await fixture.Desktop.InvokeAsync<JsonElement>("entities/list", "character")).EnumerateArray());
     }

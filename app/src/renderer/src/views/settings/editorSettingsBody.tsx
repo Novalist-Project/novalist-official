@@ -13,17 +13,7 @@ export function editorSettingsBody(context: SettingsBodyContext): React.ReactNod
       {editorSpacingSettings(context)}
       {readAloudSettings(context)}
       {editorFocusSettings(context)}
-      <label className="relationships-toggle">
-        <input
-          id="set-page-view"
-          type="checkbox"
-          checked={eff.pageViewEnabled}
-          onChange={(e) =>
-            void update(scopeFor('editor'), { pageViewEnabled: e.target.checked })
-          }
-        />
-        {t('settings.pageView')}
-      </label>
+      <PageViewSetting context={context} />
       <label className="relationships-toggle">
         <input
           id="set-book-spacing"
@@ -39,6 +29,15 @@ export function editorSettingsBody(context: SettingsBodyContext): React.ReactNod
       {bookWidthSettings(context)}
     </>
   )
+}
+
+function PageViewSetting({ context }: { context: SettingsBodyContext }): React.JSX.Element {
+  const { eff, scopeFor, t, update } = context
+  return <label className="relationships-toggle">
+    <input id="set-page-view" type="checkbox" checked={eff.pageViewEnabled}
+      onChange={event => void update(scopeFor('editor'), { pageViewEnabled: event.target.checked })} />
+    {t('settings.pageView')}
+  </label>
 }
 
 function editorFontSettings(context: SettingsBodyContext): React.ReactNode {

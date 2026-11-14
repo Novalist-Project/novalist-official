@@ -3,6 +3,7 @@ import { ScenePresenceBadge } from '../../collaboration/ScenePresenceBadge'
 import { SceneSynopsisField } from '../../shell/SceneSynopsisField'
 import { useTranslation } from 'react-i18next'
 import { useManuscriptStore } from '../../stores/manuscriptStore'
+import type { PlanningSection } from '../../stores/planningTypes'
 import { useStageStore } from '../../stores/stageStore'
 import { rpc as rpcClient } from '../../rpc/client'
 import { useProjectStore } from '../../stores/projectStore'
@@ -31,9 +32,10 @@ interface CardPlacement {
  * scenes that happen the same night, an outlier pushed aside because it does
  * not fit yet.
  */
-export function Corkboard(): React.JSX.Element {
+export function Corkboard({ sections: provided }: { sections?: PlanningSection[] } = {}): React.JSX.Element {
   const { t } = useTranslation()
-  const sections = useManuscriptStore((s) => s.sections)
+  const stored = useManuscriptStore((s) => s.sections)
+  const sections = provided ?? stored
   const freeform = useManuscriptStore((s) => s.freeform)
   const selectedIds = useSelectionStore((s) => s.sceneIds)
   const chapters = useProjectStore((s) => s.chapters)
@@ -70,7 +72,7 @@ export function Corkboard(): React.JSX.Element {
       stageColor: sceneContext.get(sceneId)?.stageColor
     })
 
-  if (freeform) return <FreeformCorkboard bandColor={bandColor} />
+  if (freeform) return <FreeformCorkboard bandColor={bandColor} sections={sections} />
 
   return (
     <div className="corkboard">
@@ -134,12 +136,12 @@ export function Corkboard(): React.JSX.Element {
  * instead of every card stacked in the corner.
  */
 function FreeformCorkboard({
-  bandColor
+  bandColor, sections
 }: {
   bandColor: (sceneId: string, pov: string | null) => string | undefined
+  sections: PlanningSection[]
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const sections = useManuscriptStore((s) => s.sections)
   const selectedIds = useSelectionStore((s) => s.sceneIds)
   const [places, setPlaces] = useState<Record<string, { x: number; y: number }>>({})
   const dragging = useRef<{ sceneId: string; dx: number; dy: number } | null>(null)

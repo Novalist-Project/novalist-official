@@ -1,0 +1,59 @@
+{
+  "base": "5672bf79",
+  "results": [
+    {
+      "baseline": true,
+      "formatting": false,
+      "dirtyBeforeCapture": [
+        0,
+        0
+      ],
+      "localInDOM": true,
+      "localInYText": false,
+      "DOMMatchesYText": false,
+      "undoGroups": []
+    },
+    {
+      "baseline": true,
+      "formatting": true,
+      "dirtyBeforeCapture": [
+        0,
+        0
+      ],
+      "localInDOM": false,
+      "localInYText": false,
+      "DOMMatchesYText": true,
+      "undoGroups": []
+    },
+    {
+      "baseline": false,
+      "formatting": false,
+      "dirtyBeforeCapture": [
+        0,
+        1
+      ],
+      "localInDOM": true,
+      "localInYText": true,
+      "DOMMatchesYText": true,
+      "undoGroups": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "baseline": false,
+      "formatting": true,
+      "dirtyBeforeCapture": [
+        0,
+        1
+      ],
+      "localInDOM": false,
+      "localInYText": false,
+      "DOMMatchesYText": true,
+      "undoGroups": []
+    }
+  ],
+  "collectedBeforeSourceFreeze": "9edf21793b58b35ab309291b57868b47aa34b872",
+  "probeSourceSha256": "d20db3159c6eb1b137ed1f0ec248a1722412cc15694067e4b0833b3ae125c418"
+}

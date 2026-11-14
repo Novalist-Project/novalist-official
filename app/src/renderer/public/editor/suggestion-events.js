@@ -26,17 +26,19 @@ window.setSuggestionMode = function (on, author) {
  * being shown one of them are different things.
  */
 window.scrollToSuggestionById = function (changeId) {
+    var root = window.getWritingServiceRoot?.() || window.NovalistEditorState.editor;
     var node = changeId
-        ? window.NovalistEditorState.editor.querySelector('[data-nl-change="' + changeId + '"]')
-        : window.NovalistEditorState.editor.querySelector('ins[data-nl-change], del[data-nl-change]');
+        ? root.querySelector('[data-nl-change="' + CSS.escape(changeId) + '"]')
+        : root.querySelector('ins[data-nl-change], del[data-nl-change]');
     if (!node) return;
+    window.cancelWritingReveal?.();
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
     node.classList.add('nv-change-flash');
     setTimeout(function () { node.classList.remove('nv-change-flash'); }, 1400);
 };
 
 window.NovalistEditorState.editor.addEventListener('beforeinput', (e) => {
-    if (window.NovalistEditorState.isSettingContent || window.isCompositionInput(e) || !suggestionMode) return;
+    if (e.defaultPrevented || window.NovalistEditorState.isSettingContent || window.isCompositionInput(e) || !suggestionMode) return;
 
     if (e.inputType === 'insertText' && e.data) {
         e.preventDefault();

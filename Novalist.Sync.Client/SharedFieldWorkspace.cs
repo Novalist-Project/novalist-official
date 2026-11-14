@@ -89,6 +89,38 @@ public sealed class SharedFieldWorkspace : IAsyncDisposable
         return true;
     }, ct);
 
+    public async Task ApplyStructureAsync(IReadOnlyList<SharedMetadataUpdate> updates, long sequence, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        try
+        {
+            ValidateStructure(updates);
+            foreach (var update in updates)
+            {
+                if (fields[update.ItemId].Sequence >= sequence) continue;
+                await project(update.ItemId, update.After, ct);
+                fields[update.ItemId] = (update.After, sequence);
+            }
+        }
+        finally { gate.Release(); }
+    }
+
+    public async Task ValidateStructureAsync(IReadOnlyList<SharedMetadataUpdate> updates, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        try { ValidateStructure(updates); }
+        finally { gate.Release(); }
+    }
+
+    private void ValidateStructure(IReadOnlyList<SharedMetadataUpdate> updates)
+    {
+        foreach (var update in updates)
+        {
+            EnsureItem(update.ItemId);
+            validate?.Invoke(update.ItemId, update.After);
+        }
+    }
+
     private async Task<T> EditAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken ct)
     {
         await editing.WaitAsync(ct);

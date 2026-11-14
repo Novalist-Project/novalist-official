@@ -25,14 +25,14 @@ public sealed class SessionPresenceTests
             using var sequence = new DeviceSequence(Path.Combine(root, "device.sqlite"), device.Id);
             await using var presence = new SessionPresence(new(project, device.Id, 0), new(membership, membership.CreateOwnerCertificate(device), device), sequence, cipher, wire);
             var sending = presence.PublishAsync(new(Guid.NewGuid(), Guid.NewGuid(), "Owner", null, true), ct);
-            await wire.Entered.Task.WaitAsync(TimeSpan.FromSeconds(2), ct);
+            await wire.Entered.Task.WaitAsync(TestWait.Deadline, ct);
             var first = presence.DisposeAsync().AsTask();
             var second = presence.DisposeAsync().AsTask();
-            await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(2), ct);
+            await Task.WhenAll(first, second).WaitAsync(TestWait.Deadline, ct);
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sending);
             Assert.Empty(presence.Snapshot());
         }
-        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+        finally { TestFiles.DeleteTree(root); }
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public sealed class SessionPresenceTests
             await sending.PublishAsync(new(item, view, "Guest", null, false), ct);
             Assert.Empty(receiving.Snapshot());
         }
-        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+        finally { TestFiles.DeleteTree(root); }
     }
 
     private sealed class Clock : TimeProvider

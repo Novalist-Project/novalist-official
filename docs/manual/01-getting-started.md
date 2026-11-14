@@ -90,7 +90,7 @@ Double-click a book on the bookshelf, or use **Open folder** and select your pro
 
 Navigation is five **modes** in the horizontal navigation row, alongside **Library** and **Dashboard**:
 
-- **Write** — the editor and the Manuscript view.
+- **Write** — the editor with Scene, Chapter, and Manuscript scopes. Arrange scenes in **Plan → Structure**.
 - **Plan** — Timeline, Plot Grid, Planning board, Relationships, Calendar, Dialogue.
 - **World** — Codex, Wiki, Maps, Research, Gallery, Languages.
 - **Publish** — Exposé, Style report, Export, Git.

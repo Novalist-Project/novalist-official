@@ -19,7 +19,7 @@
 .library-more summary::-webkit-details-marker { display: none; }
 .library-more[open] { z-index: 30; }
 .library-more-menu { position: absolute; z-index: 30; right: 0; top: 100%; width: var(--nl-panel-width-sm); max-width: calc(100vw - var(--nl-space-xxl)); padding: var(--nl-space-sm); border: var(--nl-rule-width) solid var(--nl-border); border-radius: var(--nl-radius-md); box-shadow: var(--nl-elevation-md); background: var(--nl-surface-card); }
-.library-more-menu button { display: flex; align-items: center; gap: var(--nl-space-sm); width: 100%; padding: var(--nl-space-md); text-align: left; border-radius: var(--nl-radius-sm); font-size: var(--nl-font-ui); }
+.library-more-menu button { display: flex; align-items: center; gap: var(--nl-space-sm); width: 100%; padding: var(--nl-space-md); text-align: start; border-radius: var(--nl-radius-sm); font-size: var(--nl-font-ui); }
 .library-more-menu button:hover { background: var(--nl-surface-hover); }
 .library-more-menu button:disabled { opacity: 0.35; }
 .library-controls { flex: none; flex-wrap: wrap; margin-inline: var(--nl-space-xxl); padding-bottom: var(--nl-space-lg); border-bottom: var(--nl-rule-width) solid var(--nl-border); gap: var(--nl-space-lg); }
@@ -57,8 +57,8 @@
 .project-library .volume-cover::before { content: ''; position: absolute; inset: var(--nl-space-hairline); border-radius: inherit; background: var(--nl-book-page-shading), repeating-linear-gradient(90deg, var(--nl-book-page-paper) 0, var(--nl-book-page-paper) var(--nl-space-hairline), var(--nl-book-page-edge) var(--nl-space-hairline), var(--nl-book-page-edge) calc(var(--nl-space-hairline) + var(--nl-rule-width))); pointer-events: none; }
 .volume-cover-front { position: absolute; inset: 0; z-index: 1; overflow: hidden; border-radius: inherit; border: var(--nl-rule-width) solid var(--nl-border-firm); background: var(--nl-surface-card); transform-origin: left center; backface-visibility: hidden; transition: transform var(--nl-book-cover-duration) cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow var(--nl-book-cover-duration) ease; pointer-events: none; }
 .volume-cover-front::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: var(--nl-book-cover-shading); box-shadow: var(--nl-book-cover-edge); pointer-events: none; }
-.project-library .start-recent-card:focus-visible .volume-cover-front, .project-library .start-recent-card[aria-pressed='true'] .volume-cover-front { transform: rotateY(var(--nl-book-cover-opening)); border-color: var(--nl-accent); box-shadow: var(--nl-elevation-md); }
-@media (hover: hover) and (pointer: fine) { .project-library .start-recent-card:hover .volume-cover-front { transform: rotateY(var(--nl-book-cover-opening)); border-color: var(--nl-accent); box-shadow: var(--nl-elevation-md); } }
+.project-library .start-recent-card:focus-visible .volume-cover-front, .project-library .start-recent-card[aria-pressed='true'] .volume-cover-front { transform: rotateY(calc(var(--nl-book-cover-opening) * var(--nl-book-cover-turn))); border-color: var(--nl-accent); box-shadow: var(--nl-elevation-md); }
+@media (hover: hover) and (pointer: fine) { .project-library .start-recent-card:hover .volume-cover-front { transform: rotateY(calc(var(--nl-book-cover-opening) * var(--nl-book-cover-turn))); border-color: var(--nl-accent); box-shadow: var(--nl-elevation-md); } }
 .project-library .start-recent-card[aria-pressed='true'] .volume-cover { outline: var(--nl-space-hairline) solid var(--nl-accent); outline-offset: var(--nl-space-tightest); }
 .volume-generated-cover { --cover-paper: var(--nl-book-cover-blue); --cover-ink: var(--nl-book-cover-ink); position: absolute; inset: 0; overflow: hidden; border-radius: inherit; background: var(--cover-paper); color: var(--cover-ink); }
 .cover-palette-blue { --cover-paper: var(--nl-book-cover-blue); }
@@ -92,7 +92,7 @@
 .library-related { margin-block: var(--nl-space-xl); padding-block: var(--nl-space-lg); border-block: var(--nl-rule-width) solid var(--nl-border); }
 .library-related h3, .library-detail-label { margin: 0; font-size: var(--nl-font-ui); font-weight: var(--nl-weight-label); color: var(--nl-text-dim); }
 .volume-details { margin: var(--nl-space-sm) 0; color: var(--nl-text-subtle); font-size: var(--nl-font-caption); }
-.library-related button { display: flex; gap: var(--nl-space-sm); align-items: center; width: 100%; padding: var(--nl-space-sm) 0; text-align: left; font-size: var(--nl-font-ui); overflow-wrap: anywhere; }
+.library-related button { display: flex; gap: var(--nl-space-sm); align-items: center; width: 100%; padding: var(--nl-space-sm) 0; text-align: start; font-size: var(--nl-font-ui); overflow-wrap: anywhere; }
 .library-related button[aria-current='true'] { color: var(--nl-accent); }
 .library-project-link { margin-bottom: var(--nl-space-md); }
 .library-detail-label { display: flex; flex-direction: column; gap: var(--nl-space-sm); margin-top: var(--nl-space-lg); }
@@ -100,7 +100,7 @@
 .library-project-order { display: flex; gap: var(--nl-space-sm); margin-top: var(--nl-space-md); }
 .library-project-order button { flex: 1; }
 .library-remove-actions { margin-top: var(--nl-space-xl); padding-top: var(--nl-space-md); border-top: var(--nl-rule-width) solid var(--nl-border); }
-.library-remove-actions button { display: flex; align-items: center; gap: var(--nl-space-sm); width: 100%; padding: var(--nl-space-sm) 0; color: var(--nl-text-dim); text-align: left; font-size: var(--nl-font-ui); }
+.library-remove-actions button { display: flex; align-items: center; gap: var(--nl-space-sm); width: 100%; padding: var(--nl-space-sm) 0; color: var(--nl-text-dim); text-align: start; font-size: var(--nl-font-ui); }
 .library-remove-actions button:hover { color: var(--nl-accent); }
 .library-scratchpad-dialog { box-sizing: border-box; width: min(var(--nl-dialog-width-wide), calc(100% - var(--nl-space-xl))); max-height: calc(100% - var(--nl-space-xl)); overflow-y: auto; padding: var(--nl-space-xl); color: var(--nl-text); background: var(--nl-surface-card); border: var(--nl-rule-width) solid var(--nl-border); border-radius: var(--nl-radius-xl); box-shadow: var(--nl-elevation-high); }
 .library-scratchpad-dialog::backdrop { background: var(--nl-surface-overlay); }

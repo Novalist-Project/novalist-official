@@ -1,9 +1,32 @@
 import { createHash, generateKeyPairSync, randomBytes, randomUUID, sign } from 'node:crypto'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { createServer as createHttpsServer, type ServerOptions } from 'node:https'
-import { once } from 'node:events'
+import type { Server as NetServer } from 'node:net'
 
 export const introspectionClient = { id: 'novalist-local-relay', secret: randomBytes(32).toString('hex') }
+
+/**
+ * Listens on the port, which a restarted provider must take back. Once the
+ * first instance has closed, an ephemeral port is free for any other socket on
+ * the machine - the app's own outbound connections draw from the same range -
+ * so the port can be held for a moment by something unrelated that lets go
+ * again. Waiting that out is what a returning server does; the test is about
+ * the writer's sign-in, not about which process holds the port for 100ms.
+ */
+async function listen(server: NetServer, port: number): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        server.once('error', reject)
+        server.listen(port, '127.0.0.1', () => { server.off('error', reject); resolve() })
+      })
+      return
+    } catch (error) {
+      if (port === 0 || (error as NodeJS.ErrnoException).code !== 'EADDRINUSE' || attempt >= 100) throw error
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+    }
+  }
+}
 
 export async function identityProvider(subject: () => string = () => 'writer', displayName: (subject: string) => string = () => 'Test Writer', port = 0, advertiseClientConfiguration = true, tls?: ServerOptions): Promise<{ address: string; disable(subject: string): void; close(): Promise<void> }> {
   const keys = generateKeyPairSync('rsa', { modulusLength: 2048 })
@@ -93,8 +116,7 @@ export async function identityProvider(subject: () => string = () => 'writer', d
     }
   }
   const server = tls ? createHttpsServer(tls, handle) : createServer(handle)
-  server.listen(port, '127.0.0.1')
-  await once(server, 'listening')
+  await listen(server, port)
   const endpoint = server.address()
   if (!endpoint || typeof endpoint === 'string') throw new Error('The test identity provider has no port.')
   address = `${tls ? 'https' : 'http'}://127.0.0.1:${endpoint.port}`

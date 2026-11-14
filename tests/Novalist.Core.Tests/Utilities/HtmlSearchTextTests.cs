@@ -7,6 +7,22 @@ namespace Novalist.Core.Tests.Utilities;
 
 public class HtmlSearchTextTests
 {
+    [Fact]
+    public void AttributedBreaksMatchCanonicalDomOffsets()
+    {
+        Assert.Equal("a\nb\n", new HtmlSearchText("<p>a<br class='soft' data-note='1 > 0'>b</p>").Text);
+    }
+
+    [Fact]
+    public void EditorChromeIsExcludedWithoutMistakingQuotedAttributeValuesForMarkers()
+    {
+        var html = "<!--comment--><p title='data-editor-chrome'>one<span data-editor-chrome><b>hidden</b><br>note</span>two<br data-editor-chrome>three</p>";
+        var text = new HtmlSearchText(html);
+        Assert.Equal("onetwothree\n", text.Text);
+        var replaced = text.Replace(new Regex("onetwo"), "done");
+        Assert.Equal("<!--comment--><p title='data-editor-chrome'>done<span data-editor-chrome><b>hidden</b><br>note</span><br data-editor-chrome>three</p>", replaced.Html);
+    }
+
     [Theory]
     [InlineData("<p></p>", "^", "<p>X</p>")]
     [InlineData("<img src='a'>", "$", "<img src='a'>X")]

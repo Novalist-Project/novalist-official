@@ -4,7 +4,8 @@ function isTextEditingShortcut(e) {
     // Cmd is the editing modifier on Apple platforms, so it must reserve the same
     // native shortcuts (Cmd+C/V/X/Z/A) that Ctrl does elsewhere.
     if (!e.ctrlKey && !e.metaKey) return false;
-    var k = e.key.toLowerCase();
+    var k = window.NovalistShortcutKeys.key(e);
+    if (k === null) return false;
     // Navigation keys that should be handled natively by contenteditable:
     // Ctrl+Arrow walks by word, Ctrl+Shift+Arrow selects by word, Ctrl+Home and
     // Ctrl+End go to the ends. Alt is the exception - contenteditable does
@@ -35,7 +36,7 @@ function sanitizePastedHtml(html) {
     for (const el of allElements) {
         // Keep b, i, u, strong, em, p, br, div, span
         const tag = el.tagName.toLowerCase();
-        const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+        const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'div', 'span', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
         if (!allowedTags.includes(tag)) {
             // Replace with its text content
             el.replaceWith(...el.childNodes);
@@ -43,8 +44,11 @@ function sanitizePastedHtml(html) {
         }
         // Remove all attributes except style with basic formatting
         const style = el.getAttribute('style');
+        const direction = el.getAttribute('dir');
+        const validDirection = /^(ltr|rtl|auto)$/i.test(direction ?? '') ? direction.toLowerCase() : el.style.direction;
         // Clear all attributes
         while (el.attributes.length > 0) el.removeAttribute(el.attributes[0].name);
+        if (/^(ltr|rtl|auto)$/.test(validDirection)) el.setAttribute('dir', validDirection);
         if (style) {
             // Only keep font-weight, font-style, text-decoration, text-align
             const allowed = {};
@@ -57,6 +61,7 @@ function sanitizePastedHtml(html) {
             if (parts.length > 0) el.setAttribute('style', parts.join(';'));
         }
     }
+    window.applyProseDirection?.(tmp);
     return tmp.innerHTML;
 }
 

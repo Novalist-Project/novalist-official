@@ -20,12 +20,24 @@ test('tablet property definitions fit beside the Settings categories with and wi
     const row = card.locator('.props-row')
     await expect(row.locator('input').first()).toHaveValue('Revision stage')
     const failures: string[] = []
+    const toggle = h.page.getByRole('button', { name: 'Toggle binder', exact: true })
+    // Until the writer chooses, the binder follows the window width, and that
+    // follow-up runs from a resize event that can land after the window has
+    // reported its new size. Choose explicitly, twice, so the state is pinned
+    // before any resize and no late event can flip it under the loop below.
+    for (let choice = 0; choice < 2; choice++) {
+      const before = await toggle.getAttribute('aria-pressed')
+      await toggle.click()
+      await expect(toggle).toHaveAttribute('aria-pressed', String(before !== 'true'))
+    }
     for (const { width, binder } of [
       { width: 1180, binder: true }, { width: 720, binder: false }, { width: 900, binder: true }
     ]) {
       await resizeWindow(h, width, 800)
-      const toggle = h.page.getByRole('button', { name: 'Toggle binder', exact: true })
-      if ((await toggle.getAttribute('aria-pressed')) !== String(binder)) await toggle.click()
+      await toggle.evaluate((element, open) => {
+        if (element.getAttribute('aria-pressed') !== String(open)) (element as HTMLButtonElement).click()
+      }, binder)
+      await expect(toggle).toHaveAttribute('aria-pressed', String(binder))
       await expect(h.page.locator('.tablet-binder')).toHaveCount(binder ? 1 : 0)
       const geometry = await row.evaluate(element => {
         const bounds = element.getBoundingClientRect()

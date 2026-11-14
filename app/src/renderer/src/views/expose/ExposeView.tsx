@@ -11,6 +11,7 @@ import {
 import { rpc } from '../../rpc/client'
 import { useProjectStore } from '../../stores/projectStore'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { pushEditorLanguage } from '../editor/editorConfiguration'
 import {
   persistPendingWrite,
   registerPendingWrite,
@@ -162,7 +163,7 @@ function ExposeEditor({ projectPath, bookId }: {
 
     const pushConfig = (editor: EditorWindow): void => {
       pushEditorTheme(editor)
-      editor.setLanguage(i18n.language.startsWith('de') ? 'de' : 'en')
+      pushEditorLanguage(editor)
       editor.setMobile(window.novalist.isMobile === true)
       const view = useSettingsStore.getState().view
       if (view) {

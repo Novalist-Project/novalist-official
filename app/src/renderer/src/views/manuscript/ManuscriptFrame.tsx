@@ -4,6 +4,7 @@ import { useProjectStore } from '../../stores/projectStore'
 import { useSettingsStore, type EffectiveSettings } from '../../stores/settingsStore'
 import { registerPendingWrite } from '../../stores/pendingWrites'
 import { pushWritingTypography } from '../editor/writingTypography'
+import { pushEditorLanguage } from '../editor/editorConfiguration'
 import { useWritingZoomStore } from '../../stores/writingZoomStore'
 import { SharedManuscriptEditors, type ManuscriptEditingWindow } from './SharedManuscriptEditors'
 import { rpc } from '../../rpc/client'
@@ -28,6 +29,8 @@ interface ManuscriptWindow extends ManuscriptEditingWindow {
     scrollbarThumbActive?: string
   ): void
   setFont(family: string, size: number): void
+  setLanguage(language: string): void
+  setInterfaceLanguage(language: string, direction: 'ltr' | 'rtl'): void
   setBookWidth(enabled: boolean, widthPx: number): void
   setWritingZoom(factor: number, typewriterAnchor?: string | null): void
   setReadingComfort(lineHeight: number, letterSpacing: number, firstLineIndent: number): void
@@ -41,6 +44,7 @@ interface ManuscriptWindow extends ManuscriptEditingWindow {
 }
 
 function presentManuscript(win: ManuscriptWindow, eff?: EffectiveSettings): void {
+  pushEditorLanguage(win)
   const style = getComputedStyle(document.documentElement)
   const token = (name: string): string => style.getPropertyValue(name).trim()
   for (const name of style) {
@@ -74,7 +78,7 @@ function presentManuscript(win: ManuscriptWindow, eff?: EffectiveSettings): void
 }
 
 export function ManuscriptFrame(): React.JSX.Element {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const sharedRef = useRef<SharedManuscriptEditors | null>(null)
   const readyRef = useRef(false)
@@ -213,7 +217,7 @@ export function ManuscriptFrame(): React.JSX.Element {
   useEffect(() => {
     pushPresentation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effective, zoomPercent])
+  }, [effective, zoomPercent, i18n.language])
 
   return (
     <>

@@ -63,7 +63,10 @@ public sealed class ReviewRpc
         }
 
         if (added > 0)
+        {
             await _workspace.Projects.SaveScenesAsync();
+            _workspace.NotifySceneAnnotationsChanged(chapterGuid, sceneId);
+        }
 
         return added;
     }

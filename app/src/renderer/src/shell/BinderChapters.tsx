@@ -35,7 +35,7 @@ export function BinderChapters({ state }: { state: BinderState }): React.JSX.Ele
                 <ChevronRight
                   size={13}
                   strokeWidth={2}
-                  className={`binder-chevron${collapsed[chapter.guid] ? '' : ' open'}`}
+                  className={`icon-directional binder-chevron${collapsed[chapter.guid] ? '' : ' open'}`}
                 />
               </button>
               <span className="binder-chapter-title" title={chapter.title}>{chapter.title}</span>

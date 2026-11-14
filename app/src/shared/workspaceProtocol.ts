@@ -33,4 +33,4 @@ export function desktopRequestId(owner: number, epoch: number, sequence: number,
   return `nl/${owner}/${epoch}/${sequence}/${token ?? '-'}`
 }
 
-export type CloseStage = 'flush' | 'backup' | 'abort'
+export type CloseStage = 'flush' | 'backup' | 'release' | 'commit' | 'abort'

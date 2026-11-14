@@ -2,6 +2,7 @@ import type { CommandDef } from './commandTypes'
 import { useEditorBridge } from '../stores/editorBridgeStore'
 import { showDictation } from '../dictation/dictationStore'
 import { shell, inEditor, editorOpen, hasSelection, sceneOpen, toggleEditorSetting } from './commandContext'
+import { getWritingNavigation } from '../views/editor/writingNavigation'
 
 /** The named block styles a scene can carry. Body is the absence of a style. */
 const PARAGRAPH_STYLES = ['', 'heading', 'subheading', 'blockquote', 'poetry'] as const
@@ -11,9 +12,39 @@ const PARAGRAPH_STYLE_COMMANDS: CommandDef[] = PARAGRAPH_STYLES.map((style) => (
   labelKey: `blockStyle.${style || 'body'}`,
   categoryKey: 'hotkeys.category.editor',
   scope: 'paragraph' as const,
+  transientHomes: ['selectionToolbar', 'contextMenu'],
   available: editorOpen,
   run: inEditor((editor) => editor.setParagraphStyle(style))
 }))
+
+const writingStructureAvailable = (): boolean => editorOpen() && useEditorBridge.getState().editor?.writingStructureEnabled === true
+const WRITING_STRUCTURE_COMMANDS: CommandDef[] = [
+  {
+    id: 'writing.sceneBreak',
+    labelKey: 'writing.sceneBreak', categoryKey: 'hotkeys.category.scenes',
+    scope: 'caret',
+    home: 'viewBar',
+    homeNote: 'The approved editor keeps scene creation beside the paragraph style selector.',
+    transientHomes: ['selectionToolbar', 'contextMenu'], available: writingStructureAvailable,
+    run: inEditor(editor => editor.requestWritingStructure('sceneBreak'))
+  },
+  {
+    id: 'writing.chapterHeading',
+    labelKey: 'writing.chapterHeading', categoryKey: 'hotkeys.category.scenes',
+    scope: 'caret',
+    home: 'viewBar',
+    homeNote: 'The approved editor keeps chapter creation beside scene creation.',
+    transientHomes: ['selectionToolbar', 'contextMenu'], available: writingStructureAvailable,
+    run: inEditor(editor => editor.requestWritingStructure('chapterHeading'))
+  },
+  {
+    id: 'writing.insertChapter',
+    labelKey: 'writing.insertChapter', categoryKey: 'hotkeys.category.scenes',
+    scope: 'caret',
+    transientHomes: ['selectionToolbar'], available: writingStructureAvailable,
+    run: inEditor(editor => editor.requestWritingStructure('insertChapter'))
+  }
+]
 
 export const EDITOR_COMMANDS: CommandDef[] = [
   /* ── Selection: the floating toolbar over the prose ─────────────────── */
@@ -142,6 +173,15 @@ export const EDITOR_COMMANDS: CommandDef[] = [
   },
 
   /* ── Caret: the editor's context menu ───────────────────────────────── */
+  {
+    id: 'editor.quickEdit',
+    labelKey: 'writing.quickEdit',
+    categoryKey: 'hotkeys.category.editor',
+    scope: 'caret',
+    available: editorOpen,
+    run: inEditor((editor) => editor.openQuickEdit())
+  },
+  ...WRITING_STRUCTURE_COMMANDS,
   {
     id: 'caret.peekEntity',
     labelKey: 'blockStyle.peekEntity',
@@ -282,6 +322,10 @@ export const EDITOR_COMMANDS: CommandDef[] = [
     categoryKey: 'hotkeys.category.editor',
     scope: 'view',
     available: editorOpen,
-    run: toggleEditorSetting('pageViewEnabled')
+    run: () => {
+      const writing = getWritingNavigation(shell().activePaneId)
+      if (writing?.changePageView) writing.changePageView(!writing.pageViewEnabled)
+      else toggleEditorSetting('pageViewEnabled')()
+    }
   }
 ]

@@ -50,7 +50,10 @@ function locate(nodes, offset) {
  */
 function proseBlocks() {
     const blocks = [];
-    for (const child of window.NovalistEditorState.editor.children) {
+    const roots = window.NovalistWritingDocument?.enabled
+        ? window.writingSelectedRanges().map(range => range.root) : [window.NovalistEditorState.editor];
+    for (const root of roots) for (const child of root.children) {
+        if (child.hasAttribute('data-editor-chrome')) continue;
         if (child.classList && child.classList.contains('nv-page')) {
             for (const inner of child.children) blocks.push(inner);
         } else {
@@ -65,7 +68,7 @@ function blockOf(node) {
     let current = node;
     while (current && current !== window.NovalistEditorState.editor) {
         const parent = current.parentNode;
-        if (parent === window.NovalistEditorState.editor) {
+        if (parent === window.NovalistEditorState.editor || parent?.hasAttribute?.('data-writing-scene')) {
             // A page wrapper is not a block. Its first paragraph is the nearest
             // thing, but a caret directly in a wrapper means an empty page.
             if (current.classList && current.classList.contains('nv-page'))
@@ -169,6 +172,7 @@ function showSpeaking(range) {
         // height as though it were the sentence's, so reading a line near the
         // top threw the page upward by half a screen - which is what looked
         // like the editor scrolling itself back up.
+        window.cancelWritingReveal?.();
         window.NovalistEditorState.wrapper.scrollTop += (rect.top - box.top) - (box.height - rect.height) / 2;
     }
 
@@ -179,8 +183,7 @@ function showSpeaking(range) {
     if (window.NovalistEditorState.dimOthers) {
         const block = blockOf(range.startContainer);
         if (block) {
-            for (const other of proseBlocks()) other.classList.remove('nv-focus-block');
-            block.classList.add('nv-focus-block');
+            window.setFocusBlocks([block]);
         }
     }
 }

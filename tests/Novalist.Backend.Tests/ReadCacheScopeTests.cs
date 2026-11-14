@@ -114,7 +114,7 @@ public sealed class ReadCacheScopeTests
         var read = pair.Client.InvokeWithCancellationAsync<bool>("entities/get", [], cancellation.Token);
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await entered.Task.WaitAsync(TestWait.Deadline);
             Assert.False(await pair.Client.InvokeAsync<bool>("system/ping"));
             var mutation = pair.Client.InvokeAsync<bool>("scenes/write");
             if (outcome == "cancel") cancellation.Cancel();
@@ -122,7 +122,7 @@ public sealed class ReadCacheScopeTests
             if (outcome == "cancel") await Assert.ThrowsAnyAsync<OperationCanceledException>(() => read);
             else if (outcome == "failure") await Assert.ThrowsAsync<RemoteInvocationException>(() => read);
             else Assert.True(await read);
-            Assert.False(await mutation.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(await mutation.WaitAsync(TestWait.Deadline));
             Assert.Equal(1, pair.Cache.CachedExits);
             Assert.All(pair.AfterRequestScopes, enabled => Assert.False(enabled));
             Assert.All(pair.AfterRequestFreshScopes, enabled => Assert.True(enabled));

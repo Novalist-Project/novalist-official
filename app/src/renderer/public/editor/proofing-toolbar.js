@@ -70,23 +70,67 @@ function updateGrammarStatusBar() {
     }
 }
 
+let pendingProofingNavigation = null;
+
+function cancelProofingNavigation() {
+    if (!pendingProofingNavigation) return;
+    const cancel = pendingProofingNavigation;
+    pendingProofingNavigation = null;
+    cancel();
+}
+
+function openProofingIssueAfterScroll(target) {
+    const state = window.NovalistEditorState;
+    const index = Number(target.dataset.issueIndex);
+    const issue = state.grammarIssues[index];
+    const wrapper = state.wrapper;
+    const hasScrollEnd = 'onscrollend' in wrapper;
+    const interruptions = ['wheel', 'pointerdown', 'touchstart', 'keydown'];
+    let timer;
+
+    function cancel() {
+        clearTimeout(timer);
+        wrapper.removeEventListener('scroll', onScroll);
+        wrapper.removeEventListener('scrollend', finish);
+        for (const event of interruptions) document.removeEventListener(event, cancelProofingNavigation, true);
+    }
+
+    function finish() {
+        if (pendingProofingNavigation !== cancel) return;
+        cancelProofingNavigation();
+        if (!target.isConnected || !state.editor.contains(target)
+            || state.grammarIssues[index] !== issue || Number(target.dataset.issueIndex) !== index) return;
+        const rect = target.getBoundingClientRect();
+        window.showGrammarPopup(index, rect.left, rect.bottom);
+    }
+
+    function onScroll() {
+        clearTimeout(timer);
+        if (!hasScrollEnd) timer = setTimeout(finish, 150);
+    }
+
+    pendingProofingNavigation = cancel;
+    wrapper.addEventListener('scroll', onScroll);
+    if (hasScrollEnd) wrapper.addEventListener('scrollend', finish);
+    for (const event of interruptions) document.addEventListener(event, cancelProofingNavigation, true);
+    // An already visible target produces no scrollend event.
+    timer = setTimeout(finish, 150);
+    window.cancelWritingReveal?.();
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function scrollToNextIssue(type) {
+    window.hideGrammarPopup();
     const selector = type === 'grammar'
         ? '.grammar-issue[data-issue-type="grammar"]'
         : '.grammar-issue[data-issue-type="spelling"], .grammar-issue[data-issue-type="style"]';
     const firstIssue = window.NovalistEditorState.editor.querySelector(selector);
-    if (firstIssue) {
-        firstIssue.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Wait briefly for scroll to finish, then open popup
-        setTimeout(() => {
-            const index = parseInt(firstIssue.getAttribute('data-issue-index'), 10);
-            const rect = firstIssue.getBoundingClientRect();
-            window.showGrammarPopup(index, rect.left, rect.bottom);
-        }, 150);
-    }
+    if (firstIssue) openProofingIssueAfterScroll(firstIssue);
 }
 
-function updateFloatingToolbar() {
+function updateFloatingToolbar(allowCaret = false) {
+    const toolbar = window.NovalistEditorState.floatingToolbar;
+    if (toolbar.contains(document.activeElement)) return;
     // Right-clicking a word selects it so the menu can offer spellings for it,
     // and that selection used to raise the format bar on top of the very menu
     // the click had just opened - the bar sits a layer above it. The menu is
@@ -96,12 +140,18 @@ function updateFloatingToolbar() {
         return;
     }
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || sel.toString().trim() === '') {
+    if (!sel || !sel.rangeCount || !window.captureQuickEditSelection()
+        || window.NovalistEditorState.quickEditDismissed
+        || (!allowCaret && (sel.isCollapsed || sel.toString().trim() === ''))) {
         window.NovalistEditorState.floatingToolbar.classList.remove('visible');
         return;
     }
     const range = sel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
+    let rect = range.getBoundingClientRect();
+    if (allowCaret && rect.width === 0 && rect.height === 0) {
+        const block = window.blockOf(range.startContainer);
+        if (block) rect = block.getBoundingClientRect();
+    }
     if (rect.width === 0 && rect.height === 0) {
         window.NovalistEditorState.floatingToolbar.classList.remove('visible');
         return;
@@ -113,15 +163,16 @@ function updateFloatingToolbar() {
     document.getElementById('ft-strike').classList.toggle('active', document.queryCommandState('strikeThrough'));
     document.getElementById('ft-highlight').classList.toggle('active',
         !!window.highlightAncestor(window.getSelection() && window.getSelection().anchorNode));
+    document.getElementById('ft-style').value = window.getParagraphStyle();
 
     window.NovalistEditorState.floatingToolbar.classList.add('visible');
     const tbWidth = window.NovalistEditorState.floatingToolbar.offsetWidth || 220;
     const tbHeight = window.NovalistEditorState.floatingToolbar.offsetHeight || 34;
     let x = rect.left + rect.width / 2 - tbWidth / 2;
     let y = rect.top - tbHeight - 8;
-    if (x < 4) x = 4;
-    if (x + tbWidth > window.innerWidth - 4) x = window.innerWidth - tbWidth - 4;
     if (y < 4) y = rect.bottom + 8;
+    x = Math.max(4, Math.min(x, window.innerWidth - tbWidth - 4));
+    y = Math.max(4, Math.min(y, window.innerHeight - tbHeight - 4));
     window.NovalistEditorState.floatingToolbar.style.left = x + 'px';
     window.NovalistEditorState.floatingToolbar.style.top = y + 'px';
 }
@@ -130,6 +181,7 @@ Object.assign(window, {
     getProofingStatus,
     setProofingStatusHosted,
     updateGrammarStatusBar,
+    cancelProofingNavigation,
     scrollToNextIssue,
     updateFloatingToolbar
 });

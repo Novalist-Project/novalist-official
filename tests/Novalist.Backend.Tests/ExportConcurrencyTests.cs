@@ -31,15 +31,15 @@ public sealed class ExportConcurrencyTests
             "Original export", "Writer", false, new[] { originalChapter });
         try
         {
-            await fixture.Files.Paused.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await fixture.Files.Paused.Task.WaitAsync(TestWait.Deadline);
             var switching = client.InvokeAsync<ProjectStateDto>("project/switchBook", other.Books.Single(book => book.Name == "Other").Id);
-            await client.InvokeAsync<PingResult>("system/ping").WaitAsync(TimeSpan.FromSeconds(10));
+            await client.InvokeAsync<PingResult>("system/ping").WaitAsync(TestWait.Deadline);
             Assert.False(switching.IsCompleted);
             Assert.Equal(original.ActiveBookId, projects.ActiveBook!.Id);
 
             fixture.Files.Release.TrySetResult();
-            var exported = await export.WaitAsync(TimeSpan.FromSeconds(10));
-            var switched = await switching.WaitAsync(TimeSpan.FromSeconds(10));
+            var exported = await export.WaitAsync(TestWait.Deadline);
+            var switched = await switching.WaitAsync(TestWait.Deadline);
             Assert.True(exported.Success);
             Assert.NotEqual(original.ActiveBookId, switched.ActiveBookId);
             var output = await File.ReadAllTextAsync(outputPath);
@@ -90,7 +90,7 @@ public sealed class ExportConcurrencyTests
             Files.Release.TrySetResult();
             Client.Dispose();
             Host.Dispose();
-            Directory.Delete(Root, recursive: true);
+            TestFiles.DeleteTree(Root);
         }
     }
 
@@ -105,7 +105,7 @@ public sealed class ExportConcurrencyTests
             if (typeof(T) == typeof(string) && path == PausePath)
             {
                 Paused.TrySetResult();
-                await Release.Task.WaitAsync(TimeSpan.FromSeconds(15));
+                await Release.Task.WaitAsync(TestWait.Deadline);
             }
             return access(path);
         }

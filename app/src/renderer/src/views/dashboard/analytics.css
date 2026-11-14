@@ -38,7 +38,7 @@
   color: var(--nl-text-subtle);
   font-size: var(--nl-font-caption);
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: end;
 }
 
 /* Who drops out. Name, what happened, and how much of the book they are in -

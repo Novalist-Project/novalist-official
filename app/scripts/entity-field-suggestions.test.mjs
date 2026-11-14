@@ -64,6 +64,7 @@ function fixture(entityType = 'character', customDef, component = 'EntityDetailF
       if (name === '../../stores/codexStore') return { useCodexStore: select => select({ selectedRecord: props.record }) }
       if (name === 'react-i18next') return { useTranslation: () => ({ t: key => key }) }
       if (name === './useEntityFieldSuggestions') return loadRendererSource('src/views/codex/useEntityFieldSuggestions.ts', dependencies, { AbortController })
+      if (name === '../../shell/contentDirection') return loadRendererSource('src/shell/contentDirection.ts')
       return {}
     }
   })

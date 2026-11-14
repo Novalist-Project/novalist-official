@@ -28,7 +28,7 @@ function setFont(family, size) {
     }
     const f = family ? "'" + family + "', sans-serif" : 'var(--font-family)';
     const sz = size ? size + 'px' : 'var(--font-size)';
-    s.textContent = '#editor, #editor * { font-family: ' + f + ' !important; font-size: ' + sz + ' !important; }';
+    s.textContent = '#editor, #editor :not([data-editor-chrome], [data-editor-chrome] *) { font-family: ' + f + ' !important; font-size: calc(' + sz + ' * var(--writing-text-scale, 1)) !important; }';
     window.schedulePageViewRepaginate();
     window.scheduleCommentRender();
 }
@@ -36,6 +36,8 @@ function setFont(family, size) {
 function setBookWidth(enabled, widthPx) {
     const root = document.documentElement;
     root.style.setProperty('--book-width', enabled ? 'calc(' + widthPx + 'px + 2 * var(--padding-h))' : 'none');
+    root.style.setProperty('--writing-book-text-width', widthPx + 'px');
+    document.body.classList.toggle('book-width', enabled);
 }
 
 function setPadding(horizontal, vertical) {
@@ -66,10 +68,10 @@ function setBookParagraphSpacing(enabled) {
 }
 
 function setLanguage(lang) {
-    document.documentElement.lang = lang || 'en';
     // The prose surface carries its own lang so the platform spell checker picks
     // the right dictionary for the writing language rather than the UI language.
     window.NovalistEditorState.editor.lang = lang || 'en';
+    for (const comment of document.querySelectorAll('.nv-cc-text,.nv-cc-anchor')) comment.lang = window.NovalistEditorState.editor.lang;
 }
 
 // Red underlines from the platform's own checker. Off by default in the markup

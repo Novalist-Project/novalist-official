@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Novalist.Core.Models;
 
@@ -52,6 +53,10 @@ public class SettingsService : ISettingsService
         {
             var json = await Files.ReadTextAsync(_settingsPath);
             Settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+        }
+        else if (CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar")
+        {
+            Settings.Language = "ar";
         }
         Settings.EnsureDefaults();
     }

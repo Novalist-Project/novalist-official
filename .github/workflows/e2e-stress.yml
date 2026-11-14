@@ -1,0 +1,96 @@
+name: E2E stress
+
+# Repeats chosen E2E specs many times without retries to prove a fix for (or
+# reproduce) an intermittent failure. Push a branch named ci-stress/<anything>
+# that commits .github/e2e-stress.json, for example:
+#   {"specs": ["e2e/focus-interactions.spec.ts"], "repeat": 20}
+# See docs/ci.md.
+on:
+  push:
+    branches: ['ci-stress/**']
+
+concurrency:
+  group: e2e-stress-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: 10.0.x
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  plan:
+    name: Read stress plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      repeat: ${{ steps.plan.outputs.repeat }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read .github/e2e-stress.json
+        id: plan
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys
+
+          def fail(message):
+              print(f"::error title=E2E stress plan::{message}")
+              sys.exit(1)
+
+          path = ".github/e2e-stress.json"
+          if not os.path.isfile(path):
+              fail(f"{path} is missing. Commit it on this branch, for example "
+                   '{"specs": ["e2e/a.spec.ts"], "repeat": 20}.')
+          try:
+              with open(path, encoding="utf-8") as handle:
+                  plan = json.load(handle)
+          except ValueError as error:
+              fail(f"{path} is not valid JSON: {error}")
+          specs = plan.get("specs") if isinstance(plan, dict) else None
+          if not isinstance(specs, list) or not specs:
+              fail(f'{path} lists no specs. Add "specs": ["e2e/a.spec.ts"].')
+          repeat = plan.get("repeat", 20)
+          if type(repeat) is not int or not 1 <= repeat <= 500:
+              fail(f"repeat must be an integer from 1 to 500, got {repeat!r}.")
+          for spec in specs:
+              if not isinstance(spec, str) or not re.fullmatch(r"e2e/[A-Za-z0-9._/-]+\.spec\.ts", spec):
+                  fail(f"{spec!r} is not a spec path such as e2e/a.spec.ts.")
+              if not os.path.isfile(os.path.join("app", spec)):
+                  fail(f"app/{spec} does not exist on this branch.")
+          matrix = {"include": [{"index": index, "spec": spec} for index, spec in enumerate(dict.fromkeys(specs))]}
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"matrix={json.dumps(matrix)}\n")
+              output.write(f"repeat={repeat}\n")
+          PY
+
+  stress:
+    name: Stress ${{ matrix.spec }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up the app
+        uses: ./.github/actions/e2e-setup
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Repeat the spec
+        uses: ./.github/actions/e2e-run
+        with:
+          playwright-args: --repeat-each ${{ needs.plan.outputs.repeat }} --retries 0 ${{ matrix.spec }}
+          label: ${{ matrix.spec }}
+          artifact-name: playwright-traces-stress-${{ matrix.index }}

@@ -1,17 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, X } from 'lucide-react'
-import { rpc } from '../rpc/client'
 import { useEditorBridge } from '../stores/editorBridgeStore'
-import { useProjectStore, type ProjectStateDto } from '../stores/projectStore'
-
-interface Suggestion {
-  id: string
-  kind: 'insertion' | 'deletion'
-  text: string
-  author: string
-  at: string
-}
+import { useSceneSuggestions } from './useSceneSuggestions'
 
 /**
  * Suggested edits waiting on the open scene, one row each.
@@ -28,18 +19,8 @@ export function SuggestionsPanel({
   sceneId: string
 }): React.JSX.Element | null {
   const { t } = useTranslation()
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const { suggestions, error, answer: resolve } = useSceneSuggestions(chapterGuid, sceneId)
   const [busy, setBusy] = useState(false)
-  const suggestionsRevision = useEditorBridge((s) => s.suggestionsRevision)
-
-  const load = useCallback((): void => {
-    void rpc
-      .request<Suggestion[]>('suggestions/forScene', [chapterGuid, sceneId])
-      .then(setSuggestions)
-      .catch(() => setSuggestions([]))
-  }, [chapterGuid, sceneId])
-
-  useEffect(load, [load, suggestionsRevision])
 
   /**
    * Takes the writer to the mark this row is about.
@@ -53,30 +34,20 @@ export function SuggestionsPanel({
     if (bridge.isShowing(sceneId)) bridge.editor?.scrollToSuggestionById(id)
   }
 
-  /**
-   * Answering an edit rewrites the scene on disk, so the editor has to be told
-   * to re-read it - otherwise the writer is looking at prose that no longer
-   * matches the file and their next keystroke saves the old version back.
-   */
-  const answer = async (method: string, args: unknown[]): Promise<void> => {
+  const answer = async (accept: boolean, id?: string): Promise<void> => {
     setBusy(true)
     try {
-      setSuggestions(await rpc.request<Suggestion[]>(method, args))
-      await useProjectStore.getState().flushPendingSave()
-      useProjectStore.getState().applyState(await rpc.request<ProjectStateDto>('project/getState'))
-      await useProjectStore.getState().openScene(chapterGuid, sceneId)
-      // The book-wide list of scenes with edits waiting counts what is left in
-      // this one, so answering the last of them has to take the scene off it.
-      useEditorBridge.getState().suggestionsChanged()
+      await resolve(accept, id)
     } finally {
       setBusy(false)
     }
   }
 
-  if (suggestions.length === 0) return null
+  if (suggestions.length === 0 && !error) return null
 
   return (
     <div className="suggestions-panel">
+      {error && <div role="alert">{t(error)}</div>}
       <div className="inspector-label">
         {t('suggestions.title', { count: suggestions.length })}
       </div>
@@ -97,16 +68,16 @@ export function SuggestionsPanel({
             </span>
           </button>
           {[
-            { label: 'suggestions.accept', method: 'suggestions/accept', Icon: Check },
-            { label: 'suggestions.reject', method: 'suggestions/reject', Icon: X }
-          ].map(({ label, method, Icon }) => (
+            { label: 'suggestions.accept', accept: true, Icon: Check },
+            { label: 'suggestions.reject', accept: false, Icon: X }
+          ].map(({ label, accept, Icon }) => (
             <button
-              key={method}
+              key={label}
               className="ctx-reset"
               disabled={busy}
               title={t(label)}
               aria-label={t(label)}
-              onClick={() => void answer(method, [chapterGuid, sceneId, suggestion.id])}
+              onClick={() => void answer(accept, suggestion.id)}
             >
               <Icon size={14} />
             </button>
@@ -118,14 +89,14 @@ export function SuggestionsPanel({
         <button
           className="dialog-button"
           disabled={busy}
-          onClick={() => void answer('suggestions/acceptAll', [chapterGuid, sceneId])}
+          onClick={() => void answer(true)}
         >
           {t('suggestions.acceptAll')}
         </button>
         <button
           className="dialog-button"
           disabled={busy}
-          onClick={() => void answer('suggestions/rejectAll', [chapterGuid, sceneId])}
+          onClick={() => void answer(false)}
         >
           {t('suggestions.rejectAll')}
         </button>

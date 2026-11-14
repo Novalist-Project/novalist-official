@@ -153,7 +153,7 @@ export function LinksPanel(props: {
       {links.length === 0 && <p className="settings-hint">{t('links.none')}</p>}
       {links.map((link) => (
         <div key={link.id} className="links-row">
-          <ArrowRight size={12} strokeWidth={2} className="links-arrow" />
+          <ArrowRight size={12} strokeWidth={2} className="icon-directional links-arrow" />
           {/* A target that is gone keeps its row and says so. A link that
               disappears silently is one the writer never finds out they lost. */}
           <button
@@ -237,7 +237,7 @@ export function LinksPanel(props: {
           <div className="inspector-label">{t('links.pointedAtBy')}</div>
           {backlinks.map((back) => (
             <div key={`${back.sceneId}-${back.note}`} className="links-row">
-              <ArrowLeft size={12} strokeWidth={2} className="links-arrow" />
+              <ArrowLeft size={12} strokeWidth={2} className="icon-directional links-arrow" />
               <button
                 className="links-target"
                 onClick={() => void openScene(back.chapterGuid, back.sceneId)}

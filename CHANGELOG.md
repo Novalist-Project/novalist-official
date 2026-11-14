@@ -21,7 +21,25 @@ could encounter in a previously released version.
 
 ## [Unreleased]
 
+### Added
+
 - Added full Arabic (RTL) support, localization, and keyboard shortcut fixes. (by @Ammar-Banna)
+- **Arabic interface and right-to-left writing** — choose Arabic in Settings for translated menus and a right-to-left interface, with independently directed mixed Arabic/English prose, metadata, Codex fields and Wiki articles. Markdown editing supports per-line direction, and writing zoom keeps RTL prose within the pane. Interface language and writing-language settings remain independent.
+
+- **Unified writing and Structure planning** — switch between Scene, Chapter, and Manuscript while keeping your place in a continuous document, with outline navigation in the same editor, editable scene, chapter and act names, stage selectors, and consistently sized scene information panels that follow the prose while scrolling. Synopses expand within the panel without shifting the manuscript. Writing starts at a readable size; Ctrl+wheel enlarges prose, headings and scene information within the pane. Optional book width and paper pages honor saved book typography and page settings, preserving the previous editor's page proportions and margins. Includes cross-scene editing and undo, scope-aware Find/Replace, independent pane scopes, and selected-scene and filtered runs. Plan's Structure view organizes acts, chapters, and scenes alongside Corkboard, Outliner, and Board. Insert scene breaks and chapter headings from the writing toolbar or quick edit, or add scenes and chapters at inline boundaries. Quick edit offers paragraph styles beside selected text or at the caret, with mixed-style indicators and keyboard access.
+
+### Fixed
+
+- Views added by extensions, such as the AI Assistant's chat and analysis panels, now show their names in the interface language and switch immediately when you change language.
+- Application and editor shortcuts work with Arabic and other non-Latin keyboard layouts, including custom shortcut recording, while preserving Latin-layout bindings and composition input.
+
+- Opening a project or changing collaboration sessions no longer shows a spurious workspace-changed error from background invitation polling.
+- Starting or joining collaboration is faster for large projects.
+- Restarting an audiobook export immediately after it finishes reliably starts the new render.
+- Clicking a spelling or grammar count keeps the issue popup open after scrolling to the marked text.
+- The editor follows the configured proofing language without replacing it with the interface language or quote preset.
+- An export that has already written its file no longer ends with a "file in use" error when a temporary copy of one of its images cannot be removed right away.
+- The editor's right-click menu no longer occasionally closes by itself the moment it opens.
 
 ---
 

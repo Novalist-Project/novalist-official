@@ -43,7 +43,7 @@ export function chapterMenuItems(state: BinderState, chapter: BinderState['chapt
           })
       },
       {
-        label: t('explorer.renameAct'),
+        label: t(isMobile ? 'explorer.renameAct' : 'unifiedWriting.assignAct'),
         onClick: () =>
           setPending({ kind: 'setAct', chapterGuid: chapter.guid, current: chapter.act })
       },

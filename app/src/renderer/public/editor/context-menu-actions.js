@@ -46,6 +46,20 @@ function setContextMenuLabels(labelsJson) {
                 button.textContent = label;
             }
         }
+        const labels = window.NovalistEditorState.contextMenuLabels;
+        const picker = document.getElementById('ft-style');
+        picker.setAttribute('aria-label', labels.paragraphStyle || 'Paragraph style');
+        document.getElementById('floating-toolbar').setAttribute('aria-label', labels.quickEdit || 'Quick edit');
+        for (const option of picker.options) {
+            const label = labels['style_' + (option.value || 'body')];
+            if (label) option.textContent = label;
+        }
+        const structure = document.getElementById('ft-structure');
+        structure.setAttribute('aria-label', labels.insertStructure || 'Insert structure');
+        for (const option of structure.options) {
+            const label = labels[option.value || 'insertStructure'];
+            if (label) option.textContent = label;
+        }
     } catch (error) { console.warn("editor: setContextMenuLabels failed", error instanceof Error ? error.name : typeof error); }
 }
 
@@ -90,7 +104,24 @@ function submenu(title, rows, hasSelection) {
  * them. Named, they are also commands: the palette can offer them and a writer
  * can bind a gesture to any of them.
  */
+function applyQuickEditContextAction(action) {
+    if (action === 'quickEdit') {
+        if (restoreContextMenuSelection()) window.openQuickEdit();
+        return true;
+    }
+    if (action && action.startsWith('paragraphStyle:')) {
+        if (restoreContextMenuSelection()) window.setParagraphStyle(action.slice('paragraphStyle:'.length));
+        return true;
+    }
+    if (action && action.startsWith('writing:')) {
+        if (restoreContextMenuSelection()) window.requestWritingStructure(action.slice('writing:'.length));
+        return true;
+    }
+    return false;
+}
+
 function applyContextAction(action) {
+    if (applyQuickEditContextAction(action)) return;
     switch (action) {
         case 'cut':
             document.execCommand('cut');
@@ -128,6 +159,10 @@ function applyContextAction(action) {
             // Acts on the caret captured when the menu opened, since opening it
             // moved focus out of the editor.
             restoreContextMenuSelection();
+            if (window.NovalistWritingDocument?.enabled) {
+                window.requestWritingStructure('sceneBreak');
+                break;
+            }
             const halves = window.splitAtCaret();
             if (!halves) break;
             const parsed = JSON.parse(halves);

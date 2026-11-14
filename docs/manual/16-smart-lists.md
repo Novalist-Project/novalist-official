@@ -72,7 +72,7 @@ Both match on entity id rather than name, so renaming a character does not quiet
 
 ## Narrowing the Manuscript view to a list
 
-The Manuscript view's toolbar has a **saved-list** drop-down beside the mode buttons. Pick a list and every mode narrows to its scenes: the continuous prose, the corkboard, the outliner and the board. Pick **The whole book** to clear it.
+On desktop, **Plan → Structure** has a **saved-list** drop-down beside the mode buttons. Pick a list and the writing and planning views narrow to its scenes. Pick **The whole book** to clear it. Write labels a limited run and offers **Show whole manuscript** to clear both the selected run and ordinary filters. A list with no matches stays empty. Mobile retains the saved-list control in Manuscript.
 
 A saved list that only the binder could apply is a question you can ask in one place and nowhere else, which is most of the reason to save it.
 

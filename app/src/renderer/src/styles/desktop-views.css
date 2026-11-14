@@ -536,7 +536,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--nl-space-md);
-  text-align: left;
+  text-align: start;
   padding: var(--nl-space-md);
   margin: 0;
   border: var(--nl-rule-width) solid var(--nl-border);
@@ -875,7 +875,7 @@
   padding: var(--nl-space-lg);
   height: auto;
   writing-mode: horizontal-tb;
-  text-align: left;
+  text-align: start;
   vertical-align: top;
   border: var(--nl-rule-width) solid var(--nl-border);
 }
@@ -897,7 +897,7 @@
   border: var(--nl-rule-width) solid var(--nl-border);
   color: var(--nl-text-dim);
   font-size: var(--nl-font-ui);
-  text-align: left;
+  text-align: start;
 }
 :root[data-shell='desktop'] .plotgrid-scenes-as-rows .plotgrid-cell.assigned {
   border-left: var(--nl-space-tighter) solid var(--nl-accent);
@@ -1271,7 +1271,7 @@
   color: var(--nl-text-dim);
 }
 .relationships-detail-link button {
-  text-align: left;
+  text-align: start;
   color: var(--nl-accent);
 }
 :root[data-shell='desktop'] .calendar-month-wrap {

@@ -125,7 +125,7 @@
   color: var(--nl-text-dim);
   border-radius: var(--nl-radius-md);
   font-size: var(--nl-font-ui);
-  text-align: left;
+  text-align: start;
 }
 
 .toolbar-more-action:hover:not(:disabled) {
@@ -461,7 +461,7 @@
   align-items: center;
   gap: var(--nl-space-sm);
   width: 100%;
-  text-align: left;
+  text-align: start;
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--nl-radius-sm);
@@ -555,7 +555,7 @@
   border: 1px solid var(--nl-border);
   border-radius: var(--nl-radius-sm);
   font-family: var(--nl-font-mono);
-  text-align: left;
+  text-align: start;
   word-break: break-word;
 }
 
@@ -820,7 +820,7 @@
   width: 100%;
   padding: var(--nl-space-tightest) var(--nl-space-sm);
   border-radius: var(--nl-radius-sm);
-  text-align: left;
+  text-align: start;
 }
 
 .ctx-card:hover {
@@ -889,7 +889,7 @@
   border-radius: var(--nl-radius-sm);
   background: transparent;
   color: var(--nl-text);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 
@@ -1152,7 +1152,7 @@
   /* The row is a button, and a button centres its text. That was invisible
      while the title span was only as wide as its text; once it stretches to
      fill the row, every title drifts to the middle. */
-  text-align: left;
+  text-align: start;
   width: 100%;
   padding: var(--nl-space-tighter) var(--nl-space-sm) var(--nl-space-tighter)
     calc(var(--nl-space-xl) + var(--nl-space-sm));
@@ -1227,7 +1227,7 @@
 .binder-scene-title {
   flex: 1;
   /* Same reason, for the lists that reuse this class inside their own buttons. */
-  text-align: left;
+  text-align: start;
   /* Without this the title refuses to shrink below its text width and pushes
      the word count off the end instead of ellipsing. */
   min-width: 0;
@@ -1438,7 +1438,7 @@
   background: none;
   color: inherit;
   font: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 
@@ -1655,7 +1655,7 @@
   color: var(--nl-text-subtle);
   font-size: var(--nl-font-caption);
   direction: rtl;
-  text-align: left;
+  text-align: start;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1679,7 +1679,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  text-align: left;
+  text-align: start;
   gap: var(--nl-space-tightest);
   padding: 0;
   border-radius: var(--nl-radius-lg);
@@ -1910,7 +1910,7 @@
   width: 100%;
   padding: var(--nl-space-sm);
   border-radius: var(--nl-radius-md);
-  text-align: left;
+  text-align: start;
 }
 
 .codex-row:hover {
@@ -2035,7 +2035,7 @@
   border-radius: var(--nl-radius-sm);
   color: var(--nl-text);
   font-size: var(--nl-font-body);
-  text-align: left;
+  text-align: start;
 }
 
 .context-menu-item:hover {
@@ -2525,7 +2525,7 @@
 }
 
 .outliner-words {
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
   color: var(--nl-text-subtle);
 }
@@ -2635,7 +2635,7 @@
   position: sticky;
   left: 0;
   background: var(--nl-surface-input);
-  text-align: left;
+  text-align: start;
   font-size: var(--nl-font-body);
   font-weight: var(--nl-weight-title);
   padding: var(--nl-space-sm) var(--nl-space-lg) var(--nl-space-sm) var(--nl-space-sm);
@@ -3016,7 +3016,7 @@
 .calendar-event {
   display: block;
   width: 100%;
-  text-align: left;
+  text-align: start;
   background: var(--nl-surface-selected);
   border-left: 3px solid var(--nl-accent);
   border-radius: var(--nl-radius-sm);
@@ -3077,7 +3077,7 @@
 }
 
 .calendar-year-month {
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 
@@ -3433,7 +3433,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   direction: rtl;
-  text-align: left;
+  text-align: start;
 }
 
 .git-message {
@@ -3473,7 +3473,7 @@
   gap: var(--nl-space-tightest);
   padding: var(--nl-space-sm);
   border-radius: var(--nl-radius-sm);
-  text-align: left;
+  text-align: start;
 }
 
 .findreplace-result:hover:not(:disabled) {
@@ -3563,7 +3563,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--nl-space-tightest);
-  text-align: left;
+  text-align: start;
 }
 
 .quickopen-main {
@@ -3777,7 +3777,7 @@
   flex-direction: column;
   gap: var(--nl-space-tightest);
   min-width: 0;
-  text-align: left;
+  text-align: start;
 }
 
 .overrides-scope-label {
@@ -3839,7 +3839,7 @@
 
 .binder-archived-toggle {
   width: 100%;
-  text-align: left;
+  text-align: start;
 }
 
 .binder-archived-toggle:hover {
@@ -4087,7 +4087,7 @@
 }
 
 .outliner-target {
-  text-align: right;
+  text-align: end;
 }
 
 /* The target bar sits behind the count rather than beside it, so a row with a
@@ -4188,7 +4188,7 @@
   font-size: var(--nl-font-caption);
   justify-content: space-between;
   padding: var(--nl-space-tightest) var(--nl-space-tighter);
-  text-align: left;
+  text-align: start;
 }
 
 .scene-cast-match:hover {
@@ -4262,7 +4262,7 @@
   color: var(--nl-text-dim);
   font-size: var(--nl-font-ui);
   overflow: hidden;
-  text-align: left;
+  text-align: start;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -4307,7 +4307,7 @@
   color: var(--nl-text-dim);
   font-size: var(--nl-font-caption);
   overflow: hidden;
-  text-align: left;
+  text-align: start;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -4537,7 +4537,7 @@
   padding: var(--nl-space-tightest) var(--nl-space-sm);
   font-size: var(--nl-font-caption);
   color: var(--nl-text-dim);
-  text-align: left;
+  text-align: start;
 }
 
 .binder-pin-icon {
@@ -4928,7 +4928,7 @@
   background: none;
   color: var(--nl-text);
   font-size: var(--nl-font-ui);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 

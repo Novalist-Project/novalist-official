@@ -32,4 +32,8 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="../Novalist.Sync.Client.Tests/TestSupport.cs" Link="TestHelpers/TestSupport.cs" />
+    <Using Include="Novalist.Tests.Support" />
+  </ItemGroup>
 </Project>

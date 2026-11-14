@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { launchApp, seedBook, dismissTour } from './harness'
+import { launchApp, seedBook, dismissTour, enterWriting } from './harness'
 
 /**
  * Teaching the checker a word from the prose.
@@ -15,8 +15,12 @@ test('a word taught from the prose lands in the writer own dictionary', async ()
   test.setTimeout(180_000)
   const h = await launchApp('nl-dict-')
   try {
-    await dismissTour(h.page)
     await seedBook(h, { 'Chapter One': ['Scene One'] })
+    // The tour opens once the project does; it covers the editor until closed.
+    await dismissTour(h.page)
+    // Closing the tour hands back the workspace it borrowed, which can be the
+    // Dashboard; the binder belongs to Write.
+    await enterWriting(h.page)
 
     await h.page.locator('.binder-scene-row').first().click()
     const editor = h.page.frameLocator('.editor-frame').locator('#editor')

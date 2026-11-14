@@ -9,6 +9,7 @@ import { SceneNotesWindow } from './shell/SceneNotesWindow'
 import { installModalFocus } from './shell/modalFocus'
 import { InlineActionDialog } from './views/editor/InlineActionDialog'
 import { DetachedPane, type DetachedRequest } from './shell/DetachedPane'
+import { readDetachedPaneQuery } from '../../shared/detachedPane'
 import { useShellStore, type MainView } from "./stores/shellStore";
 import { useProjectStore } from './stores/projectStore'
 import { useCodexStore } from './stores/codexStore'
@@ -19,7 +20,10 @@ import { useOnboardingStore } from './stores/onboardingStore'
 import { useNarrationStore } from './stores/narrationStore'
 import { useManuscriptStore } from './stores/manuscriptStore'
 import { rpc } from './rpc/client'
+import { installWritingSearchCapture } from './views/editor/writingSearchCapture'
+import { installWritingSearchLease } from './views/editor/writingSearchLease'
 import { postThemeToFrame, themeTokens, watchTheme } from './shell/extensionTheme'
+import './styles/rtl.css'
 
 // Store/RPC access for end-to-end tests (Playwright drives the real app through these).
 window.novalistStores = {
@@ -34,6 +38,8 @@ window.novalistStores = {
   manuscript: useManuscriptStore
 }
 window.novalistRpc = rpc
+installWritingSearchLease()
+installWritingSearchCapture()
 // The theme bridge for extension frames. Exposed for the same reason as the
 // stores - an end-to-end test drives the real app - and because a renderer
 // plugin that builds a frame of its own needs to theme it the same way the
@@ -66,10 +72,8 @@ const params = new URLSearchParams(window.location.search)
 const detachedView = params.get('pane')
 const detached: DetachedRequest | null = detachedView
   ? {
-      view: detachedView as MainView,
-      projectPath: params.get('project'),
-      chapterGuid: params.get('chapter'),
-      sceneId: params.get('scene')
+      ...readDetachedPaneQuery(params),
+      view: detachedView as MainView
     }
   : null
 

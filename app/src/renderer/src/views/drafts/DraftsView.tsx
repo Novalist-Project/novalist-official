@@ -429,7 +429,7 @@ function DraftTransfer({ t, fromId, setFromId, setChapterPicks, setScenePicks, d
             ))}
           </select>
         </label>
-        <ArrowRight size={14} strokeWidth={2} className="drafts-arrow" />
+        <ArrowRight size={14} strokeWidth={2} className="icon-directional drafts-arrow" />
         <label className="drafts-side">
           {t('drafts.sendTo')}
           <select

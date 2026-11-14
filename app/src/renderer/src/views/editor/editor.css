@@ -128,7 +128,7 @@
 .editor-tab-menu button {
   display: block;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: var(--nl-space-sm) var(--nl-space-md);
   border-radius: var(--nl-radius-sm);
   font-size: var(--nl-font-ui);

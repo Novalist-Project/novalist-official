@@ -1,4 +1,21 @@
 {
+  "unifiedWriting": {
+    "write": "Schreiben",
+    "sceneCount_one": "{{count}} Szene",
+    "sceneCount_other": "{{count}} Szenen",
+    "chapterNumber": "Kapitel {{number}}",
+    "sceneNumber": "Szene {{number}}",
+    "synopsis": "Zusammenfassung",
+    "focusScene": "Szene fokussieren",
+    "metadataSaveFailed": "Die Änderung konnte nicht gespeichert werden. Dein Entwurf bleibt hier erhalten; versuche es erneut.",
+    "finishMetadataEdit": "Speichere oder verwirf diese Namensänderung, bevor du fortfährst.",
+    "chapterActMoveHint": "Ein Aktwechsel verschiebt dieses Kapitel in die gewählte Gruppe. Akte verwaltest du unter Planen → Struktur.",
+    "assignAct": "Akt zuweisen",
+    "limitedRun": "Eingeschränkte Szenenauswahl",
+    "scope": "Umfang", "scene": "Szene", "chapter": "Kapitel", "manuscript": "Manuskript",
+    "words": "{{count}} Wörter", "showWhole": "Gesamtes Manuskript anzeigen",
+    "empty": "In diesem Schreibbereich sind keine Szenen vorhanden.", "insertChapter": "Kapitel einfügen"
+  },
   "collaboration": {
     "open": "Zusammenarbeiten",
     "sharing": "Geteilt",
@@ -551,6 +568,8 @@
     "recovered": "Wiederhergestellt"
   },
   "findReplace": {
+    "scopeProjection": "Aktuelle Schreibansicht", "previous": "Zurück", "next": "Weiter", "replaceCurrent": "Aktuellen Treffer ersetzen",
+    "replaceNotes": "Notizen und Zusammenfassungen ersetzen", "retryReplacement": "Ersetzen erneut versuchen",
     "failed": "Suchen oder Ersetzen fehlgeschlagen: {{message}}",
     "title": "Suchen und Ersetzen",
     "find": "Suchen",
@@ -2768,6 +2787,7 @@
     "backendConnecting": "Verbinde mit Kern...",
     "viewPending": "Diese Ansicht folgt in einem späteren Meilenstein der neuen Oberfläche.",
     "view": {
+      "structure": "Struktur",
       "write": "Editor",
       "manuscript": "Manuskript",
       "dashboard": "Dashboard",
@@ -3228,6 +3248,7 @@
     "rescanned": "Neu eingelesen. Neue Themes, Sprachen und Lexika stehen jetzt zur Verfügung."
   },
   "conflict": {
+    "pendingResolution": "Das Speichern konnte nicht bestätigt werden. Versuche erneut, die unten angezeigte Version zu speichern.",
     "title": "Diese Szene wurde anderswo geändert",
     "explain": "Ihre Fassung und die auf der Festplatte haben sich beide geändert, an {{count}} Stellen. Es wurde noch nichts gespeichert. Wählen Sie pro Zeile die gewünschte Fassung — Novalist führt Ihren Text nicht selbst zusammen, denn ein aus zwei Fassungen zusammengesetzter Satz liest sich wie keiner von beiden.",
     "mine": "Was Sie geschrieben haben",
@@ -3237,6 +3258,37 @@
     "snapshotNote": "Von beiden Fassungen wird vor dem Speichern ein Schnappschuss angelegt, Sie können also zu jeder zurück.",
     "decideLater": "Später entscheiden",
     "save": "Diese Fassung speichern"
+  },
+  "writing": {
+    "conflict": "Diese Szene wurde andernorts geändert. Prüfe die neuere Version vor dem Speichern.",
+    "saveFailed": "Dein Text konnte nicht gespeichert werden. Deine Änderungen bleiben geöffnet; bitte versuche es erneut.",
+    "commitFailed": "Die Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut.",
+    "workspaceChanged": "Der Arbeitsbereich hat sich geändert. Bitte versuche es im aktuellen Buch erneut.",
+    "workspaceUnavailable": "Öffne zuerst ein Buch, um das Manuskript zu bearbeiten.",
+    "documentUnavailable": "Diese Szene ist im aktuellen Buch nicht mehr verfügbar.",
+    "sceneUnavailable": "Wähle zuerst eine Szene im Editor.",
+    "historyBlocked": "Diese Änderung kann gerade nicht rückgängig gemacht werden.",
+    "historyClosed": "Diese Schreibsitzung wurde beendet.",
+    "historyEmpty": "Es gibt keine weiteren Änderungen zum Rückgängigmachen oder Wiederholen.",
+    "historyConflict": "Der betroffene Inhalt wurde andernorts geändert. Prüfe ihn vor dem Rückgängigmachen oder Wiederholen.",
+    "structureWorkspaceChanged": "Das Buch hat sich während dieser Aktion geändert. Bitte versuche es erneut.",
+    "structureConflict": "Die Manuskriptstruktur wurde geändert. Prüfe die aktuelle Reihenfolge vor einem erneuten Versuch.",
+    "structureRetry": "Schließe zuerst die ausstehende Strukturänderung durch einen erneuten Versuch ab.",
+    "structureCaret": "Setze den Cursor an eine einzelne Stelle, um eine Szene oder ein Kapitel zu beginnen.",
+    "structureFailed": "Die Strukturänderung konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
+    "annotationConflict": "Dieser Kommentar oder diese Fußnote wurde andernorts geändert. Prüfe den Inhalt vor dem Speichern.",
+    "annotationSaveFailed": "Kommentare oder Fußnoten konnten nicht gespeichert werden. Deine Änderungen bleiben geöffnet.",
+    "annotationsUnavailable": "Kommentare und Fußnoten sind noch nicht verfügbar. Bitte versuche es erneut.",
+    "annotationSceneUnavailable": "Die Szene für diesen Kommentar oder diese Fußnote ist nicht mehr verfügbar.",
+    "sharedAnnotationsFailed": "Geteilte Kommentare oder Fußnoten konnten nicht gespeichert werden. Bitte versuche es erneut.",
+    "sharedUnavailable": "Das geteilte Buch ist nicht verbunden. Stelle die Verbindung vor einem erneuten Versuch wieder her.",
+    "sceneName": "Szene {{number}}",
+    "quickEdit": "Schnellbearbeitung",
+    "mixedStyles": "Gemischte Stile",
+    "insertStructure": "Struktur einfügen",
+    "sceneBreak": "Szenenumbruch",
+    "chapterHeading": "Kapitelüberschrift",
+    "insertChapter": "Neues Kapitel"
   },
   "blockStyle": {
     "label": "Absatzformat",
@@ -3350,6 +3402,14 @@
     "mergeWithNext": "Mit nächster zusammenführen: {{title}}"
   },
   "structure": {
+    "introduction": "Ordne Akte, Kapitel und Szenen in Lesereihenfolge an. Bearbeite hier Zusammenfassungen und öffne eine Szene, um weiterzuschreiben.",
+    "selectChapter": "{{title}} auswählen", "move": "Verschieben", "newScene": "Neue Szene",
+    "chapterSummary": "Kapitelzusammenfassung", "addChapterSummary": "Kapitelzusammenfassung hinzufügen", "inactive": "Inaktiv", "addSynopsis": "Zusammenfassung hinzufügen",
+    "destination": "Ziel", "chooseDestination": "Ziel auswählen", "position": "Position", "inside": "Darin", "before": "Davor", "after": "Danach",
+    "unassigned": "Kapitel ohne Akt", "newAct": "Neuer Akt", "chapters": "{{count}} Kapitel", "renameAct": "Akt umbenennen", "removeAct": "Akt entfernen",
+    "removeActMessage": "Diesen Akt entfernen? Seine Kapitel bleiben an ihrer Position und werden keinem Akt zugeordnet.",
+    "repairExplanation": "Dieses Buch enthält ältere Aktzuordnungen, die keine geordneten Gruppen bilden. Prüfe die vorgeschlagene Gruppierung, bevor du die Kapitelreihenfolge änderst.",
+    "reviewGrouping": "Aktgruppierung prüfen", "currentOrder": "Aktuelle Reihenfolge", "proposedOrder": "Vorgeschlagene Reihenfolge", "applyGrouping": "Gruppierung anwenden",
     "title": "Struktur",
     "none": "Keine Struktur",
     "pickOne": "Wählen Sie eine Erzählstruktur, und jeder ihrer Beats erscheint hier, bereit, auf die Szene zu zeigen, die ihn erfüllt.",
@@ -3890,6 +3950,8 @@
     "manuscriptTitle": "Das Manuskript",
     "manuscriptBody": "Das Buch selbst, auf vier Arten: als fortlaufender Text, als Karteikarten, als beschreibbare Gliederung und als Board, auf dem Sie Szenen verschieben.",
     "manuscriptTask": "Wechseln Sie zu Karten oder Gliederung und finden Sie dieselbe Szene in einer anderen Ansicht.",
+    "desktopManuscriptBody": "Schreiben Sie das aktive Buch als fortlaufenden Text oder konzentrieren Sie sich auf ein Kapitel oder eine Szene. Ordnen Sie Kapitel und Szenen unter Planen → Struktur an.",
+    "desktopManuscriptTask": "Öffnen Sie eine Szene im Binder und probieren Sie die Umfänge Szene, Kapitel und Manuskript aus. Ein leeres Buch beginnt mit Kapitel einfügen.",
     "editorTitle": "Die Schreibansicht",
     "editorBody": "Jede Szene öffnet sich in einem konzentrierten Editor. Nach einer kurzen Pause speichert Novalist automatisch.",
     "editorTask": "Öffnen Sie eine Szene aus dem Binder und schreiben Sie einen Satz.",

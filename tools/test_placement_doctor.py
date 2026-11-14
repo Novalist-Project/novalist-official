@@ -18,6 +18,53 @@ SPEC.loader.exec_module(placement_doctor)
 
 
 class PlacementDoctorTests(unittest.TestCase):
+    def test_transient_access_preserves_one_required_home(self):
+        command = placement_doctor.Command(
+            'paragraph.style.body', 'paragraph', 'viewBar',
+            transient_homes={'selectionToolbar', 'contextMenu'},
+        )
+        command.containers = {'viewBar', 'selectionToolbar', 'contextMenu'}
+        self.assertEqual(placement_doctor.placement_problems(command), [])
+        command.containers.remove('viewBar')
+        self.assertTrue(placement_doctor.placement_problems(command))
+
+    def test_transient_access_cannot_authorize_second_persistent_home(self):
+        command = placement_doctor.Command(
+            'paragraph.style.body', 'paragraph', 'viewBar',
+            transient_homes={'projectBar'},
+        )
+        command.containers = {'viewBar', 'projectBar'}
+        self.assertTrue(placement_doctor.placement_problems(command))
+        command.transient_homes = set()
+        command.containers = {'viewBar', 'selectionToolbar'}
+        self.assertTrue(placement_doctor.placement_problems(command))
+
+    def test_parses_only_explicit_transient_declarations(self):
+        source = """
+const NAV_VIEWS = []
+const PARAGRAPH_STYLES = ['', 'heading']
+const PARAGRAPH_STYLE_COMMANDS = PARAGRAPH_STYLES.map(style => ({
+  id: `paragraph.style.${style}`,
+  scope: 'paragraph',
+  transientHomes: ['selectionToolbar', 'contextMenu'],
+}))
+const COMMANDS = [{
+  id: 'editor.quickEdit',
+  scope: 'caret',
+  transientHomes: ['selectionToolbar'],
+}, {
+  id: 'text.bold',
+  scope: 'selection',
+}]
+"""
+        commands = placement_doctor.parse_registry([source], {
+            'paragraph': 'viewBar', 'caret': 'contextMenu',
+            'selection': 'selectionToolbar', 'application': 'menuBar',
+        })
+        self.assertEqual(commands[0].transient_homes, {'selectionToolbar'})
+        self.assertEqual(commands[1].transient_homes, set())
+        self.assertEqual(commands[2].transient_homes, {'selectionToolbar', 'contextMenu'})
+
     def test_generated_family_does_not_change_previous_module_scope(self):
         with tempfile.TemporaryDirectory() as folder:
             registry = Path(folder) / "commands.ts"

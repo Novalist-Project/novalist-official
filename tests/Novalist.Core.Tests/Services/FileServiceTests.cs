@@ -353,7 +353,7 @@ public class FileServiceTests
         else
         {
             // A permanent lock must release the save queue with an error.
-            await Assert.ThrowsAsync<IOException>(() => read.WaitAsync(TimeSpan.FromSeconds(5)));
+            await Assert.ThrowsAsync<IOException>(() => read.WaitAsync(TestWait.Deadline));
         }
     }
 }

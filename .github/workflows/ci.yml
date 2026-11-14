@@ -6,38 +6,47 @@ on:
   pull_request:
     branches: [main, dev]
 
+# A new push to a pull request cancels that pull request's superseded run.
+# A push to main or dev gets a group of its own per commit, so it is never
+# cancelled and never replaced while queued: tools/wait_for_release_ci.py needs
+# the run on the release commit to finish.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('push-{0}', github.sha) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 env:
   DOTNET_VERSION: 10.0.x
   DOTNET_NOLOGO: "true"
   DOTNET_CLI_TELEMETRY_OPTOUT: "true"
 
 jobs:
-  test:
-    name: Tests & 100% coverage
-    # Matches the dev environment where the headless Avalonia suite is known green.
+  # Each project's coverage is checked against ITS OWN assembly;
+  # Check-Coverage.ps1 filters the cobertura report by package name.
+  test-sdk-core:
+    name: Tests Sdk and Core
+    # Matches the dev environment where the headless suites are known green.
     runs-on: windows-latest
-    permissions:
-      contents: write   # push the coverage badge JSON to the `badges` branch
-
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET and NuGet cache
+        uses: ./.github/actions/dotnet-setup
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
-        run: dotnet restore novalist-official.sln
-
       - name: Build
-        run: dotnet build novalist-official.sln -c Debug --no-restore
+        shell: bash
+        run: |
+          dotnet build tests/Novalist.Sdk.Tests/Novalist.Sdk.Tests.csproj -c Debug
+          dotnet build tests/Novalist.Core.Tests/Novalist.Core.Tests.csproj -c Debug
 
-      # Each project's coverage is checked against ITS OWN assembly;
-      # Check-Coverage.ps1 filters the cobertura report by package name.
       - name: Test Novalist.Sdk
         run: >-
           dotnet test tests/Novalist.Sdk.Tests/Novalist.Sdk.Tests.csproj
@@ -52,6 +61,38 @@ jobs:
           --settings tests/coverlet.runsettings
           --results-directory artifacts/coverage/core
 
+      - name: Upload Sdk coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-results-sdk
+          path: artifacts/coverage/sdk
+          retention-days: 1
+
+      - name: Upload Core coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-results-core
+          path: artifacts/coverage/core
+          retention-days: 1
+
+  test-backend:
+    name: Tests Backend
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup .NET and NuGet cache
+        uses: ./.github/actions/dotnet-setup
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build
+        run: dotnet build tests/Novalist.Backend.Tests/Novalist.Backend.Tests.csproj -c Debug
+
       - name: Test Novalist.Backend
         run: >-
           dotnet test tests/Novalist.Backend.Tests/Novalist.Backend.Tests.csproj
@@ -59,8 +100,106 @@ jobs:
           --settings tests/coverlet.runsettings
           --results-directory artifacts/coverage/backend
 
+      - name: Upload Backend coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-results-backend
+          path: artifacts/coverage/backend
+          retention-days: 1
+
+  test-sync-tooling:
+    name: Tests Sync.Client and repository tooling
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup .NET and NuGet cache
+        uses: ./.github/actions/dotnet-setup
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build
+        run: dotnet build tests/Novalist.Sync.Client.Tests/Novalist.Sync.Client.Tests.csproj -c Debug
+
       - name: Test Novalist.Sync.Client
         run: dotnet test tests/Novalist.Sync.Client.Tests/Novalist.Sync.Client.Tests.csproj -c Debug --no-build
+
+      - name: Test repository tooling
+        run: python -m unittest discover -s tools -p "test_*.py"
+
+  # Native maximize/fullscreen state needs a desktop window manager. Run
+  # this contract on the Windows desktop already used by the backend suite.
+  e2e-native-window:
+    name: Native window E2E
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up the app
+        uses: ./.github/actions/e2e-setup
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          install-browsers: 'false'
+
+      - name: Native window E2E
+        working-directory: app
+        env:
+          NOVALIST_E2E_ALLOW_DESKTOP: '1'
+        run: npx playwright test e2e/focus-interactions.spec.ts --grep "focus restores window chrome"
+
+      - name: Flaky tests
+        if: always()
+        working-directory: app
+        run: node scripts/flaky-report.mjs --shard native-window
+
+      - name: Upload native window traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-native-window-traces
+          path: |
+            app/test-results/
+            app/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Measures the three assemblies from the test jobs' cobertura results, publishes
+  # the badge number, then enforces the threshold. It runs only when both test
+  # jobs passed, as the single-job pipeline did.
+  coverage:
+    name: 100% coverage
+    needs: [test-sdk-core, test-backend]
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write   # push the coverage badge JSON to the `badges` branch
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Sdk coverage results
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-results-sdk
+          path: artifacts/coverage/sdk
+
+      - name: Download Core coverage results
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-results-core
+          path: artifacts/coverage/core
+
+      - name: Download Backend coverage results
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-results-backend
+          path: artifacts/coverage/backend
 
       # Measure only (never fails) so the badge can be published with the real number
       # — including when coverage has dropped below the threshold — before we fail the build.
@@ -82,9 +221,6 @@ jobs:
           }
           $overall = ($rates | Measure-Object -Minimum).Minimum   # lowest assembly rate
           "coverage=$overall" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Test repository tooling
-        run: python -m unittest discover -s tools -p "test_*.py"
 
       # Publish the measured number BEFORE enforcing, so a drop below 100% still
       # updates the badge (the build then fails on the next step).
@@ -111,58 +247,28 @@ jobs:
           path: artifacts/coverage/**/coverage.cobertura.xml
           if-no-files-found: warn
 
-      # Native maximize/fullscreen state needs a desktop window manager. Run
-      # this contract on the Windows desktop already used by the backend suite.
-      - name: Setup Node for native window E2E
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install app dependencies for native window E2E
-        working-directory: app
-        run: npm ci
-
-      - name: Build renderer for native window E2E
-        working-directory: app
-        run: npm run build
-
-      - name: Native window E2E
-        working-directory: app
-        env:
-          NOVALIST_E2E_ALLOW_DESKTOP: '1'
-        run: npx playwright test e2e/focus-interactions.spec.ts --grep "focus restores window chrome"
-
-      - name: Upload failed native window traces
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-native-window-failures
-          path: app/test-results/
-          if-no-files-found: ignore
-          retention-days: 7
-
-  web:
-    name: Electron app (typecheck, build, e2e)
+  checks:
+    name: Electron app checks (typecheck, build, tooling)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
 
-      - name: Build backend
-        run: dotnet build Novalist.Backend/Novalist.Backend.csproj -c Debug
-
-      - name: Build E2E test extension
-        run: dotnet build tests/Novalist.TestExtension/Novalist.TestExtension.csproj -c Debug
+      - name: Cache Electron download
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: electron-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
 
       - name: Install app dependencies
         working-directory: app
@@ -182,10 +288,6 @@ jobs:
           tools/test_changelog.py tools/test_wait_for_release_ci.py tools/test_release_metadata.py
           tools/test_discord_release.py tools/test_apple_release_uploads.py
 
-      - name: Install Playwright Chromium
-        working-directory: app
-        run: npx playwright install --with-deps --only-shell chromium
-
       - name: Typecheck
         working-directory: app
         run: npm run typecheck
@@ -202,45 +304,105 @@ jobs:
         working-directory: app
         run: npm run build:mobile
 
-      - name: Install isolated desktop credential service
-        run: sudo apt-get update && sudo apt-get install -y dbus-x11 gnome-keyring libsecret-tools libglib2.0-bin
-
-      - name: E2E (Playwright against the real app)
-        working-directory: app
-        env:
-          NOVALIST_E2E_ALLOW_DESKTOP: '1'
-        run: |
-          credential_session=$(mktemp -d)
-          trap 'rm -rf "$credential_session"' EXIT
-          # Keep Playwright pointed at the browsers installed before cache isolation.
-          export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright}"
-          export XDG_CONFIG_HOME="$credential_session/config"
-          export XDG_DATA_HOME="$credential_session/data"
-          export XDG_CACHE_HOME="$credential_session/cache"
-          export XDG_RUNTIME_DIR="$credential_session/runtime"
-          export GNOME_KEYRING_CONTROL="$XDG_RUNTIME_DIR/keyring"
-          export XDG_CURRENT_DESKTOP=GNOME
-          mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$GNOME_KEYRING_CONTROL"
-          chmod 700 "$XDG_RUNTIME_DIR" "$GNOME_KEYRING_CONTROL"
-          xvfb-run --auto-servernum dbus-run-session -- bash -euo pipefail <<'SESSION'
-            # A fresh random password protects only this disposable CI keyring.
-            openssl rand -hex 32 | gnome-keyring-daemon --foreground --unlock --components=secrets --control-directory "$GNOME_KEYRING_CONTROL" &
-            keyring_pid=$!
-            trap 'kill "$keyring_pid" 2>/dev/null || true; wait "$keyring_pid" 2>/dev/null || true' EXIT
-            gdbus wait --session --timeout 20 org.freedesktop.secrets
-            # Check the actual Playwright launch path: its Electron preload can
-            # override password storage even when standalone Electron is secure.
-            npx playwright test e2e/linux-credential-store.spec.ts
-            npx playwright test e2e/collaboration-account.spec.ts e2e/collaboration-peer.spec.ts e2e/m38-context-menu-groups.spec.ts
-            DEBUG=pw:browser npx playwright test e2e/workspace-windows-regression.spec.ts e2e/m68-dictionary-word.spec.ts e2e/collaboration-board.spec.ts --grep "backend restart restores|a word taught|three windows retain|Board POV" --repeat-each=20
-            npx playwright test
-          SESSION
-
-      - name: Upload failed E2E traces
-        if: failure()
-        uses: actions/upload-artifact@v4
+  # The credential-store and launch-path specs below are also part of the sharded
+  # suite. They run here once, in parallel with the shards, so a broken isolated
+  # keyring or launcher shows up as one clearly named failing job instead of as
+  # the same failure in all four shards.
+  e2e-smoke:
+    name: E2E launch and credential-store smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          name: playwright-failures
-          path: app/test-results/
-          if-no-files-found: ignore
-          retention-days: 7
+          fetch-depth: 0
+
+      - name: Set up the app
+        uses: ./.github/actions/e2e-setup
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Run smoke specs
+        uses: ./.github/actions/e2e-run
+        with:
+          playwright-args: e2e/linux-credential-store.spec.ts e2e/collaboration-account.spec.ts e2e/collaboration-peer.spec.ts e2e/m38-context-menu-groups.spec.ts
+          label: smoke
+          artifact-name: playwright-traces-smoke
+
+  e2e:
+    name: E2E shard ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up the app
+        uses: ./.github/actions/e2e-setup
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Shards are balanced by measured time (app/e2e/shard-timings.json), not
+      # by test count; see docs/ci.md. The writing-browser project has its own job.
+      - name: Plan shard
+        id: plan
+        working-directory: app
+        run: |
+          files=$(node scripts/e2e-shard.mjs --shard ${{ matrix.shard }}/4)
+          # An empty list would make Playwright run the whole project.
+          test -n "$files"
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+
+      - name: Run shard
+        uses: ./.github/actions/e2e-run
+        with:
+          playwright-args: --project=app ${{ steps.plan.outputs.files }}
+          label: ${{ matrix.shard }}/4
+          artifact-name: playwright-traces-shard-${{ matrix.shard }}
+
+  # Headless Chromium against fixtures the specs bundle from source: no backend,
+  # no renderer build. It still runs inside the session script, which sets the
+  # desktop permission the Playwright global setup requires.
+  e2e-browser:
+    name: E2E writing-browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up the app
+        uses: ./.github/actions/e2e-setup
+        with:
+          build-app: 'false'
+
+      - name: Run writing-browser specs
+        uses: ./.github/actions/e2e-run
+        with:
+          playwright-args: --project=writing-browser
+          label: browser
+          artifact-name: playwright-traces-browser
+
+  # One stable check to require: it fails unless every job above succeeded.
+  ci-gate:
+    name: CI gate
+    if: always()
+    needs: [test-sdk-core, test-backend, test-sync-tooling, e2e-native-window, coverage, checks, e2e-smoke, e2e-browser, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every job to have succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success")' > /dev/null

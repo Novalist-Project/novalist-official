@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Novalist.Sdk.Models.Wizards;
 using Novalist.Sdk.Services;
+using Novalist.Core.Models;
 
 namespace Novalist.Backend.Extensions;
 
@@ -55,6 +56,9 @@ public sealed class UiBridge
     /// shape and has no other way to learn it moved.
     /// </summary>
     public void ProjectStructureChanged() => Send("project/structureChanged", null);
+
+    public void SceneAnnotationsChanged(string workspaceId, long workspaceEpoch, SceneRef reference)
+        => Send("writing/annotationsChanged", new { workspaceId, workspaceEpoch, reference });
 
     /// <summary>New imported records let open library views merge them into their lists.</summary>
     public void ImportChanged(string? target = null, string? id = null)

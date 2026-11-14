@@ -7,6 +7,7 @@ type Surface = 'scene' | 'manuscript'
 type ManuscriptWindow = Window & {
   setManuscript(json: string): void
   updateSceneContent(id: string, html: string): void
+  getSceneContent(root: HTMLElement): string
 }
 
 async function load(page: Page, surface: Surface, html: string): Promise<void> {
@@ -18,6 +19,12 @@ async function load(page: Page, surface: Surface, html: string): Promise<void> {
       ]
     }]))
   }, { surface, html })
+}
+
+async function savedContent(page: Page, surface: Surface): Promise<string> {
+  return page.evaluate(surface => surface === 'scene'
+    ? (window as unknown as EditorWindow).getContent()
+    : (window as unknown as ManuscriptWindow).getSceneContent(document.querySelector<HTMLElement>('.scene-editor')!), surface)
 }
 
 for (const surface of ['scene', 'manuscript'] as const) {
@@ -34,9 +41,7 @@ for (const surface of ['scene', 'manuscript'] as const) {
     })
     expect(gap).toBe(0)
     for (let round = 0; round < 3; round++) {
-      const saved = surface === 'scene'
-        ? await page.evaluate(() => (window as unknown as EditorWindow).getContent())
-        : await editor.innerHTML()
+      const saved = await savedContent(page, surface)
       expect(saved).toBe('<p>First.</p><p>Second.</p>')
       await load(page, surface, saved)
     }
@@ -46,7 +51,7 @@ for (const surface of ['scene', 'manuscript'] as const) {
         .toBe('<p>First.</p><p>Second.</p>')
     } else {
       await page.evaluate(() => (window as unknown as ManuscriptWindow).updateSceneContent('scene', '<p>First.</p>\n<p>Second.</p>\n'))
-      expect(await editor.innerHTML()).toBe('<p>First.</p><p>Second.</p>')
+      expect(await savedContent(page, surface)).toBe('<p>First.</p><p>Second.</p>')
     }
   })
 
@@ -57,9 +62,9 @@ for (const surface of ['scene', 'manuscript'] as const) {
       '<p><b>Two</b> <i>words</i></p><pre>  Code\n\n  here</pre>' +
       'Loose text\nwith a line break'
     await load(page, surface, html)
-    expect(await page.locator(selector).innerHTML()).toBe(html)
+    expect(await savedContent(page, surface)).toBe(html)
     await load(page, surface, '<blockquote>\n<p>Quoted.</p>\n<p>Again.</p>\n</blockquote>')
-    expect(await page.locator(selector).innerHTML())
+    expect(await savedContent(page, surface))
       .toBe('<blockquote><p>Quoted.</p><p>Again.</p></blockquote>')
   })
 

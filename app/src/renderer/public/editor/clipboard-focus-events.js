@@ -41,9 +41,17 @@ document.addEventListener('mousedown', () => {
 }, true);
 
 // Prevent default scroll-to-top behavior when editor gains focus natively
+let focusScrollGeneration = 0;
+window.NovalistEditorState.cancelFocusScrollRestore = () => {
+    focusScrollGeneration++;
+    window.NovalistEditorState.isFocusing = false;
+};
+
 window.NovalistEditorState.editor.addEventListener('focus', () => {
+    const generation = ++focusScrollGeneration;
     window.NovalistEditorState.isFocusing = true;
     const restore = () => {
+        if (generation !== focusScrollGeneration) return;
         if (window.NovalistEditorState.wrapper.scrollTop !== window.NovalistEditorState.savedScrollTop) {
             window.NovalistEditorState.wrapper.scrollTop = window.NovalistEditorState.savedScrollTop;
         }
@@ -51,6 +59,7 @@ window.NovalistEditorState.editor.addEventListener('focus', () => {
     restore();
     requestAnimationFrame(restore);
     setTimeout(() => {
+        if (generation !== focusScrollGeneration) return;
         restore();
         window.NovalistEditorState.isFocusing = false;
     }, 100);

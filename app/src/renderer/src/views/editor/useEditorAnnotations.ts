@@ -3,13 +3,10 @@ import { rpc } from '../../rpc/client'
 import { editorPane, useProjectStore } from '../../stores/projectStore'
 import { useEditorBridge } from '../../stores/editorBridgeStore'
 import type { EditorWindow } from './editorBridge'
+import type { WritingFrameAdapter } from './writingFrameAdapter'
+import type { WritingComment } from './writingTypes'
 
-interface SceneComment {
-  id: string
-  anchorText: string
-  text: string
-  resolved: boolean
-}
+type SceneComment = WritingComment
 
 interface SceneFootnote {
   id: string
@@ -27,7 +24,7 @@ function pushAnnotations(editor: EditorWindow, annotations: Annotations): void {
   editor.setFootnotesData(annotations.footnotes.map(({ id, text }) => ({ id, text })))
 }
 
-export function useEditorAnnotations(pane: string, editorRef: RefObject<EditorWindow | null>) {
+export function useEditorAnnotations(pane: string, editorRef: RefObject<EditorWindow | null>, writing?: WritingFrameAdapter) {
   const annotationsRef = useRef<Annotations>({ comments: [], footnotes: [] })
   const ownAnnotationsRef = useRef(0)
   const annotationsLoadRef = useRef(0)
@@ -40,7 +37,8 @@ export function useEditorAnnotations(pane: string, editorRef: RefObject<EditorWi
     const { chapterGuid, sceneId } = paneIds()
     if (!chapterGuid || !sceneId) return false
     const request = ++annotationsLoadRef.current
-    const annotations = await rpc.request<Annotations>('scenes/getAnnotations', [chapterGuid, sceneId])
+    const annotations = writing ? writing.readAnnotations() : await rpc.request<Annotations>('scenes/getAnnotations', [chapterGuid, sceneId])
+    if (!annotations) return false
     const current = paneIds()
     // Reads must not replace annotations from a later scene or local edit.
     if (request !== annotationsLoadRef.current || current.chapterGuid !== chapterGuid ||
@@ -52,6 +50,10 @@ export function useEditorAnnotations(pane: string, editorRef: RefObject<EditorWi
 
   const persistAnnotations = (): Promise<void> => {
     annotationsLoadRef.current++
+    if (writing) {
+      writing.writeAnnotations(annotationsRef.current)
+      return Promise.resolve()
+    }
     const { chapterGuid, sceneId } = paneIds()
     if (!chapterGuid || !sceneId) return Promise.resolve()
     const { comments, footnotes } = annotationsRef.current

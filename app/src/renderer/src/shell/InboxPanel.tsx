@@ -1,43 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, CornerDownRight, ListTodo, RotateCcw } from 'lucide-react'
-import { rpc } from '../rpc/client'
-import { useEditorBridge } from '../stores/editorBridgeStore'
 import { useProjectStore } from '../stores/projectStore'
 import { useShellStore } from '../stores/shellStore'
+import { useSuggestionInbox } from './useSuggestionInbox'
+import { useCommentInbox } from './useCommentInbox'
+import type { InboxItem } from './inboxComments'
 
-/** A scene with suggested edits waiting on somebody. */
-interface SuggestionScene {
-  chapterGuid: string
-  chapterTitle: string
-  sceneId: string
-  sceneTitle: string
-  count: number
-}
-
-interface InboxReply {
-  id: string
-  author: string
-  text: string
-  createdAt: string
-}
-
-interface InboxItem {
-  chapterGuid: string
-  chapterTitle: string
-  sceneId: string
-  sceneTitle: string
-  commentId: string
-  anchorText: string
-  text: string
-  author: string
-  isTodo: boolean
-  resolved: boolean
-  createdAt: string
-  replies: InboxReply[]
-  /** '', 'accepted', 'considering' or 'declined'. */
-  verdict: string
-}
+const itemKey = (item: InboxItem): string => JSON.stringify([item.chapterGuid, item.sceneId, item.commentId])
 
 /** What can be decided about a note. Order is the order they are offered in. */
 const VERDICTS = ['accepted', 'considering', 'declined'] as const
@@ -51,47 +21,28 @@ const VERDICTS = ['accepted', 'considering', 'declined'] as const
  */
 function useInbox() {
   const { t } = useTranslation()
-  const [items, setItems] = useState<InboxItem[]>([])
   const [showResolved, setShowResolved] = useState(false)
+  const { items, change, error } = useCommentInbox(showResolved)
   const [todosOnly, setTodosOnly] = useState(false)
   // Suggested edits belong here for the same reason comments do: they are
   // somebody waiting on an answer, and the scene they sit in is the only place
   // they show otherwise.
-  const [suggestionScenes, setSuggestionScenes] = useState<SuggestionScene[]>([])
+  const { scenes: suggestionScenes, error: suggestionsError } = useSuggestionInbox()
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
 
-  const load = (resolved: boolean): void => {
-    void rpc
-      .request<InboxItem[]>('inbox/list', [resolved])
-      .then(setItems)
-      .catch(() => setItems([]))
-  }
-
-  useEffect(() => load(showResolved), [showResolved])
-
-  // Reloaded whenever an edit is taken or turned down, wherever that happened:
-  // the count on each row is what is still waiting, and a row still saying "2
-  // waiting" for a scene with none left is worse than no row at all.
-  const suggestionsRevision = useEditorBridge((s) => s.suggestionsRevision)
-
-  useEffect(() => {
-    void rpc
-      .request<SuggestionScene[]>('suggestions/inbox')
-      .then(setSuggestionScenes)
-      .catch(() => setSuggestionScenes([]))
-  }, [suggestionsRevision])
-
   const shown = todosOnly ? items.filter((i) => i.isTodo) : items
 
-  return { suggestionScenes, t, todosOnly, setTodosOnly, showResolved, setShowResolved, shown, load, setReplyTo, replyTo, setReplyText, replyText }
+  return { suggestionScenes, suggestionsError, error, t, todosOnly, setTodosOnly, showResolved, setShowResolved, shown, change, setReplyTo, replyTo, setReplyText, replyText }
 }
 
 export function InboxPanel(): React.JSX.Element {
-  const { suggestionScenes, t, todosOnly, setTodosOnly, showResolved, setShowResolved, shown, load, setReplyTo, replyTo, setReplyText, replyText } = useInbox()
+  const { suggestionScenes, suggestionsError, error, t, todosOnly, setTodosOnly, showResolved, setShowResolved, shown, change, setReplyTo, replyTo, setReplyText, replyText } = useInbox()
 
   return (
     <div className="inbox">
+      {suggestionsError && <div role="alert">{t(suggestionsError)}</div>}
+      {error && <div role="alert">{t(error)}</div>}
       {suggestionScenes.length > 0 && (
         <div className="inbox-suggestions">
           <div className="inspector-label">{t('inbox.suggestionsTitle')}</div>
@@ -139,7 +90,7 @@ export function InboxPanel(): React.JSX.Element {
       {shown.length === 0 && <div className="inbox-empty">{t('inbox.empty')}</div>}
 
       {shown.map((item) => (
-        <div key={item.commentId} className={`inbox-item${item.resolved ? ' resolved' : ''}`}>
+        <div key={itemKey(item)} className={`inbox-item${item.resolved ? ' resolved' : ''}`}>
           <button
             className="inbox-where"
             onClick={() =>
@@ -165,7 +116,7 @@ export function InboxPanel(): React.JSX.Element {
 
           {item.replies.map((reply) => (
             <div key={reply.id} className="inbox-reply">
-              <CornerDownRight size={11} strokeWidth={2} />
+              <CornerDownRight size={11} strokeWidth={2} className="icon-directional" />
               <span className="inbox-reply-text">{reply.text}</span>
               {reply.author && <span className="inbox-author">{reply.author}</span>}
             </div>
@@ -177,17 +128,7 @@ export function InboxPanel(): React.JSX.Element {
                 key={verdict}
                 className={`inbox-action inbox-verdict-btn${item.verdict === verdict ? ' active' : ''}`}
                 title={t(`inbox.verdict.${verdict}Hint`)}
-                onClick={() =>
-                  void rpc
-                    .request<InboxItem[]>('inbox/setVerdict', [
-                      item.sceneId,
-                      item.commentId,
-                      // Pressing the one already set clears it: deciding twice
-                      // by accident should be undoable in one click.
-                      item.verdict === verdict ? '' : verdict
-                    ])
-                    .then(() => load(showResolved))
-                }
+                onClick={() => void change(item, { kind: 'verdict', value: item.verdict === verdict ? '' : verdict })}
               >
                 {t(`inbox.verdict.${verdict}`)}
               </button>
@@ -195,30 +136,14 @@ export function InboxPanel(): React.JSX.Element {
             <button
               className="inbox-action"
               title={t(item.resolved ? 'inbox.reopen' : 'inbox.resolve')}
-              onClick={() =>
-                void rpc
-                  .request<InboxItem[]>('inbox/setResolved', [
-                    item.sceneId,
-                    item.commentId,
-                    !item.resolved
-                  ])
-                  .then(() => load(showResolved))
-              }
+              onClick={() => void change(item, { kind: 'resolved', value: !item.resolved })}
             >
               {item.resolved ? <RotateCcw size={12} /> : <Check size={12} />}
             </button>
             <button
               className={`inbox-action${item.isTodo ? ' active' : ''}`}
               title={t(item.isTodo ? 'inbox.notATodo' : 'inbox.makeTodo')}
-              onClick={() =>
-                void rpc
-                  .request<InboxItem[]>('inbox/setTodo', [
-                    item.sceneId,
-                    item.commentId,
-                    !item.isTodo
-                  ])
-                  .then(() => load(showResolved))
-              }
+              onClick={() => void change(item, { kind: 'todo', value: !item.isTodo })}
             >
               <ListTodo size={12} />
             </button>
@@ -226,15 +151,15 @@ export function InboxPanel(): React.JSX.Element {
               className="inbox-action"
               title={t('inbox.reply')}
               onClick={() => {
-                setReplyTo(replyTo === item.commentId ? null : item.commentId)
+                setReplyTo(replyTo === itemKey(item) ? null : itemKey(item))
                 setReplyText('')
               }}
             >
-              <CornerDownRight size={12} />
+              <CornerDownRight size={12} className="icon-directional" />
             </button>
           </div>
 
-          {replyTo === item.commentId && (
+          {replyTo === itemKey(item) && (
             <input
               className="inspector-input"
               autoFocus
@@ -243,13 +168,12 @@ export function InboxPanel(): React.JSX.Element {
               onChange={(e) => setReplyText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== 'Enter' || replyText.trim().length === 0) return
-                void rpc
-                  .request('inbox/reply', [item.sceneId, item.commentId, replyText.trim()])
-                  .then(() => {
+                void change(item, { kind: 'reply', text: replyText }).then(saved => {
+                  if (saved) {
                     setReplyTo(null)
                     setReplyText('')
-                    load(showResolved)
-                  })
+                  }
+                })
               }}
             />
           )}

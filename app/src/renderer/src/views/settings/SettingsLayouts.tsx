@@ -51,7 +51,7 @@ export function SettingsPhone(props: SettingsLayoutProps): React.JSX.Element {
             className="mobile-nav-back settings-phone-back"
             onClick={() => setMainView('dashboard')}
           >
-            <ChevronLeft size={20} strokeWidth={2} />
+            <ChevronLeft size={20} strokeWidth={2} className="icon-directional" />
             <span className="mobile-nav-back-label">Novalist</span>
           </button>
         )}

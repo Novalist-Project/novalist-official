@@ -105,7 +105,7 @@ public sealed class AppearanceRpc
     [JsonRpcMethod("appearance/languagePacks")]
     public LanguagePackDto[] LanguagePacks()
     {
-        var bundledInterface = new[] { "en", "de", "zh-CN" };
+        var bundledInterface = new[] { "en", "de", "zh-CN", "ar" };
         var userLocales = _workspace.UserAssets.DiscoverLocales()
             .ToDictionary(l => l.Code, l => l.Name, StringComparer.OrdinalIgnoreCase);
         var lexicons = Core.Services.SceneAnalysisLexicon.AvailableLanguages

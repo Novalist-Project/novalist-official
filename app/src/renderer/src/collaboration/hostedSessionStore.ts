@@ -59,8 +59,9 @@ export const useHostedSessionStore = create<HostedSessionState>((set, get) => ({
     catch (error) { set({ error: String(error), cancelling: false }) }
   },
   reportPresence(sessionId, viewId, unavailable) {
-    if (get().session?.sessionId !== sessionId) return
-    const failures = get().presenceFailures.filter(view => view !== viewId)
+    const state = get()
+    if (state.session?.sessionId !== sessionId || state.presenceFailures.includes(viewId) === unavailable) return
+    const failures = state.presenceFailures.filter(view => view !== viewId)
     if (unavailable) failures.push(viewId)
     set({ presenceFailures: failures, presenceUnavailable: failures.length > 0 })
   },

@@ -1,4 +1,4 @@
-const { sanitizeSceneHtml, sanitizeSceneFragment } = NovalistSceneSanitizer.createSceneSanitizer(window, window.DOMPurify);
+const { sanitizeSceneHtml, sanitizeSceneFragment } = window.NovalistSceneSanitizer.createSceneSanitizer(window, window.DOMPurify);
 window.sanitizeSceneHtml = sanitizeSceneHtml;
 window.sanitizeSceneFragment = sanitizeSceneFragment;
 
@@ -28,6 +28,7 @@ function sceneContentFragment(html) {
         }
     }
     separators.forEach(node => node.remove());
+    window.applyProseDirection?.(fragment);
     return fragment;
 }
 

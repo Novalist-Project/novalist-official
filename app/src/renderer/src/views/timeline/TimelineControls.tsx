@@ -96,7 +96,7 @@ export function TimelineToolbar({ setPending, t, isPhone, toolbarOpen, setToolba
           {toolbarOpen ? (
             <ChevronDown size={14} strokeWidth={2} />
           ) : (
-            <ChevronRight size={14} strokeWidth={2} />
+            <ChevronRight size={14} strokeWidth={2} className="icon-directional" />
           )}
           {t('timeline.viewOptions')}
         </button>
@@ -223,7 +223,7 @@ function TimelineDateNavigation({ t, pan, scrollToDate, anchorDate }: { t: Timel
         title={t('timeline.prev')}
         onClick={() => pan(-1)}
       >
-        <ChevronLeft size={14} strokeWidth={2} />
+        <ChevronLeft size={14} strokeWidth={2} className="icon-directional" />
       </button>
       <button
         className="toolbar-button timeline-nav-arrow"
@@ -231,7 +231,7 @@ function TimelineDateNavigation({ t, pan, scrollToDate, anchorDate }: { t: Timel
         title={t('timeline.next')}
         onClick={() => pan(1)}
       >
-        <ChevronRight size={14} strokeWidth={2} />
+        <ChevronRight size={14} strokeWidth={2} className="icon-directional" />
       </button>
       <button
         className="toolbar-button toolbar-action"

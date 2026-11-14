@@ -1,4 +1,6 @@
 import { COMMANDS } from './commands'
+import '../../public/editor/shortcut-key.js'
+import type { ShortcutKeyEvent } from '../../public/editor/shortcut-key'
 
 /**
  * Gestures: matching them, rebinding them, and dispatching what they run.
@@ -86,14 +88,10 @@ export function canonicalGesture(gesture: string): string {
  * modifier-only press (which cannot be a binding on its own). Digits become
  * "D1".."D9" and single letters upper-case, matching the default descriptors.
  */
-export function eventToGesture(event: {
-  key: string
-  ctrlKey: boolean
-  metaKey: boolean
-  shiftKey: boolean
-  altKey: boolean
-}): string | null {
-  const { key } = event
+export function eventToGesture(event: ShortcutKeyEvent): string | null {
+  const resolved = globalThis.NovalistShortcutKeys.key(event)
+  if (resolved === null) return null
+  const key = resolved.length === 1 ? resolved : event.key
   if (key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta') return null
   const parts: string[] = []
   if (event.ctrlKey || event.metaKey) parts.push('Ctrl')
@@ -110,7 +108,7 @@ export function eventToGesture(event: {
  * grammar ("Ctrl+Shift+P") so descriptors stay compatible; Cmd maps to Ctrl on
  * macOS.
  */
-export function matchGesture(event: KeyboardEvent, gesture: string): boolean {
+export function matchGesture(event: ShortcutKeyEvent, gesture: string): boolean {
   // Most commands carry no gesture at all now that a hotkey is a property of a
   // command rather than the reason it exists. An unbound one must never match.
   if (gesture.length === 0) return false
@@ -119,17 +117,18 @@ export function matchGesture(event: KeyboardEvent, gesture: string): boolean {
   const needCtrl = parts.includes('Ctrl')
   const needShift = parts.includes('Shift')
   const needAlt = parts.includes('Alt')
-  const ctrl = event.ctrlKey || event.metaKey
-  const eventKey = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase()
+  const ctrl = Boolean(event.ctrlKey || event.metaKey)
+  const eventKey = globalThis.NovalistShortcutKeys.key(event)
+  if (eventKey === null) return false
   const normalized = key.startsWith('d') && key.length === 2 ? key.slice(1) : key
   const aliases = KEY_ALIASES[normalized]
   // Shift is part of typing `+` on most layouts, so a gesture that names a
   // shifted character cannot also demand that Shift was not held.
-  const shiftMatches = aliases ? true : event.shiftKey === needShift
+  const shiftMatches = aliases ? true : Boolean(event.shiftKey) === needShift
   return (
     ctrl === needCtrl &&
     shiftMatches &&
-    event.altKey === needAlt &&
+    Boolean(event.altKey) === needAlt &&
     (aliases ? aliases.includes(eventKey) : eventKey === normalized)
   )
 }
@@ -195,6 +194,9 @@ export function dispatchForwardedHotkey(payload: {
   metaKey?: boolean
   shiftKey: boolean
   altKey: boolean
+  isComposing?: boolean
+  keyCode?: number
+  altGraph?: boolean
 }): boolean {
   if (!hotkeysEnabled) return false
   const synthetic = {
@@ -205,8 +207,11 @@ export function dispatchForwardedHotkey(payload: {
     // so dropping it here silently disabled every Cmd shortcut typed in the editor.
     metaKey: payload.metaKey === true,
     shiftKey: payload.shiftKey,
-    altKey: payload.altKey
-  } as KeyboardEvent
+    altKey: payload.altKey,
+    isComposing: payload.isComposing,
+    keyCode: payload.keyCode,
+    altGraph: payload.altGraph
+  }
   for (const action of [...installedActions, ...extensionActions]) {
     if (matchGesture(synthetic, action.gesture)) {
       action.run()

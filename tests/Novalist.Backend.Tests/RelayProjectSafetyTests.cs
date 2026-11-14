@@ -64,11 +64,7 @@ public sealed class RelayProjectSafetyTests
         var retainedRoot = directory.Combine("Retained copy");
         await guest.Rpc.InvokeAsync("collaboration/join", server.Address, link, retainedRoot);
         await guest.Rpc.InvokeAsync("research/save", null, "Before removal", "Note", "Earlier shared writing.", Array.Empty<string>(), Array.Empty<string>());
-        using (var beforeTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
-        {
-            beforeTimeout.CancelAfter(TimeSpan.FromSeconds(5));
-            while ((await owner.Rpc.InvokeAsync<ResearchItemDto[]>("research/list")).Length == 0) await Task.Delay(20, beforeTimeout.Token);
-        }
+        await ResearchCountReachesAsync(owner, 1, ct);
         var member = Assert.Single(await owner.Rpc.InvokeAsync<HostedProjectMember[]>("collaboration/members"), item => item.Role == "Contributor");
         link = await owner.Rpc.InvokeAsync<string>("collaboration/invite", DateTimeOffset.UtcNow.AddHours(1));
         identity.Subject = "remaining";
@@ -77,9 +73,7 @@ public sealed class RelayProjectSafetyTests
         await remaining.Rpc.InvokeAsync("collaboration/join", server.Address, link, directory.Combine("Remaining copy"));
         await owner.Rpc.InvokeAsync("collaboration/removeMember", member.UserId);
         await remaining.Rpc.InvokeAsync("research/save", null, "After removal", "Note", "Still writing together.", Array.Empty<string>(), Array.Empty<string>());
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromSeconds(5));
-        while ((await owner.Rpc.InvokeAsync<ResearchItemDto[]>("research/list")).Length < 2) await Task.Delay(20, timeout.Token);
+        await ResearchCountReachesAsync(owner, 2, ct);
         await guest.Rpc.InvokeAsync("collaboration/end");
         await guest.Rpc.InvokeAsync("research/save", null, "Private retained writing", "Note", "Keep this local draft.", Array.Empty<string>(), Array.Empty<string>());
         var metadataPath = Path.Combine(retainedRoot, ".novalist", "project.json");
@@ -89,10 +83,12 @@ public sealed class RelayProjectSafetyTests
         Assert.Equal("Connected", joined.Connection);
         Assert.Contains(await guest.Rpc.InvokeAsync<ResearchItemDto[]>("research/list"), item => item.Title == "After removal");
         await guest.Rpc.InvokeAsync("research/save", null, "After new invitation", "Note", "Shared again.", Array.Empty<string>(), Array.Empty<string>());
-        using var rejoinedTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        rejoinedTimeout.CancelAfter(TimeSpan.FromSeconds(5));
-        while ((await owner.Rpc.InvokeAsync<ResearchItemDto[]>("research/list")).Length < 3) await Task.Delay(20, rejoinedTimeout.Token);
+        await ResearchCountReachesAsync(owner, 3, ct);
         Assert.Equal(retained, await File.ReadAllBytesAsync(metadataPath, ct));
     }
 
+    private static Task ResearchCountReachesAsync(HostedDesktop desktop, int count, CancellationToken ct)
+        => TestWait.UntilAsync(
+            async () => (await desktop.Rpc.InvokeAsync<ResearchItemDto[]>("research/list")).Length >= count,
+            $"{count} shared research items to reach the host", ct);
 }

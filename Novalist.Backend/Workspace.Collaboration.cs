@@ -54,6 +54,13 @@ public sealed partial class Workspace
             using var projection = BeginSharedProjection();
             if (Projects.ProjectRoot != root) throw new InvalidOperationException("The shared project is no longer open.");
             if (sharedProse.TryGetValue(item, out var prose)) { await ProjectSharedProseAsync(root, prose, snapshot); return; }
+            if (sharedItems.TryGetValue(files[item].Relative, out var owner) && owner != item)
+            {
+                if ((snapshot.Recovered ?? snapshot.Html) is { } retained)
+                    await WriteSharedFileRecoveryAsync(root, item.ToString("N"), files[item].Relative,
+                        Encoding.UTF8.GetBytes(FileFrontMatter.Stamp(retained, files[item].SceneId)));
+                return;
+            }
             await PrepareSharedProjectionPathAsync(files[item].Relative);
             if (snapshot.Html is null)
             {
@@ -74,7 +81,7 @@ public sealed partial class Workspace
             var file = files[item];
             if (changed) await FileService.WriteTextAsync(SharedProjectPath.Resolve(root, file.Relative),
                 FileFrontMatter.Stamp(FileFrontMatter.Strip(snapshot.Html), file.SceneId));
-            var counted = await RecordSharedSceneAsync(root, file.Relative, snapshot.Html, local);
+            var counted = await RecordSharedSceneAsync(root, file.Relative, file.SceneId, snapshot.Html, local);
             projected[item] = snapshot.Html;
             if (counted) recorded.Add(item);
         });
@@ -97,6 +104,23 @@ public sealed partial class Workspace
         await WordHistory.RecordBaselineAsync(Projects.ActiveBook?.Id ?? "", sceneId,
             CountWords(Core.Utilities.TextDiff.StripHtml(SharedBlockBoundary().Replace(html, "\n"))));
         return new(sceneId, html, Core.Services.ContentHasher.Hash(html), new(sharedSession, item.Value, snapshot.State, PeerProjects?.IsActive == true));
+    }
+
+    internal async Task<SceneContentDto?> ReadSharedScenePathAsync(string path, string sceneId, CancellationToken ct)
+    {
+        if (sharedScenes is null || sharedRoot is null || Projects.ProjectRoot != sharedRoot) return null;
+        var relative = Path.GetRelativePath(sharedRoot, path).Replace('\\', '/');
+        if (!sharedItems.TryGetValue(relative, out var item)) return null;
+        var snapshot = await sharedScenes.ReadAsync(item, ct);
+        var html = snapshot.Html ?? throw new InvalidOperationException("The shared scene was deleted.");
+        return new(sceneId, html, Core.Services.ContentHasher.Hash(html), new(sharedSession, item, snapshot.State, PeerProjects?.IsActive == true));
+    }
+
+    internal void RequireUnsharedWritingPath(string path)
+    {
+        if (sharedRoot is not null && Projects.ProjectRoot == sharedRoot
+            && sharedItems.ContainsKey(Path.GetRelativePath(sharedRoot, path).Replace('\\', '/')))
+            throw new InvalidOperationException("A shared scene must be saved as collaborative edits.");
     }
 
     internal SharedSceneWorkspace RequireSharedScenes(Guid sessionId)
@@ -142,8 +166,9 @@ public sealed partial class Workspace
         if (sharedScenes is not null || sharedFields is not null || PeerProjects?.IsActive == true) throw new InvalidOperationException("Close the collaboration session asynchronously before closing this workspace.");
     }
 
-    private async Task<bool> RecordSharedSceneAsync(string root, string relative, string html, bool local)
+    private async Task<bool> RecordSharedSceneAsync(string root, string relative, string sceneId, string html, bool local)
     {
+        if (projectingSharedFiles) return await RecordInactiveSharedSceneAsync(root, relative, sceneId, html);
         if (Projects.ProjectRoot != root || Projects.ActiveBook is not { } book || Projects.ScenesManifest is not { } manifest) return false;
         foreach (var chapter in book.Chapters)
         {
@@ -156,7 +181,7 @@ public sealed partial class Workspace
                 return true;
             }
         }
-        return await RecordInactiveSharedSceneAsync(root, relative, html);
+        return await RecordInactiveSharedSceneAsync(root, relative, sceneId, html);
     }
 
     [GeneratedRegex(@"</?(?:p|div|h[1-6]|ul|ol|li|dl|dt|dd|blockquote|pre|table|thead|tbody|tfoot|tr|td|th|figure|figcaption|br|hr)\b[^>]*>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]

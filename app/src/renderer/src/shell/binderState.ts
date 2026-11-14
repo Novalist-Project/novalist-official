@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useBookScope, useProjectStore } from '../stores/projectStore'
@@ -14,6 +14,7 @@ import { openBinderScene } from './binderNavigation'
 import { useTargetStore } from '../stores/targetStore'
 import { loadBookScoped } from '../stores/bookScopedLoad'
 import { setSceneMetadata } from './sceneMetadataActions'
+import { executeWritingStructure } from '../stores/writingStructure'
 
 import { type SortMode, type BinderPlotline, type MenuState, type PendingAction, type ArchivedScene, type TrashedChapter } from './binderTypes'
 
@@ -77,6 +78,9 @@ function useBinderBook() {
   const [plotlines, setPlotlines] = useState<BinderPlotline[]>([])
 
   const targets = useTargetStore((s) => s.targets)
+  const sceneTargets = useMemo(() => new Map(targets.filter(target => target.kind === 'scene').map(target => [target.id, target])), [targets])
+  const stagesByKey = useMemo(() => new Map(stages.map(stage => [stage.key, stage])), [stages])
+  const selectedSceneIds = useMemo(() => new Set(selectedIds), [selectedIds])
   const [labelList, setLabelList] = useState<{ key: string; label: string; color: string }[]>([])
   const chapters = useProjectStore((s) => s.chapters)
 
@@ -88,7 +92,7 @@ function useBinderBook() {
   const openSceneId = mainView === 'narration' ? narrationSceneId : editorSceneId
   const openScene = openBinderScene
   const store = useProjectStore
-  return { projectPath, bookScope, workspaceBusy, workspaceEpoch, changedIds, setChangedIds, selectedIds, stages, plotlines, setPlotlines, targets, labelList, setLabelList, chapters, editorSceneId, mainView, narrationSceneId, openSceneId, openScene, store }
+  return { projectPath, bookScope, workspaceBusy, workspaceEpoch, changedIds, setChangedIds, selectedIds, selectedSceneIds, stages, stagesByKey, plotlines, setPlotlines, targets, sceneTargets, labelList, setLabelList, chapters, editorSceneId, mainView, narrationSceneId, openSceneId, openScene, store }
 }
 
 function useBinderBookEffects(book: ReturnType<typeof useBinderBook>): void {
@@ -188,7 +192,7 @@ function useBinderData() {
 
 type BinderData = ReturnType<typeof useBinderData>
 
-function binderDragHandlers(data: BinderData) {
+function binderDragHandlers(data: Pick<BinderData, 'drag' | 'setDrag' | 'store'>) {
   const { drag, setDrag, store } = data
   /** Dragging a scene that is part of the selection carries the whole selection;
    *  dragging one outside it moves only that scene. */
@@ -211,6 +215,11 @@ function binderDragHandlers(data: BinderData) {
     if (!drag || drag.kind !== 'scene') return
     if (drag.sceneId === target.id) { setDrag(null); return }
     const payload = dragPayload(drag.sceneId)
+    if (!window.novalist.isMobile) {
+      if (!payload.includes(target.id)) void executeWritingStructure({ kind: 'moveScenes', sceneIds: payload, targetChapterGuid: chapterGuid, beforeSceneId: target.id })
+      setDrag(null)
+      return
+    }
     // Reordering within a chapter moves one scene at a time; a multi-scene drag
     // goes through the cross-chapter move, which inserts them as a block.
     if (drag.chapterGuid === chapterGuid && payload.length === 1) {
@@ -265,7 +274,9 @@ function binderDisplay(data: BinderData) {
 
 export function useBinderState() {
   const data = useBinderData()
-  return { ...data, ...binderDragHandlers(data), ...binderDisplay(data) }
+  const { drag, setDrag, store } = data
+  const dragHandlers = useMemo(() => binderDragHandlers({ drag, setDrag, store }), [drag, setDrag, store])
+  return { ...data, ...dragHandlers, ...binderDisplay(data) }
 }
 
 export type BinderState = ReturnType<typeof useBinderState>

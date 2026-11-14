@@ -56,7 +56,7 @@ public sealed partial class Workspace
 
     private async Task ReloadSharedWorkspaceAsync()
     {
-        await Projects.ReloadSharedProjectAsync();
+        await Projects.ReloadWritingStructureAsync();
         Settings.SetActiveOverrides(Projects.ProjectSettings.Overrides);
     }
 }

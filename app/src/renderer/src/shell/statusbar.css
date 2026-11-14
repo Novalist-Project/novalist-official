@@ -404,7 +404,7 @@ button.status-ext-item:hover {
 /* The page estimate: a number that is read down the column, so it lines up on
    the digit rather than on the left edge. */
 .status-overview-pages {
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
   color: var(--nl-text-dim);
   font-size: var(--nl-font-caption);

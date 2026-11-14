@@ -11,7 +11,7 @@ public sealed class SystemDictationTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), "nl-system-dictation-" + Guid.NewGuid().ToString("N"));
     private readonly Workspace _workspace;
     public SystemDictationTests() => _workspace = new Workspace(_root);
-    public void Dispose() { _workspace.Dispose(); Directory.Delete(_root, true); }
+    public void Dispose() { _workspace.Dispose(); TestFiles.DeleteTree(_root); }
 
     [Fact]
     public async Task WindowsOffersItsOnlinePanelWithoutLoadingAModelOrMicrophone()

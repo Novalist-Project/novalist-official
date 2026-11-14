@@ -1,0 +1,3921 @@
+{
+  "kind": "instrumented-headless-diagnostic-only",
+  "records": [
+    {
+      "sceneCount": 100,
+      "wordCount": 100000,
+      "longSceneWords": 25000,
+      "provenance": {
+        "sourceRevision": "b854f6fc913edf0c09786cf2caf04718b9f1862a",
+        "sourceDirty": false,
+        "sourceSha256": "a60d044ec1a705acb37748979e6b1766a45ffe169e4b34e0e9dcdfb705eac8dc",
+        "adaptations": {
+          "optimized": true,
+          "scoped": true,
+          "incrementalPeerInsert": true,
+          "contentVisibility": true,
+          "scenePagination": true,
+          "sceneCapture": true,
+          "sceneProofingMap": true
+        },
+        "distribution": "fixed-25000-word-long-scene",
+        "diagnostic": {
+          "layoutTelemetry": true,
+          "trace": true
+        }
+      },
+      "environment": {
+        "os": "win32",
+        "osRelease": "10.0.26300",
+        "arch": "x64",
+        "cpuModel": "AMD Ryzen 9 9950X3D 16-Core Processor          ",
+        "logicalCpus": 32,
+        "totalMemoryBytes": 33976696832,
+        "node": "v26.7.0",
+        "browser": "HeadlessChrome/149.0.7827.55",
+        "javascript": "14.9.207.21",
+        "engine": "chromium-headless",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        }
+      },
+      "acceptance": false,
+      "workload": {
+        "inputsPerMode": 9,
+        "interInputDelayMs": 90,
+        "tailMs": 1100,
+        "backendAnalysis": false,
+        "dimming": false,
+        "grammar": false,
+        "readability": false
+      },
+      "modes": [
+        {
+          "name": "normal",
+          "samplesMs": [
+            94.69999999552965,
+            26.100000001490116,
+            21.69999999552965,
+            17.600000001490116,
+            18.799999997019768,
+            19.299999997019768,
+            14.600000001490116,
+            28.299999997019768,
+            21.80000000447035
+          ],
+          "inputP95Ms": 94.69999999552965,
+          "telemetry": {
+            "elapsedMs": 2162.7000000029802,
+            "lastActivityMs": 1062.9000000059605,
+            "spans": {
+              "sceneMarkup.ts:SceneMarkup.read": {
+                "count": 90,
+                "totalMs": 13.200000017881393,
+                "selfMs": 13.200000017881393,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 2.3000000044703484,
+                "lastMs": 964
+              },
+              "sceneMarkup.ts:SceneMarkup.domPosition": {
+                "count": 40,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 3,
+                "lastMs": 964
+              },
+              "comment-gutter.js:scheduleCommentRender": {
+                "count": 43,
+                "totalMs": 0.19999999552965164,
+                "selfMs": 0.19999999552965164,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 5.700000002980232,
+                "lastMs": 1062.5
+              },
+              "comment.anchorScan": {
+                "count": 34,
+                "totalMs": 0.30000000447034836,
+                "selfMs": 0.30000000447034836,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 5.9000000059604645,
+                "lastMs": 1062.5
+              },
+              "comment.anchorRect": {
+                "count": 340,
+                "totalMs": 3.7000000029802322,
+                "selfMs": 3.7000000029802322,
+                "maxMs": 0.5,
+                "firstMs": 6,
+                "lastMs": 1062.8000000044703
+              },
+              "comment.cardHeight": {
+                "count": 340,
+                "totalMs": 0.19999999552965164,
+                "selfMs": 0.19999999552965164,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 6.100000001490116,
+                "lastMs": 1062.9000000059605
+              },
+              "comment-gutter.js:renderCommentGutter": {
+                "count": 34,
+                "totalMs": 6.799999989569187,
+                "selfMs": 2.599999986588955,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 5.9000000059604645,
+                "lastMs": 1062.9000000059605
+              },
+              "writingExperiment.ts:ExperimentPane.selectedRanges": {
+                "count": 9,
+                "totalMs": 0.5,
+                "selfMs": 0.5,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 7.100000001490116,
+                "lastMs": 962.5
+              },
+              "writingExperiment.ts:ExperimentPane.markDirty": {
+                "count": 18,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 8.5,
+                "lastMs": 963.5
+              },
+              "typewriter-scroll.js:scheduleTypewriterRecenter": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 8.600000001490116,
+                "lastMs": 963.4000000059605
+              },
+              "readability.js:requestReadability": {
+                "count": 9,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 8.600000001490116,
+                "lastMs": 963.4000000059605
+              },
+              "grammar-corrections.js:requestGrammarCheck": {
+                "count": 15,
+                "totalMs": 0.4000000059604645,
+                "selfMs": 0.4000000059604645,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 8.700000002980232,
+                "lastMs": 963.4000000059605
+              },
+              "content-input.js:handleEditorInput": {
+                "count": 9,
+                "totalMs": 0.7999999970197678,
+                "selfMs": 0.29999998956918716,
+                "maxMs": 0.30000000447034836,
+                "firstMs": 8.600000001490116,
+                "lastMs": 963.4000000059605
+              },
+              "writingExperiment.ts:ExperimentPane.selection": {
+                "count": 18,
+                "totalMs": 5.399999998509884,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.8999999985098839,
+                "firstMs": 9,
+                "lastMs": 963.9000000059605
+              },
+              "richText.ts:updateRichText": {
+                "count": 9,
+                "totalMs": 18.69999999552965,
+                "selfMs": 18.69999999552965,
+                "maxMs": 7.799999997019768,
+                "firstMs": 9.400000005960464,
+                "lastMs": 963.8000000044703
+              },
+              "writingExperiment.ts:callback:state.text.observe": {
+                "count": 18,
+                "totalMs": 93.59999999403954,
+                "selfMs": 1.3000000044703484,
+                "maxMs": 79.39999999850988,
+                "firstMs": 17.200000002980232,
+                "lastMs": 964.1000000014901
+              },
+              "sceneMarkup.ts:SceneMarkup.render": {
+                "count": 3,
+                "totalMs": 84.19999999552965,
+                "selfMs": 83.79999999701977,
+                "maxMs": 78.59999999403954,
+                "firstMs": 17.900000005960464,
+                "lastMs": 751.1000000014901
+              },
+              "writingExperiment.ts:ExperimentPane.render": {
+                "count": 3,
+                "totalMs": 84.39999999850988,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 78.79999999701977,
+                "firstMs": 17.80000000447035,
+                "lastMs": 751.1000000014901
+              },
+              "writingExperiment.ts:CompoundHistory.capture": {
+                "count": 9,
+                "totalMs": 117.90000000596046,
+                "selfMs": 1.2000000104308128,
+                "maxMs": 88,
+                "firstMs": 9,
+                "lastMs": 964.2000000029802
+              },
+              "writingExperiment.ts:ExperimentPane.capture": {
+                "count": 9,
+                "totalMs": 117.90000000596046,
+                "selfMs": 0,
+                "maxMs": 88,
+                "firstMs": 9,
+                "lastMs": 964.2000000029802
+              },
+              "read-aloud.js:proseBlocks": {
+                "count": 18,
+                "totalMs": 0.29999999701976776,
+                "selfMs": 0.29999999701976776,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 98,
+                "lastMs": 965.7000000029802
+              },
+              "formatting.js:selectedBlocks": {
+                "count": 18,
+                "totalMs": 1.2000000029802322,
+                "selfMs": 0.9000000059604645,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 97.90000000596046,
+                "lastMs": 965.7000000029802
+              },
+              "formatting.js:getFormattingState": {
+                "count": 18,
+                "totalMs": 12.000000014901161,
+                "selfMs": 10.800000011920929,
+                "maxMs": 1.5,
+                "firstMs": 97.10000000149012,
+                "lastMs": 965.7000000029802
+              },
+              "formatting.js:notifyFormattingChanged": {
+                "count": 18,
+                "totalMs": 12.700000025331974,
+                "selfMs": 0.7000000104308128,
+                "maxMs": 1.6000000014901161,
+                "firstMs": 97.10000000149012,
+                "lastMs": 965.8000000044703
+              },
+              "caret.prefixCopy": {
+                "count": 18,
+                "totalMs": 4.19999997317791,
+                "selfMs": 4.19999997317791,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 98.10000000149012,
+                "lastMs": 966.3000000044703
+              },
+              "dialogue-input.js:getCaretPosition": {
+                "count": 18,
+                "totalMs": 4.499999977648258,
+                "selfMs": 0.30000000447034836,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 98.10000000149012,
+                "lastMs": 966.4000000059605
+              },
+              "writingExperiment.ts:ExperimentPane.activeScene": {
+                "count": 18,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 98.20000000298023,
+                "lastMs": 966.4000000059605
+              },
+              "readability.js:reapplyReadability": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 98.60000000149012,
+                "lastMs": 858.7000000029802
+              },
+              "typewriter.caretRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 99.10000000149012,
+                "lastMs": 966.6000000014901
+              },
+              "typewriter.wrapperRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 99.10000000149012,
+                "lastMs": 966.6000000014901
+              },
+              "typewriter-scroll.js:recenterCaret": {
+                "count": 9,
+                "totalMs": 0.30000000447034836,
+                "selfMs": 0.30000000447034836,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 99,
+                "lastMs": 966.6000000014901
+              },
+              "content-input.js:getCleanContentHtml": {
+                "count": 11,
+                "totalMs": 2.9999999925494194,
+                "selfMs": 2.9999999925494194,
+                "maxMs": 1,
+                "firstMs": 101.40000000596046,
+                "lastMs": 1014.1000000014901
+              },
+              "writingSceneCapture.ts:serialize": {
+                "count": 11,
+                "totalMs": 3.0999999940395355,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 1,
+                "firstMs": 101.40000000596046,
+                "lastMs": 1014.1000000014901
+              },
+              "capture.innerText": {
+                "count": 11,
+                "totalMs": 1.0999999940395355,
+                "selfMs": 1.0999999940395355,
+                "maxMs": 0.3999999985098839,
+                "firstMs": 101.90000000596046,
+                "lastMs": 1014.2000000029802
+              },
+              "writingSceneCapture.ts:capture": {
+                "count": 11,
+                "totalMs": 4.399999991059303,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 1.0999999940395355,
+                "firstMs": 101.40000000596046,
+                "lastMs": 1014.2000000029802
+              },
+              "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+                "count": 9,
+                "totalMs": 5.300000004470348,
+                "selfMs": 0.9000000134110451,
+                "maxMs": 1.3000000044703484,
+                "firstMs": 101.40000000596046,
+                "lastMs": 1014.2000000029802
+              },
+              "sceneMarkup.ts:SceneMarkup.position": {
+                "count": 32,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 198.10000000149012,
+                "lastMs": 963.9000000059605
+              },
+              "writingExperiment.ts:ExperimentPane.point": {
+                "count": 32,
+                "totalMs": 5.199999995529652,
+                "selfMs": 0.3999999985098839,
+                "maxMs": 0.5999999940395355,
+                "firstMs": 197.60000000149012,
+                "lastMs": 963.9000000059605
+              },
+              "writingExperiment.ts:ExperimentPane.restore": {
+                "count": 8,
+                "totalMs": 4.399999991059303,
+                "selfMs": 2.100000001490116,
+                "maxMs": 1.3999999985098839,
+                "firstMs": 205.70000000298023,
+                "lastMs": 964.1000000014901
+              },
+              "writing-zoom.js:resizeSurface": {
+                "count": 8,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 415.80000000447035,
+                "lastMs": 883.8000000044703
+              }
+            },
+            "counters": {
+              "comment.anchorRect.reads": 340,
+              "comment.anchorRect.offscreen": 309,
+              "comment.anchors": 340,
+              "comment.positionWrites": 340,
+              "focus.proseBlocks": 1800,
+              "caret.prefixChars": 8510734
+            }
+          },
+          "trace": {
+            "bytes": 4487187,
+            "events": 22445,
+            "pipeline": {
+              "scriptMs": 159.848,
+              "styleMs": 3.607,
+              "layoutMs": 13.606,
+              "paintMs": 18.725,
+              "nestedLayoutMs": 4.534,
+              "maxTaskMs": 90.147,
+              "layoutCount": 47
+            }
+          },
+          "endpointGeometryStable": true,
+          "endpointGeometry": {
+            "top": 173091.25,
+            "bottom": 173108.25,
+            "scrollTop": 0,
+            "pages": 0
+          }
+        },
+        {
+          "name": "page",
+          "samplesMs": [
+            29.69999999552965,
+            16.799999997019768,
+            19.899999998509884,
+            28.80000000447035,
+            28.899999998509884,
+            27.69999999552965,
+            30.299999997019768,
+            25.799999997019768,
+            21.100000001490116
+          ],
+          "inputP95Ms": 30.299999997019768,
+          "telemetry": {
+            "elapsedMs": 2161.2999999970198,
+            "lastActivityMs": 1099.2999999970198,
+            "spans": {
+              "sceneMarkup.ts:SceneMarkup.read": {
+                "count": 114,
+                "totalMs": 19.900000005960464,
+                "selfMs": 19.900000005960464,
+                "maxMs": 0.7999999970197678,
+                "firstMs": 1.7000000029802322,
+                "lastMs": 941.7999999970198
+              },
+              "sceneMarkup.ts:SceneMarkup.domPosition": {
+                "count": 45,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 2.399999998509884,
+                "lastMs": 941.7999999970198
+              },
+              "comment-gutter.js:scheduleCommentRender": {
+                "count": 52,
+                "totalMs": 0.3999999985098839,
+                "selfMs": 0.3999999985098839,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 4,
+                "lastMs": 1095.8999999985099
+              },
+              "comment.anchorScan": {
+                "count": 45,
+                "totalMs": 0.3999999910593033,
+                "selfMs": 0.3999999910593033,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 4,
+                "lastMs": 1096.1000000014901
+              },
+              "comment.anchorRect": {
+                "count": 450,
+                "totalMs": 26.700000002980232,
+                "selfMs": 26.700000002980232,
+                "maxMs": 19.100000001490116,
+                "firstMs": 4.100000001490116,
+                "lastMs": 1096.1000000014901
+              },
+              "comment.cardHeight": {
+                "count": 450,
+                "totalMs": 0.20000000298023224,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 4.200000002980232,
+                "lastMs": 1096.2000000029802
+              },
+              "comment-gutter.js:renderCommentGutter": {
+                "count": 45,
+                "totalMs": 37.70000000298023,
+                "selfMs": 10.400000005960464,
+                "maxMs": 19.299999997019768,
+                "firstMs": 4,
+                "lastMs": 1096.2000000029802
+              },
+              "writingExperiment.ts:ExperimentPane.selectedRanges": {
+                "count": 9,
+                "totalMs": 0.4000000059604645,
+                "selfMs": 0.4000000059604645,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 5.700000002980232,
+                "lastMs": 940.1000000014901
+              },
+              "writingExperiment.ts:ExperimentPane.markDirty": {
+                "count": 28,
+                "totalMs": 2,
+                "selfMs": 2,
+                "maxMs": 0.4000000059604645,
+                "firstMs": 6.600000001490116,
+                "lastMs": 1095.8999999985099
+              },
+              "typewriter-scroll.js:scheduleTypewriterRecenter": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 6.700000002980232,
+                "lastMs": 941.2000000029802
+              },
+              "readability.js:requestReadability": {
+                "count": 9,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 6.700000002980232,
+                "lastMs": 941.2000000029802
+              },
+              "grammar-corrections.js:requestGrammarCheck": {
+                "count": 15,
+                "totalMs": 0.3999999910593033,
+                "selfMs": 0.3999999910593033,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 6.700000002980232,
+                "lastMs": 941.2000000029802
+              },
+              "content-input.js:handleEditorInput": {
+                "count": 9,
+                "totalMs": 0.4999999925494194,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 6.700000002980232,
+                "lastMs": 941.2000000029802
+              },
+              "sceneMarkup.ts:SceneMarkup.position": {
+                "count": 46,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 6.899999998509884,
+                "lastMs": 941.7000000029802
+              },
+              "writingExperiment.ts:ExperimentPane.point": {
+                "count": 46,
+                "totalMs": 7.200000010430813,
+                "selfMs": 0,
+                "maxMs": 0.7000000029802322,
+                "firstMs": 6.799999997019768,
+                "lastMs": 941.7000000029802
+              },
+              "writingExperiment.ts:ExperimentPane.selection": {
+                "count": 23,
+                "totalMs": 7.300000004470348,
+                "selfMs": 0.09999999403953552,
+                "maxMs": 1.2000000029802322,
+                "firstMs": 6.799999997019768,
+                "lastMs": 941.7000000029802
+              },
+              "richText.ts:updateRichText": {
+                "count": 14,
+                "totalMs": 30.900000005960464,
+                "selfMs": 30.900000005960464,
+                "maxMs": 6,
+                "firstMs": 7.5,
+                "lastMs": 941.7000000029802
+              },
+              "writingExperiment.ts:callback:state.text.observe": {
+                "count": 18,
+                "totalMs": 9.199999995529652,
+                "selfMs": 1.3999999985098839,
+                "maxMs": 2.600000001490116,
+                "firstMs": 11.799999997019768,
+                "lastMs": 941.7999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.restore": {
+                "count": 9,
+                "totalMs": 2.700000010430813,
+                "selfMs": 0.5,
+                "maxMs": 0.9000000059604645,
+                "firstMs": 13.399999998509884,
+                "lastMs": 941.7999999970198
+              },
+              "writingExperiment.ts:CompoundHistory.capture": {
+                "count": 9,
+                "totalMs": 49.20000001043081,
+                "selfMs": 0.5000000074505806,
+                "maxMs": 9.400000005960464,
+                "firstMs": 6.799999997019768,
+                "lastMs": 941.7999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.capture": {
+                "count": 9,
+                "totalMs": 49.20000001043081,
+                "selfMs": 0,
+                "maxMs": 9.400000005960464,
+                "firstMs": 6.799999997019768,
+                "lastMs": 941.7999999970198
+              },
+              "read-aloud.js:proseBlocks": {
+                "count": 23,
+                "totalMs": 0.7999999970197678,
+                "selfMs": 0.7999999970197678,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 14.200000002980232,
+                "lastMs": 1098.7999999970198
+              },
+              "formatting.js:selectedBlocks": {
+                "count": 23,
+                "totalMs": 1.4999999925494194,
+                "selfMs": 0.6999999955296516,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 14.200000002980232,
+                "lastMs": 1098.7999999970198
+              },
+              "formatting.js:getFormattingState": {
+                "count": 23,
+                "totalMs": 14.899999998509884,
+                "selfMs": 13.400000005960464,
+                "maxMs": 0.8000000044703484,
+                "firstMs": 13.600000001490116,
+                "lastMs": 1098.7999999970198
+              },
+              "formatting.js:notifyFormattingChanged": {
+                "count": 23,
+                "totalMs": 15.700000010430813,
+                "selfMs": 0.800000011920929,
+                "maxMs": 0.8000000044703484,
+                "firstMs": 13.600000001490116,
+                "lastMs": 1098.8999999985099
+              },
+              "caret.prefixCopy": {
+                "count": 23,
+                "totalMs": 6.100000008940697,
+                "selfMs": 6.100000008940697,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 14.299999997019768,
+                "lastMs": 1099.2999999970198
+              },
+              "dialogue-input.js:getCaretPosition": {
+                "count": 23,
+                "totalMs": 6.5,
+                "selfMs": 0.3999999910593033,
+                "maxMs": 0.6999999955296516,
+                "firstMs": 14.299999997019768,
+                "lastMs": 1099.2999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.activeScene": {
+                "count": 23,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 14.299999997019768,
+                "lastMs": 1099.2999999970198
+              },
+              "readability.js:reapplyReadability": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 14.600000001490116,
+                "lastMs": 830.1000000014901
+              },
+              "typewriter.caretRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 19,
+                "lastMs": 952.5
+              },
+              "typewriter.wrapperRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 19,
+                "lastMs": 952.5
+              },
+              "typewriter-scroll.js:recenterCaret": {
+                "count": 9,
+                "totalMs": 0.30000000447034836,
+                "selfMs": 0.30000000447034836,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 19,
+                "lastMs": 952.5
+              },
+              "content-input.js:getCleanContentHtml": {
+                "count": 210,
+                "totalMs": 9.600000001490116,
+                "selfMs": 9.600000001490116,
+                "maxMs": 0.9000000059604645,
+                "firstMs": 57.29999999701977,
+                "lastMs": 992
+              },
+              "writingSceneCapture.ts:serialize": {
+                "count": 210,
+                "totalMs": 9.700000002980232,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.9000000059604645,
+                "firstMs": 57.29999999701977,
+                "lastMs": 992
+              },
+              "capture.innerText": {
+                "count": 12,
+                "totalMs": 1,
+                "selfMs": 1,
+                "maxMs": 0.3999999985098839,
+                "firstMs": 58.100000001490116,
+                "lastMs": 992
+              },
+              "writingSceneCapture.ts:capture": {
+                "count": 210,
+                "totalMs": 10.899999998509884,
+                "selfMs": 0.19999999552965164,
+                "maxMs": 1.3000000044703484,
+                "firstMs": 57.29999999701977,
+                "lastMs": 992
+              },
+              "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+                "count": 9,
+                "totalMs": 12.399999998509884,
+                "selfMs": 1.5,
+                "maxMs": 3.899999998509884,
+                "firstMs": 57.29999999701977,
+                "lastMs": 992.1000000014901
+              },
+              "writingPageLayout.ts:unwrapPages": {
+                "count": 12,
+                "totalMs": 7.399999991059303,
+                "selfMs": 7.399999991059303,
+                "maxMs": 1.8000000044703484,
+                "firstMs": 157.39999999850988,
+                "lastMs": 1094.3999999985099
+              },
+              "page.measureWrites": {
+                "count": 12,
+                "totalMs": 1,
+                "selfMs": 1,
+                "maxMs": 0.29999999701976776,
+                "firstMs": 158.89999999850988,
+                "lastMs": 1094.5
+              },
+              "page.heightRead": {
+                "count": 1340,
+                "totalMs": 16.700000002980232,
+                "selfMs": 16.700000002980232,
+                "maxMs": 14.100000001490116,
+                "firstMs": 174.10000000149012,
+                "lastMs": 1095.2000000029802
+              },
+              "page.commitWrite": {
+                "count": 1340,
+                "totalMs": 2.600000001490116,
+                "selfMs": 2.600000001490116,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 174.29999999701977,
+                "lastMs": 1095.2000000029802
+              },
+              "writingPageLayout.ts:paginateScene": {
+                "count": 12,
+                "totalMs": 100.80000000447035,
+                "selfMs": 73.1000000089407,
+                "maxMs": 20.69999999552965,
+                "firstMs": 157.39999999850988,
+                "lastMs": 1095.2000000029802
+              },
+              "page.selectionRestore": {
+                "count": 10,
+                "totalMs": 44.00000000745058,
+                "selfMs": 44.00000000745058,
+                "maxMs": 19.400000005960464,
+                "firstMs": 175.29999999701977,
+                "lastMs": 1095.7999999970198
+              },
+              "writingPageLayout.ts:paginate": {
+                "count": 10,
+                "totalMs": 146.10000000149012,
+                "selfMs": 1.2999999895691872,
+                "maxMs": 38.70000000298023,
+                "firstMs": 157.20000000298023,
+                "lastMs": 1095.7999999970198
+              },
+              "writing-zoom.js:resizeSurface": {
+                "count": 7,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 371.5,
+                "lastMs": 853.6000000014901
+              }
+            },
+            "counters": {
+              "comment.anchorRect.reads": 450,
+              "comment.anchorRect.offscreen": 411,
+              "comment.anchors": 450,
+              "comment.positionWrites": 450,
+              "focus.proseBlocks": 2300,
+              "caret.prefixChars": 10586723,
+              "page.atoms": 1340,
+              "page.blockMoves": 1340,
+              "page.scenes": 12
+            }
+          },
+          "trace": {
+            "bytes": 2626631,
+            "events": 12179,
+            "pipeline": {
+              "scriptMs": 130.645,
+              "styleMs": 13.532,
+              "layoutMs": 151.319,
+              "paintMs": 37.634,
+              "nestedLayoutMs": 145.508,
+              "maxTaskMs": 39.517,
+              "layoutCount": 66
+            }
+          },
+          "endpointGeometryStable": true,
+          "endpointGeometry": {
+            "top": 402300.5,
+            "bottom": 402317.5,
+            "scrollTop": 32,
+            "pages": 1171
+          }
+        },
+        {
+          "name": "typewriter",
+          "samplesMs": [
+            30.69999999552965,
+            28.399999998509884,
+            23.899999998509884,
+            21,
+            17,
+            21.5,
+            16,
+            32.100000001490116,
+            25.30000000447035
+          ],
+          "inputP95Ms": 32.100000001490116,
+          "telemetry": {
+            "elapsedMs": 2103.4000000059605,
+            "lastActivityMs": 992.9000000059605,
+            "spans": {
+              "sceneMarkup.ts:SceneMarkup.read": {
+                "count": 99,
+                "totalMs": 12.500000014901161,
+                "selfMs": 12.500000014901161,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 1.6000000014901161,
+                "lastMs": 888.6000000014901
+              },
+              "sceneMarkup.ts:SceneMarkup.domPosition": {
+                "count": 45,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 2.100000001490116,
+                "lastMs": 888.6000000014901
+              },
+              "comment-gutter.js:scheduleCommentRender": {
+                "count": 47,
+                "totalMs": 0.4999999925494194,
+                "selfMs": 0.4999999925494194,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 3.600000001490116,
+                "lastMs": 992.3000000044703
+              },
+              "comment.anchorScan": {
+                "count": 37,
+                "totalMs": 0.8999999985098839,
+                "selfMs": 0.8999999985098839,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 3.600000001490116,
+                "lastMs": 992.4000000059605
+              },
+              "comment.anchorRect": {
+                "count": 370,
+                "totalMs": 4.200000002980232,
+                "selfMs": 4.200000002980232,
+                "maxMs": 0.4000000059604645,
+                "firstMs": 3.600000001490116,
+                "lastMs": 992.8000000044703
+              },
+              "comment.cardHeight": {
+                "count": 370,
+                "totalMs": 0.5999999940395355,
+                "selfMs": 0.5999999940395355,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 3.7000000029802322,
+                "lastMs": 992.9000000059605
+              },
+              "comment-gutter.js:renderCommentGutter": {
+                "count": 37,
+                "totalMs": 9,
+                "selfMs": 3.3000000044703484,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 3.600000001490116,
+                "lastMs": 992.9000000059605
+              },
+              "writingExperiment.ts:ExperimentPane.selectedRanges": {
+                "count": 9,
+                "totalMs": 0.5999999940395355,
+                "selfMs": 0.5999999940395355,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 5.4000000059604645,
+                "lastMs": 887.4000000059605
+              },
+              "writingExperiment.ts:ExperimentPane.markDirty": {
+                "count": 18,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 6.200000002980232,
+                "lastMs": 888.2000000029802
+              },
+              "typewriter-scroll.js:scheduleTypewriterRecenter": {
+                "count": 9,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 6.300000004470348,
+                "lastMs": 888.1000000014901
+              },
+              "readability.js:requestReadability": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 6.300000004470348,
+                "lastMs": 888.1000000014901
+              },
+              "grammar-corrections.js:requestGrammarCheck": {
+                "count": 15,
+                "totalMs": 0.3999999985098839,
+                "selfMs": 0.3999999985098839,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 6.300000004470348,
+                "lastMs": 888.2000000029802
+              },
+              "content-input.js:handleEditorInput": {
+                "count": 9,
+                "totalMs": 0.6000000014901161,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.19999999552965164,
+                "firstMs": 6.300000004470348,
+                "lastMs": 888.2000000029802
+              },
+              "sceneMarkup.ts:SceneMarkup.position": {
+                "count": 36,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 6.4000000059604645,
+                "lastMs": 888.5
+              },
+              "writingExperiment.ts:ExperimentPane.point": {
+                "count": 36,
+                "totalMs": 4.800000004470348,
+                "selfMs": 0.4000000059604645,
+                "maxMs": 0.4000000059604645,
+                "firstMs": 6.300000004470348,
+                "lastMs": 888.5
+              },
+              "writingExperiment.ts:ExperimentPane.selection": {
+                "count": 18,
+                "totalMs": 4.800000004470348,
+                "selfMs": 0,
+                "maxMs": 0.7999999970197678,
+                "firstMs": 6.300000004470348,
+                "lastMs": 888.5
+              },
+              "richText.ts:updateRichText": {
+                "count": 9,
+                "totalMs": 21.399999998509884,
+                "selfMs": 21.399999998509884,
+                "maxMs": 7.100000001490116,
+                "firstMs": 6.800000004470348,
+                "lastMs": 888.5
+              },
+              "writingExperiment.ts:callback:state.text.observe": {
+                "count": 18,
+                "totalMs": 7.899999998509884,
+                "selfMs": 0.9999999925494194,
+                "maxMs": 2,
+                "firstMs": 13.5,
+                "lastMs": 888.6000000014901
+              },
+              "writingExperiment.ts:ExperimentPane.restore": {
+                "count": 9,
+                "totalMs": 2.399999998509884,
+                "selfMs": 0.6000000014901161,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 14.600000001490116,
+                "lastMs": 888.6000000014901
+              },
+              "writingExperiment.ts:CompoundHistory.capture": {
+                "count": 9,
+                "totalMs": 33.50000000745058,
+                "selfMs": 0.5000000074505806,
+                "maxMs": 10.100000001490116,
+                "firstMs": 6.300000004470348,
+                "lastMs": 888.6000000014901
+              },
+              "writingExperiment.ts:ExperimentPane.capture": {
+                "count": 9,
+                "totalMs": 33.50000000745058,
+                "selfMs": 0,
+                "maxMs": 10.100000001490116,
+                "firstMs": 6.300000004470348,
+                "lastMs": 888.6000000014901
+              },
+              "read-aloud.js:proseBlocks": {
+                "count": 15,
+                "totalMs": 0.3999999985098839,
+                "selfMs": 0.3999999985098839,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 15.900000005960464,
+                "lastMs": 890.5
+              },
+              "formatting.js:selectedBlocks": {
+                "count": 15,
+                "totalMs": 0.9000000059604645,
+                "selfMs": 0.5000000074505806,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 15.900000005960464,
+                "lastMs": 890.5
+              },
+              "formatting.js:getFormattingState": {
+                "count": 15,
+                "totalMs": 9.300000004470348,
+                "selfMs": 8.399999998509884,
+                "maxMs": 0.7000000029802322,
+                "firstMs": 15.300000004470348,
+                "lastMs": 890.5
+              },
+              "formatting.js:notifyFormattingChanged": {
+                "count": 15,
+                "totalMs": 9.600000008940697,
+                "selfMs": 0.30000000447034836,
+                "maxMs": 0.7000000029802322,
+                "firstMs": 15.300000004470348,
+                "lastMs": 890.6000000014901
+              },
+              "caret.prefixCopy": {
+                "count": 15,
+                "totalMs": 2.899999998509884,
+                "selfMs": 2.899999998509884,
+                "maxMs": 0.5,
+                "firstMs": 16,
+                "lastMs": 890.8000000044703
+              },
+              "dialogue-input.js:getCaretPosition": {
+                "count": 15,
+                "totalMs": 3.100000001490116,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.5,
+                "firstMs": 16,
+                "lastMs": 890.8000000044703
+              },
+              "writingExperiment.ts:ExperimentPane.activeScene": {
+                "count": 15,
+                "totalMs": 0.09999999403953552,
+                "selfMs": 0.09999999403953552,
+                "maxMs": 0.09999999403953552,
+                "firstMs": 16,
+                "lastMs": 890.9000000059605
+              },
+              "readability.js:reapplyReadability": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 16.200000002980232,
+                "lastMs": 776.9000000059605
+              },
+              "typewriter.caretRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 20.700000002980232,
+                "lastMs": 889
+              },
+              "typewriter.wrapperRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 20.700000002980232,
+                "lastMs": 889
+              },
+              "typewriter-scroll.js:recenterCaret": {
+                "count": 9,
+                "totalMs": 0.29999999701976776,
+                "selfMs": 0.29999999701976776,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 20.700000002980232,
+                "lastMs": 889
+              },
+              "content-input.js:getCleanContentHtml": {
+                "count": 209,
+                "totalMs": 4.899999998509884,
+                "selfMs": 4.899999998509884,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 64.60000000149012,
+                "lastMs": 945.6000000014901
+              },
+              "writingSceneCapture.ts:serialize": {
+                "count": 209,
+                "totalMs": 5.4000000059604645,
+                "selfMs": 0.5000000074505806,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 64.60000000149012,
+                "lastMs": 945.6000000014901
+              },
+              "writingSceneCapture.ts:capture": {
+                "count": 209,
+                "totalMs": 6.899999991059303,
+                "selfMs": 0.29999999701976776,
+                "maxMs": 0.8999999985098839,
+                "firstMs": 64.60000000149012,
+                "lastMs": 945.6000000014901
+              },
+              "capture.innerText": {
+                "count": 12,
+                "totalMs": 1.199999988079071,
+                "selfMs": 1.199999988079071,
+                "maxMs": 0.3999999985098839,
+                "firstMs": 65.10000000149012,
+                "lastMs": 945.6000000014901
+              },
+              "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+                "count": 9,
+                "totalMs": 7.9000000059604645,
+                "selfMs": 1.0000000149011612,
+                "maxMs": 2.7000000029802322,
+                "firstMs": 64.60000000149012,
+                "lastMs": 945.6000000014901
+              },
+              "writing-zoom.js:resizeSurface": {
+                "count": 7,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 335.20000000298023,
+                "lastMs": 803.8000000044703
+              }
+            },
+            "counters": {
+              "comment.anchorRect.reads": 370,
+              "comment.anchorRect.offscreen": 337,
+              "comment.anchors": 370,
+              "comment.positionWrites": 370,
+              "focus.proseBlocks": 1500,
+              "caret.prefixChars": 7514798
+            }
+          },
+          "trace": {
+            "bytes": 2310214,
+            "events": 10653,
+            "pipeline": {
+              "scriptMs": 71.086,
+              "styleMs": 3.371,
+              "layoutMs": 12.073,
+              "paintMs": 18.011,
+              "nestedLayoutMs": 4.213,
+              "maxTaskMs": 11.06,
+              "layoutCount": 50
+            }
+          },
+          "endpointGeometryStable": true,
+          "endpointGeometry": {
+            "top": 186760.40625,
+            "bottom": 186777.40625,
+            "scrollTop": 201,
+            "pages": 0
+          }
+        },
+        {
+          "name": "page+typewriter",
+          "samplesMs": [
+            27.799999997019768,
+            22,
+            16.30000000447035,
+            19.5,
+            19.599999994039536,
+            16.200000002980232,
+            15.199999995529652,
+            26.80000000447035,
+            27.600000001490116
+          ],
+          "inputP95Ms": 27.799999997019768,
+          "telemetry": {
+            "elapsedMs": 2143.39999999851,
+            "lastActivityMs": 1102.7999999970198,
+            "spans": {
+              "sceneMarkup.ts:SceneMarkup.read": {
+                "count": 114,
+                "totalMs": 21.60000003129244,
+                "selfMs": 21.60000003129244,
+                "maxMs": 1,
+                "firstMs": 1.5,
+                "lastMs": 933.8999999985099
+              },
+              "sceneMarkup.ts:SceneMarkup.domPosition": {
+                "count": 45,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 2.2000000029802322,
+                "lastMs": 933.8999999985099
+              },
+              "comment-gutter.js:scheduleCommentRender": {
+                "count": 56,
+                "totalMs": 0.6999999955296516,
+                "selfMs": 0.6999999955296516,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 3.899999998509884,
+                "lastMs": 1087.7000000029802
+              },
+              "comment.anchorScan": {
+                "count": 46,
+                "totalMs": 0.30000000447034836,
+                "selfMs": 0.30000000447034836,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 4.100000001490116,
+                "lastMs": 1102.7000000029802
+              },
+              "comment.anchorRect": {
+                "count": 460,
+                "totalMs": 24.799999982118607,
+                "selfMs": 24.799999982118607,
+                "maxMs": 17.5,
+                "firstMs": 4.100000001490116,
+                "lastMs": 1102.7999999970198
+              },
+              "comment.cardHeight": {
+                "count": 460,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 4.200000002980232,
+                "lastMs": 1102.7999999970198
+              },
+              "comment-gutter.js:renderCommentGutter": {
+                "count": 46,
+                "totalMs": 28.299999982118607,
+                "selfMs": 3.0999999940395355,
+                "maxMs": 17.799999997019768,
+                "firstMs": 4.100000001490116,
+                "lastMs": 1102.7999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.selectedRanges": {
+                "count": 9,
+                "totalMs": 0.3999999985098839,
+                "selfMs": 0.3999999985098839,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 5.899999998509884,
+                "lastMs": 932.2999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.markDirty": {
+                "count": 28,
+                "totalMs": 0.7999999970197678,
+                "selfMs": 0.7999999970197678,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 6.899999998509884,
+                "lastMs": 1087.7000000029802
+              },
+              "typewriter-scroll.js:scheduleTypewriterRecenter": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 7,
+                "lastMs": 933.3999999985099
+              },
+              "readability.js:requestReadability": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 7,
+                "lastMs": 933.3999999985099
+              },
+              "grammar-corrections.js:requestGrammarCheck": {
+                "count": 15,
+                "totalMs": 0.30000000447034836,
+                "selfMs": 0.30000000447034836,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 7,
+                "lastMs": 933.3999999985099
+              },
+              "content-input.js:handleEditorInput": {
+                "count": 9,
+                "totalMs": 0.4000000059604645,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 6.899999998509884,
+                "lastMs": 933.3999999985099
+              },
+              "sceneMarkup.ts:SceneMarkup.position": {
+                "count": 46,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 7.100000001490116,
+                "lastMs": 933.7000000029802
+              },
+              "writingExperiment.ts:ExperimentPane.point": {
+                "count": 46,
+                "totalMs": 7.700000002980232,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.8000000044703484,
+                "firstMs": 7.100000001490116,
+                "lastMs": 933.7000000029802
+              },
+              "writingExperiment.ts:ExperimentPane.selection": {
+                "count": 23,
+                "totalMs": 7.700000002980232,
+                "selfMs": 0,
+                "maxMs": 1.1000000014901161,
+                "firstMs": 7.100000001490116,
+                "lastMs": 933.7000000029802
+              },
+              "richText.ts:updateRichText": {
+                "count": 14,
+                "totalMs": 43.39999998360872,
+                "selfMs": 43.39999998360872,
+                "maxMs": 7.5,
+                "firstMs": 7.600000001490116,
+                "lastMs": 933.7000000029802
+              },
+              "writingExperiment.ts:callback:state.text.observe": {
+                "count": 18,
+                "totalMs": 9.900000013411045,
+                "selfMs": 0.6999999955296516,
+                "maxMs": 2.7000000029802322,
+                "firstMs": 14.5,
+                "lastMs": 933.8999999985099
+              },
+              "writingExperiment.ts:ExperimentPane.restore": {
+                "count": 9,
+                "totalMs": 2.500000014901161,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.8000000044703484,
+                "firstMs": 16.299999997019768,
+                "lastMs": 933.8999999985099
+              },
+              "writingExperiment.ts:CompoundHistory.capture": {
+                "count": 9,
+                "totalMs": 62.1000000089407,
+                "selfMs": 0.30000000447034836,
+                "maxMs": 11.800000004470348,
+                "firstMs": 7.100000001490116,
+                "lastMs": 933.8999999985099
+              },
+              "writingExperiment.ts:ExperimentPane.capture": {
+                "count": 9,
+                "totalMs": 62.1000000089407,
+                "selfMs": 0,
+                "maxMs": 11.800000004470348,
+                "firstMs": 7.100000001490116,
+                "lastMs": 933.8999999985099
+              },
+              "read-aloud.js:proseBlocks": {
+                "count": 24,
+                "totalMs": 0.3999999910593033,
+                "selfMs": 0.3999999910593033,
+                "maxMs": 0.19999999552965164,
+                "firstMs": 17.200000002980232,
+                "lastMs": 1089.7000000029802
+              },
+              "formatting.js:selectedBlocks": {
+                "count": 24,
+                "totalMs": 0.699999988079071,
+                "selfMs": 0.29999999701976776,
+                "maxMs": 0.19999999552965164,
+                "firstMs": 17.200000002980232,
+                "lastMs": 1089.7000000029802
+              },
+              "formatting.js:getFormattingState": {
+                "count": 24,
+                "totalMs": 14.799999974668026,
+                "selfMs": 14.099999986588955,
+                "maxMs": 0.7000000029802322,
+                "firstMs": 16.600000001490116,
+                "lastMs": 1089.7000000029802
+              },
+              "formatting.js:notifyFormattingChanged": {
+                "count": 24,
+                "totalMs": 15.499999985098839,
+                "selfMs": 0.7000000104308128,
+                "maxMs": 0.7000000029802322,
+                "firstMs": 16.600000001490116,
+                "lastMs": 1089.7000000029802
+              },
+              "caret.prefixCopy": {
+                "count": 24,
+                "totalMs": 6.499999992549419,
+                "selfMs": 6.499999992549419,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 17.200000002980232,
+                "lastMs": 1090.2999999970198
+              },
+              "dialogue-input.js:getCaretPosition": {
+                "count": 24,
+                "totalMs": 7,
+                "selfMs": 0.5000000074505806,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 17.200000002980232,
+                "lastMs": 1090.2999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.activeScene": {
+                "count": 24,
+                "totalMs": 0.3999999836087227,
+                "selfMs": 0.3999999836087227,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 17.299999997019768,
+                "lastMs": 1090.2999999970198
+              },
+              "readability.js:reapplyReadability": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 17.5,
+                "lastMs": 823
+              },
+              "typewriter.caretRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 19.399999998509884,
+                "lastMs": 935.3999999985099
+              },
+              "typewriter.wrapperRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 19.399999998509884,
+                "lastMs": 935.3999999985099
+              },
+              "typewriter-scroll.js:recenterCaret": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 19.399999998509884,
+                "lastMs": 935.3999999985099
+              },
+              "content-input.js:getCleanContentHtml": {
+                "count": 210,
+                "totalMs": 9.099999994039536,
+                "selfMs": 9.099999994039536,
+                "maxMs": 0.8999999985098839,
+                "firstMs": 57.20000000298023,
+                "lastMs": 990.6000000014901
+              },
+              "writingSceneCapture.ts:serialize": {
+                "count": 210,
+                "totalMs": 9.299999997019768,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.8999999985098839,
+                "firstMs": 57.20000000298023,
+                "lastMs": 990.6000000014901
+              },
+              "capture.innerText": {
+                "count": 12,
+                "totalMs": 1,
+                "selfMs": 1,
+                "maxMs": 0.30000000447034836,
+                "firstMs": 58,
+                "lastMs": 990.6000000014901
+              },
+              "writingSceneCapture.ts:capture": {
+                "count": 210,
+                "totalMs": 10.399999998509884,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 1.2000000029802322,
+                "firstMs": 57.20000000298023,
+                "lastMs": 990.6000000014901
+              },
+              "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+                "count": 9,
+                "totalMs": 11.899999998509884,
+                "selfMs": 1.5,
+                "maxMs": 4,
+                "firstMs": 57.20000000298023,
+                "lastMs": 990.7000000029802
+              },
+              "writingPageLayout.ts:unwrapPages": {
+                "count": 12,
+                "totalMs": 7.299999997019768,
+                "selfMs": 7.299999997019768,
+                "maxMs": 1.7999999970197678,
+                "firstMs": 157.70000000298023,
+                "lastMs": 1086.2999999970198
+              },
+              "page.measureWrites": {
+                "count": 12,
+                "totalMs": 0.9000000059604645,
+                "selfMs": 0.9000000059604645,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 159.60000000149012,
+                "lastMs": 1086.3999999985099
+              },
+              "page.heightRead": {
+                "count": 1340,
+                "totalMs": 14.900000005960464,
+                "selfMs": 14.900000005960464,
+                "maxMs": 12.700000002980232,
+                "firstMs": 173.29999999701977,
+                "lastMs": 1087.1000000014901
+              },
+              "page.commitWrite": {
+                "count": 1340,
+                "totalMs": 2.600000001490116,
+                "selfMs": 2.600000001490116,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 173.60000000149012,
+                "lastMs": 1087.1000000014901
+              },
+              "writingPageLayout.ts:paginateScene": {
+                "count": 12,
+                "totalMs": 90.39999999850988,
+                "selfMs": 64.69999998807907,
+                "maxMs": 18.19999999552965,
+                "firstMs": 157.70000000298023,
+                "lastMs": 1087.1000000014901
+              },
+              "page.selectionRestore": {
+                "count": 10,
+                "totalMs": 39.899999998509884,
+                "selfMs": 39.899999998509884,
+                "maxMs": 17.5,
+                "firstMs": 174.39999999850988,
+                "lastMs": 1087.7000000029802
+              },
+              "writingPageLayout.ts:paginate": {
+                "count": 10,
+                "totalMs": 131.39999999850988,
+                "selfMs": 1.1000000014901161,
+                "maxMs": 34.899999998509884,
+                "firstMs": 157.60000000149012,
+                "lastMs": 1087.7000000029802
+              },
+              "writing-zoom.js:resizeSurface": {
+                "count": 7,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 367.6000000014901,
+                "lastMs": 852.7999999970198
+              }
+            },
+            "counters": {
+              "comment.anchorRect.reads": 460,
+              "comment.anchorRect.offscreen": 419,
+              "comment.anchors": 460,
+              "comment.positionWrites": 460,
+              "focus.proseBlocks": 2400,
+              "caret.prefixChars": 11375836,
+              "page.atoms": 1340,
+              "page.blockMoves": 1340,
+              "page.scenes": 12
+            }
+          },
+          "trace": {
+            "bytes": 4365946,
+            "events": 19816,
+            "pipeline": {
+              "scriptMs": 132.56,
+              "styleMs": 12.605,
+              "layoutMs": 137.352,
+              "paintMs": 37.709,
+              "nestedLayoutMs": 131.667,
+              "maxTaskMs": 35.345,
+              "layoutCount": 66
+            }
+          },
+          "endpointGeometryStable": true,
+          "endpointGeometry": {
+            "top": 415909.65625,
+            "bottom": 415926.65625,
+            "scrollTop": 269,
+            "pages": 1171
+          }
+        }
+      ],
+      "enabledServices": {
+        "name": "enabled-services-submission-only",
+        "tailMs": 1800,
+        "backendAnalysis": false,
+        "dimming": true,
+        "grammar": true,
+        "readability": true,
+        "correction": true,
+        "telemetry": {
+          "elapsedMs": 1848.2000000029802,
+          "lastActivityMs": 1535,
+          "spans": {
+            "writingExperiment.ts:ExperimentPane.selectedRanges": {
+              "count": 1,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 1.6000000014901161,
+              "lastMs": 1.7000000029802322
+            },
+            "comment-gutter.js:scheduleCommentRender": {
+              "count": 4,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 2.5,
+              "lastMs": 37
+            },
+            "writingExperiment.ts:ExperimentPane.markDirty": {
+              "count": 3,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 2.5,
+              "lastMs": 32.600000001490116
+            },
+            "typewriter-scroll.js:scheduleTypewriterRecenter": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 2.5,
+              "lastMs": 2.5
+            },
+            "readability.js:requestReadability": {
+              "count": 1,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 2.5,
+              "lastMs": 2.600000001490116
+            },
+            "grammar-corrections.js:requestGrammarCheck": {
+              "count": 2,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 2.600000001490116,
+              "lastMs": 32.80000000447035
+            },
+            "content-input.js:handleEditorInput": {
+              "count": 1,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 2.5,
+              "lastMs": 2.600000001490116
+            },
+            "sceneMarkup.ts:SceneMarkup.read": {
+              "count": 306,
+              "totalMs": 5.799999974668026,
+              "selfMs": 5.799999974668026,
+              "maxMs": 0.5,
+              "firstMs": 2.7000000029802322,
+              "lastMs": 31.200000002980232
+            },
+            "sceneMarkup.ts:SceneMarkup.position": {
+              "count": 202,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 2.8000000044703484,
+              "lastMs": 31.200000002980232
+            },
+            "writingExperiment.ts:ExperimentPane.point": {
+              "count": 202,
+              "totalMs": 3.3999999836087227,
+              "selfMs": 0.7000000029802322,
+              "maxMs": 0.19999999552965164,
+              "firstMs": 2.7000000029802322,
+              "lastMs": 31.200000002980232
+            },
+            "writingExperiment.ts:ExperimentPane.selection": {
+              "count": 101,
+              "totalMs": 3.3999999836087227,
+              "selfMs": 0,
+              "maxMs": 0.19999999552965164,
+              "firstMs": 2.7000000029802322,
+              "lastMs": 31.200000002980232
+            },
+            "richText.ts:updateRichText": {
+              "count": 100,
+              "totalMs": 20.400000020861626,
+              "selfMs": 20.400000020861626,
+              "maxMs": 7.600000001490116,
+              "firstMs": 3.2000000029802322,
+              "lastMs": 31.200000002980232
+            },
+            "writingExperiment.ts:callback:state.text.observe": {
+              "count": 2,
+              "totalMs": 2.100000001490116,
+              "selfMs": 0.30000000447034836,
+              "maxMs": 2.100000001490116,
+              "firstMs": 10.800000004470348,
+              "lastMs": 12.900000005960464
+            },
+            "sceneMarkup.ts:SceneMarkup.domPosition": {
+              "count": 3,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 11.700000002980232,
+              "lastMs": 12.100000001490116
+            },
+            "writingExperiment.ts:ExperimentPane.restore": {
+              "count": 1,
+              "totalMs": 0.8000000044703484,
+              "selfMs": 0.8000000044703484,
+              "maxMs": 0.8000000044703484,
+              "firstMs": 12,
+              "lastMs": 12.800000004470348
+            },
+            "writingExperiment.ts:CompoundHistory.capture": {
+              "count": 1,
+              "totalMs": 28.5,
+              "selfMs": 0.3999999910593033,
+              "maxMs": 28.5,
+              "firstMs": 2.7000000029802322,
+              "lastMs": 31.200000002980232
+            },
+            "writingExperiment.ts:ExperimentPane.capture": {
+              "count": 1,
+              "totalMs": 28.5,
+              "selfMs": 0,
+              "maxMs": 28.5,
+              "firstMs": 2.7000000029802322,
+              "lastMs": 31.200000002980232
+            },
+            "read-aloud.js:proseBlocks": {
+              "count": 4,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 31.400000005960464,
+              "lastMs": 36.30000000447035
+            },
+            "formatting.js:selectedBlocks": {
+              "count": 3,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 31.5,
+              "lastMs": 36.30000000447035
+            },
+            "typewriter-scroll.js:updateFocusBlock": {
+              "count": 1,
+              "totalMs": 0.09999999403953552,
+              "selfMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552,
+              "firstMs": 31.400000005960464,
+              "lastMs": 31.5
+            },
+            "formatting.js:getFormattingState": {
+              "count": 2,
+              "totalMs": 1.7000000029802322,
+              "selfMs": 1.6000000014901161,
+              "maxMs": 1,
+              "firstMs": 31.5,
+              "lastMs": 36.30000000447035
+            },
+            "formatting.js:notifyFormattingChanged": {
+              "count": 2,
+              "totalMs": 1.8000000044703484,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 1.1000000014901161,
+              "firstMs": 31.5,
+              "lastMs": 36.30000000447035
+            },
+            "caret.prefixCopy": {
+              "count": 2,
+              "totalMs": 0.3999999985098839,
+              "selfMs": 0.3999999985098839,
+              "maxMs": 0.3999999985098839,
+              "firstMs": 32.600000001490116,
+              "lastMs": 36.80000000447035
+            },
+            "dialogue-input.js:getCaretPosition": {
+              "count": 2,
+              "totalMs": 0.6000000014901161,
+              "selfMs": 0.20000000298023224,
+              "maxMs": 0.6000000014901161,
+              "firstMs": 32.600000001490116,
+              "lastMs": 36.900000005960464
+            },
+            "writingExperiment.ts:ExperimentPane.activeScene": {
+              "count": 2,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 32.600000001490116,
+              "lastMs": 36.900000005960464
+            },
+            "readability.js:reapplyReadability": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 32.70000000298023,
+              "lastMs": 32.70000000298023
+            },
+            "comment.anchorScan": {
+              "count": 3,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 33.20000000298023,
+              "lastMs": 37
+            },
+            "comment.anchorRect": {
+              "count": 30,
+              "totalMs": 0.20000000298023224,
+              "selfMs": 0.20000000298023224,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 33.20000000298023,
+              "lastMs": 37
+            },
+            "comment.cardHeight": {
+              "count": 30,
+              "totalMs": 0.09999999403953552,
+              "selfMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552,
+              "firstMs": 33.400000005960464,
+              "lastMs": 37.100000001490116
+            },
+            "comment-gutter.js:renderCommentGutter": {
+              "count": 3,
+              "totalMs": 0.5,
+              "selfMs": 0.20000000298023224,
+              "maxMs": 0.29999999701976776,
+              "firstMs": 33.20000000298023,
+              "lastMs": 37.100000001490116
+            },
+            "typewriter.caretRect": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 33.5,
+              "lastMs": 33.5
+            },
+            "typewriter.wrapperRect": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 33.5,
+              "lastMs": 33.5
+            },
+            "typewriter-scroll.js:recenterCaret": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 33.5,
+              "lastMs": 33.5
+            },
+            "content-input.js:getCleanContentHtml": {
+              "count": 100,
+              "totalMs": 2.100000001490116,
+              "selfMs": 2.100000001490116,
+              "maxMs": 0.7999999970197678,
+              "firstMs": 56.30000000447035,
+              "lastMs": 59.400000005960464
+            },
+            "writingSceneCapture.ts:serialize": {
+              "count": 100,
+              "totalMs": 2.2999999970197678,
+              "selfMs": 0.19999999552965164,
+              "maxMs": 0.7999999970197678,
+              "firstMs": 56.30000000447035,
+              "lastMs": 59.400000005960464
+            },
+            "writingSceneCapture.ts:capture": {
+              "count": 100,
+              "totalMs": 2.7999999970197678,
+              "selfMs": 0,
+              "maxMs": 1.2999999970197678,
+              "firstMs": 56.30000000447035,
+              "lastMs": 59.400000005960464
+            },
+            "capture.innerText": {
+              "count": 1,
+              "totalMs": 0.5,
+              "selfMs": 0.5,
+              "maxMs": 0.5,
+              "firstMs": 57.20000000298023,
+              "lastMs": 57.70000000298023
+            },
+            "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+              "count": 1,
+              "totalMs": 3.100000001490116,
+              "selfMs": 0.30000000447034836,
+              "maxMs": 3.100000001490116,
+              "firstMs": 56.30000000447035,
+              "lastMs": 59.400000005960464
+            },
+            "dialogue-input.js:tryDialogueCorrection": {
+              "count": 1,
+              "totalMs": 0.29999999701976776,
+              "selfMs": 0.29999999701976776,
+              "maxMs": 0.29999999701976776,
+              "firstMs": 612.3000000044703,
+              "lastMs": 612.6000000014901
+            },
+            "grammar-highlights.js:buildGrammarPlainTextMap": {
+              "count": 2,
+              "totalMs": 0.7000000029802322,
+              "selfMs": 0.7000000029802322,
+              "maxMs": 0.4000000059604645,
+              "firstMs": 706,
+              "lastMs": 1534.5
+            },
+            "readability.js:callback:setTimeout": {
+              "count": 1,
+              "totalMs": 0.7000000029802322,
+              "selfMs": 0.29999999701976776,
+              "maxMs": 0.7000000029802322,
+              "firstMs": 706,
+              "lastMs": 706.7000000029802
+            },
+            "grammar-corrections.js:callback:setTimeout": {
+              "count": 1,
+              "totalMs": 0.7999999970197678,
+              "selfMs": 0.5,
+              "maxMs": 0.7999999970197678,
+              "firstMs": 1534.2000000029802,
+              "lastMs": 1535
+            }
+          },
+          "counters": {
+            "focus.proseBlocks": 400,
+            "caret.prefixChars": 788965,
+            "comment.anchorRect.reads": 30,
+            "comment.anchorRect.offscreen": 27,
+            "comment.anchors": 30,
+            "comment.positionWrites": 30
+          }
+        }
+      }
+    },
+    {
+      "sceneCount": 1000,
+      "wordCount": 1000000,
+      "longSceneWords": 25000,
+      "provenance": {
+        "sourceRevision": "b854f6fc913edf0c09786cf2caf04718b9f1862a",
+        "sourceDirty": false,
+        "sourceSha256": "a60d044ec1a705acb37748979e6b1766a45ffe169e4b34e0e9dcdfb705eac8dc",
+        "adaptations": {
+          "optimized": true,
+          "scoped": true,
+          "incrementalPeerInsert": true,
+          "contentVisibility": true,
+          "scenePagination": true,
+          "sceneCapture": true,
+          "sceneProofingMap": true
+        },
+        "distribution": "fixed-25000-word-long-scene",
+        "diagnostic": {
+          "layoutTelemetry": true,
+          "trace": true
+        }
+      },
+      "environment": {
+        "os": "win32",
+        "osRelease": "10.0.26300",
+        "arch": "x64",
+        "cpuModel": "AMD Ryzen 9 9950X3D 16-Core Processor          ",
+        "logicalCpus": 32,
+        "totalMemoryBytes": 33976696832,
+        "node": "v26.7.0",
+        "browser": "HeadlessChrome/149.0.7827.55",
+        "javascript": "14.9.207.21",
+        "engine": "chromium-headless",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        }
+      },
+      "acceptance": false,
+      "workload": {
+        "inputsPerMode": 9,
+        "interInputDelayMs": 90,
+        "tailMs": 1100,
+        "backendAnalysis": false,
+        "dimming": false,
+        "grammar": false,
+        "readability": false
+      },
+      "modes": [
+        {
+          "name": "normal",
+          "samplesMs": [
+            95.10000000149012,
+            21.69999999552965,
+            23.5,
+            20.30000000447035,
+            37.79999999701977,
+            25.700000002980232,
+            23,
+            21.399999998509884,
+            39.399999998509884
+          ],
+          "inputP95Ms": 95.10000000149012,
+          "telemetry": {
+            "elapsedMs": 2301.2999999970198,
+            "lastActivityMs": 1182.1999999955297,
+            "spans": {
+              "sceneMarkup.ts:SceneMarkup.read": {
+                "count": 90,
+                "totalMs": 14.200000010430813,
+                "selfMs": 14.200000010430813,
+                "maxMs": 0.7000000029802322,
+                "firstMs": 2,
+                "lastMs": 1098.2999999970198
+              },
+              "sceneMarkup.ts:SceneMarkup.domPosition": {
+                "count": 40,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 2.6999999955296516,
+                "lastMs": 1098.2999999970198
+              },
+              "comment-gutter.js:scheduleCommentRender": {
+                "count": 45,
+                "totalMs": 0.20000000298023224,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 10.699999995529652,
+                "lastMs": 1180.7999999970198
+              },
+              "comment.anchorScan": {
+                "count": 36,
+                "totalMs": 4.5,
+                "selfMs": 4.5,
+                "maxMs": 0.4000000059604645,
+                "firstMs": 10.899999998509884,
+                "lastMs": 1181
+              },
+              "comment.anchorRect": {
+                "count": 3600,
+                "totalMs": 15.799999989569187,
+                "selfMs": 15.799999989569187,
+                "maxMs": 0.7999999970197678,
+                "firstMs": 11.100000001490116,
+                "lastMs": 1181.8999999985099
+              },
+              "comment.cardHeight": {
+                "count": 3600,
+                "totalMs": 2.5999999940395355,
+                "selfMs": 2.5999999940395355,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 11.699999995529652,
+                "lastMs": 1182.1999999955297
+              },
+              "comment-gutter.js:renderCommentGutter": {
+                "count": 36,
+                "totalMs": 36.599999986588955,
+                "selfMs": 13.700000002980232,
+                "maxMs": 2,
+                "firstMs": 10.799999997019768,
+                "lastMs": 1182.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.selectedRanges": {
+                "count": 9,
+                "totalMs": 32.900000013411045,
+                "selfMs": 32.900000013411045,
+                "maxMs": 7.300000004470348,
+                "firstMs": 14.299999997019768,
+                "lastMs": 1095.7999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.markDirty": {
+                "count": 18,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 17.399999998509884,
+                "lastMs": 1097.3999999985099
+              },
+              "typewriter-scroll.js:scheduleTypewriterRecenter": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 17.5,
+                "lastMs": 1097.2999999970198
+              },
+              "readability.js:requestReadability": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 17.5,
+                "lastMs": 1097.2999999970198
+              },
+              "grammar-corrections.js:requestGrammarCheck": {
+                "count": 15,
+                "totalMs": 0.8999999985098839,
+                "selfMs": 0.8999999985098839,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 17.600000001490116,
+                "lastMs": 1097.3999999985099
+              },
+              "content-input.js:handleEditorInput": {
+                "count": 9,
+                "totalMs": 1.0000000074505806,
+                "selfMs": 0.4000000059604645,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 17.5,
+                "lastMs": 1097.3999999985099
+              },
+              "writingExperiment.ts:ExperimentPane.selection": {
+                "count": 18,
+                "totalMs": 7.199999995529652,
+                "selfMs": 0.29999999701976776,
+                "maxMs": 1,
+                "firstMs": 17.899999998509884,
+                "lastMs": 1098.1999999955297
+              },
+              "richText.ts:updateRichText": {
+                "count": 9,
+                "totalMs": 21.099999994039536,
+                "selfMs": 21.099999994039536,
+                "maxMs": 7.899999998509884,
+                "firstMs": 18.5,
+                "lastMs": 1098.1000000014901
+              },
+              "writingExperiment.ts:callback:state.text.observe": {
+                "count": 18,
+                "totalMs": 92.89999998360872,
+                "selfMs": 1.5999999940395355,
+                "maxMs": 73.59999999403954,
+                "firstMs": 26.600000001490116,
+                "lastMs": 1099.1999999955297
+              },
+              "sceneMarkup.ts:SceneMarkup.render": {
+                "count": 3,
+                "totalMs": 79.90000000596046,
+                "selfMs": 79.40000000596046,
+                "maxMs": 73,
+                "firstMs": 27.19999999552965,
+                "lastMs": 838.2999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.render": {
+                "count": 3,
+                "totalMs": 80.10000000149012,
+                "selfMs": 0.19999999552965164,
+                "maxMs": 73.19999999552965,
+                "firstMs": 27,
+                "lastMs": 838.2999999970198
+              },
+              "writingExperiment.ts:CompoundHistory.capture": {
+                "count": 9,
+                "totalMs": 121.20000000298023,
+                "selfMs": 1.300000011920929,
+                "maxMs": 82.70000000298023,
+                "firstMs": 17.799999997019768,
+                "lastMs": 1099.2999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.capture": {
+                "count": 9,
+                "totalMs": 121.29999999701977,
+                "selfMs": 0.09999999403953552,
+                "maxMs": 82.70000000298023,
+                "firstMs": 17.799999997019768,
+                "lastMs": 1099.2999999970198
+              },
+              "read-aloud.js:proseBlocks": {
+                "count": 17,
+                "totalMs": 6.599999986588955,
+                "selfMs": 6.599999986588955,
+                "maxMs": 0.7000000029802322,
+                "firstMs": 101.5,
+                "lastMs": 1112.6999999955297
+              },
+              "formatting.js:selectedBlocks": {
+                "count": 17,
+                "totalMs": 67.6000000089407,
+                "selfMs": 61.00000002235174,
+                "maxMs": 7.700000002980232,
+                "firstMs": 101.39999999850988,
+                "lastMs": 1119.8999999985099
+              },
+              "formatting.js:getFormattingState": {
+                "count": 17,
+                "totalMs": 77.40000002086163,
+                "selfMs": 9.800000011920929,
+                "maxMs": 8.399999998509884,
+                "firstMs": 100.69999999552965,
+                "lastMs": 1119.8999999985099
+              },
+              "formatting.js:notifyFormattingChanged": {
+                "count": 17,
+                "totalMs": 78.30000001937151,
+                "selfMs": 0.8999999985098839,
+                "maxMs": 8.5,
+                "firstMs": 100.69999999552965,
+                "lastMs": 1120
+              },
+              "caret.prefixCopy": {
+                "count": 17,
+                "totalMs": 61.100000001490116,
+                "selfMs": 61.100000001490116,
+                "maxMs": 8.199999995529652,
+                "firstMs": 103.69999999552965,
+                "lastMs": 1128.1999999955297
+              },
+              "dialogue-input.js:getCaretPosition": {
+                "count": 17,
+                "totalMs": 63.599999994039536,
+                "selfMs": 2.4999999925494194,
+                "maxMs": 8.600000001490116,
+                "firstMs": 103.60000000149012,
+                "lastMs": 1128.6000000014901
+              },
+              "writingExperiment.ts:ExperimentPane.activeScene": {
+                "count": 17,
+                "totalMs": 1.4999999925494194,
+                "selfMs": 1.4999999925494194,
+                "maxMs": 0.29999999701976776,
+                "firstMs": 103.69999999552965,
+                "lastMs": 1128.8999999985099
+              },
+              "readability.js:reapplyReadability": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 104.79999999701977,
+                "lastMs": 966.1000000014901
+              },
+              "typewriter.caretRect": {
+                "count": 9,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 106,
+                "lastMs": 1130.2999999970198
+              },
+              "typewriter.wrapperRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 106.10000000149012,
+                "lastMs": 1130.2999999970198
+              },
+              "typewriter-scroll.js:recenterCaret": {
+                "count": 9,
+                "totalMs": 0.6000000014901161,
+                "selfMs": 0.5,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 106,
+                "lastMs": 1130.2999999970198
+              },
+              "content-input.js:getCleanContentHtml": {
+                "count": 11,
+                "totalMs": 2.5,
+                "selfMs": 2.5,
+                "maxMs": 0.5999999940395355,
+                "firstMs": 111,
+                "lastMs": 1150.1000000014901
+              },
+              "writingSceneCapture.ts:serialize": {
+                "count": 11,
+                "totalMs": 2.5,
+                "selfMs": 0,
+                "maxMs": 0.5999999940395355,
+                "firstMs": 111,
+                "lastMs": 1150.1000000014901
+              },
+              "capture.innerText": {
+                "count": 11,
+                "totalMs": 0.7999999970197678,
+                "selfMs": 0.7999999970197678,
+                "maxMs": 0.29999999701976776,
+                "firstMs": 111.39999999850988,
+                "lastMs": 1150.1000000014901
+              },
+              "writingSceneCapture.ts:capture": {
+                "count": 11,
+                "totalMs": 3.5,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.8999999985098839,
+                "firstMs": 111,
+                "lastMs": 1150.1000000014901
+              },
+              "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+                "count": 9,
+                "totalMs": 4.600000001490116,
+                "selfMs": 1.1000000014901161,
+                "maxMs": 1.1000000014901161,
+                "firstMs": 111,
+                "lastMs": 1150.1999999955297
+              },
+              "sceneMarkup.ts:SceneMarkup.position": {
+                "count": 32,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 215.19999999552965,
+                "lastMs": 1098.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.point": {
+                "count": 32,
+                "totalMs": 6.899999998509884,
+                "selfMs": 1.3000000044703484,
+                "maxMs": 0.8000000044703484,
+                "firstMs": 214.79999999701977,
+                "lastMs": 1098.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.restore": {
+                "count": 8,
+                "totalMs": 7.099999986588955,
+                "selfMs": 5.299999989569187,
+                "maxMs": 1.7000000029802322,
+                "firstMs": 224.29999999701977,
+                "lastMs": 1099.1999999955297
+              },
+              "writing-zoom.js:resizeSurface": {
+                "count": 8,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 463.3999999985099,
+                "lastMs": 1020.8999999985099
+              }
+            },
+            "counters": {
+              "comment.anchorRect.reads": 3600,
+              "comment.anchorRect.offscreen": 3569,
+              "comment.anchors": 3600,
+              "comment.positionWrites": 3600,
+              "focus.proseBlocks": 17000,
+              "caret.prefixChars": 79089977
+            }
+          },
+          "trace": {
+            "bytes": 4078729,
+            "events": 20478,
+            "pipeline": {
+              "scriptMs": 355.427,
+              "styleMs": 4.652,
+              "layoutMs": 27.496,
+              "paintMs": 32.872,
+              "nestedLayoutMs": 11.237,
+              "maxTaskMs": 86.575,
+              "layoutCount": 47
+            }
+          },
+          "endpointGeometryStable": true,
+          "endpointGeometry": {
+            "top": 727074.3125,
+            "bottom": 727091.3125,
+            "scrollTop": 0,
+            "pages": 0
+          }
+        },
+        {
+          "name": "page",
+          "samplesMs": [
+            25.600000001490116,
+            22.30000000447035,
+            24.200000002980232,
+            23.200000002980232,
+            23.399999998509884,
+            1272.6000000014901,
+            112.30000000447035,
+            23.299999997019768,
+            26.100000001490116
+          ],
+          "inputP95Ms": 1272.6000000014901,
+          "telemetry": {
+            "elapsedMs": 3493.5,
+            "lastActivityMs": 2490.2999999970198,
+            "spans": {
+              "read-aloud.js:proseBlocks": {
+                "count": 24,
+                "totalMs": 8.499999985098839,
+                "selfMs": 8.499999985098839,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 1.6999999955296516,
+                "lastMs": 2474.39999999851
+              },
+              "formatting.js:selectedBlocks": {
+                "count": 24,
+                "totalMs": 94.79999997466803,
+                "selfMs": 86.29999998956919,
+                "maxMs": 6.700000002980232,
+                "firstMs": 1.6999999955296516,
+                "lastMs": 2480.5
+              },
+              "formatting.js:getFormattingState": {
+                "count": 24,
+                "totalMs": 109.09999999403954,
+                "selfMs": 14.30000001937151,
+                "maxMs": 7.300000004470348,
+                "firstMs": 1.1000000014901161,
+                "lastMs": 2480.5
+              },
+              "formatting.js:notifyFormattingChanged": {
+                "count": 24,
+                "totalMs": 110.09999999403954,
+                "selfMs": 1,
+                "maxMs": 7.300000004470348,
+                "firstMs": 1.1000000014901161,
+                "lastMs": 2480.5
+              },
+              "caret.prefixCopy": {
+                "count": 24,
+                "totalMs": 108.20000000298023,
+                "selfMs": 108.20000000298023,
+                "maxMs": 9.299999997019768,
+                "firstMs": 8.100000001490116,
+                "lastMs": 2489.7999999970198
+              },
+              "dialogue-input.js:getCaretPosition": {
+                "count": 24,
+                "totalMs": 111.60000001639128,
+                "selfMs": 3.400000013411045,
+                "maxMs": 9.5,
+                "firstMs": 8.100000001490116,
+                "lastMs": 2490
+              },
+              "writingExperiment.ts:ExperimentPane.activeScene": {
+                "count": 24,
+                "totalMs": 2.3999999836087227,
+                "selfMs": 2.3999999836087227,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 15.299999997019768,
+                "lastMs": 2490.2999999970198
+              },
+              "sceneMarkup.ts:SceneMarkup.read": {
+                "count": 3111,
+                "totalMs": 915.8999999910593,
+                "selfMs": 915.8999999910593,
+                "maxMs": 21.600000001490116,
+                "firstMs": 26.600000001490116,
+                "lastMs": 2287.2999999970198
+              },
+              "sceneMarkup.ts:SceneMarkup.domPosition": {
+                "count": 45,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 27.399999998509884,
+                "lastMs": 2287.2999999970198
+              },
+              "comment-gutter.js:scheduleCommentRender": {
+                "count": 50,
+                "totalMs": 0.20000000298023224,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 35.100000001490116,
+                "lastMs": 2455
+              },
+              "comment.anchorScan": {
+                "count": 41,
+                "totalMs": 5.399999983608723,
+                "selfMs": 5.399999983608723,
+                "maxMs": 0.30000000447034836,
+                "firstMs": 35.29999999701977,
+                "lastMs": 2456.1999999955297
+              },
+              "comment.anchorRect": {
+                "count": 4100,
+                "totalMs": 34.30000001937151,
+                "selfMs": 34.30000001937151,
+                "maxMs": 2,
+                "firstMs": 35.399999998509884,
+                "lastMs": 2456.60000000149
+              },
+              "comment.cardHeight": {
+                "count": 4100,
+                "totalMs": 2.2999999970197678,
+                "selfMs": 2.2999999970197678,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 35.899999998509884,
+                "lastMs": 2456.89999999851
+              },
+              "comment-gutter.js:renderCommentGutter": {
+                "count": 41,
+                "totalMs": 58.39999998360872,
+                "selfMs": 16.399999983608723,
+                "maxMs": 3,
+                "firstMs": 35.29999999701977,
+                "lastMs": 2456.89999999851
+              },
+              "writingExperiment.ts:ExperimentPane.selectedRanges": {
+                "count": 9,
+                "totalMs": 30.200000002980232,
+                "selfMs": 30.200000002980232,
+                "maxMs": 6.100000001490116,
+                "firstMs": 39.5,
+                "lastMs": 2283.7999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.markDirty": {
+                "count": 28,
+                "totalMs": 5.100000001490116,
+                "selfMs": 5.100000001490116,
+                "maxMs": 1.1000000014901161,
+                "firstMs": 42.899999998509884,
+                "lastMs": 2455.10000000149
+              },
+              "typewriter-scroll.js:scheduleTypewriterRecenter": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 43,
+                "lastMs": 2286.2999999970198
+              },
+              "readability.js:requestReadability": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 43.100000001490116,
+                "lastMs": 2286.2999999970198
+              },
+              "grammar-corrections.js:requestGrammarCheck": {
+                "count": 15,
+                "totalMs": 0.5,
+                "selfMs": 0.5,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 43.19999999552965,
+                "lastMs": 2286.2999999970198
+              },
+              "content-input.js:handleEditorInput": {
+                "count": 9,
+                "totalMs": 0.8999999985098839,
+                "selfMs": 0.5,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 43,
+                "lastMs": 2286.2999999970198
+              },
+              "sceneMarkup.ts:SceneMarkup.position": {
+                "count": 2044,
+                "totalMs": 0.20000000298023224,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 43.69999999552965,
+                "lastMs": 2287.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.point": {
+                "count": 2044,
+                "totalMs": 862.3999999836087,
+                "selfMs": 2.800000011920929,
+                "maxMs": 21.600000001490116,
+                "firstMs": 43.399999998509884,
+                "lastMs": 2287.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.selection": {
+                "count": 1022,
+                "totalMs": 863.4999999925494,
+                "selfMs": 1.1000000089406967,
+                "maxMs": 22.899999998509884,
+                "firstMs": 43.399999998509884,
+                "lastMs": 2287.1999999955297
+              },
+              "richText.ts:updateRichText": {
+                "count": 1013,
+                "totalMs": 268.3999999910593,
+                "selfMs": 268.3999999910593,
+                "maxMs": 34,
+                "firstMs": 44.29999999701977,
+                "lastMs": 2287
+              },
+              "writingExperiment.ts:callback:state.text.observe": {
+                "count": 18,
+                "totalMs": 10.400000005960464,
+                "selfMs": 1.0000000074505806,
+                "maxMs": 2.7000000029802322,
+                "firstMs": 49.5,
+                "lastMs": 2287.2999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.restore": {
+                "count": 9,
+                "totalMs": 3.100000001490116,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.9000000059604645,
+                "firstMs": 51.29999999701977,
+                "lastMs": 2287.2999999970198
+              },
+              "writingExperiment.ts:CompoundHistory.capture": {
+                "count": 9,
+                "totalMs": 1189.8999999985099,
+                "selfMs": 4.899999983608723,
+                "maxMs": 1145.6000000014901,
+                "firstMs": 43.399999998509884,
+                "lastMs": 2287.39999999851
+              },
+              "writingExperiment.ts:ExperimentPane.capture": {
+                "count": 9,
+                "totalMs": 1190,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 1145.6000000014901,
+                "firstMs": 43.399999998509884,
+                "lastMs": 2287.39999999851
+              },
+              "readability.js:reapplyReadability": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 55.399999998509884,
+                "lastMs": 2145.7999999970198
+              },
+              "typewriter.caretRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 61.5,
+                "lastMs": 2288.2999999970198
+              },
+              "typewriter.wrapperRect": {
+                "count": 9,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 61.5,
+                "lastMs": 2288.39999999851
+              },
+              "typewriter-scroll.js:recenterCaret": {
+                "count": 9,
+                "totalMs": 0.5,
+                "selfMs": 0.3999999985098839,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 61.5,
+                "lastMs": 2288.39999999851
+              },
+              "content-input.js:getCleanContentHtml": {
+                "count": 2010,
+                "totalMs": 58.20000001788139,
+                "selfMs": 58.20000001788139,
+                "maxMs": 1,
+                "firstMs": 94.29999999701977,
+                "lastMs": 2352.1999999955297
+              },
+              "writingSceneCapture.ts:serialize": {
+                "count": 2010,
+                "totalMs": 59.99999999254942,
+                "selfMs": 1.799999974668026,
+                "maxMs": 1,
+                "firstMs": 94.29999999701977,
+                "lastMs": 2352.2999999970198
+              },
+              "capture.innerText": {
+                "count": 12,
+                "totalMs": 0.7000000029802322,
+                "selfMs": 0.7000000029802322,
+                "maxMs": 0.30000000447034836,
+                "firstMs": 95.29999999701977,
+                "lastMs": 2352.2999999970198
+              },
+              "writingSceneCapture.ts:capture": {
+                "count": 2010,
+                "totalMs": 61.29999999701977,
+                "selfMs": 0.6000000014901161,
+                "maxMs": 1.3000000044703484,
+                "firstMs": 94.29999999701977,
+                "lastMs": 2352.2999999970198
+              },
+              "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+                "count": 9,
+                "totalMs": 62.99999999254942,
+                "selfMs": 1.6999999955296516,
+                "maxMs": 30.899999998509884,
+                "firstMs": 94.29999999701977,
+                "lastMs": 2352.39999999851
+              },
+              "writingPageLayout.ts:unwrapPages": {
+                "count": 12,
+                "totalMs": 6.999999992549419,
+                "selfMs": 6.999999992549419,
+                "maxMs": 1.6000000014901161,
+                "firstMs": 1328.8999999985099,
+                "lastMs": 2451.2999999970198
+              },
+              "page.measureWrites": {
+                "count": 12,
+                "totalMs": 1.1000000014901161,
+                "selfMs": 1.1000000014901161,
+                "maxMs": 0.30000000447034836,
+                "firstMs": 1330.2999999970198,
+                "lastMs": 2451.39999999851
+              },
+              "page.heightRead": {
+                "count": 1364,
+                "totalMs": 2.199999988079071,
+                "selfMs": 2.199999988079071,
+                "maxMs": 1.3000000044703484,
+                "firstMs": 1345.5,
+                "lastMs": 2453.39999999851
+              },
+              "page.commitWrite": {
+                "count": 1364,
+                "totalMs": 2.9999999925494194,
+                "selfMs": 2.9999999925494194,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 1345.6999999955297,
+                "lastMs": 2453.39999999851
+              },
+              "writingPageLayout.ts:paginateScene": {
+                "count": 12,
+                "totalMs": 122.89999998360872,
+                "selfMs": 109.6000000089407,
+                "maxMs": 19.899999998509884,
+                "firstMs": 1328.8999999985099,
+                "lastMs": 2453.39999999851
+              },
+              "page.selectionRestore": {
+                "count": 10,
+                "totalMs": 49,
+                "selfMs": 49,
+                "maxMs": 18.899999998509884,
+                "firstMs": 1346.8999999985099,
+                "lastMs": 2455
+              },
+              "writingPageLayout.ts:paginate": {
+                "count": 10,
+                "totalMs": 182.19999999552965,
+                "selfMs": 10.300000011920929,
+                "maxMs": 39.5,
+                "firstMs": 1328.1000000014901,
+                "lastMs": 2455
+              },
+              "writing-zoom.js:resizeSurface": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 1607.2999999970198,
+                "lastMs": 2185.7999999970198
+              }
+            },
+            "counters": {
+              "focus.proseBlocks": 24000,
+              "caret.prefixChars": 127278310,
+              "comment.anchorRect.reads": 4100,
+              "comment.anchorRect.offscreen": 4063,
+              "comment.anchors": 4100,
+              "comment.positionWrites": 4100,
+              "page.atoms": 1364,
+              "page.blockMoves": 1364,
+              "page.scenes": 12
+            }
+          },
+          "trace": {
+            "bytes": 12592356,
+            "events": 56352,
+            "pipeline": {
+              "scriptMs": 1696.827,
+              "styleMs": 155.568,
+              "layoutMs": 1128.067,
+              "paintMs": 74.065,
+              "nestedLayoutMs": 308.279,
+              "maxTaskMs": 1150.377,
+              "layoutCount": 806
+            }
+          },
+          "endpointGeometryStable": true,
+          "endpointGeometry": {
+            "top": 1004931.375,
+            "bottom": 1004948.375,
+            "scrollTop": 32,
+            "pages": 12349
+          }
+        },
+        {
+          "name": "typewriter",
+          "samplesMs": [
+            30.200000002980232,
+            16.19999999552965,
+            14.199999995529652,
+            16.700000002980232,
+            16.399999998509884,
+            19.5,
+            17.5,
+            14.199999995529652,
+            21.200000002980232
+          ],
+          "inputP95Ms": 30.200000002980232,
+          "telemetry": {
+            "elapsedMs": 2219,
+            "lastActivityMs": 1117.2999999970198,
+            "spans": {
+              "sceneMarkup.ts:SceneMarkup.read": {
+                "count": 99,
+                "totalMs": 13.50000000745058,
+                "selfMs": 13.50000000745058,
+                "maxMs": 0.6000000014901161,
+                "firstMs": 1.3999999985098839,
+                "lastMs": 1024.6000000014901
+              },
+              "sceneMarkup.ts:SceneMarkup.domPosition": {
+                "count": 45,
+                "totalMs": 0.09999999403953552,
+                "selfMs": 0.09999999403953552,
+                "maxMs": 0.09999999403953552,
+                "firstMs": 2,
+                "lastMs": 1024.6000000014901
+              },
+              "comment-gutter.js:scheduleCommentRender": {
+                "count": 46,
+                "totalMs": 0.20000000298023224,
+                "selfMs": 0.20000000298023224,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 9.199999995529652,
+                "lastMs": 1116
+              },
+              "comment.anchorScan": {
+                "count": 37,
+                "totalMs": 4.300000004470348,
+                "selfMs": 4.300000004470348,
+                "maxMs": 0.30000000447034836,
+                "firstMs": 9.199999995529652,
+                "lastMs": 1116.1000000014901
+              },
+              "comment.anchorRect": {
+                "count": 3700,
+                "totalMs": 16.50000001490116,
+                "selfMs": 16.50000001490116,
+                "maxMs": 0.7000000029802322,
+                "firstMs": 9.299999997019768,
+                "lastMs": 1117
+              },
+              "comment.cardHeight": {
+                "count": 3700,
+                "totalMs": 2.399999976158142,
+                "selfMs": 2.399999976158142,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 9.799999997019768,
+                "lastMs": 1117.2999999970198
+              },
+              "comment-gutter.js:renderCommentGutter": {
+                "count": 37,
+                "totalMs": 37.5,
+                "selfMs": 14.300000004470348,
+                "maxMs": 1.7000000029802322,
+                "firstMs": 9.199999995529652,
+                "lastMs": 1117.2999999970198
+              },
+              "writingExperiment.ts:ExperimentPane.selectedRanges": {
+                "count": 9,
+                "totalMs": 29.99999999254942,
+                "selfMs": 29.99999999254942,
+                "maxMs": 6.399999998509884,
+                "firstMs": 14,
+                "lastMs": 1022.3999999985099
+              },
+              "writingExperiment.ts:ExperimentPane.markDirty": {
+                "count": 18,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 16.69999999552965,
+                "lastMs": 1023.7999999970198
+              },
+              "typewriter-scroll.js:scheduleTypewriterRecenter": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 16.69999999552965,
+                "lastMs": 1023.6999999955297
+              },
+              "readability.js:requestReadability": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 16.69999999552965,
+                "lastMs": 1023.6999999955297
+              },
+              "grammar-corrections.js:requestGrammarCheck": {
+                "count": 15,
+                "totalMs": 9.399999991059303,
+                "selfMs": 9.399999991059303,
+                "maxMs": 9,
+                "firstMs": 16.69999999552965,
+                "lastMs": 1023.7999999970198
+              },
+              "content-input.js:handleEditorInput": {
+                "count": 9,
+                "totalMs": 0.5,
+                "selfMs": 0.29999999701976776,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 16.69999999552965,
+                "lastMs": 1023.7999999970198
+              },
+              "sceneMarkup.ts:SceneMarkup.position": {
+                "count": 36,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 17.100000001490116,
+                "lastMs": 1024.5
+              },
+              "writingExperiment.ts:ExperimentPane.point": {
+                "count": 36,
+                "totalMs": 5.899999998509884,
+                "selfMs": 1.2999999970197678,
+                "maxMs": 0.5,
+                "firstMs": 16.799999997019768,
+                "lastMs": 1024.5
+              },
+              "writingExperiment.ts:ExperimentPane.selection": {
+                "count": 18,
+                "totalMs": 5.899999998509884,
+                "selfMs": 0,
+                "maxMs": 0.8000000044703484,
+                "firstMs": 16.799999997019768,
+                "lastMs": 1024.5
+              },
+              "richText.ts:updateRichText": {
+                "count": 9,
+                "totalMs": 16.100000001490116,
+                "selfMs": 16.100000001490116,
+                "maxMs": 4.9000000059604645,
+                "firstMs": 17.600000001490116,
+                "lastMs": 1024.3999999985099
+              },
+              "writingExperiment.ts:callback:state.text.observe": {
+                "count": 18,
+                "totalMs": 8.099999994039536,
+                "selfMs": 0.4999999925494194,
+                "maxMs": 2.399999998509884,
+                "firstMs": 22.5,
+                "lastMs": 1024.6000000014901
+              },
+              "writingExperiment.ts:ExperimentPane.restore": {
+                "count": 9,
+                "totalMs": 3.0000000074505806,
+                "selfMs": 1.2000000029802322,
+                "maxMs": 1.1000000014901161,
+                "firstMs": 23.799999997019768,
+                "lastMs": 1024.6000000014901
+              },
+              "writingExperiment.ts:CompoundHistory.capture": {
+                "count": 9,
+                "totalMs": 29.799999997019768,
+                "selfMs": 0.29999999701976776,
+                "maxMs": 8.100000001490116,
+                "firstMs": 16.799999997019768,
+                "lastMs": 1024.6000000014901
+              },
+              "writingExperiment.ts:ExperimentPane.capture": {
+                "count": 9,
+                "totalMs": 29.799999997019768,
+                "selfMs": 0,
+                "maxMs": 8.100000001490116,
+                "firstMs": 16.799999997019768,
+                "lastMs": 1024.6000000014901
+              },
+              "read-aloud.js:proseBlocks": {
+                "count": 16,
+                "totalMs": 4.799999997019768,
+                "selfMs": 4.799999997019768,
+                "maxMs": 0.4000000059604645,
+                "firstMs": 25.600000001490116,
+                "lastMs": 1030
+              },
+              "formatting.js:selectedBlocks": {
+                "count": 16,
+                "totalMs": 59.29999999701977,
+                "selfMs": 54.5,
+                "maxMs": 6.100000001490116,
+                "firstMs": 25.600000001490116,
+                "lastMs": 1033.6999999955297
+              },
+              "formatting.js:getFormattingState": {
+                "count": 16,
+                "totalMs": 68.19999999552965,
+                "selfMs": 8.899999998509884,
+                "maxMs": 6.800000004470348,
+                "firstMs": 25,
+                "lastMs": 1033.6999999955297
+              },
+              "formatting.js:notifyFormattingChanged": {
+                "count": 16,
+                "totalMs": 69.10000000149012,
+                "selfMs": 0.9000000059604645,
+                "maxMs": 6.800000004470348,
+                "firstMs": 25,
+                "lastMs": 1033.7999999970198
+              },
+              "caret.prefixCopy": {
+                "count": 16,
+                "totalMs": 55.79999998956919,
+                "selfMs": 55.79999998956919,
+                "maxMs": 6.699999995529652,
+                "firstMs": 27.5,
+                "lastMs": 1038.8999999985099
+              },
+              "dialogue-input.js:getCaretPosition": {
+                "count": 16,
+                "totalMs": 57.899999998509884,
+                "selfMs": 2.1000000089406967,
+                "maxMs": 6.899999998509884,
+                "firstMs": 27.5,
+                "lastMs": 1039.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.activeScene": {
+                "count": 16,
+                "totalMs": 0.8999999910593033,
+                "selfMs": 0.8999999910593033,
+                "maxMs": 0.19999999552965164,
+                "firstMs": 27.5,
+                "lastMs": 1039.2999999970198
+              },
+              "readability.js:reapplyReadability": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 28.399999998509884,
+                "lastMs": 892.5
+              },
+              "typewriter.caretRect": {
+                "count": 9,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 29.299999997019768,
+                "lastMs": 1025.6000000014901
+              },
+              "typewriter.wrapperRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 29.299999997019768,
+                "lastMs": 1025.6000000014901
+              },
+              "typewriter-scroll.js:recenterCaret": {
+                "count": 9,
+                "totalMs": 0.20000000298023224,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 29.299999997019768,
+                "lastMs": 1025.6000000014901
+              },
+              "content-input.js:getCleanContentHtml": {
+                "count": 2009,
+                "totalMs": 31.399999976158142,
+                "selfMs": 31.399999976158142,
+                "maxMs": 0.3999999985098839,
+                "firstMs": 67.39999999850988,
+                "lastMs": 1074.1999999955297
+              },
+              "writingSceneCapture.ts:serialize": {
+                "count": 2009,
+                "totalMs": 33.49999997764826,
+                "selfMs": 2.100000001490116,
+                "maxMs": 0.5,
+                "firstMs": 67.39999999850988,
+                "lastMs": 1074.1999999955297
+              },
+              "writingSceneCapture.ts:capture": {
+                "count": 2009,
+                "totalMs": 35.20000000298023,
+                "selfMs": 1.0000000149011612,
+                "maxMs": 0.5,
+                "firstMs": 67.29999999701977,
+                "lastMs": 1074.1999999955297
+              },
+              "capture.innerText": {
+                "count": 12,
+                "totalMs": 0.7000000104308128,
+                "selfMs": 0.7000000104308128,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 67.69999999552965,
+                "lastMs": 1074.1999999955297
+              },
+              "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+                "count": 9,
+                "totalMs": 36.79999999701977,
+                "selfMs": 1.5999999940395355,
+                "maxMs": 18.30000000447035,
+                "firstMs": 67.29999999701977,
+                "lastMs": 1074.1999999955297
+              },
+              "writing-zoom.js:resizeSurface": {
+                "count": 7,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 391,
+                "lastMs": 925
+              }
+            },
+            "counters": {
+              "comment.anchorRect.reads": 3700,
+              "comment.anchorRect.offscreen": 3667,
+              "comment.anchors": 3700,
+              "comment.positionWrites": 3700,
+              "focus.proseBlocks": 16000,
+              "caret.prefixChars": 83411712
+            }
+          },
+          "trace": {
+            "bytes": 2859306,
+            "events": 13330,
+            "pipeline": {
+              "scriptMs": 284.365,
+              "styleMs": 6.12,
+              "layoutMs": 25.215,
+              "paintMs": 30.592,
+              "nestedLayoutMs": 10.91,
+              "maxTaskMs": 18.452,
+              "layoutCount": 52
+            }
+          },
+          "endpointGeometryStable": true,
+          "endpointGeometry": {
+            "top": 748395.8125,
+            "bottom": 748412.8125,
+            "scrollTop": 201,
+            "pages": 0
+          }
+        },
+        {
+          "name": "page+typewriter",
+          "samplesMs": [
+            23.69999999552965,
+            20.100000001490116,
+            23.5,
+            19.200000002980232,
+            19,
+            1276,
+            71.80000000447035,
+            23.899999998509884,
+            28.799999997019768
+          ],
+          "inputP95Ms": 1276,
+          "telemetry": {
+            "elapsedMs": 3515,
+            "lastActivityMs": 2504.39999999851,
+            "spans": {
+              "read-aloud.js:proseBlocks": {
+                "count": 24,
+                "totalMs": 8.200000017881393,
+                "selfMs": 8.200000017881393,
+                "maxMs": 0.5,
+                "firstMs": 1.6999999955296516,
+                "lastMs": 2490.7999999970198
+              },
+              "formatting.js:selectedBlocks": {
+                "count": 24,
+                "totalMs": 91.20000000298023,
+                "selfMs": 82.99999998509884,
+                "maxMs": 6.5,
+                "firstMs": 1.6999999955296516,
+                "lastMs": 2496.5
+              },
+              "formatting.js:getFormattingState": {
+                "count": 24,
+                "totalMs": 105.09999998658895,
+                "selfMs": 13.899999983608723,
+                "maxMs": 7.100000001490116,
+                "firstMs": 1,
+                "lastMs": 2496.5
+              },
+              "formatting.js:notifyFormattingChanged": {
+                "count": 24,
+                "totalMs": 106.49999997764826,
+                "selfMs": 1.3999999910593033,
+                "maxMs": 7.199999995529652,
+                "firstMs": 1,
+                "lastMs": 2496.5999999940395
+              },
+              "caret.prefixCopy": {
+                "count": 24,
+                "totalMs": 88.90000002086163,
+                "selfMs": 88.90000002086163,
+                "maxMs": 7.4000000059604645,
+                "firstMs": 7.5999999940395355,
+                "lastMs": 2504
+              },
+              "dialogue-input.js:getCaretPosition": {
+                "count": 24,
+                "totalMs": 91.70000000298023,
+                "selfMs": 2.7999999821186066,
+                "maxMs": 7.600000001490116,
+                "firstMs": 7.5999999940395355,
+                "lastMs": 2504.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.activeScene": {
+                "count": 24,
+                "totalMs": 1.900000013411045,
+                "selfMs": 1.900000013411045,
+                "maxMs": 0.20000000298023224,
+                "firstMs": 14.799999997019768,
+                "lastMs": 2504.39999999851
+              },
+              "sceneMarkup.ts:SceneMarkup.read": {
+                "count": 3111,
+                "totalMs": 931.1000000089407,
+                "selfMs": 931.1000000089407,
+                "maxMs": 43,
+                "firstMs": 26.299999997019768,
+                "lastMs": 2312.0999999940395
+              },
+              "sceneMarkup.ts:SceneMarkup.domPosition": {
+                "count": 45,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 27.19999999552965,
+                "lastMs": 2312.0999999940395
+              },
+              "readability.js:reapplyReadability": {
+                "count": 6,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 38.79999999701977,
+                "lastMs": 2165.5
+              },
+              "grammar-corrections.js:requestGrammarCheck": {
+                "count": 15,
+                "totalMs": 0.7000000029802322,
+                "selfMs": 0.7000000029802322,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 38.79999999701977,
+                "lastMs": 2311.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.selectedRanges": {
+                "count": 9,
+                "totalMs": 30.00000000745058,
+                "selfMs": 30.00000000745058,
+                "maxMs": 6,
+                "firstMs": 39.399999998509884,
+                "lastMs": 2308.5999999940395
+              },
+              "comment-gutter.js:scheduleCommentRender": {
+                "count": 56,
+                "totalMs": 0.29999999701976776,
+                "selfMs": 0.29999999701976776,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 42.79999999701977,
+                "lastMs": 2486.5999999940395
+              },
+              "writingExperiment.ts:ExperimentPane.markDirty": {
+                "count": 28,
+                "totalMs": 4.600000001490116,
+                "selfMs": 4.600000001490116,
+                "maxMs": 1,
+                "firstMs": 42.899999998509884,
+                "lastMs": 2486.7999999970198
+              },
+              "typewriter-scroll.js:scheduleTypewriterRecenter": {
+                "count": 9,
+                "totalMs": 0.10000000149011612,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 42.899999998509884,
+                "lastMs": 2311.1999999955297
+              },
+              "readability.js:requestReadability": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 42.899999998509884,
+                "lastMs": 2311.1999999955297
+              },
+              "content-input.js:handleEditorInput": {
+                "count": 9,
+                "totalMs": 0.7000000029802322,
+                "selfMs": 0.10000000149011612,
+                "maxMs": 0.19999999552965164,
+                "firstMs": 42.899999998509884,
+                "lastMs": 2311.1999999955297
+              },
+              "sceneMarkup.ts:SceneMarkup.position": {
+                "count": 2044,
+                "totalMs": 0.6000000014901161,
+                "selfMs": 0.6000000014901161,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 43.29999999701977,
+                "lastMs": 2312
+              },
+              "writingExperiment.ts:ExperimentPane.point": {
+                "count": 2044,
+                "totalMs": 870.1999999955297,
+                "selfMs": 3.300000011920929,
+                "maxMs": 43,
+                "firstMs": 43,
+                "lastMs": 2312
+              },
+              "writingExperiment.ts:ExperimentPane.selection": {
+                "count": 1022,
+                "totalMs": 871.7999999821186,
+                "selfMs": 1.599999986588955,
+                "maxMs": 51.70000000298023,
+                "firstMs": 43,
+                "lastMs": 2312
+              },
+              "richText.ts:updateRichText": {
+                "count": 1013,
+                "totalMs": 254,
+                "selfMs": 254,
+                "maxMs": 5.600000001490116,
+                "firstMs": 44.099999994039536,
+                "lastMs": 2311.7999999970198
+              },
+              "writingExperiment.ts:callback:state.text.observe": {
+                "count": 18,
+                "totalMs": 9.900000005960464,
+                "selfMs": 0.5000000074505806,
+                "maxMs": 2.7000000029802322,
+                "firstMs": 49.099999994039536,
+                "lastMs": 2312.0999999940395
+              },
+              "writingExperiment.ts:ExperimentPane.restore": {
+                "count": 9,
+                "totalMs": 2.7999999970197678,
+                "selfMs": 0.09999999403953552,
+                "maxMs": 0.8000000044703484,
+                "firstMs": 50.69999999552965,
+                "lastMs": 2312.0999999940395
+              },
+              "writingExperiment.ts:CompoundHistory.capture": {
+                "count": 9,
+                "totalMs": 1191.5999999940395,
+                "selfMs": 4.999999985098839,
+                "maxMs": 1148,
+                "firstMs": 43,
+                "lastMs": 2312.1999999955297
+              },
+              "writingExperiment.ts:ExperimentPane.capture": {
+                "count": 9,
+                "totalMs": 1191.5999999940395,
+                "selfMs": 0,
+                "maxMs": 1148,
+                "firstMs": 43,
+                "lastMs": 2312.1999999955297
+              },
+              "comment.anchorScan": {
+                "count": 45,
+                "totalMs": 5.200000010430813,
+                "selfMs": 5.200000010430813,
+                "maxMs": 0.3999999985098839,
+                "firstMs": 50.899999998509884,
+                "lastMs": 2486.89999999851
+              },
+              "comment.anchorRect": {
+                "count": 4500,
+                "totalMs": 53.39999998360872,
+                "selfMs": 53.39999998360872,
+                "maxMs": 18.299999997019768,
+                "firstMs": 51.099999994039536,
+                "lastMs": 2487.39999999851
+              },
+              "comment.cardHeight": {
+                "count": 4500,
+                "totalMs": 2.300000011920929,
+                "selfMs": 2.300000011920929,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 51.5,
+                "lastMs": 2487.6999999955297
+              },
+              "comment-gutter.js:renderCommentGutter": {
+                "count": 45,
+                "totalMs": 78.8999999910593,
+                "selfMs": 17.99999998509884,
+                "maxMs": 19.299999997019768,
+                "firstMs": 50.899999998509884,
+                "lastMs": 2487.6999999955297
+              },
+              "typewriter.caretRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 51.79999999701977,
+                "lastMs": 2313.1999999955297
+              },
+              "typewriter.wrapperRect": {
+                "count": 9,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 51.79999999701977,
+                "lastMs": 2313.1999999955297
+              },
+              "typewriter-scroll.js:recenterCaret": {
+                "count": 9,
+                "totalMs": 0.3999999985098839,
+                "selfMs": 0.3999999985098839,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 51.79999999701977,
+                "lastMs": 2313.1999999955297
+              },
+              "content-input.js:getCleanContentHtml": {
+                "count": 2010,
+                "totalMs": 57.30000000447035,
+                "selfMs": 57.30000000447035,
+                "maxMs": 0.8999999985098839,
+                "firstMs": 93.29999999701977,
+                "lastMs": 2362.0999999940395
+              },
+              "writingSceneCapture.ts:serialize": {
+                "count": 2010,
+                "totalMs": 59.99999998509884,
+                "selfMs": 2.6999999806284904,
+                "maxMs": 0.8999999985098839,
+                "firstMs": 93.29999999701977,
+                "lastMs": 2362.0999999940395
+              },
+              "capture.innerText": {
+                "count": 12,
+                "totalMs": 0.9000000059604645,
+                "selfMs": 0.9000000059604645,
+                "maxMs": 0.29999999701976776,
+                "firstMs": 94,
+                "lastMs": 2362.1999999955297
+              },
+              "writingSceneCapture.ts:capture": {
+                "count": 2010,
+                "totalMs": 61.69999998807907,
+                "selfMs": 0.7999999970197678,
+                "maxMs": 1.2000000029802322,
+                "firstMs": 93.29999999701977,
+                "lastMs": 2362.1999999955297
+              },
+              "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+                "count": 9,
+                "totalMs": 63.69999998062849,
+                "selfMs": 1.9999999925494194,
+                "maxMs": 30.69999999552965,
+                "firstMs": 93.29999999701977,
+                "lastMs": 2362.2999999970198
+              },
+              "writingPageLayout.ts:unwrapPages": {
+                "count": 12,
+                "totalMs": 6.699999995529652,
+                "selfMs": 6.699999995529652,
+                "maxMs": 1.5,
+                "firstMs": 1340.8999999985099,
+                "lastMs": 2482.5999999940395
+              },
+              "page.measureWrites": {
+                "count": 12,
+                "totalMs": 1,
+                "selfMs": 1,
+                "maxMs": 0.30000000447034836,
+                "firstMs": 1342.3999999985099,
+                "lastMs": 2482.5999999940395
+              },
+              "page.heightRead": {
+                "count": 1364,
+                "totalMs": 17.19999998062849,
+                "selfMs": 17.19999998062849,
+                "maxMs": 13.799999997019768,
+                "firstMs": 1357.5,
+                "lastMs": 2484.89999999851
+              },
+              "page.commitWrite": {
+                "count": 1364,
+                "totalMs": 3.1000000163912773,
+                "selfMs": 3.1000000163912773,
+                "maxMs": 0.10000000149011612,
+                "firstMs": 1357.7999999970198,
+                "lastMs": 2484.89999999851
+              },
+              "writingPageLayout.ts:paginateScene": {
+                "count": 12,
+                "totalMs": 105.90000000596046,
+                "selfMs": 77.90000001341105,
+                "maxMs": 20.30000000447035,
+                "firstMs": 1340.8999999985099,
+                "lastMs": 2484.89999999851
+              },
+              "page.selectionRestore": {
+                "count": 10,
+                "totalMs": 48.8999999910593,
+                "selfMs": 48.8999999910593,
+                "maxMs": 18.799999997019768,
+                "firstMs": 1358.7999999970198,
+                "lastMs": 2486.5999999940395
+              },
+              "writingPageLayout.ts:paginate": {
+                "count": 10,
+                "totalMs": 165.7999999821186,
+                "selfMs": 10.999999985098839,
+                "maxMs": 38.79999999701977,
+                "firstMs": 1340,
+                "lastMs": 2486.5999999940395
+              },
+              "writing-zoom.js:resizeSurface": {
+                "count": 7,
+                "totalMs": 0,
+                "selfMs": 0,
+                "maxMs": 0,
+                "firstMs": 1613.6999999955297,
+                "lastMs": 2208.5
+              }
+            },
+            "counters": {
+              "focus.proseBlocks": 24000,
+              "caret.prefixChars": 118526819,
+              "comment.anchorRect.reads": 4500,
+              "comment.anchorRect.offscreen": 4461,
+              "comment.anchors": 4500,
+              "comment.positionWrites": 4500,
+              "page.atoms": 1364,
+              "page.blockMoves": 1364,
+              "page.scenes": 12
+            }
+          },
+          "trace": {
+            "bytes": 6599958,
+            "events": 29713,
+            "pipeline": {
+              "scriptMs": 1677.231,
+              "styleMs": 160.328,
+              "layoutMs": 1154.909,
+              "paintMs": 78.775,
+              "nestedLayoutMs": 304.025,
+              "maxTaskMs": 1153.162,
+              "layoutCount": 806
+            }
+          },
+          "endpointGeometryStable": true,
+          "endpointGeometry": {
+            "top": 1026192.875,
+            "bottom": 1026209.875,
+            "scrollTop": 269,
+            "pages": 12349
+          }
+        }
+      ],
+      "enabledServices": {
+        "name": "enabled-services-submission-only",
+        "tailMs": 1800,
+        "backendAnalysis": false,
+        "dimming": true,
+        "grammar": true,
+        "readability": true,
+        "correction": true,
+        "telemetry": {
+          "elapsedMs": 2092.10000000149,
+          "lastActivityMs": 1811,
+          "spans": {
+            "writingExperiment.ts:ExperimentPane.selectedRanges": {
+              "count": 1,
+              "totalMs": 1.8999999985098839,
+              "selfMs": 1.8999999985098839,
+              "maxMs": 1.8999999985098839,
+              "firstMs": 4.300000004470348,
+              "lastMs": 6.200000002980232
+            },
+            "comment-gutter.js:scheduleCommentRender": {
+              "count": 4,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 7.100000001490116,
+              "lastMs": 330.1000000014901
+            },
+            "writingExperiment.ts:ExperimentPane.markDirty": {
+              "count": 3,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 7.100000001490116,
+              "lastMs": 299.70000000298023
+            },
+            "typewriter-scroll.js:scheduleTypewriterRecenter": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 7.100000001490116,
+              "lastMs": 7.100000001490116
+            },
+            "readability.js:requestReadability": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 7.200000002980232,
+              "lastMs": 7.200000002980232
+            },
+            "grammar-corrections.js:requestGrammarCheck": {
+              "count": 2,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 7.200000002980232,
+              "lastMs": 300.6000000014901
+            },
+            "content-input.js:handleEditorInput": {
+              "count": 1,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 7.100000001490116,
+              "lastMs": 7.200000002980232
+            },
+            "sceneMarkup.ts:SceneMarkup.read": {
+              "count": 3006,
+              "totalMs": 54.89999998360872,
+              "selfMs": 54.89999998360872,
+              "maxMs": 0.6999999955296516,
+              "firstMs": 7.5,
+              "lastMs": 285.5
+            },
+            "sceneMarkup.ts:SceneMarkup.position": {
+              "count": 2002,
+              "totalMs": 0.29999999701976776,
+              "selfMs": 0.29999999701976776,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 7.600000001490116,
+              "lastMs": 285.5
+            },
+            "writingExperiment.ts:ExperimentPane.point": {
+              "count": 2002,
+              "totalMs": 71.09999994933605,
+              "selfMs": 44.499999932944775,
+              "maxMs": 0.29999999701976776,
+              "firstMs": 7.300000004470348,
+              "lastMs": 285.5
+            },
+            "writingExperiment.ts:ExperimentPane.selection": {
+              "count": 1001,
+              "totalMs": 71.79999995231628,
+              "selfMs": 0.7000000029802322,
+              "maxMs": 0.3999999985098839,
+              "firstMs": 7.300000004470348,
+              "lastMs": 285.5
+            },
+            "richText.ts:updateRichText": {
+              "count": 1000,
+              "totalMs": 172.30000007897615,
+              "selfMs": 172.30000007897615,
+              "maxMs": 5.299999997019768,
+              "firstMs": 8.200000002980232,
+              "lastMs": 285.70000000298023
+            },
+            "writingExperiment.ts:callback:state.text.observe": {
+              "count": 2,
+              "totalMs": 2.399999998509884,
+              "selfMs": 0.20000000298023224,
+              "maxMs": 2.399999998509884,
+              "firstMs": 13.600000001490116,
+              "lastMs": 16
+            },
+            "sceneMarkup.ts:SceneMarkup.domPosition": {
+              "count": 3,
+              "totalMs": 0.09999999403953552,
+              "selfMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552,
+              "firstMs": 14.600000001490116,
+              "lastMs": 15
+            },
+            "writingExperiment.ts:ExperimentPane.restore": {
+              "count": 1,
+              "totalMs": 1.0999999940395355,
+              "selfMs": 1,
+              "maxMs": 1.0999999940395355,
+              "firstMs": 14.900000005960464,
+              "lastMs": 16
+            },
+            "writingExperiment.ts:CompoundHistory.capture": {
+              "count": 1,
+              "totalMs": 278.3999999985099,
+              "selfMs": 4.4000000059604645,
+              "maxMs": 278.3999999985099,
+              "firstMs": 7.300000004470348,
+              "lastMs": 285.70000000298023
+            },
+            "writingExperiment.ts:ExperimentPane.capture": {
+              "count": 1,
+              "totalMs": 278.3999999985099,
+              "selfMs": 0,
+              "maxMs": 278.3999999985099,
+              "firstMs": 7.300000004470348,
+              "lastMs": 285.70000000298023
+            },
+            "comment.anchorScan": {
+              "count": 3,
+              "totalMs": 0.4000000059604645,
+              "selfMs": 0.4000000059604645,
+              "maxMs": 0.20000000298023224,
+              "firstMs": 286,
+              "lastMs": 330.20000000298023
+            },
+            "comment.anchorRect": {
+              "count": 300,
+              "totalMs": 4.399999991059303,
+              "selfMs": 4.399999991059303,
+              "maxMs": 0.20000000298023224,
+              "firstMs": 286.20000000298023,
+              "lastMs": 330.6000000014901
+            },
+            "comment.cardHeight": {
+              "count": 300,
+              "totalMs": 0.5999999865889549,
+              "selfMs": 0.5999999865889549,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 290.30000000447035,
+              "lastMs": 331
+            },
+            "comment-gutter.js:renderCommentGutter": {
+              "count": 3,
+              "totalMs": 6.299999997019768,
+              "selfMs": 0.9000000134110451,
+              "maxMs": 4.5,
+              "firstMs": 286,
+              "lastMs": 331
+            },
+            "typewriter.caretRect": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 290.5,
+              "lastMs": 290.5
+            },
+            "typewriter.wrapperRect": {
+              "count": 1,
+              "totalMs": 0,
+              "selfMs": 0,
+              "maxMs": 0,
+              "firstMs": 290.5,
+              "lastMs": 290.5
+            },
+            "typewriter-scroll.js:recenterCaret": {
+              "count": 1,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 290.5,
+              "lastMs": 290.6000000014901
+            },
+            "read-aloud.js:proseBlocks": {
+              "count": 4,
+              "totalMs": 0.7999999970197678,
+              "selfMs": 0.7999999970197678,
+              "maxMs": 0.3999999985098839,
+              "firstMs": 294.90000000596046,
+              "lastMs": 301.6000000014901
+            },
+            "formatting.js:selectedBlocks": {
+              "count": 3,
+              "totalMs": 9.299999997019768,
+              "selfMs": 8.899999998509884,
+              "maxMs": 6.299999997019768,
+              "firstMs": 295.5,
+              "lastMs": 307.6000000014901
+            },
+            "typewriter-scroll.js:updateFocusBlock": {
+              "count": 1,
+              "totalMs": 2.0999999940395355,
+              "selfMs": 0.19999999552965164,
+              "maxMs": 2.0999999940395355,
+              "firstMs": 294.90000000596046,
+              "lastMs": 297
+            },
+            "formatting.js:getFormattingState": {
+              "count": 2,
+              "totalMs": 9.5,
+              "selfMs": 1.7000000029802322,
+              "maxMs": 6.899999998509884,
+              "firstMs": 297,
+              "lastMs": 307.6000000014901
+            },
+            "formatting.js:notifyFormattingChanged": {
+              "count": 2,
+              "totalMs": 9.600000001490116,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 6.899999998509884,
+              "firstMs": 297,
+              "lastMs": 307.6000000014901
+            },
+            "caret.prefixCopy": {
+              "count": 2,
+              "totalMs": 5.600000001490116,
+              "selfMs": 5.600000001490116,
+              "maxMs": 5.600000001490116,
+              "firstMs": 299.70000000298023,
+              "lastMs": 313.20000000298023
+            },
+            "dialogue-input.js:getCaretPosition": {
+              "count": 2,
+              "totalMs": 5.800000004470348,
+              "selfMs": 0.20000000298023224,
+              "maxMs": 5.800000004470348,
+              "firstMs": 299.70000000298023,
+              "lastMs": 313.40000000596046
+            },
+            "writingExperiment.ts:ExperimentPane.activeScene": {
+              "count": 2,
+              "totalMs": 0.20000000298023224,
+              "selfMs": 0.20000000298023224,
+              "maxMs": 0.20000000298023224,
+              "firstMs": 299.70000000298023,
+              "lastMs": 313.70000000298023
+            },
+            "readability.js:reapplyReadability": {
+              "count": 1,
+              "totalMs": 0.10000000149011612,
+              "selfMs": 0.10000000149011612,
+              "maxMs": 0.10000000149011612,
+              "firstMs": 300.5,
+              "lastMs": 300.6000000014901
+            },
+            "content-input.js:getCleanContentHtml": {
+              "count": 1000,
+              "totalMs": 13.100000023841858,
+              "selfMs": 13.100000023841858,
+              "maxMs": 0.3999999985098839,
+              "firstMs": 313.70000000298023,
+              "lastMs": 330
+            },
+            "writingSceneCapture.ts:serialize": {
+              "count": 1000,
+              "totalMs": 14.600000008940697,
+              "selfMs": 1.4999999850988388,
+              "maxMs": 0.3999999985098839,
+              "firstMs": 313.70000000298023,
+              "lastMs": 330
+            },
+            "writingSceneCapture.ts:capture": {
+              "count": 1000,
+              "totalMs": 16.100000001490116,
+              "selfMs": 0.8999999910593033,
+              "maxMs": 1,
+              "firstMs": 313.70000000298023,
+              "lastMs": 330
+            },
+            "capture.innerText": {
+              "count": 1,
+              "totalMs": 0.6000000014901161,
+              "selfMs": 0.6000000014901161,
+              "maxMs": 0.6000000014901161,
+              "firstMs": 314.1000000014901,
+              "lastMs": 314.70000000298023
+            },
+            "writingSceneCapture.ts:assignment:editor.reportContentChanged": {
+              "count": 1,
+              "totalMs": 16.299999997019768,
+              "selfMs": 0.19999999552965164,
+              "maxMs": 16.299999997019768,
+              "firstMs": 313.70000000298023,
+              "lastMs": 330
+            },
+            "dialogue-input.js:tryDialogueCorrection": {
+              "count": 1,
+              "totalMs": 0.6000000014901161,
+              "selfMs": 0.6000000014901161,
+              "maxMs": 0.6000000014901161,
+              "firstMs": 612.7000000029802,
+              "lastMs": 613.3000000044703
+            },
+            "grammar-highlights.js:buildGrammarPlainTextMap": {
+              "count": 2,
+              "totalMs": 0.5999999940395355,
+              "selfMs": 0.5999999940395355,
+              "maxMs": 0.29999999701976776,
+              "firstMs": 721.9000000059605,
+              "lastMs": 1810.6000000014901
+            },
+            "readability.js:callback:setTimeout": {
+              "count": 1,
+              "totalMs": 0.6000000014901161,
+              "selfMs": 0.30000000447034836,
+              "maxMs": 0.6000000014901161,
+              "firstMs": 721.8000000044703,
+              "lastMs": 722.4000000059605
+            },
+            "grammar-corrections.js:callback:setTimeout": {
+              "count": 1,
+              "totalMs": 0.6999999955296516,
+              "selfMs": 0.3999999985098839,
+              "maxMs": 0.6999999955296516,
+              "firstMs": 1810.3000000044703,
+              "lastMs": 1811
+            }
+          },
+          "counters": {
+            "comment.anchorRect.reads": 300,
+            "comment.anchorRect.offscreen": 297,
+            "comment.anchors": 300,
+            "comment.positionWrites": 300,
+            "focus.proseBlocks": 4000,
+            "caret.prefixChars": 8751666
+          }
+        }
+      }
+    }
+  ]
+}

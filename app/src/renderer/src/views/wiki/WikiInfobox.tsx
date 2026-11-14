@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useWikiStore, type WikiInfobox as Infobox } from '../../stores/wikiStore'
+import { contentDirection } from '../../shell/contentDirection'
 
 const IMAGE_PREFIX = 'novalist-project://nl/'
 
@@ -41,7 +42,7 @@ export function WikiInfobox({
             <img className="wiki-infobox-image" src={imageSrc(infobox.primaryImageUrl)} alt="" />
           </button>
           {infobox.images[0]?.name && (
-            <figcaption className="wiki-infobox-caption">{infobox.images[0].name}</figcaption>
+            <figcaption dir={contentDirection(infobox.images[0].name)} className="wiki-infobox-caption">{infobox.images[0].name}</figcaption>
           )}
         </figure>
       )}
@@ -50,8 +51,8 @@ export function WikiInfobox({
         <dl className="wiki-infobox-fields">
           {infobox.fields.map((field, i) => (
             <div className="wiki-infobox-row" key={`${field.labelKey ?? field.literalLabel}-${i}`}>
-              <dt>{field.labelKey ? t(field.labelKey) : field.literalLabel}</dt>
-              <dd>
+              <dt dir={contentDirection(field.labelKey ? t(field.labelKey) : field.literalLabel)}>{field.labelKey ? t(field.labelKey) : field.literalLabel}</dt>
+              <dd dir={contentDirection(field.value)}>
                 {field.linkEntityId && field.linkTypeKey ? (
                   <button
                     type="button"
@@ -81,7 +82,7 @@ export function WikiInfobox({
               >
                 <img src={imageSrc(image.url)} alt="" />
               </button>
-              {image.name && <figcaption>{image.name}</figcaption>}
+              {image.name && <figcaption dir={contentDirection(image.name)}>{image.name}</figcaption>}
             </figure>
           ))}
         </div>

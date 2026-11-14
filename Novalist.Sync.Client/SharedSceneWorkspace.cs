@@ -113,6 +113,36 @@ public sealed class SharedSceneWorkspace : IAsyncDisposable
         finally { gate.Release(); }
     }
 
+    public async Task ValidateStructureAsync(IReadOnlyList<SharedDocumentUpdate> updates, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        try
+        {
+            foreach (var update in updates)
+            {
+                EnsureItem(update.ItemId);
+                await documents.ValidateAsync(update.ItemId, update.Update, ct);
+            }
+        }
+        finally { gate.Release(); }
+    }
+
+    public async Task ApplyStructureAsync(IReadOnlyList<SharedDocumentUpdate> updates, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        try
+        {
+            foreach (var update in updates)
+            {
+                EnsureItem(update.ItemId);
+                failures.Add(update.ItemId);
+                if (!await ApplyAsync(update.ItemId, update.Update, ct)) throw new InvalidDataException("The structural document update was rejected.");
+                await ProjectAsync(update.ItemId, ct);
+            }
+        }
+        finally { gate.Release(); }
+    }
+
     public async Task RenameAsync(Guid item, string entityId, string oldName, string newName, FieldLeaseCondition condition, CancellationToken ct)
     {
         await gate.WaitAsync(ct);

@@ -364,9 +364,9 @@ body.dim-others #editor > .nv-page > .nv-focus-block { opacity: 1; }
     z-index: 10001;
     background: color-mix(in srgb, var(--bg) 92%, white 8%);
     border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent 80%);
-    border-radius: 6px;
-    padding: 3px 4px;
-    gap: 2px;
+    border-radius: var(--nl-radius-sm);
+    padding: var(--nl-space-tightest);
+    gap: var(--nl-space-hairline);
     align-items: center;
     box-shadow: 0 3px 12px rgba(0,0,0,0.4);
     pointer-events: auto;
@@ -374,6 +374,16 @@ body.dim-others #editor > .nv-page > .nv-focus-block { opacity: 1; }
     overflow-x: auto;
 }
 #floating-toolbar.visible { display: flex; }
+#floating-toolbar select {
+    color: var(--fg);
+    background: var(--bg);
+    font: inherit;
+    font-size: var(--chrome-font);
+    border: 1px solid currentColor;
+    border-radius: var(--nl-radius-sm);
+    padding: var(--nl-space-tightest);
+    flex-shrink: 0;
+}
 #floating-toolbar button {
     background: transparent;
     border: 1px solid transparent;
@@ -815,7 +825,21 @@ body.proofing-status-hosted #grammar-status-bar { display: none; }
 </div>
 <div id="context-menu"></div>
 <!-- placement-container: selectionToolbar -->
-<div id="floating-toolbar">
+<div id="floating-toolbar" role="toolbar" aria-label="Quick edit">
+    <select id="ft-style" aria-label="Paragraph style" data-command="paragraph.style.body paragraph.style.heading paragraph.style.subheading paragraph.style.blockquote paragraph.style.poetry">
+        <option value="mixed" disabled>Mixed styles</option>
+        <option value="">Body</option>
+        <option value="heading">Heading</option>
+        <option value="subheading">Subheading</option>
+        <option value="blockquote">Blockquote</option>
+        <option value="poetry">Verse</option>
+    </select>
+    <select id="ft-structure" aria-label="Insert structure" hidden data-command="writing.sceneBreak writing.chapterHeading writing.insertChapter">
+        <option value="">Insert structure</option>
+        <option value="sceneBreak">Scene break</option>
+        <option value="chapterHeading">Chapter heading</option>
+        <option value="insertChapter">New chapter</option>
+    </select>
     <button id="ft-bold" title="Bold" data-command="text.bold"><b>B</b></button>
     <button id="ft-italic" title="Italic (Ctrl+I)" data-command="text.italic"><i>I</i></button>
     <button id="ft-underline" title="Underline (Ctrl+U)" style="text-decoration:underline" data-command="text.underline">U</button>
@@ -832,9 +856,14 @@ body.proofing-status-hosted #grammar-status-bar { display: none; }
 </div>
 <!-- placement-container: end -->
 <div id="mention-picker" tabindex="-1"></div>
+<link rel="stylesheet" href="prose-direction.css">
+<link rel="stylesheet" href="interface-direction.css">
+<script src="interface-language.js"></script>
 <script src="purify.min.js"></script>
 <script src="scene-sanitizer.js"></script>
 <script src="scene-html.js"></script>
+<script src="shortcut-key.js"></script>
+<script src="prose-direction.js"></script>
 <script src="dialogue-correction.js"></script>
 <script src="editor-runtime.js"></script>
 <script src="readability.js"></script>
@@ -865,6 +894,10 @@ body.proofing-status-hosted #grammar-status-bar { display: none; }
 <script src="slash-commands.js"></script>
 <script src="dictation.js"></script>
 <script src="editor-state.js"></script>
+<script src="writing-selection.js"></script>
+<script src="writing-document.js"></script>
+<script src="writing-transactions.js"></script>
+<script src="writing-drag-drop.js"></script>
 <script src="layout-events.js"></script>
 <script src="typing-events.js"></script>
 <script src="comment-gutter-events.js"></script>
