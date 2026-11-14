@@ -76,3 +76,8 @@ runs:
       shell: bash
       working-directory: app
       run: npm run build
+
+    - name: Build mobile renderer
+      shell: bash
+      working-directory: app
+      run: npm run build:mobile
