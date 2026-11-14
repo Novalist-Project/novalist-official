@@ -226,6 +226,10 @@ export async function dismissTour(page: Page): Promise<void> {
     await tour.waitFor({ state: 'visible', timeout: 2_000 })
     await tour.locator('.tour-close').click()
     await tour.waitFor({ state: 'hidden', timeout: 5_000 })
+    // The pointer is left where the close button was, which is over the prose
+    // once the card is gone; a mention there opens a Focus Peek card that then
+    // covers whatever the spec clicks next. Park it in the corner.
+    await page.mouse.move(0, 0)
     // The tour walks the workspace and gives back the one it borrowed, and it
     // does that a task after it unmounts. Settling it here is what stops the
     // hand-back landing in the middle of whatever the spec set up next - which

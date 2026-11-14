@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { launchApp, seedBook, dismissTour } from './harness'
+import { launchApp, seedBook, dismissTour, enterWriting } from './harness'
 
 /**
  * Marking hard-to-read sentences, and having the marks stay.
@@ -36,6 +36,7 @@ test('hard-to-read marks survive the prose being re-laid-out', async () => {
   const h = await launchApp('nl-readability-')
   await seedBook(h, { 'Chapter One': ['Scene One'] })
   await dismissTour(h.page)
+  await enterWriting(h.page)
 
   await h.page.locator('.binder-scene-row').first().click()
   await h.page.getByRole('button', { name: 'Page view', exact: true }).click()
