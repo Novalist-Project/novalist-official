@@ -17,6 +17,9 @@ test('a saved persistent session reconnects when its project opens, unless the p
       const session = { sessionId: 'session', projectId: 'project', server: 'https://sync.example/', connection: 'Connected',
         isOwner: true, recoveryPath: null, mode: 'persistent', hasPendingUpdates: false }
       window.novalistRpc.request = async <T,>(method: string, params?: unknown): Promise<T> => {
+        if (method === 'collaboration/account/configuration') return { authenticationRequired: true } as T
+        if (method === 'collaboration/account/status')
+          return { subject: 'writer', displayName: 'Test Writer', deviceRegistered: true } as T
         if (method === 'collaboration/status') return (window.reconnectTest.connected ? session : null) as T
         if (method === 'collaboration/saved')
           return (window.novalistStores.project.getState().projectPath
