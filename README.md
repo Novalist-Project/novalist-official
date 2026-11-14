@@ -318,6 +318,9 @@ Listing tests opens no windows. Executing Electron tests requires a dedicated
 desktop session or explicit permission to use the interactive desktop, with
 `NOVALIST_E2E_ALLOW_DESKTOP=1` set for that run. The stress command does not set it.
 
+How CI shards and retries the suite, and how to stress a flaky spec on CI with a
+`ci-stress/*` branch, is described in [docs/ci.md](docs/ci.md).
+
 ### Packaging
 
 To produce distributable installers for the current platform:

@@ -20,7 +20,10 @@ export default defineConfig({
   timeout: 180_000,
   fullyParallel: false,
   workers: 1,
-  reporter: [['list']],
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI
+    ? [['list'], ['json', { outputFile: 'playwright-report/results.json' }]]
+    : [['list']],
   projects: [
     { name: 'app', testIgnore: [...writingResearchSpecs, ...writingBrowserSpecs] },
     { name: 'writing-browser', testMatch: writingBrowserSpecs,

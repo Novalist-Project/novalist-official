@@ -104,6 +104,7 @@ certs/
 
 # Playwright run artifacts (the last-run marker was tracked by accident)
 app/test-results/
+app/playwright-report/
 test-results/
 app/.out/
 app/.*.log
