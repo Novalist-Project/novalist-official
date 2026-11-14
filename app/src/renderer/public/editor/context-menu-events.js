@@ -14,6 +14,12 @@ let contextSpellingPoint = null;
 
 let contextSpellingTarget = null;
 
+// Where the prose was scrolled to when the menu opened. A scroll event that was
+// queued before the menu opened (focus restoring the caret, a scroll into view)
+// is delivered after it, and closed a menu the writer had only just asked for.
+// Only a scroll that actually moved the prose has anything to dismiss.
+let contextMenuScrollTop = 0;
+
 // Same trick the floating toolbar uses: swallowing mousedown keeps focus — and
 // therefore the selection — inside the editor while a menu row is clicked.
 contextMenu.addEventListener('mousedown', (e) => e.preventDefault());
@@ -62,6 +68,7 @@ document.addEventListener('contextmenu', (e) => {
     contextMenu.replaceChildren(window.sanitizeSceneFragment(html));
 
     window.positionContextMenu(e, contextMenu);
+    contextMenuScrollTop = window.NovalistEditorState.wrapper.scrollTop;
 });
 
 contextMenu.addEventListener('click', (e) => {
@@ -141,7 +148,10 @@ document.addEventListener('keydown', (e) => {
 // the wrapper too, and letting that through closed the menu in the same frame
 // it opened.
 window.NovalistEditorState.wrapper.addEventListener('scroll', () => {
-    if (Date.now() < window.NovalistEditorState.programmaticScrollUntil) return;
+    const scrollTop = window.NovalistEditorState.wrapper.scrollTop;
+    const moved = scrollTop !== contextMenuScrollTop;
+    contextMenuScrollTop = scrollTop;
+    if (!moved || Date.now() < window.NovalistEditorState.programmaticScrollUntil) return;
     window.hideContextMenu();
 });
 
