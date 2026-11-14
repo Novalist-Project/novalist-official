@@ -217,6 +217,17 @@ using the operating system's encryption service, outside project files. If that
 service is unavailable, Novalist reports the error instead of saving credentials
 without encryption.
 
+On Linux, desktops such as GNOME, KDE Plasma, Cinnamon and Xfce provide this
+service through their own keyring. On other desktops and window managers, such as
+Hyprland, Sway, niri, COSMIC or LXQt, Novalist looks for a keyring running in your
+session at startup: a Secret Service provider (GNOME Keyring, KeePassXC with Secret
+Service integration enabled, or KWallet) is used first, then KWallet directly. If
+none is running or it is locked, saving credentials fails with a message that names
+these keyrings: start one, unlock it, then restart Novalist. To
+choose a keyring yourself, launch Novalist with
+`--password-store=gnome-libsecret`, `--password-store=kwallet5` or
+`--password-store=kwallet6`; an explicit choice is always kept.
+
 On iPhone and iPad, sign-in uses the system authentication browser and credentials
 are kept in Keychain. The provider's native client must register
 `com.novalist.app:/oauth/callback` as an additional redirect URI with PKCE; desktop

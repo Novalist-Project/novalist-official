@@ -64,8 +64,7 @@ function recenterCaret() {
         const caretRelative = top - wrapperRect.top;
         const delta = caretRelative - targetY;
         if (Math.abs(delta) < 2) return;
-        window.NovalistEditorState.programmaticScrollUntil = Date.now() + 150;
-        window.NovalistEditorState.wrapper.scrollTop = window.NovalistEditorState.wrapper.scrollTop + delta;
+        window.setWritingScroll(window.NovalistEditorState.wrapper.scrollTop + delta);
     } else {
         // Typewriter is disabled: just keep caret in view (standard scroll-into-view)
         const caretRelativeTop = top - wrapperRect.top;
@@ -80,8 +79,7 @@ function recenterCaret() {
         }
 
         if (Math.abs(delta) > 1) {
-            window.NovalistEditorState.programmaticScrollUntil = Date.now() + 150;
-            window.NovalistEditorState.wrapper.scrollTop = window.NovalistEditorState.wrapper.scrollTop + delta;
+            window.setWritingScroll(window.NovalistEditorState.wrapper.scrollTop + delta);
         }
     }
 }

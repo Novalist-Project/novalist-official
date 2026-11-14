@@ -21,11 +21,12 @@ public sealed partial class Workspace
     private CollaborationSession? fieldSession;
     private readonly Dictionary<Guid, SharedFieldBinding> fieldBindings = [];
 
-    internal async Task AttachSharedProjectAsync(Guid sessionId, CollaborationSession session, SharedProjectState state, CancellationToken ct)
+    internal async Task AttachSharedProjectAsync(Guid sessionId, CollaborationSession session, SharedProjectState state, CancellationToken ct,
+        bool verifySource = true)
     {
         try
         {
-            await AttachSharedFieldsAsync(sessionId, session, state.Fields, ct);
+            await AttachSharedFieldsAsync(sessionId, session, state.Fields, ct, verifySource);
             await AttachSharedScenesAsync(sessionId, session, state.Documents, ct);
         }
         catch
@@ -35,12 +36,16 @@ public sealed partial class Workspace
         }
     }
 
-    internal async Task AttachSharedFieldsAsync(Guid sessionId, CollaborationSession session, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct)
+    /// <param name="verifySource">Require each bound file to still match the hash it was captured with.
+    /// A joiner turns this off: the checkpoint was already verified on install, and opening the project
+    /// may have rewritten a bound file since (for example, to add an extension's entity type).</param>
+    internal async Task AttachSharedFieldsAsync(Guid sessionId, CollaborationSession session, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct,
+        bool verifySource = true)
     {
         if (sharedFields is not null) throw new InvalidOperationException("Close the current collaboration session first.");
         if (sessionId == Guid.Empty) throw new ArgumentException("A session identity is required.", nameof(sessionId));
         var root = Projects.ProjectRoot ?? throw new InvalidOperationException("Open a project first.");
-        var values = await SharedCodexFields.ReadAsync(root, bindings, ct);
+        var values = await SharedCodexFields.ReadAsync(LockedSharedFiles(root), bindings, ct, verifySource);
         var known = fieldBindings;
         foreach (var binding in bindings) known.Add(binding.ItemId, binding);
         var fields = new SharedFieldWorkspace(session, async (item, value, _) =>
@@ -59,6 +64,11 @@ public sealed partial class Workspace
         sharedRoot = root;
         sharedSession = sessionId;
     }
+
+    /// <summary>Reads project files through <see cref="FileService"/>, so a read waits for an
+    /// autosave of the same file instead of racing it.</summary>
+    private SharedFileReader LockedSharedFiles(string root) =>
+        (relative, _) => FileService.ReadBytesAsync(SharedProjectPath.Resolve(root, relative));
 
     internal SharedEntityFieldsDto? SharedEntityFields(IEntityData entity)
     {

@@ -153,7 +153,7 @@ internal sealed partial class PeerProjectWorkspace : IDisposable
             await session.StartAsync(createProject: false, ct);
             await workspace.OpenProjectAsync(destination);
             archive.Position = 0;
-            await workspace.AttachSharedProjectAsync(id, session.Updates, state, archive, ct);
+            await workspace.AttachSharedProjectAsync(id, session.Updates, state, archive, ct, joining: true);
             if (hosted is not null) await RememberAsync(hosted, destination, name, ct);
             await wire.CompleteBootstrapAsync(ct);
         }

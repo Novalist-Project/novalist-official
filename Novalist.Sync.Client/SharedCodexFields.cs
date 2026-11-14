@@ -12,8 +12,13 @@ public sealed record SharedProjectState(IReadOnlyList<SharedDocumentState> Docum
     public IReadOnlyDictionary<string, byte[]>? FileBaselines { get; init; }
 }
 
+/// <summary>Reads a project file by its project-relative path.</summary>
+public delegate Task<byte[]> SharedFileReader(string relative, CancellationToken ct);
+
 public static class SharedCodexFields
 {
+    private const int MaxFileBytes = 64 * 1024 * 1024;
+
     private static readonly IReadOnlyDictionary<string, string[]> BuiltIn = new Dictionary<string, string[]>
     {
         ["character"] = ["name", "surname", "gender", "age", "birthDate", "role", "group", "eyeColor", "hairColor", "hairLength", "height", "build", "skinTone"],
@@ -25,21 +30,30 @@ public static class SharedCodexFields
     private sealed record FolderSchema(string[] Keys, bool Custom);
     private sealed record Value(SharedFieldBinding Binding, string Text);
 
-    public static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, CancellationToken ct)
+    public static Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, CancellationToken ct) =>
+        CaptureAsync(Disk(root), paths, ct);
+
+    public static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(SharedFileReader read, IReadOnlyList<string> paths, CancellationToken ct)
     {
-        var basic = (await EnumerateAsync(root, paths, ct)).Select(value => value.Binding with { ItemId = Guid.NewGuid() }).ToArray();
-        var metadata = await SharedMetadataFields.CaptureAsync(root, paths, basic.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct);
+        var basic = (await EnumerateAsync(read, paths, ct)).Select(value => value.Binding with { ItemId = Guid.NewGuid() }).ToArray();
+        var metadata = await SharedMetadataFields.CaptureAsync(read, paths, basic.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct);
         return [.. basic, .. metadata];
     }
 
-    public static async Task<IReadOnlyDictionary<Guid, string>> ReadAsync(string root, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct, bool verifySource = true)
+    public static Task<IReadOnlyDictionary<Guid, string>> ReadAsync(string root, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct, bool verifySource = true) =>
+        ReadAsync(Disk(root), bindings, ct, verifySource);
+
+    /// <param name="verifySource">Require each source file to still hash to the binding's
+    /// <see cref="SharedFieldBinding.SourceSha256"/>. Off where the file may have legitimately
+    /// changed since the bindings were captured, e.g. after a joiner opened the project.</param>
+    public static async Task<IReadOnlyDictionary<Guid, string>> ReadAsync(SharedFileReader read, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct, bool verifySource = true)
     {
         ValidateBindings(bindings);
         if (bindings.Count == 0) return new Dictionary<Guid, string>();
         var paths = bindings.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray();
-        var basic = await EnumerateAsync(root, paths, ct);
+        var basic = await EnumerateAsync(read, paths, ct);
         var values = basic.ToDictionary(value => (value.Binding.Path, value.Binding.Key, value.Binding.Custom));
-        var metadata = await SharedMetadataFields.CaptureAsync(root, paths, basic.Select(value => value.Binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct);
+        var metadata = await SharedMetadataFields.CaptureAsync(read, paths, basic.Select(value => value.Binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct);
         var result = new Dictionary<Guid, string>();
         foreach (var binding in bindings)
         {
@@ -47,7 +61,7 @@ public static class SharedCodexFields
             {
                 if (!metadata.Any(candidate => candidate.Path == binding.Path && candidate.Key == binding.Key && candidate.Metadata == binding.Metadata))
                     throw new InvalidDataException("A shared metadata binding is outside its editable schema.");
-                result.Add(binding.ItemId, await SharedMetadataFields.ReadAsync(root, binding, verifySource, ct));
+                result.Add(binding.ItemId, await SharedMetadataFields.ReadAsync(read, binding, verifySource, ct));
                 continue;
             }
             if (!values.TryGetValue((binding.Path, binding.Key, binding.Custom), out var value))
@@ -74,16 +88,16 @@ public static class SharedCodexFields
         }
     }
 
-    private static async Task<IReadOnlyList<Value>> EnumerateAsync(string root, IReadOnlyList<string> paths, CancellationToken ct)
+    private static async Task<IReadOnlyList<Value>> EnumerateAsync(SharedFileReader read, IReadOnlyList<string> paths, CancellationToken ct)
     {
-        using var project = JsonDocument.Parse(await ReadBytesAsync(root, ".novalist/project.json", ct));
+        using var project = JsonDocument.Parse(await ReadBoundedAsync(read, ".novalist/project.json", ct));
         var folders = Folders(project.RootElement);
         var result = new List<Value>();
         foreach (var path in paths)
         {
             var slash = path.LastIndexOf('/');
             if (slash < 0 || !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || !folders.TryGetValue(path[..slash], out var schema)) continue;
-            var bytes = await ReadBytesAsync(root, path, ct);
+            var bytes = await ReadBoundedAsync(read, path, ct);
             using var entity = JsonDocument.Parse(bytes);
             var id = Text(entity.RootElement, "id");
             if (string.IsNullOrEmpty(id) || !string.Equals(Path.GetFileNameWithoutExtension(path), id, StringComparison.Ordinal))
@@ -137,13 +151,21 @@ public static class SharedCodexFields
     private static IEnumerable<JsonElement> Elements(JsonElement value, string key) => Property(value, key) is { } found
         ? found.ValueKind == JsonValueKind.Array ? found.EnumerateArray() : throw new InvalidDataException("Invalid Codex metadata collection.") : [];
 
-    private static async Task<byte[]> ReadBytesAsync(string root, string relative, CancellationToken ct)
+    /// <summary>Reads straight from disk, refusing a file that grows while it is read.
+    /// Callers inside the app pass a reader that goes through its per-file lock instead.</summary>
+    public static SharedFileReader Disk(string root) => async (relative, ct) =>
     {
         await using var stream = File.OpenRead(SharedProjectPath.Resolve(root, relative));
-        if (stream.Length > 64 * 1024 * 1024) throw new InvalidDataException("Codex metadata is too large to share.");
+        if (stream.Length > MaxFileBytes) throw new InvalidDataException("Codex metadata is too large to share.");
         var bytes = new byte[checked((int)stream.Length)];
         await stream.ReadExactlyAsync(bytes, ct);
         if (await stream.ReadAsync(new byte[1], ct) != 0) throw new IOException("Codex metadata changed while it was being read.");
         return bytes;
+    };
+
+    internal static async Task<byte[]> ReadBoundedAsync(SharedFileReader read, string relative, CancellationToken ct)
+    {
+        var bytes = await read(relative, ct);
+        return bytes.Length > MaxFileBytes ? throw new InvalidDataException("Codex metadata is too large to share.") : bytes;
     }
 }

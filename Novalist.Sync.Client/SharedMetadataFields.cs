@@ -133,9 +133,9 @@ public static partial class SharedMetadataFields
     private static IEnumerable<JsonObject> Scenes(JsonObject root) => (root["chapters"] as JsonObject)?.SelectMany(chapter =>
         (chapter.Value as JsonArray)?.OfType<JsonObject>() ?? []) ?? [];
 
-    internal static async Task<string> ReadAsync(string root, SharedFieldBinding binding, bool verifySource, CancellationToken ct)
+    internal static async Task<string> ReadAsync(SharedFileReader read, SharedFieldBinding binding, bool verifySource, CancellationToken ct)
     {
-        var bytes = await File.ReadAllBytesAsync(SharedProjectPath.Resolve(root, binding.Path), ct);
+        var bytes = await SharedCodexFields.ReadBoundedAsync(read, binding.Path, ct);
         if (verifySource && !string.Equals(binding.SourceSha256, Convert.ToHexStringLower(SHA256.HashData(bytes)), StringComparison.OrdinalIgnoreCase))
             throw new IOException("Shared metadata changed during capture. Its local edits have been kept.");
         var entity = JsonNode.Parse(bytes) as JsonObject ?? throw new InvalidDataException("Invalid shared metadata.");

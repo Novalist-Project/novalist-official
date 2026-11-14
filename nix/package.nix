@@ -6,6 +6,7 @@
   copyDesktopItems,
   dotnetCorePackages,
   electron_44,
+  importNpmLock,
   makeDesktopItem,
   makeWrapper,
   nodejs_24,
@@ -22,9 +23,11 @@ buildNpmPackage (finalAttrs: {
   __structuredAttrs = true;
   sourceRoot = "${finalAttrs.src.name}/app";
   nodejs = nodejs_24;
-  npmDepsHash = "sha256-qWwq4omGrLIUZG0H7AYKfAvsKFsAJGVLzBuohn1GkEI=";
+  # Each npm package is fetched with the integrity hash recorded in
+  # package-lock.json, so lockfile edits need no separate Nix hash.
+  npmDeps = importNpmLock { npmRoot = "${src}/app"; };
+  npmConfigHook = importNpmLock.npmConfigHook;
   npmFlags = [ "--ignore-scripts" ];
-  makeCacheWritable = true;
   env.ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
   nativeBuildInputs = [ copyDesktopItems makeWrapper ];
 

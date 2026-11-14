@@ -45,7 +45,7 @@ window.NovalistEditorState.editor.addEventListener('focus', () => {
     window.NovalistEditorState.isFocusing = true;
     const restore = () => {
         if (window.NovalistEditorState.wrapper.scrollTop !== window.NovalistEditorState.savedScrollTop) {
-            window.NovalistEditorState.wrapper.scrollTop = window.NovalistEditorState.savedScrollTop;
+            window.setWritingScroll(window.NovalistEditorState.savedScrollTop);
         }
     };
     restore();

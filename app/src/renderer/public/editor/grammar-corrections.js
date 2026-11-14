@@ -157,7 +157,7 @@ function replaceProofingRange(range, expectedText, replacement) {
     // the popup on the input handler's next animation frame.
     if (window.NovalistEditorState.typewriterFrame) cancelAnimationFrame(window.NovalistEditorState.typewriterFrame);
     window.NovalistEditorState.typewriterFrame = 0;
-    window.NovalistEditorState.wrapper.scrollTop = scrollTop;
+    window.setWritingScroll(scrollTop);
     return applied;
 }
 

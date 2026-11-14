@@ -40,7 +40,7 @@ public sealed partial class Workspace
                 }
             }
         }
-        var values = await SharedCodexFields.ReadAsync(root, added.Fields, ct, verifySource: false);
+        var values = await SharedCodexFields.ReadAsync(LockedSharedFiles(root), added.Fields, ct, verifySource: false);
         foreach (var binding in added.Fields) fieldBindings[binding.ItemId] = binding;
         if (sharedFields is { } fields) await fields.AddAsync(values, ct);
         await RetireMissingMetadataAsync(root);

@@ -32,7 +32,11 @@ could encounter in a previously released version.
 
 ### Fixed
 
+- The scene notes placement picker no longer opens over Dashboard or Manuscript when a saved dock position is missing, or reappears after cancellation. Choose Notes to set its position again.
 - Scene synopses retain edits when switching views or closing the app while the field is still focused. Background refreshes no longer replace newer summary text, and failed saves keep the text available for retry.
+- Joining a live session no longer fails with "Shared metadata changed during capture" when opening the project updates it on your machine, for example when an installed extension adds its entity type. The update is shared with the host and the other writers. Sharing a project also no longer fails occasionally when a save lands while the project is being packed for a joining writer, and preparing that copy no longer blocks saves on Windows.
+- Editor context menus stay open when automatic caret scrolling is delayed by a busy app, so actions such as Add to Dictionary remain clickable.
+- Collaboration sign-in and relay credentials can be saved on Linux desktops and window managers without built-in keyring detection, such as Hyprland, Sway, niri, COSMIC and LXQt. Novalist now finds the GNOME Keyring, KeePassXC or KWallet service running in your session, and still respects a keyring chosen with `--password-store`. When no keyring is available, the error now says which keyrings to start instead of a generic failure.
 
 ---
 
