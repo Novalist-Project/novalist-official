@@ -103,7 +103,8 @@ service through their own keyring. On other desktops and window managers, such a
 Hyprland, Sway, niri, COSMIC or LXQt, Novalist looks for a keyring running in your
 session at startup: a Secret Service provider (GNOME Keyring, KeePassXC with Secret
 Service integration enabled, or KWallet) is used first, then KWallet directly. If
-none is running, start one and make sure it is unlocked, then restart Novalist. To
+none is running or it is locked, saving credentials fails with a message that names
+these keyrings: start one, unlock it, then restart Novalist. To
 choose a keyring yourself, launch Novalist with
 `--password-store=gnome-libsecret`, `--password-store=kwallet5` or
 `--password-store=kwallet6`; an explicit choice is always kept.
