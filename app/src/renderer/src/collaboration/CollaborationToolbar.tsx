@@ -18,6 +18,7 @@ export function CollaborationToolbar(): React.JSX.Element {
   const changing = useProjectStore(state => state.workspaceBusy || state.workspaceSuspended || state.closingProject)
   const session = useHostedSessionStore(state => state.session)
   const busy = useHostedSessionStore(state => state.busy)
+  const hostSynchronizing = useHostedSessionStore(state => state.hostSynchronizing)
   useEffect(() => {
     if (!ready || changing) return
     let stopped = false
@@ -43,12 +44,17 @@ export function CollaborationToolbar(): React.JSX.Element {
   const label = busy ? 'collaboration.working' : session
     ? session.connection === 'Connected' ? session.isOwner ? 'collaboration.sharing' : 'collaboration.joined' : 'collaboration.reconnecting'
     : 'collaboration.open'
+  const connection = !ready || changing ? 'Stopped' : busy || hostSynchronizing ? 'Connecting' : session?.connection ?? 'Stopped'
+  const connectionLabel = hostSynchronizing ? t('collaboration.transfer.hostSynchronizing')
+    : busy ? t('collaboration.progress.' + busy) : t('collaboration.connection.' + connection)
   return <div className="collaboration-toolbar" ref={root}>
     <button className={`toolbar-button toolbar-action${session ? ' collaboration-active' : ''}`} data-collaboration-trigger
       aria-label={t('collaboration.title')} aria-expanded={open} aria-haspopup="dialog" disabled={!ready}
-      title={session ? t('collaboration.connection.' + session.connection) : t('collaboration.title')}
+      title={session || busy || hostSynchronizing ? connectionLabel : t('collaboration.title')}
       onClick={() => setOpen(value => !value)}>
       <Users size={16} strokeWidth={1.75} /><span>{t(label)}</span>
+      {(session || busy || hostSynchronizing) && <span className="collaboration-connection-dot"
+        data-connection={connection} role="img" aria-label={connectionLabel} />}
     </button>
     {open && <CollaborationPanel onClose={() => setOpen(false)} />}
   </div>

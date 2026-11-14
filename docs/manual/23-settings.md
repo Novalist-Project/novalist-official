@@ -40,6 +40,12 @@ connection type, and a retained relay project opens its reconnect controls.
 During a session, the panel shows connection status, invitations and the end-session
 action. Owners can expand **Manage shared access** for membership controls.
 
+The top-bar button also shows a connection dot without opening the panel:
+green means connected, amber means connecting, reconnecting or preparing a
+transfer, and red means sharing is paused or needs attention. Hover for details.
+This indicates the session connection, not confirmation that every edit has reached
+every writer.
+
 iPhone and iPad offer **Relay server** and **Direct TCP**, and can collaborate with
 desktop writers using either mode. Steam is available only on desktop. Mobile joins
 create a local copy in **Files → Novalist** by default; change the folder name or

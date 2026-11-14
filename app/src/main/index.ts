@@ -34,6 +34,10 @@ import { registerProtocolSchemes, registerProtocolHandlers } from './protocols'
 import { SCHEME, parseDeepLink, deepLinkFromArgv, type DeepLink } from './deeplink'
 import { installFocusWindow } from './focus-window'
 import { registerSceneNotesWindow } from './scene-notes-window'
+import { linuxPasswordStoreSwitch } from './linux-password-store'
+
+const passwordStore = linuxPasswordStoreSwitch(process.platform, process.env, app.commandLine.hasSwitch('password-store'))
+if (passwordStore) app.commandLine.appendSwitch('password-store', passwordStore)
 
 // Name the app before anything reads it (menu/About/dock/window title) so the
 // UI never shows the default "Electron".
