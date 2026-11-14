@@ -26,6 +26,11 @@ import { registerProtocolSchemes, registerProtocolHandlers } from './protocols'
 import { SCHEME, parseDeepLink, deepLinkFromArgv, type DeepLink } from './deeplink'
 import { installFocusWindow } from './focus-window'
 import { registerSceneNotesWindow } from './scene-notes-window'
+import { linuxPasswordStoreSwitch, sessionBusNames } from './linux-password-store'
+
+// Chosen before anything touches safeStorage: Chromium reads the switch once.
+const passwordStore = linuxPasswordStoreSwitch(process.platform, process.env, app.commandLine.hasSwitch('password-store'), sessionBusNames)
+if (passwordStore) app.commandLine.appendSwitch('password-store', passwordStore)
 
 // Name the app before anything reads it (menu/About/dock/window title) so the
 // UI never shows the default "Electron".

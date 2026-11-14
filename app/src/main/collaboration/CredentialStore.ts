@@ -2,6 +2,8 @@ import { safeStorage } from 'electron'
 import { createHash, randomUUID } from 'node:crypto'
 import { mkdir, open, readFile, rename, rm } from 'node:fs/promises'
 import { join } from 'node:path'
+import { DesktopOperationError } from '../desktop-operation-error'
+import { credentialStoreProblem } from './credentialStoreAvailability'
 
 const maxCredentialBytes = 256 * 1024
 
@@ -49,9 +51,9 @@ export class CredentialStore {
 }
 
 function requireEncryption(): void {
-  if (!safeStorage.isEncryptionAvailable() || (process.platform === 'linux' &&
-    ['basic_text', 'unknown'].includes(safeStorage.getSelectedStorageBackend())))
-    throw new Error('The operating system credential store is unavailable.')
+  const problem = credentialStoreProblem(process.platform, safeStorage.isEncryptionAvailable(),
+    process.platform === 'linux' ? safeStorage.getSelectedStorageBackend() : '')
+  if (problem) throw new DesktopOperationError(problem)
 }
 
 function missing(error: unknown): boolean {
