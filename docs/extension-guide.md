@@ -363,9 +363,34 @@ The whole set arrives — surfaces, text, accent, borders, status colours, the t
 
 The shim sets `data-novalist-theme="ready"` on your `<html>` element once the tokens are on, which is worth waiting for if you measure anything at startup. Hardcoding a palette still works and is still wrong: it will not follow a theme, and it will not follow a writer who picked high contrast because they need it.
 
+### Following the writer's language and direction
+
+The same shim sets `lang` and `dir` on your `<html>` element, so a panel is laid out right to left in a right-to-left interface without your extension passing a direction around itself. Novalist sends both as soon as the shim reports it is listening and again whenever the writer changes the interface language.
+
+The language is the one **your strings are in**, not simply the interface language. If the interface is Arabic and your `Locales/` folder has an `ar.json`, the panel gets `lang="ar" dir="rtl"`. If it has none, every key falls back to English, so the panel gets `lang="en" dir="ltr"` and stays as you wrote it: English text in a mirrored layout reads worse than a panel left alone. Shipping the locale file is what opts a panel in.
+
+What is left to you is CSS that does not name a side:
+
+```html
+<style>
+  .row { display: flex; gap: var(--nl-space-sm); }      /* order follows dir */
+  .meta { margin-inline-start: auto; }                  /* not margin-left */
+  .list { padding-inline-start: var(--nl-space-lg); }   /* not padding-left */
+  th, td { text-align: start; }                         /* not left */
+  .rail { border-inline-end: var(--nl-rule-width) solid var(--nl-border); }
+</style>
+```
+
+- Use the logical properties (`margin-inline-*`, `padding-inline-*`, `border-inline-*`, `inset-inline-*`, `text-align: start` / `end`). They are identical to their physical counterparts in a left-to-right panel, so there is nothing to test twice.
+- Do not set `dir` on `<html>` yourself, and do not mirror by hand with a `[dir="rtl"]` copy of your stylesheet.
+- Text the writer typed (a name, a scene title, a chat message) has a direction of its own, whatever the interface: give those elements `dir="auto"`.
+- An icon that points somewhere (a back arrow, a chevron) needs flipping: `[dir="rtl"] .chevron { transform: scaleX(-1); }`.
+
+A panel that builds its own listener instead of using the shim receives the same data as a message: `event.data.novalistLanguage` is `{ lang, dir }`, with `dir` either `"rtl"` or `"ltr"`. It is sent in answer to the `novalistThemeReady` ping the shim posts to `parent`.
+
 ## Localization
 
-Ship a `Locales/` folder of JSON files named by language code (`en.json`, `de.json`, …), and resolve keys through `host.GetLocalization(Id)`. Missing keys fall back to English. Subscribe to `LanguageChanged` if you cache resolved strings.
+Ship a `Locales/` folder of JSON files named by language code (`en.json`, `de.json`, …), and resolve keys through `host.GetLocalization(Id)`. Missing keys fall back to English. Subscribe to `LanguageChanged` if you cache resolved strings. A locale file also decides the [language and direction your panels are laid out in](#following-the-writers-language-and-direction).
 
 ## Storing data
 

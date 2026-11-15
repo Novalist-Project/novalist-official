@@ -124,6 +124,8 @@ A regional tag falls back to its base language, so `de-AT` uses `analysis.de.jso
 
 Extensions ship their own locale files in their `Locales/` folder. The active app language is exposed to extensions through the SDK, and extensions load their own translations independently — translating the core app does not translate extensions, and vice versa.
 
+The same holds for direction. A panel of an extension that is translated into a right-to-left interface language is laid out right to left with the rest of the app. An extension that is not translated into it keeps showing English and stays left to right. See [Extensions](24-extensions.md#hotkeys-themes-and-the-status-bar).
+
 ## Counting words in Chinese, Japanese, Korean and Thai
 
 Novalist counts words by script rather than by spaces.

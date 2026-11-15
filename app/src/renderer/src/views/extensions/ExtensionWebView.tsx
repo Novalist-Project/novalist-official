@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { rpc } from '../../rpc/client'
-import { postThemeToFrame, watchTheme } from '../../shell/extensionTheme'
+import { postLanguageToFrame, postThemeToFrame, watchTheme } from '../../shell/extensionTheme'
 import type { ExtensionWebView as WebViewInfo } from '../../stores/extensionsStore'
 
 /**
@@ -13,9 +13,21 @@ import type { ExtensionWebView as WebViewInfo } from '../../stores/extensionsSto
  * used to ship its own palette and stay that colour whichever theme the writer
  * picked. A panel that includes the theme shim announces itself and is sent the
  * whole `--nl-*` set, then again whenever the theme changes.
+ *
+ * The same goes for direction: the frame is told the language its extension's
+ * strings are in, and with it whether to lay out right to left, when the shim
+ * announces itself and again when the interface language changes.
  */
 export function ExtensionWebView({ view }: { view: WebViewInfo }): React.JSX.Element {
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  // Read through a ref by the long-lived listener below, which must not be torn
+  // down and re-registered every time the language changes.
+  const language = useRef(view.language)
+
+  useEffect(() => {
+    language.current = view.language
+    postLanguageToFrame(iframeRef.current?.contentWindow, view.language)
+  }, [view.language])
 
   useEffect(() => {
     const iframe = iframeRef.current
@@ -34,6 +46,7 @@ export function ExtensionWebView({ view }: { view: WebViewInfo }): React.JSX.Ele
       // leave the panel unstyled until the writer next changed theme.
       if (data?.novalistThemeReady === true) {
         sendTheme()
+        postLanguageToFrame(iframe.contentWindow, language.current)
         return
       }
 

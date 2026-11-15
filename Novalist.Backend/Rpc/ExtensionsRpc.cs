@@ -136,7 +136,8 @@ public sealed class ExtensionsRpc : IDisposable
                 v.Placement,
                 v.Mode,
                 $"{e.Manifest.Id}/{v.Entry}",
-                e.FolderPath)) : [])
+                e.FolderPath,
+                _workspace.ExtensionsHost.Host.ResolvedLanguage(e.Manifest.Id))) : [])
             .ToArray();
 
     /// <summary>
@@ -341,7 +342,10 @@ public sealed record WebViewInfoDto(
     /// <summary>The workspace the view joins; empty for the default.</summary>
     string Mode,
     string Entry,
-    string FolderPath);
+    string FolderPath,
+    /// <summary>The language the extension's strings are in; the panel is given
+    /// this language and its reading direction.</summary>
+    string Language);
 
 /// <summary>
 /// One script an extension wants to run inside the interface.

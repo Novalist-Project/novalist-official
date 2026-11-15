@@ -1,3 +1,5 @@
+import i18n from '../i18n'
+
 /**
  * Handing the interface theme to an extension's webview.
  *
@@ -59,6 +61,20 @@ export function themeTokens(): Record<string, string> {
 /** Sends the current theme into an extension frame. */
 export function postThemeToFrame(frame: Window | null | undefined): void {
   frame?.postMessage({ novalistTheme: themeTokens() }, '*')
+}
+
+/**
+ * Tells an extension frame which language its strings are in, and the reading
+ * direction that goes with it.
+ *
+ * `dir` and `lang` do not cross a document boundary any more than a token
+ * does. The language is the extension's, not the interface's: an extension
+ * with no Arabic translation shows English in an Arabic interface, and English
+ * text in a mirrored layout reads worse than a panel that simply stayed as it
+ * was written.
+ */
+export function postLanguageToFrame(frame: Window | null | undefined, language: string): void {
+  frame?.postMessage({ novalistLanguage: { lang: language, dir: i18n.dir(language) } }, '*')
 }
 
 /**

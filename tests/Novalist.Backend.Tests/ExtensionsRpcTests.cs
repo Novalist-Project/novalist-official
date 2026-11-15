@@ -256,6 +256,29 @@ public sealed class ExtensionsRpcTests : IDisposable
         var rpc = WithTitledViews("com.test.nolocales", false, "ai.chatTitle");
 
         Assert.Equal("ai.chatTitle", rpc.Views().Single().Title);
+        Assert.Equal("en", rpc.Views().Single().Language);
+    }
+
+    [Fact]
+    public void Views_LanguageIsTheInterfaceLanguageOnlyWhenTheExtensionShipsIt()
+    {
+        var previous = Loc.Instance.CurrentLanguage;
+        Loc.Instance.CurrentLanguage = "en";
+        try
+        {
+            var rpc = WithTitledViews("com.test.viewlang", true, "ai.chatTitle", "Second");
+            Assert.All(rpc.Views(), view => Assert.Equal("en", view.Language));
+
+            // Shipped (de.json): the panel is told the interface language.
+            _workspace.ExtensionsHost.Host.RaiseLanguageChanged("de");
+            Assert.All(rpc.Views(), view => Assert.Equal("de", view.Language));
+
+            // Not shipped (no ar.json): its text stays English, and so does the
+            // language - and with it the direction - the panel is laid out for.
+            _workspace.ExtensionsHost.Host.RaiseLanguageChanged("ar");
+            Assert.All(rpc.Views(), view => Assert.Equal("en", view.Language));
+        }
+        finally { Loc.Instance.CurrentLanguage = previous; }
     }
 
     private static string DeploySampleSource(string root)

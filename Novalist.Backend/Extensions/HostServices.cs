@@ -137,6 +137,11 @@ public sealed partial class HostServices :
             ? resolved
             : text;
 
+    /// <summary>The language the extension's own strings are in right now; English
+    /// when it ships no translation for the interface language.</summary>
+    internal string ResolvedLanguage(string extensionId)
+        => _locServices.TryGetValue(extensionId, out var svc) ? svc.Language : "en";
+
     public void ShowNotification(string message)
     {
         NotificationRequested?.Invoke(message);
