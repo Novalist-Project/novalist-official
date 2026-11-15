@@ -60,6 +60,11 @@ function entityContextMenuHtml(hasSelection) {
         { action: 'paragraphStyle:blockquote', command: 'paragraph.style.blockquote', label: labels.style_blockquote || 'Blockquote' },
         { action: 'paragraphStyle:poetry', command: 'paragraph.style.poetry', label: labels.style_poetry || 'Verse' }
     ], hasSelection);
+    html += window.submenu(labels.paragraphDirection || 'Paragraph direction', [
+        { action: 'paragraphDirection:ltr', command: 'paragraph.directionLtr', label: labels.directionLtr || 'Left-to-right' },
+        { action: 'paragraphDirection:rtl', command: 'paragraph.directionRtl', label: labels.directionRtl || 'Right-to-left' },
+        { action: 'paragraphDirection:auto', command: 'paragraph.directionAuto', label: labels.directionAuto || 'Automatic direction' }
+    ], hasSelection);
     if (window.writingStructureEnabled) {
         html += window.submenu(labels.insertStructure || 'Insert structure', [
             { action: 'writing:sceneBreak', command: 'writing.sceneBreak', label: labels.sceneBreak || 'Scene break' },

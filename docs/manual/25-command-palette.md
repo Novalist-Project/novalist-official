@@ -23,7 +23,7 @@ Press `Ctrl+Shift+P` (`Cmd+Shift+P` on macOS). The palette opens as an overlay i
 - **Every view**, by name — including the ones with no shortcut and no button of their own, such as Wiki, Maps, Languages, Planning board, Series, Style report, Extensions and Settings.
 - **Every project command** — new chapter, new scene, new book, new draft, compare drafts, rename the project, clean up the manuscript, find and replace.
 - **Every window command** — the panel toggles, the mode panel, focus mode, splitting and closing panes, pane layouts, workspace layouts, interface scale.
-- **Every writing command** — paragraph styles, lists, alignment, bold and the rest of the inline marks, comment, footnote, snapshots, suggestion mode, read aloud and the writing options.
+- **Every writing command** — paragraph styles, lists, alignment, paragraph direction (left-to-right, right-to-left, automatic), bold and the rest of the inline marks, comment, footnote, snapshots, suggestion mode, read aloud and the writing options.
 - **Commands from your extensions** — anything an installed extension registers, listed under its own name. The AI Assistant's critique passes, for instance, appear here once it is installed.
 
 ### Commands that cannot run are hidden

@@ -35,6 +35,7 @@ import { SCHEME, parseDeepLink, deepLinkFromArgv, type DeepLink } from './deepli
 import { installFocusWindow } from './focus-window'
 import { registerSceneNotesWindow } from './scene-notes-window'
 import { linuxPasswordStoreSwitch, sessionBusNames } from './linux-password-store'
+import { RestartAfterQuit, UI_DIRECTION_SWITCH, asDirection, launchedDirection, readStoredDirection, relaunchOptions, rememberDirection, restartNeeded, uiDirectionSwitch } from './ui-direction'
 
 // Chosen before anything touches safeStorage: Chromium reads the switch once.
 const passwordStore = linuxPasswordStoreSwitch(process.platform, process.env, app.commandLine.hasSwitch('password-store'), sessionBusNames)
@@ -43,6 +44,16 @@ if (passwordStore) app.commandLine.appendSwitch('password-store', passwordStore)
 // Name the app before anything reads it (menu/About/dock/window title) so the
 // UI never shows the default "Electron".
 app.setName('Novalist')
+
+// Menus drawn by Chromium mirror only when its own UI direction is right-to-left,
+// and that is read once at startup. So the direction the writer last used is
+// remembered in a file and forced here, before ready.
+const uiDirectionFile = join(process.env.NOVALIST_SETTINGS_DIR ?? app.getPath('userData'), 'ui-direction')
+const explicitUiDirection = app.commandLine.hasSwitch(UI_DIRECTION_SWITCH)
+const appliedUiDirection = uiDirectionSwitch(process.platform, explicitUiDirection, readStoredDirection(uiDirectionFile))
+if (appliedUiDirection) app.commandLine.appendSwitch(UI_DIRECTION_SWITCH, appliedUiDirection)
+let currentUiDirection = appliedUiDirection
+const uiDirectionRestart = new RestartAfterQuit()
 
 const backend = new BackendProcess()
 const collaboration = new DesktopCollaborationServices(join(process.env.NOVALIST_SETTINGS_DIR ?? app.getPath('userData'), 'collaboration', 'credentials'))
@@ -87,7 +98,7 @@ let setFocusWindow: ((enabled: boolean) => Promise<void>) | null = null
 const approvedCloses = new Set<number>()
 const closeRequests = new WindowCloseRequests(windowCloses, {
   getMainWindow: () => mainWindow, getWindows: () => BrowserWindow.getAllWindows(), approvedCloses,
-  quit: () => app.quit()
+  quit: () => { uiDirectionRestart.quitStarting(); app.quit() }
 })
 
 function prepareWindowClose(win: BrowserWindow, quit: boolean): void {
@@ -311,6 +322,28 @@ ipcMain.on('novalist:set-menu', (event, nodes: MenuNode[], labels: MenuLabels) =
   }
 })
 
+// The interface direction the renderer is showing. Remembered for the next
+// launch; the answer says whether the menus this process drew now disagree with
+// it, which only a restart can fix. The locale is read here, after ready, as
+// the process's natural direction is not reliable earlier.
+ipcMain.handle('novalist:set-ui-direction', (event, requested: unknown): boolean => {
+  const direction = asDirection(requested)
+  if (event.sender !== mainWindow?.webContents || !direction) return false
+  currentUiDirection = direction
+  rememberDirection(uiDirectionFile, direction)
+  return restartNeeded(launchedDirection(process.platform, explicitUiDirection, appliedUiDirection, () => app.getLocale()), direction)
+})
+
+// Restarts through the ordinary quit path, so unsaved work and every close
+// guard still run. The relaunch is armed only once the quit is approved.
+ipcMain.handle('novalist:restart-for-ui-direction', async (event) => {
+  const win = mainWindow
+  if (event.sender !== win?.webContents || win.isDestroyed()) return
+  const launched = launchedDirection(process.platform, explicitUiDirection, appliedUiDirection, () => app.getLocale())
+  if (!currentUiDirection || !restartNeeded(launched, currentUiDirection)) return
+  await uiDirectionRestart.request(() => closeRequests.request(win, true)).catch(() => {})
+})
+
 // The window controls are the system's own again now that Windows and Linux
 // keep their native title bar, so there is nothing here to repaint. Kept as a
 // no-op rather than removed from the preload, so an older renderer talking to a
@@ -477,6 +510,7 @@ app.on('before-quit', (event) => {
 })
 
 app.on('will-quit', () => {
+  uiDirectionRestart.willQuit(() => app.relaunch(relaunchOptions(process.env, process.argv)))
   backend.dispose()
   void collaboration.reset()
 })

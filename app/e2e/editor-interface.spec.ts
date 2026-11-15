@@ -134,6 +134,36 @@ test('context submenus stay within both viewport edges in Arabic and English', a
   }
 })
 
+test('direction buttons exist only in a right-to-left interface and show the direction of the caret paragraph', async ({ page }) => {
+  await page.goto(await buildWritingAppearance())
+  const buttons = page.locator('.editor-toolbar [data-command^="paragraph.direction"]')
+  const change = (language: string): Promise<unknown> => page.evaluate(language => (window as unknown as { changeLanguage(language: string): Promise<unknown> }).changeLanguage(language), language)
+  const show = (direction: string): Promise<unknown> => page.evaluate(direction => (window as unknown as { setToolbarFormatting(patch: object): void }).setToolbarFormatting({ direction }), direction)
+  await expect(page.locator('.editor-toolbar [data-command="paragraph.alignLeft"]')).toBeVisible()
+  for (const language of ['en', 'de']) {
+    await change(language)
+    await expect(buttons).toHaveCount(0)
+  }
+  await change('ar')
+  await page.evaluate(() => { document.documentElement.dir = 'rtl' })
+  await expect(buttons).toHaveCount(2)
+  expect(await buttons.evaluateAll(nodes => nodes.map(node => node.getAttribute('data-command')))).toEqual(['paragraph.directionRtl', 'paragraph.directionLtr'])
+  const [rtl, ltr] = await Promise.all([buttons.nth(0).boundingBox(), buttons.nth(1).boundingBox()])
+  expect(rtl!.x).toBeGreaterThan(ltr!.x)
+  await expect(buttons.locator('svg.icon-directional')).toHaveCount(0)
+  await show('ltr')
+  await expect(buttons.nth(1)).toHaveAttribute('aria-pressed', 'true')
+  await expect(buttons.nth(0)).toHaveAttribute('aria-pressed', 'false')
+  await show('rtl')
+  await expect(buttons.nth(0)).toHaveAttribute('aria-pressed', 'true')
+  await expect(buttons.nth(1)).toHaveAttribute('aria-pressed', 'false')
+  await buttons.nth(1).click()
+  expect(await page.evaluate(() => (window as unknown as { commands: string[] }).commands.at(-1))).toBe('paragraph.directionLtr')
+  await page.locator('.editor-toolbar-primary').screenshot({ path: 'out/issue78/editor/toolbar-direction-arabic.png' })
+  await change('en')
+  await expect(buttons).toHaveCount(0)
+})
+
 for (const kind of ['manuscript', 'narration']) {
   test(`${kind} interface language stays independent from mixed book prose`, async ({ page }) => {
     await page.goto(pathToFileURL(resolve(`src/renderer/public/editor/${kind}-editor.html`)).href)

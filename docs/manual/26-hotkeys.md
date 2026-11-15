@@ -75,7 +75,7 @@ Every other view — Structure, Wiki, Maps, Languages, Gallery, Dialogue, Planni
 | Italic | `Ctrl+I` |
 | Underline | `Ctrl+U` |
 | Strikethrough, Highlight, Link, Footnote | *(unbound)* |
-| Paragraph styles, lists, alignment | *(unbound)* |
+| Paragraph styles, lists, alignment, paragraph direction | *(unbound)* |
 | Quick edit (open the paragraph-style picker at the caret) | *(unbound)* |
 | Scene snapshots, Suggest edits, Read aloud, and the writing options | *(unbound)* |
 

@@ -258,6 +258,34 @@ export const EDITOR_COMMANDS: CommandDef[] = [
     available: editorOpen,
     run: inEditor((editor) => editor.alignJustify())
   },
+  {
+    id: 'paragraph.directionLtr',
+    labelKey: 'blockStyle.directionLtr',
+    categoryKey: 'hotkeys.category.editor',
+    scope: 'paragraph',
+    transientHomes: ['contextMenu'],
+    available: editorOpen,
+    run: inEditor((editor) => editor.setParagraphDirection('ltr'))
+  },
+  {
+    id: 'paragraph.directionRtl',
+    labelKey: 'blockStyle.directionRtl',
+    categoryKey: 'hotkeys.category.editor',
+    scope: 'paragraph',
+    transientHomes: ['contextMenu'],
+    available: editorOpen,
+    run: inEditor((editor) => editor.setParagraphDirection('rtl'))
+  },
+  {
+    id: 'paragraph.directionAuto',
+    labelKey: 'blockStyle.directionAuto',
+    categoryKey: 'hotkeys.category.editor',
+    scope: 'paragraph',
+    home: 'contextMenu',
+    homeNote: 'The writing bar offers only Left-to-right and Right-to-left, so handing a paragraph back to its content lives in the right-click menu.',
+    available: editorOpen,
+    run: inEditor((editor) => editor.setParagraphDirection('auto'))
+  },
 
   /* ── The writing view itself ────────────────────────────────────────── */
   {

@@ -113,6 +113,10 @@ function applyQuickEditContextAction(action) {
         if (restoreContextMenuSelection()) window.setParagraphStyle(action.slice('paragraphStyle:'.length));
         return true;
     }
+    if (action && action.startsWith('paragraphDirection:')) {
+        if (restoreContextMenuSelection()) window.setParagraphDirection(action.slice('paragraphDirection:'.length));
+        return true;
+    }
     if (action && action.startsWith('writing:')) {
         if (restoreContextMenuSelection()) window.requestWritingStructure(action.slice('writing:'.length));
         return true;

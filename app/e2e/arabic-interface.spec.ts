@@ -137,7 +137,7 @@ test('rows in the reported lists follow the interface direction', async ({ page 
   expect(await textEdge('.dashboard-activity-chapter')).toBeLessThan(sceneRight)
 })
 
-test('the library cover opens on its spine in both directions and stays shut under reduced motion', async ({ page }) => {
+test('the library cover opens on its spine in both directions, and under reduced motion opens at once', async ({ page }) => {
   await page.goto(detailsUrl)
   const front = page.locator('.volume-cover-front')
   const card = page.locator('.start-recent-card')
@@ -171,9 +171,26 @@ test('the library cover opens on its spine in both directions and stays shut und
   await card.hover()
   expect(Math.sign((await opened()).turn)).toBe(Math.sign(ltr.turn))
   await page.locator('#shelf').screenshot({ path: `${shots}/cover-hover-ltr.png` })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
-  await expect(front).toHaveCSS('transform', 'none')
+  const ltrPose = await front.evaluate(node => getComputedStyle(node).transform)
   await setLanguage(page, 'ar')
-  await expect(front).toHaveCSS('transform', 'none')
+  await page.mouse.move(0, 0)
+  await card.hover()
+  await page.waitForTimeout(450)
+  const rtlPose = await front.evaluate(node => getComputedStyle(node).transform)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  // Reduced motion keeps the opened pose and drops only the turn: the final
+  // matrix is there immediately, with nothing animating or transitioning.
+  const instant = (): Promise<{ transform: string; running: number }> => front.evaluate(node => ({
+    transform: getComputedStyle(node).transform,
+    running: node.getAnimations().length
+  }))
+  await page.mouse.move(0, 0)
+  await card.hover()
+  expect(await instant()).toEqual({ transform: rtlPose, running: 0 })
   await page.locator('#shelf').screenshot({ path: `${shots}/cover-reduced-motion-rtl.png` })
+  await setLanguage(page, 'en')
+  await page.mouse.move(0, 0)
+  await card.hover()
+  expect(await instant()).toEqual({ transform: ltrPose, running: 0 })
+  await page.locator('#shelf').screenshot({ path: `${shots}/cover-reduced-motion-ltr.png` })
 })

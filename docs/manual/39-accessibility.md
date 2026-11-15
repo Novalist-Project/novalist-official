@@ -41,7 +41,7 @@ For a reading with more than one voice in it, the [Narration](46-narration.md) v
 
 ## Motion
 
-Novalist honours `prefers-reduced-motion`. With reduced motion set at the operating-system level, transitions and animated reveals are suppressed.
+Novalist honours `prefers-reduced-motion`. With reduced motion set at the operating-system level, transitions and animated reveals are suppressed. State changes still happen, only without the movement: a library book cover still opens on hover, focus and selection, instantly.
 
 ## Keyboard
 

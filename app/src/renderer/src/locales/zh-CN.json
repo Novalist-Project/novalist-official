@@ -982,6 +982,8 @@
     "language": "语言",
     "uiLanguage": "界面语言",
     "uiLanguageDesc": "应用程序界面使用的语言。",
+    "uiDirectionRestart": "重新启动后，菜单栏将采用新的界面方向。",
+    "uiDirectionRestartNow": "立即重启",
     "theme": "主题",
     "themeDescription": "应用程序的视觉主题。",
     "uiScale": "界面大小",
@@ -3394,6 +3396,10 @@
     "insertChapter": "新建章节"
   },
   "blockStyle": {
+    "direction": "段落文字方向",
+    "directionLtr": "从左到右",
+    "directionRtl": "从右到左",
+    "directionAuto": "自动文字方向",
     "label": "段落样式",
     "body": "正文",
     "heading": "标题",

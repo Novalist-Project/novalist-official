@@ -192,6 +192,11 @@ interface Window {
       nodes: import('./shell/menuLayout').MenuNode[],
       labels: import('./shell/menuLayout').MenuLabels
     ): void
+    /** Remembers the interface direction for the next launch. Resolves to whether
+     *  the native menus need a restart to follow it. Desktop only. */
+    setUiDirection?(direction: 'ltr' | 'rtl'): Promise<boolean>
+    /** Quits through the close guards and relaunches. Desktop only. */
+    restartForUiDirection?(): Promise<void>
     /** Whole-interface scale, independent from the manuscript font size. */
     setUiScale?(factor: number): Promise<number>
     /** The installed application version. Desktop only; the mobile shell has

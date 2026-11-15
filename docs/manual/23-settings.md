@@ -460,7 +460,7 @@ Everything under **Project** is per-project and only applies while a project is 
 
 ## Appearance
 
-- **Interface Language** — UI language. English, German, Chinese (Simplified), and Arabic ship built in, and any language you dropped into your `Locales/` folder is listed too. Changes apply immediately without restart. Arabic uses a right-to-left interface; switching back restores the other language's layout. This does not change your writing or proofing language.
+- **Interface Language** — UI language. English, German, Chinese (Simplified), and Arabic ship built in, and any language you dropped into your `Locales/` folder is listed too. Changes apply immediately without restart. Arabic uses a right-to-left interface; switching back restores the other language's layout. On Windows and Linux the menu bar and its dropdowns follow the interface direction after a restart; a **Restart now** notice appears under the dropdown while one is needed (see [Localization](27-localization.md)). This does not change your writing or proofing language.
 - **Theme** — the active color scheme. Built-in themes come first, then your own, then any contributed by extensions:
   - **Default** — Novalist's own identity. A deep "Ink Night" page with parchment-coloured text and gilt accents; panels are the one raised surface, edges are hairlines rather than grey rules, and primary buttons carry a gold foil fill. Headings are set in Fraunces, text and interface labels in Newsreader, and anything the app computed for you — word counts, versions, file sizes, timestamps — in Courier Prime. All three typefaces ship inside the app, so the interface looks the same offline and on a machine that has none of them installed.
   - **Discord**

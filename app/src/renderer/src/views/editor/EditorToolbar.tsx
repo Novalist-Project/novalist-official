@@ -8,6 +8,8 @@ import {
   List,
   ListOrdered,
   Mic,
+  PilcrowLeft,
+  PilcrowRight,
   PenLine,
   Plus,
   Settings2,
@@ -32,6 +34,8 @@ export interface FormattingState {
   strikethrough: boolean
   highlight: boolean
   alignment: 'left' | 'center' | 'right' | 'justify'
+  /** The direction the caret's paragraph reads in, explicit or resolved from its content. */
+  direction: 'ltr' | 'rtl'
   /** Named block style on the paragraph the caret is in; empty for body text. */
   paragraphStyle: string
   bulletList: boolean
@@ -87,6 +91,17 @@ function alignmentButtons(alignment: FormattingState['alignment'], rtl: boolean)
   return rtl ? [right, center, left, justify] : [left, center, right, justify]
 }
 
+/**
+ * Shown only in a right-to-left interface. The pilcrow arrows are physical, so
+ * they are never mirrored: the arrow points the way the text runs.
+ */
+function directionButtons(direction: FormattingState['direction']): ToolbarButton[] {
+  return [
+    { command: 'paragraph.directionRtl', labelKey: 'blockStyle.directionRtl', active: direction === 'rtl', icon: PilcrowLeft },
+    { command: 'paragraph.directionLtr', labelKey: 'blockStyle.directionLtr', active: direction === 'ltr', icon: PilcrowRight }
+  ]
+}
+
 function useEditorToolbar(formatting: FormattingState, writing?: WritingFrameAdapter) {
   const { t, i18n } = useTranslation()
   const [optionsOpen, setOptionsOpen] = useState(false)
@@ -107,7 +122,8 @@ function useEditorToolbar(formatting: FormattingState, writing?: WritingFrameAda
       active: formatting.numberList,
       icon: ListOrdered
     },
-    ...alignmentButtons(formatting.alignment, i18n.dir() === 'rtl')
+    ...alignmentButtons(formatting.alignment, i18n.dir() === 'rtl'),
+    ...(i18n.dir() === 'rtl' ? directionButtons(formatting.direction) : [])
   ]
 
   /** One writing preference, flipped where the writer is already editing. */

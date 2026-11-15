@@ -170,4 +170,5 @@
   .library-removal-notice, .library-shelf-form { margin-inline: var(--nl-space-lg); }
 }
 @media (forced-colors: active) { .volume-cover-art { display: none; } .volume-cover-front { border-color: CanvasText; } }
-@media (prefers-reduced-motion: reduce) { .volume-cover-front { transition: none; } .project-library .start-recent-card:hover .volume-cover-front, .project-library .start-recent-card:focus-visible .volume-cover-front, .project-library .start-recent-card[aria-pressed='true'] .volume-cover-front { transform: none; } }
+/* Reduced motion removes the turn, not the opened pose: the cover still opens, at once. */
+@media (prefers-reduced-motion: reduce) { .volume-cover-front { transition: none; } }

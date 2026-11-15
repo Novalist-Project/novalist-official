@@ -32,12 +32,14 @@ const sources: Record<string, string> = {
   } };`,
   EditorFrame: `import React from 'react';
     import { EditorToolbar } from './src/renderer/src/views/editor/EditorToolbar';
-    export const EditorFrame = ({ writing }) => <div className="editor-pane">
-      <EditorToolbar writing={writing} active={true} speaking={false}
-        formatting={{ paragraphStyle: '', alignment: 'left' }} />
+    export const EditorFrame = ({ writing }) => {
+      const [formatting, setFormatting] = React.useState({ paragraphStyle: '', alignment: 'left', direction: 'ltr' });
+      window.setToolbarFormatting = patch => setFormatting(current => ({ ...current, ...patch }));
+      return <div className="editor-pane">
+      <EditorToolbar writing={writing} active={true} speaking={false} formatting={formatting} />
       <iframe className="editor-frame" title="editor" src={window.editorUrl}
         onLoad={event => window.connectEditor(event.currentTarget.contentWindow)} />
-    </div>;`
+    </div>; };`
 }
 
 const entry = `

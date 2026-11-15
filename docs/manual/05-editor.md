@@ -4,7 +4,7 @@ The desktop Editor is one continuous rich-text writing surface with **Scene**, *
 
 Shortcuts below are written with `Ctrl`; on macOS use `Cmd`.
 
-Arabic and other right-to-left prose choose their direction paragraph by paragraph, so Arabic and English can share a scene. Headings and lists follow their content; editor controls and the scene information rail follow the selected interface language. Choosing Arabic in Settings places the rail on the right. Explicit direction and alignment in imported or pasted text are retained. Text zoom reflows the prose within the writing pane, including book-width and page views. Changing the interface language does not change the proofing language.
+Arabic and other right-to-left prose choose their direction paragraph by paragraph, so Arabic and English can share a scene. Headings and lists follow their content; editor controls and the scene information rail follow the selected interface language. Choosing Arabic in Settings places the rail on the right. Explicit direction and alignment in imported or pasted text are retained. When automatic direction guesses wrong, for example an Arabic paragraph that begins with a Latin name, set the paragraph's direction yourself: in the Arabic interface the writing bar has **Right-to-left** and **Left-to-right** buttons, and the command palette offers **Left-to-right**, **Right-to-left** and **Automatic direction** in every interface language. Text zoom reflows the prose within the writing pane, including book-width and page views. Changing the interface language does not change the proofing language.
 
 The scope buttons sit above the writing toolbar. Manuscript opens as a continuous document with the book title, draft, act names, and chapter headings. Beside each scene, a compact rail shows its number, editable name and stage, word count, and an optional collapsed **Synopsis**. Click a scene, chapter, or act name to rename it; Enter or Save commits, and Escape or Cancel discards the draft. The rail stays visible while scrolling through its scene. **Focus scene** isolates that scene and reveals the caret if it was inside it, or the scene's beginning otherwise. **Manuscript** returns to the full document. Scene names stay outside the prose. **Page view** on the scope bar and in Editor settings controls the same saved setting, including project overrides. **+ Scene** and **+ Chapter** beside the paragraph-style selector create structure at the caret.
 
@@ -110,6 +110,7 @@ From the left:
 - **Paragraph style** (drop-down) — what the paragraph under the caret *is*: Body, Heading, Subheading, Block quote or Verse. See [Paragraph styles](#paragraph-styles) below.
 - **Bulleted list** and **Numbered list** — turn the paragraph into a list item, or turn a list back into paragraphs.
 - **Align left / center / right / justify** — set paragraph alignment. Alignment is a property of the paragraph, not of the words you highlighted, so it lives here rather than on the toolbar that appears over a selection. In the Arabic interface the group reads Align right, center, left, justify from the right, so each icon sits on the side it aligns to. The highlighted button always matches what you see: an Arabic paragraph with default alignment highlights Align right.
+- **Right-to-left / Left-to-right** — shown only in the Arabic interface, beside the alignment buttons. They set the reading direction of the paragraph under the caret (or of every paragraph in a selection) explicitly, the way Word's two paragraph-direction buttons do, independently of alignment: a paragraph with default alignment follows the direction you choose, and a paragraph you aligned to a side stays there. One of the two is always highlighted and shows the direction the paragraph reads in now. The same commands, plus **Automatic direction**, which hands the paragraph back to its content, are in the command palette and under **Paragraph direction** in the right-click menu, in every interface language.
 
 At the right-hand end:
 
@@ -123,7 +124,7 @@ At the right-hand end:
 
 When **read aloud** or **suggestion mode** is running, a bar under the writing bar says so and carries a single button to leave that mode, so there is never a mode you are in without being told and without an obvious way out.
 
-The current paragraph style, list state and alignment are highlighted on the bar.
+The current paragraph style, list state, alignment and (in the Arabic interface) paragraph direction are highlighted on the bar.
 
 ### The selection toolbar
 

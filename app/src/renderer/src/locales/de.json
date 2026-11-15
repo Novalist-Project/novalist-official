@@ -818,6 +818,8 @@
     "language": "SPRACHE",
     "uiLanguage": "Oberflächensprache",
     "uiLanguageDesc": "Sprache der Benutzeroberfläche.",
+    "uiDirectionRestart": "Ein Neustart ist nötig, damit die Menüleiste der neuen Leserichtung der Oberfläche folgt.",
+    "uiDirectionRestartNow": "Jetzt neu starten",
     "theme": "Farbschema",
     "themeDescription": "Visuelles Farbschema der Anwendung.",
     "uiScale": "Oberflächengröße",
@@ -3360,6 +3362,10 @@
     "insertChapter": "Neues Kapitel"
   },
   "blockStyle": {
+    "direction": "Schreibrichtung des Absatzes",
+    "directionLtr": "Von links nach rechts",
+    "directionRtl": "Von rechts nach links",
+    "directionAuto": "Automatische Schreibrichtung",
     "label": "Absatzformat",
     "body": "Fließtext",
     "heading": "Überschrift",

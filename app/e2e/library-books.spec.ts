@@ -41,7 +41,7 @@ test('each book has its own cover and opens directly, including on a narrow shel
     }
     await expect.poll(() => books.nth(2).locator('.volume-cover-front').evaluate(element => getComputedStyle(element).transform)).toBe('none')
     await h.page.emulateMedia({ reducedMotion: 'reduce' })
-    await expect.poll(() => books.nth(0).locator('.volume-cover-front').evaluate(element => getComputedStyle(element).transform)).toBe('none')
+    await expect.poll(() => books.nth(0).locator('.volume-cover-front').evaluate(element => getComputedStyle(element).transform)).toContain('matrix3d')
     await h.page.emulateMedia({ reducedMotion: 'no-preference' })
     await h.page.getByRole('button', { name: 'Close book details' }).click()
     await expect.poll(() => books.nth(0).locator('.volume-cover-front').evaluate(element => getComputedStyle(element).transform)).toBe('none')
@@ -75,7 +75,7 @@ test('each book has its own cover and opens directly, including on a narrow shel
     }
     await h.page.screenshot({ path: 'test-results/library-cover-opening.png', animations: 'disabled' })
     await h.page.emulateMedia({ reducedMotion: 'reduce' })
-    await expect.poll(() => books.nth(2).locator('.volume-cover-front').evaluate(element => getComputedStyle(element).transform)).toBe('none')
+    await expect.poll(() => books.nth(2).locator('.volume-cover-front').evaluate(element => getComputedStyle(element).transform)).toContain('matrix3d')
     await h.page.emulateMedia({ reducedMotion: 'no-preference' })
 
     // Neither renaming nor rebuilding the renderer should change a book's

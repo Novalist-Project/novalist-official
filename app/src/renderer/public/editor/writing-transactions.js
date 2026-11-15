@@ -233,7 +233,7 @@ function writingFormatCommand(command, args, isolate) {
 
 for (const name of ['toggleBold', 'toggleItalic', 'toggleUnderline', 'toggleStrikethrough',
     'toggleHighlight', 'applyLink', 'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
-    'setParagraphStyle', 'toggleBulletList', 'toggleNumberList']) {
+    'setParagraphStyle', 'setParagraphDirection', 'toggleBulletList', 'toggleNumberList']) {
     const command = window[name];
     if (command) window[name] = (...args) => writingFormatCommand(command, args,
         name === 'toggleBulletList' || name === 'toggleNumberList');

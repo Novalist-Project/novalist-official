@@ -313,6 +313,17 @@ contextBridge.exposeInMainWorld('novalist', {
   setMenu(nodes: unknown[], labels: unknown): void {
     ipcRenderer.send('novalist:set-menu', nodes, labels)
   },
+  /**
+   * Reports the interface direction so main can remember it for the next launch.
+   * Resolves to whether this process's native menus now need a restart to follow it.
+   */
+  setUiDirection(direction: 'ltr' | 'rtl'): Promise<boolean> {
+    return ipcRenderer.invoke('novalist:set-ui-direction', direction)
+  },
+  /** Quits through the normal close guards and starts the app again. */
+  restartForUiDirection(): Promise<void> {
+    return ipcRenderer.invoke('novalist:restart-for-ui-direction')
+  },
   /** Applies the persisted whole-interface scale to this renderer window. */
   setUiScale(factor: number): Promise<number> {
     return ipcRenderer.invoke('novalist:set-ui-scale', factor)

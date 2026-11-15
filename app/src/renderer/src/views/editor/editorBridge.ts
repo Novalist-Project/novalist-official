@@ -146,6 +146,8 @@ export interface EditorWindow extends Window {
   alignCenter(): void
   alignRight(): void
   alignJustify(): void
+  /** Sets the explicit text direction of the selected paragraphs; 'auto' returns them to their content. */
+  setParagraphDirection(direction: 'ltr' | 'rtl' | 'auto'): void
   /** Applies a named paragraph style (`nv-style-<id>`) to the selection; '' clears it. */
   setParagraphStyle(style: string): void
   openQuickEdit(): void

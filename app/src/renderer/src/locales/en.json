@@ -947,6 +947,8 @@
     "language": "LANGUAGE",
     "uiLanguage": "Interface Language",
     "uiLanguageDesc": "Language used for the application interface.",
+    "uiDirectionRestart": "Restart to make the menu bar follow the new interface direction.",
+    "uiDirectionRestartNow": "Restart now",
     "theme": "Theme",
     "themeDescription": "Visual theme for the application.",
     "uiScale": "Interface size",
@@ -3352,6 +3354,10 @@
     "insertChapter": "New chapter"
   },
   "blockStyle": {
+    "direction": "Paragraph direction",
+    "directionLtr": "Left-to-right",
+    "directionRtl": "Right-to-left",
+    "directionAuto": "Automatic direction",
     "label": "Paragraph style",
     "body": "Body",
     "heading": "Heading",

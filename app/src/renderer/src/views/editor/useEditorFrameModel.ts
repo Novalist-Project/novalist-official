@@ -21,6 +21,7 @@ const DEFAULT_FORMATTING: FormattingState = {
   strikethrough: false,
   highlight: false,
   alignment: 'left',
+  direction: 'ltr',
   paragraphStyle: '',
   bulletList: false,
   numberList: false,

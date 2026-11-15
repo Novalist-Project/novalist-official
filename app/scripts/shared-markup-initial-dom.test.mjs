@@ -60,3 +60,25 @@ test('different initial content and later peer updates still reconcile the actua
   assert.equal(root.querySelector('b').textContent, 'Revised')
   assert.deepEqual(markup.read(), withAttributes(updated))
 })
+
+test('an explicit paragraph direction is shared as the block style and never as runtime bookkeeping', t => {
+  const html = '<p style="direction: rtl;">AMMAR ذهب</p><p>Plain</p>'
+  const dom = new JSDOM('<section contenteditable="true"></section>')
+  const document = dom.window.document, root = document.querySelector('section')
+  const environment = { document, sanitizeSceneFragment(html) {
+    const template = document.createElement('template'); template.innerHTML = html; return template.content
+  }, toDisplayImages() {}, refreshLayout() {} }
+  const host = new ProseDocumentHost(document, environment), doc = new Y.Doc()
+  t.after(() => { doc.destroy(); host.dispose(); dom.window.close() })
+  Y.applyUpdate(doc, host.seed('scene', html))
+  const markup = new SceneMarkup(environment, root)
+  markup.render(doc.getText('prose').toDelta())
+  assert.equal(root.firstElementChild.style.direction, 'rtl')
+  assert.equal(root.lastElementChild.style.direction, '')
+  root.firstElementChild.setAttribute('dir', 'rtl')
+  root.firstElementChild.setAttribute('data-nv-auto-direction', '')
+  const block = JSON.parse(markup.read().find(run => run.attributes.block).attributes.block)[0]
+  assert.equal(block.attributes.style, 'direction: rtl;')
+  assert.equal('dir' in block.attributes, false)
+  assert.equal('data-nv-auto-direction' in block.attributes, false)
+})
