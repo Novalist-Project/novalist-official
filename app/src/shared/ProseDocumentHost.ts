@@ -4,6 +4,14 @@ import { updateRichText } from '../renderer/src/collaboration/richText'
 import { validateSceneUpdate } from '../renderer/src/collaboration/validateSceneUpdate'
 import { SceneUpdateInbox, type RejectedPendingUpdate } from '../renderer/src/collaboration/SceneUpdateInbox'
 import { renameReferences } from './renameReferences'
+import { planProseMerge, type MergeChoice } from './proseMerge'
+import type { ProseMergeReply as ProseMergeResult } from './collaborationDocuments'
+
+function contains(state: Uint8Array, required: Uint8Array): boolean {
+  const available = Y.decodeStateVector(state)
+  for (const [client, clock] of Y.decodeStateVector(required)) if ((available.get(client) ?? 0) < clock) return false
+  return true
+}
 
 interface Scene {
   doc: Y.Doc
@@ -23,13 +31,8 @@ export class ProseDocumentHost {
   seed(id: string, html: string): Uint8Array {
     const scene = this.create(id)
     try {
-      scene.root.replaceChildren(this.sanitizer.sanitizeSceneFragment(html))
-      for (const mark of scene.root.querySelectorAll('.grammar-issue')) {
-        while (mark.firstChild) mark.before(mark.firstChild)
-        mark.remove()
-      }
+      this.write(scene, html)
       const original = scene.root.innerHTML
-      updateRichText(scene.doc.getText('prose'), scene.markup!.read())
       if (this.html(scene) !== original) throw new Error('This scene cannot yet be shared without changing its content.')
       this.scenes.set(id, scene)
       return Y.encodeStateAsUpdate(scene.doc)
@@ -74,6 +77,61 @@ export class ProseDocumentHost {
       this.html(copy)
       return renameReferences(copy, entityId, oldName, newName) ? Y.encodeStateAsUpdate(copy.doc, before) : null
     } finally { copy.doc.destroy() }
+  }
+
+  // Brings writing done without a session into the shared document. `base` is the state this device last
+  // synchronized and `local` the text it has now; changes since then on both sides merge through Yjs.
+  merge(id: string, base: Uint8Array, local: string, choices: Readonly<Record<string, MergeChoice>> | null): ProseMergeResult {
+    const scene = this.get(id)
+    scene.updates.assertComplete()
+    if (scene.deletions.length) throw new Error('A deleted shared scene cannot take local changes.')
+    const plainText = scene.markup === null
+    const origin = this.createScene(plainText)
+    const merged = this.createScene(plainText)
+    try {
+      validateSceneUpdate(origin.doc, base, origin.markup, true)
+      Y.applyUpdate(origin.doc, base)
+      const live = Y.encodeStateVector(scene.doc)
+      const server = this.html(scene)
+      const mine = this.normalize(local, plainText)
+      Y.applyUpdate(merged.doc, Y.encodeStateAsUpdate(scene.doc))
+      if (!contains(live, Y.encodeStateVector(origin.doc))) {
+        // The server's document no longer descends from the saved state, so only the whole text can be chosen.
+        const conflicts = mine === server ? [] : [{ id: 'document', local: mine, server }]
+        if (!conflicts.length || choices?.document !== 'local') return { compatible: false, conflicts, update: null }
+        this.write(merged, mine)
+        return { compatible: false, conflicts, update: Y.encodeStateAsUpdate(merged.doc, live) }
+      }
+      const plan = planProseMerge(this.html(origin), mine, server, plainText, choices)
+      if (plan.conflicts.length && !choices) return { compatible: true, conflicts: plan.conflicts, update: null }
+      const before = Y.encodeStateVector(origin.doc)
+      this.write(origin, plan.localOnly)
+      Y.applyUpdate(merged.doc, Y.encodeStateAsUpdate(origin.doc, before))
+      if (this.html(merged) !== plan.desired) this.write(merged, plan.desired)
+      const update = this.html(merged) === server ? null : Y.encodeStateAsUpdate(merged.doc, live)
+      return { compatible: true, conflicts: plan.conflicts, update }
+    } finally { origin.doc.destroy(); merged.doc.destroy() }
+  }
+
+  private normalize(content: string, plainText: boolean): string {
+    const scene = this.createScene(plainText)
+    try {
+      this.write(scene, content)
+      return this.html(scene)
+    } finally { scene.doc.destroy() }
+  }
+
+  private write(scene: Scene, content: string): void {
+    if (!scene.markup) {
+      updateRichText(scene.doc.getText('prose'), content ? [{ insert: content }] : [])
+      return
+    }
+    scene.root.replaceChildren(this.sanitizer.sanitizeSceneFragment(content))
+    for (const mark of scene.root.querySelectorAll('.grammar-issue')) {
+      while (mark.firstChild) mark.before(mark.firstChild)
+      mark.remove()
+    }
+    updateRichText(scene.doc.getText('prose'), scene.markup.read())
   }
 
   state(id: string): Uint8Array {

@@ -42,6 +42,8 @@ public sealed class SharedCodexPersistenceTests
         var wire = Substitute.For<IUpdateTransport, IFieldLeaseTransport>();
         wire.ConnectionIdentity.Returns("test:codex-fields");
         wire.IsConnected.Returns(true);
+        ((IFieldLeaseTransport)wire).CreateFieldLeaseRequestAsync(project, Arg.Any<Guid>(), 0, Arg.Any<CancellationToken>())
+            .Returns(call => new FieldLeaseRequest(project, call.ArgAt<Guid>(1), 0, Guid.NewGuid()));
         wire.CatchUpAsync(project, Arg.Any<long>(), Arg.Any<CancellationToken>()).Returns(EmptyUpdates());
         await using var session = new CollaborationSession(new(project, sequence.DeviceId, 0), journal, cipher, signing,
             new Dictionary<Guid, PublicKey> { [sequence.DeviceId] = signing.PublicKey }, wire);

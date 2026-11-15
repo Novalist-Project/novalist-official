@@ -142,6 +142,23 @@
     "recoverField": "Wiederherstellungskopie sichern",
     "fieldRecovered": "Deine Änderung wurde in einer lokalen Wiederherstellungskopie gesichert.",
     "showRecovery": "Wiederherstellungskopie anzeigen",
+    "mergeTitle": "Änderungen während der Trennung",
+    "mergeExplain": "Stellen, die auf diesem Gerät und von jemand anderem geändert wurden: {{count}}. Wähle für jede, welche Fassung bleibt; alles andere wurde bereits zusammengeführt.",
+    "mergeMine": "Dieses Gerät",
+    "mergeServer": "Geteilte Fassung",
+    "mergeKeepAllMine": "Alles von diesem Gerät behalten",
+    "mergeKeepAllServer": "Alles aus der geteilten Fassung behalten",
+    "mergeApply": "Auswahl übernehmen",
+    "mergeLater": "Später entscheiden",
+    "mergeHeld": "Deine Änderungen an diesen Stellen werden zurückgehalten, bis du wählst. Beim Beenden der Sitzung bleiben sie erhalten, und beim nächsten Verbinden wird erneut gefragt.",
+    "mergeNoText": "Nicht als Text darstellbar (gelöscht oder keine Textdatei)",
+    "mergeReopen": "Konflikte auflösen ({{count}})",
+    "mergeKind": {
+      "prose": "Text",
+      "field": "Feld",
+      "structure": "Eintragsdaten",
+      "file": "Ganze Datei"
+    },
     "connection": {
       "AccessEnded": "Der Zugriff auf dieses geteilte Projekt wurde beendet. Beende diese Sitzung, um mit deiner lokalen Kopie weiterzuarbeiten.",
       "KeyRefreshRequired": "Der gemeinsame Zugriff wurde geändert. Aktualisiere ihn, um fortzufahren. Noch nicht geteilte Texte bleiben in einer Wiederherstellungskopie erhalten.",

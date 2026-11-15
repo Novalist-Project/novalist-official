@@ -15,7 +15,7 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
   persistent?: boolean
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const { session, saved, copied, busy, invitation, error, presenceUnavailable, run } = useHostedSessionStore()
+  const { session, saved, copied, busy, invitation, error, presenceUnavailable, run, conflicts } = useHostedSessionStore()
   const loaded = useProjectStore(state => state.isLoaded)
   const project = useProjectStore(state => state.projectPath)
   const [autoReconnect, setAutoReconnect] = useState(() => readPreference(project).autoReconnect ?? true)
@@ -51,6 +51,8 @@ export function SharedProjectCard({ server, canConnect, intent, name, prepareCon
           void run('invite', [new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()])
         }}>{t('collaboration.invite')}</button>}
         <button className="dialog-button" disabled={busy !== null} onClick={() => void run('end')}>{t('collaboration.end')}</button>
+        {conflicts.length > 0 && <button className="dialog-button primary" disabled={busy !== null}
+          onClick={() => useHostedSessionStore.getState().showConflicts(true)}>{t('collaboration.mergeReopen', { count: conflicts.length })}</button>}
         {(session.connection === 'KeyRefreshRequired' || session.connection === 'CheckpointRefreshRequired') && <button className="dialog-button primary" disabled={busy !== null} onClick={() => {
           void run('end').then(() => { if (!useHostedSessionStore.getState().session) return run(session.mode === 'persistent' ? 'persistentResume' : 'resume') })
         }}>{t('collaboration.refreshKeys')}</button>}

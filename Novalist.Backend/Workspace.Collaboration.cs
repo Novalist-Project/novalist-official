@@ -131,6 +131,7 @@ public sealed partial class Workspace
         {
             await FlushSharedProjectFilesAsync();
             await HostedProjects.FlushAsync();
+            await SaveSharedMergeBaseAsync();
         }
         await DetachSharedProjectFilesAsync();
         await DetachSharedFieldsAsync();

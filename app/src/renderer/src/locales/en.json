@@ -142,6 +142,23 @@
     "recoverField": "Save a recovery copy",
     "fieldRecovered": "Your edit was saved in a local recovery copy.",
     "showRecovery": "Show recovery copy",
+    "mergeTitle": "Changes made while disconnected",
+    "mergeExplain": "Places changed both on this device and by another writer: {{count}}. Choose which version to keep for each; everything else has already been merged.",
+    "mergeMine": "This device",
+    "mergeServer": "Shared version",
+    "mergeKeepAllMine": "Keep all from this device",
+    "mergeKeepAllServer": "Keep all shared",
+    "mergeApply": "Apply choices",
+    "mergeLater": "Decide later",
+    "mergeHeld": "Your changes to these items are held back until you choose. Ending the session keeps them, and the next reconnect asks again.",
+    "mergeNoText": "Not shown as text (deleted, or not a text file)",
+    "mergeReopen": "Resolve conflicts ({{count}})",
+    "mergeKind": {
+      "prose": "Text",
+      "field": "Field",
+      "structure": "Entry data",
+      "file": "Whole file"
+    },
     "connection": {
       "AccessEnded": "Access to this shared project has ended. End this session to continue with your local copy.",
       "KeyRefreshRequired": "Shared access changed. Refresh to continue; your unshared writing will be kept in a recovery copy.",

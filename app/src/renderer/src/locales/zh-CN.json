@@ -142,6 +142,23 @@
     "recoverField": "保存恢复副本",
     "fieldRecovered": "你的编辑已保存到本地恢复副本。",
     "showRecovery": "显示恢复副本",
+    "mergeTitle": "断开连接期间的更改",
+    "mergeExplain": "本设备与其他作者都修改过的内容：{{count}} 处。请为每一处选择要保留的版本，其余更改已自动合并。",
+    "mergeMine": "本设备",
+    "mergeServer": "共享版本",
+    "mergeKeepAllMine": "全部保留本设备版本",
+    "mergeKeepAllServer": "全部保留共享版本",
+    "mergeApply": "应用选择",
+    "mergeLater": "稍后决定",
+    "mergeHeld": "在你做出选择之前，这些内容中的更改会暂缓同步。结束会话后它们仍会保留，下次重新连接时会再次询问。",
+    "mergeNoText": "无法以文本显示（已删除或不是文本文件）",
+    "mergeReopen": "解决冲突（{{count}}）",
+    "mergeKind": {
+      "prose": "正文",
+      "field": "字段",
+      "structure": "条目数据",
+      "file": "整个文件"
+    },
     "connection": {
       "AccessEnded": "你对此共享项目的访问权限已结束。结束此会话后，可以继续使用本地副本。",
       "KeyRefreshRequired": "共享访问权限已更改。刷新后即可继续；尚未共享的写作内容将保留在恢复副本中。",

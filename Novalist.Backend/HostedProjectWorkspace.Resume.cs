@@ -89,6 +89,7 @@ internal sealed partial class HostedProjectWorkspace
                 archive.Position = 0;
                 await workspace.AttachSharedProjectAsync(runtime.Id, runtime.Session.Updates, restore.State, archive, ct);
                 await RememberAsync(runtime, saved.Root, ct);
+                await MergeLocalChangesAsync(runtime, saved.Root, restore.RecoveryPath, ct);
             }
             catch
             {

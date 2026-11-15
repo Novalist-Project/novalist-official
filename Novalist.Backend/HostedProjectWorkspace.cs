@@ -48,6 +48,7 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
             archive.Position = 0;
             await workspace.AttachSharedProjectAsync(runtime.Id, runtime.Session.Updates, state, archive, ct);
             await RememberAsync(runtime, root, ct);
+            await SaveMergeBaseAsync(ct);
         }
         catch
         {
@@ -89,6 +90,7 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
             archive.Position = 0;
             await workspace.AttachSharedProjectAsync(runtime.Id, runtime.Session.Updates, state, archive, ct);
             await RememberAsync(runtime, destination, ct);
+            await SaveMergeBaseAsync(ct);
             await workspace.ReportCollaborationProgressAsync(new("complete", 0, 0, 0, 0));
         }
         catch
@@ -230,8 +232,9 @@ internal sealed partial class HostedProjectWorkspace : IDisposable
         internal Task CompactionChecks { get; set; } = Task.CompletedTask;
         internal string? RecoveryPath { get; set; }
         internal IReadOnlyList<PendingSessionUpdate> PendingUpdates { get; init; } = [];
+        internal OpenMerge? Merge { get; set; }
         internal HostedSessionDto View() => new(id, access.ProjectId, access.Server.AbsoluteUri, session.Status.State.ToString(), access.IsOwner, RecoveryPath, "persistent",
-            session.Updates.HasPendingUpdates);
+            session.Updates.HasPendingUpdates, Merge?.Conflicts.Count ?? 0);
         public async ValueTask DisposeAsync()
         {
             await Stopping.CancelAsync();

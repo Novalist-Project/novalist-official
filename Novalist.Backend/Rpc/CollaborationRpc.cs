@@ -57,6 +57,13 @@ public sealed partial class CollaborationRpc
     [JsonRpcMethod("collaboration/persistent/resume")]
     public Task<HostedSessionDto> ResumePersistentAsync(CancellationToken cancellationToken = default) => Hosted().ResumeAsync(cancellationToken);
 
+    [JsonRpcMethod("collaboration/persistent/conflicts")]
+    public IReadOnlyList<SharedMergeConflictDto> PersistentConflicts() => Hosted().Conflicts;
+
+    [JsonRpcMethod("collaboration/persistent/resolveConflicts")]
+    public Task<HostedSessionDto> ResolvePersistentConflictsAsync(IReadOnlyList<SharedMergeChoiceDto> choices, CancellationToken cancellationToken = default) =>
+        Hosted().ResolveConflictsAsync(choices, cancellationToken);
+
     private HostedProjectWorkspace Hosted() => workspace.HostedProjects ?? throw new InvalidOperationException("Desktop collaboration is unavailable.");
 
     [JsonRpcMethod("collaboration/peer/host")]
@@ -86,11 +93,8 @@ public sealed partial class CollaborationRpc
 
 
     [JsonRpcMethod("collaboration/acquireField")]
-    public async Task<SharedFieldFocus> AcquireFieldAsync(Guid sessionId, Guid itemId, Guid focusId, CancellationToken cancellationToken = default)
-    {
-        var field = await workspace.RequireEditableSharedFieldAsync(sessionId, itemId, focusId);
-        return await field.Fields.AcquireAsync(field.Lease, cancellationToken);
-    }
+    public Task<SharedFieldFocus> AcquireFieldAsync(Guid sessionId, Guid itemId, Guid focusId, CancellationToken cancellationToken = default) =>
+        workspace.AcquireSharedFieldAsync(sessionId, itemId, focusId, cancellationToken);
 
     [JsonRpcMethod("collaboration/writeField")]
     public Task WriteFieldAsync(Guid sessionId, Guid itemId, Guid focusId, string value, CancellationToken cancellationToken = default) =>

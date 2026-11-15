@@ -2,7 +2,7 @@ import createDOMPurify from 'dompurify'
 import { DocumentBridge, type DocumentSession } from '../../../shared/CollaborationDocumentBridge'
 import { ProseDocumentHost } from '../../../shared/ProseDocumentHost'
 import { createSceneSanitizer } from '../../../shared/sceneSanitizer'
-import type { SceneCommand, SceneApplyResult, SharedSceneSnapshot } from '../../../shared/collaborationDocuments'
+import type { SceneCommand, SceneApplyResult, SharedSceneSnapshot, MergeChoices, ProseMergeReply } from '../../../shared/collaborationDocuments'
 import { InvalidSceneUpdate } from '../collaboration/validateSceneUpdate'
 
 export class CollaborationDocumentBridge extends DocumentBridge {
@@ -45,6 +45,10 @@ class BrowserDocuments implements DocumentSession {
 
   async rename(id: string, entityId: string, oldName: string, newName: string): Promise<Uint8Array | null> {
     return this.documents.rename(id, entityId, oldName, newName)
+  }
+
+  async merge(id: string, base: Uint8Array, local: string, choices: MergeChoices | null): Promise<ProseMergeReply> {
+    return this.documents.merge(id, base, local, choices)
   }
 
   async capture(id: string): Promise<SharedSceneSnapshot> {

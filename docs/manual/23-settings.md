@@ -143,9 +143,18 @@ The server stores only encrypted project content and update history. Invited
 writers can join and catch up while the owner is offline. Ending your local
 session disconnects that device; it does not delete the hosted project or end
 other writers' sessions. Reopen the retained project and use **Reconnect** to
-download missed changes. Novalist preserves local differences in a recovery
-archive; **Show retained copy** reveals it. Pending synchronized prose remains
-in the local journal for reconnection.
+download missed changes. Writing you did on this device in the meantime is
+merged with the other writers' changes rather than replaced: edits to different
+paragraphs, fields or files simply combine. Where you and another writer changed
+the same paragraph, Codex field, entry value or file differently, the
+**Changes made while disconnected** dialog shows both versions side by side.
+Choose **This device** or **Shared version** for each place, or keep all from one
+side, then select **Apply choices**. Until you choose, your side of those places
+is held back; **Decide later** closes the dialog, **Resolve conflicts** next to
+**End this session** reopens it, and ending the session keeps the choice open
+for the next reconnect. Novalist also keeps the local project as it was before
+reconnecting in a recovery archive; **Show retained copy** reveals it. Pending
+synchronized prose remains in the local journal for reconnection.
 
 Owners manage membership through **Manage shared access**. Removing a writer
 rotates project keys and publishes a fresh encrypted checkpoint. Remaining

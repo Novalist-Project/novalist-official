@@ -1,7 +1,7 @@
 import { utilityProcess, type UtilityProcess } from 'electron'
 import { join } from 'node:path'
 import { DocumentBridge } from '../../shared/CollaborationDocumentBridge'
-import type { DocumentReply, DocumentRequest, SceneCommand, SharedSceneSnapshot, SceneApplyResult } from '../../shared/collaborationDocuments'
+import type { DocumentReply, DocumentRequest, SceneCommand, SharedSceneSnapshot, SceneApplyResult, MergeChoices, ProseMergeReply } from '../../shared/collaborationDocuments'
 
 interface PendingDocument {
   resolve(reply: Extract<DocumentReply, { failed: false }>): void
@@ -50,6 +50,12 @@ export class DocumentHostProcess {
     const { update } = await this.request({ kind: 'rename', id, entityId, oldName, newName })
     if (update === undefined) throw new Error('The shared document process returned no rename result.')
     return update
+  }
+
+  async merge(id: string, base: Uint8Array, local: string, choices: MergeChoices | null): Promise<ProseMergeReply> {
+    const { merge } = await this.request({ kind: 'merge', id, base, local, choices })
+    if (!merge) throw new Error('The shared document process returned no merge result.')
+    return merge
   }
 
   private request(command: DocumentRequest['command']): Promise<Extract<DocumentReply, { failed: false }>> {

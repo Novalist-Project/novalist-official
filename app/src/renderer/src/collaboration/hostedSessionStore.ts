@@ -12,7 +12,19 @@ interface HostedSession {
   recoveryPath: string | null
   mode: 'hosted' | 'persistent' | 'tcp' | 'steam'
   hasPendingUpdates?: boolean
+  conflicts?: number
 }
+
+/** A place this device and another writer both changed while this device was disconnected. */
+export interface MergeConflict {
+  path: string
+  id: string
+  kind: 'prose' | 'field' | 'structure' | 'file'
+  label: string
+  local: string | null
+  server: string | null
+}
+export type MergeChoice = 'local' | 'server'
 
 interface SavedHostedProject { server: string; projectId: string; recoveryPath: string | null; mode: 'hosted' | 'persistent' }
 export interface CollaborationTransferProgress {
@@ -36,6 +48,11 @@ interface HostedSessionState {
   transfer: CollaborationTransferProgress | null
   hostSynchronizing: boolean
   cancelling: boolean
+  conflicts: MergeConflict[]
+  conflictsOpen: boolean
+  showConflicts(open: boolean): void
+  loadConflicts(): Promise<void>
+  resolveConflicts(choices: { path: string; id: string; keep: MergeChoice }[]): Promise<void>
   cancel(): Promise<void>
   reportPresence(sessionId: string, viewId: string, unavailable: boolean): void
   refresh(isCurrent?: () => boolean): Promise<void>
@@ -55,6 +72,17 @@ export const useHostedSessionStore = create<HostedSessionState>((set, get) => ({
   transfer: null,
   hostSynchronizing: false,
   cancelling: false,
+  conflicts: [],
+  conflictsOpen: false,
+  showConflicts(open) { set({ conflictsOpen: open && get().conflicts.length > 0 }) },
+  async loadConflicts() {
+    const conflicts = await rpc.request<MergeConflict[]>('collaboration/persistent/conflicts')
+    set({ conflicts, conflictsOpen: conflicts.length > 0 })
+  },
+  async resolveConflicts(choices) {
+    const session = await rpc.request<HostedSession>('collaboration/persistent/resolveConflicts', [choices])
+    set({ session, conflicts: [], conflictsOpen: false })
+  },
   async cancel() {
     if ((!get().busy && !get().hostSynchronizing) || get().cancelling) return
     set({ cancelling: true })
@@ -102,11 +130,14 @@ export const useHostedSessionStore = create<HostedSessionState>((set, get) => ({
       }
       else if (operation === 'end') {
         await rpc.request('collaboration/end')
-        set({ session: null, presenceFailures: [], presenceUnavailable: false })
+        set({ session: null, presenceFailures: [], presenceUnavailable: false, conflicts: [], conflictsOpen: false })
       } else if (operation === 'persistentCreate' || operation === 'persistentJoin' || operation === 'persistentResume') {
         const method = operation === 'persistentCreate' ? 'collaboration/persistent/create' : operation === 'persistentJoin'
           ? 'collaboration/persistent/join' : 'collaboration/persistent/resume'
-        set({ session: await rpc.request<HostedSession>(method, params), presenceFailures: [], presenceUnavailable: false })
+        const session = await rpc.request<HostedSession>(method, params)
+        set({ session, presenceFailures: [], presenceUnavailable: false, conflicts: [], conflictsOpen: false })
+        // Writing done while disconnected that collides with another writer's waits for a choice.
+        if (session.conflicts) await get().loadConflicts()
       } else if (operation === 'resume') {
         set({ session: await rpc.request<HostedSession>('collaboration/resume', params), presenceFailures: [], presenceUnavailable: false })
       } else if (operation === 'peerHost') {
