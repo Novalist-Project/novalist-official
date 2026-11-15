@@ -20,6 +20,40 @@ A new push to a pull request cancels that pull request's earlier run. Runs for
 pushes to `main` and `dev` are never cancelled: the release workflow waits for the run
 on the release commit.
 
+## Test builds comment
+
+`.github/workflows/test-builds.yml` keeps one comment on each pull request that links the
+installable builds of its newest commit, so a tester does not have to find the right run
+and artifact. It builds nothing itself. `tools/pr_builds_comment.py` looks up the runs of
+the build workflows for the head commit and lists what they uploaded:
+
+| Build | Workflow | Built for |
+| --- | --- | --- |
+| Windows x64, macOS Apple Silicon, macOS Intel, Linux x64 | `writing-feasibility.yml` | pushes to `feat/unified-writing-workspace` |
+| Android ARM64, Android x64 development APKs | `android.yml` | pull requests that touch the app, backend or mobile sources |
+
+The job starts with the pull request's other workflows and edits the comment as builds
+finish: a build still running shows as "Building", one whose run ended without it as
+"Not built", each with a link to the run. A workflow that did not run for the commit adds
+no rows, and a commit with no build workflow at all leaves the comment as it was, still
+naming the commit it was built from. Test traces and coverage reports are never listed.
+
+The job waits at most an hour and fails if builds are still running then; re-run it to
+refresh the comment, also after re-running a build workflow by hand. A new push cancels
+the wait for the previous commit. Pull requests from forks get no comment, because their
+token cannot write one.
+
+To list another build, add its row to `BUILDS` in `tools/pr_builds_comment.py`.
+`tools/test_pr_builds_comment.py` compares that table with the artifact names in the two
+workflows, so renaming an artifact without its row fails the tooling tests. Preview the
+comment for any commit without posting it:
+
+```bash
+GH_TOKEN=$(gh auth token) python tools/pr_builds_comment.py \
+  --repository Novalist-Project/novalist-official --sha <full commit sha> \
+  --pull-request <number> --preview
+```
+
 ## E2E shard balance
 
 Playwright's own `--shard` splits by test count, which leaves the heavy specs clustered in a

@@ -1,9 +1,13 @@
 # Testing the unified writing branch
 
-Open [Unified writing validation in GitHub Actions](https://github.com/Novalist-Project/novalist-official/actions/workflows/writing-feasibility.yml?query=branch%3Afeat%2Funified-writing-workspace)
-and select a successful run for `feat/unified-writing-workspace`. Under
-**Artifacts**, download the `novalist-preview-...` artifact for your computer.
+The quickest way to a build is the **Test builds** comment on
+[the branch's pull request](https://github.com/Novalist-Project/novalist-official/pull/80):
+it links the download for each computer, built from the newest commit.
 You must be signed in to GitHub. Artifacts expire after 14 days.
+
+The same builds are in GitHub Actions: open [Unified writing validation](https://github.com/Novalist-Project/novalist-official/actions/workflows/writing-feasibility.yml?query=branch%3Afeat%2Funified-writing-workspace),
+select a successful run for `feat/unified-writing-workspace`, and under
+**Artifacts** download the `novalist-preview-...` artifact for your computer.
 `writing-feasibility-evidence` contains automated test results, not the app.
 
 Extract the downloaded artifact ZIP. It contains the application package,
