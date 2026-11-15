@@ -253,6 +253,38 @@ packaging stages as the nixpkgs-style recipe: Node.js 24, Electron 44, a release
 depend on `app/node_modules` or a manually built debug backend. The source includes
 current local edits but excludes build output and development caches.
 
+To test collaboration against your hosted servers, start two isolated clients:
+
+```bash
+devenv up
+# Or start only one of the named processes:
+devenv up guest
+```
+
+The `host` and `guest` processes run the current packaged checkout. Each keeps its
+own settings, collaboration credentials and Electron profile across restarts.
+Closing a client does not automatically restart it. Stop the process manager with
+`devenv down`.
+
+For additional clients, run a named instance from another terminal:
+
+```bash
+devenv shell run-instance guest-2
+# Extra app arguments are forwarded, including an explicit keyring choice:
+devenv shell run-instance guest --password-store=gnome-libsecret
+```
+
+Instance names accept letters, digits, underscores and hyphens. Data lives in
+`${XDG_DATA_HOME:-$HOME/.local/share}/novalist-NAME/settings` and
+`${XDG_DATA_HOME:-$HOME/.local/share}/novalist-NAME/profile`. With the default data
+directory, `guest` reuses an existing `~/.local/share/novalist-guest` setup.
+Use a different name for each concurrent client; reopening the same name targets
+the same instance. Keep `--user-data-dir` managed by `run-instance` to preserve
+isolation. These commands use the app's normal keyring selection and leave the
+regular `run` profile separate. Configure your hosted server inside each client;
+no local server is started. For collaboration tests, use a separate local project
+folder per client.
+
 ROCm libraries and MIOpen GPU databases are excluded by default. The package's
 `withRocm` argument enables them explicitly when testing AMD speech acceleration.
 The normal client and context-selection tests do not need those downloads.
