@@ -44,11 +44,11 @@ test('context-menu groups require a selection and stay within the editor', async
     const groupNames = async (): Promise<string[]> =>
       frame.locator('#context-menu .cm-parent > .cm-item > span').allTextContents()
 
-    // Styles and structural insertion work at a caret. Selection-only Codex
-    // actions remain absent until prose is selected.
+    // Styles, direction and structural insertion work at a caret. Selection-only
+    // Codex actions remain absent until prose is selected.
     await paragraph.click({ button: 'right', position: { x: 8, y: 8 } })
     await expect(frame.locator('#context-menu.visible')).toBeVisible()
-    expect(await groupNames()).toEqual(['Paragraph style', 'Insert structure', 'Scene'])
+    expect(await groupNames()).toEqual(['Paragraph style', 'Paragraph direction', 'Insert structure', 'Scene'])
     await page.keyboard.press('Escape')
 
     // With prose selected the group comes back, and its rows are live.
@@ -58,7 +58,7 @@ test('context-menu groups require a selection and stay within the editor', async
     )).toBe('Liam Calder walked to the window.')
     await paragraph.click({ button: 'right', position: { x: 8, y: 8 } })
     await expect(frame.locator('#context-menu.visible')).toBeVisible()
-    expect(await groupNames()).toEqual(['Paragraph style', 'Insert structure', 'Scene', 'Codex'])
+    expect(await groupNames()).toEqual(['Paragraph style', 'Paragraph direction', 'Insert structure', 'Scene', 'Codex'])
     await expect(
       frame.locator('#context-menu .cm-parent', { hasText: 'Codex' }).locator('.cm-item.disabled')
     ).toHaveCount(0)
