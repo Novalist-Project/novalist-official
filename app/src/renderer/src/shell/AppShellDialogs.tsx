@@ -16,6 +16,7 @@ import { ShellDialogs } from './ShellDialogs'
 import { SceneConflictDialog } from './SceneConflictDialog'
 import { UnsavedLeaveDialog } from './UnsavedLeaveDialog'
 import { SteamInvitationDialog } from '../collaboration/SteamInvitationDialog'
+import { MergeConflictDialog } from '../collaboration/MergeConflictDialog'
 import { useShellStore } from '../stores/shellStore'
 import { useProjectStore } from '../stores/projectStore'
 
@@ -91,5 +92,6 @@ export function AppShellDialogs(): React.JSX.Element {
           behind, wherever the writer set off from. */}
       <UnsavedLeaveDialog />
       <SteamInvitationDialog />
+      <MergeConflictDialog />
   </>
 }

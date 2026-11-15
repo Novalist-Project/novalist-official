@@ -1,8 +1,49 @@
 import { expect, test } from '@playwright/test'
-import { copyFileSync, cpSync, mkdirSync } from 'node:fs'
+import { copyFileSync, cpSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { mobileHost } from './mobileHarness'
 import { dismissTour, type Book } from './harness'
+
+test('Android keeps a selected project available as its books load', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 1000 })
+  await page.addInitScript(() => {
+    const settingsReady = new Promise<void>(resolve => window.addEventListener('settings-ready', () => resolve(), { once: true }))
+    const libraryRead = new Promise<void>(resolve => window.addEventListener('finish-library-read', () => resolve(), { once: true }))
+    Object.defineProperty(window, 'novalistRpc', {
+      configurable: true,
+      set(client: typeof window.novalistRpc) {
+        Object.defineProperty(window, 'novalistRpc', { configurable: true, value: client })
+        const request = client.request.bind(client)
+        client.request = async <T>(method: string, params?: unknown): Promise<T> => {
+          if (method === 'settings/get') await settingsReady
+          if (method === 'project/recent') await libraryRead
+          return request<T>(method, params)
+        }
+      }
+    })
+  })
+  const h = await mobileHost(page, 'tablet', 'android')
+  try {
+    const status = page.getByRole('status').filter({ hasText: 'Loading library' })
+    await expect(status).toBeVisible()
+    await expect(page.getByText('Room for your first story.')).toBeHidden()
+    const path = join(h.root, 'Saved novel')
+    mkdirSync(join(path, '.novalist'), { recursive: true })
+    writeFileSync(join(path, '.novalist', 'project.json'), JSON.stringify({
+      name: 'Saved novel', books: [{ id: 'volume', name: 'First volume', folderName: 'Books/First' }]
+    }))
+    mkdirSync(join(h.root, 'settings'), { recursive: true })
+    writeFileSync(join(h.root, 'settings', 'settings.json'), JSON.stringify({ recentProjects: [{ name: 'Saved novel', path }] }))
+    await page.evaluate(() => window.dispatchEvent(new Event('settings-ready')))
+    await page.getByRole('button', { name: 'Select Saved novel — Saved novel' }).click()
+    const open = page.getByRole('button', { name: 'Open Saved novel', exact: true })
+    await expect(open).toBeVisible()
+    await page.evaluate(() => window.dispatchEvent(new Event('finish-library-read')))
+    await expect(status).toBeHidden()
+    await expect(page.getByRole('button', { name: 'Select First volume — Saved novel' })).toBeAttached()
+    await expect(open).toBeVisible()
+  } finally { await h.close() }
+})
 
 test('Android clears Codex entries when switching between copies of the same book', async ({ page }) => {
   const h = await mobileHost(page, 'tablet', 'android')
@@ -93,6 +134,22 @@ test('Android shows folder-opening errors and allows another attempt', async ({ 
     await open.click()
     await expect(page.getByRole('alert')).toHaveCount(0)
     await expect(open).toBeVisible()
+  } finally { await h.close() }
+})
+
+test('Android shows the backend error when a selected folder is not a project', async ({ page }) => {
+  const h = await mobileHost(page, 'tablet', 'android')
+  try {
+    h.host.pickedFolder = join(h.root, 'Empty folder')
+    mkdirSync(h.host.pickedFolder)
+    const open = page.locator('.library-open-folder')
+    await open.click()
+    await expect(page.getByRole('alert')).toContainText('No Novalist project found at this location.')
+    await expect(open).toBeEnabled()
+    h.host.pickedFolder = null
+    await open.click()
+    await expect(page.getByRole('alert')).toHaveCount(0)
+    await expect(open).toBeEnabled()
   } finally { await h.close() }
 })
 

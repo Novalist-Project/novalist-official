@@ -19,6 +19,7 @@ import { useExtensionsStore } from './stores/extensionsStore'
 import { useOnboardingStore } from './stores/onboardingStore'
 import { useNarrationStore } from './stores/narrationStore'
 import { useManuscriptStore } from './stores/manuscriptStore'
+import { useHostedSessionStore } from './collaboration/hostedSessionStore'
 import { rpc } from './rpc/client'
 import { installWritingSearchCapture } from './views/editor/writingSearchCapture'
 import { installWritingSearchLease } from './views/editor/writingSearchLease'
@@ -35,7 +36,8 @@ window.novalistStores = {
   extensions: useExtensionsStore,
   onboarding: useOnboardingStore,
   narration: useNarrationStore,
-  manuscript: useManuscriptStore
+  manuscript: useManuscriptStore,
+  hostedSession: useHostedSessionStore
 }
 window.novalistRpc = rpc
 installWritingSearchLease()

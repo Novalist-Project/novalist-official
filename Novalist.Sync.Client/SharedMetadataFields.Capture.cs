@@ -5,18 +5,16 @@ namespace Novalist.Sync.Client;
 
 public static partial class SharedMetadataFields
 {
-    internal static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, IReadOnlyList<string> codexPaths, CancellationToken ct,
-        Func<string, CancellationToken, Task<byte[]>>? read = null)
+    internal static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(SharedFileReader read, IReadOnlyList<string> paths, IReadOnlyList<string> codexPaths, CancellationToken ct)
     {
-        read ??= (path, token) => File.ReadAllBytesAsync(SharedProjectPath.Resolve(root, path), token);
-        var project = JsonNode.Parse(await read(".novalist/project.json", ct)) as JsonObject
+        var project = JsonNode.Parse(await SharedCodexFields.ReadBoundedAsync(read, ".novalist/project.json", ct)) as JsonObject
             ?? throw new InvalidDataException("Invalid shared project.");
         var scenePaths = ScenePaths(project);
         var result = new List<SharedFieldBinding>();
         foreach (var path in paths)
         {
             if (!codexPaths.Contains(path, StringComparer.Ordinal) && path != ".novalist/project.json" && !scenePaths.Contains(path)) continue;
-            var bytes = await read(path, ct);
+            var bytes = await SharedCodexFields.ReadBoundedAsync(read, path, ct);
             var entity = JsonNode.Parse(bytes) as JsonObject ?? throw new InvalidDataException("Invalid shared metadata.");
             SharedProseFields.EnsureSectionIdentities(entity);
             var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));

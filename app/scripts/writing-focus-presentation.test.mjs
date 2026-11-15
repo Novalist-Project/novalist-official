@@ -44,6 +44,7 @@ for (const inlinePadding of [0, 200]) {
     const paper = editor.querySelector('.nv-page')
     Object.defineProperty(paper, 'offsetWidth', { value: 544 })
     w.ResizeObserver = class { observe() {} }
+    w.eval(readFileSync(new URL('../src/renderer/public/editor/writing-scroll.js', import.meta.url), 'utf8'))
     w.eval(readFileSync(new URL('../src/renderer/public/editor/writing-zoom.js', import.meta.url), 'utf8'))
     w.setWritingZoom(1.1)
     const unscaledProseWidth = parseFloat(editor.style.width) - inlinePadding

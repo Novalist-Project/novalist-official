@@ -30,7 +30,7 @@ export function scopeEditorSource(name: string, source: string, fragments = fals
   if (name === 'clipboard-focus-events.js') {
     const marker = '// Track scroll positions for focus-gain scroll jump prevention'
     const legacy = source.slice(source.indexOf(marker))
-    if (source.split(marker).length !== 2 || createHash('sha256').update(legacy).digest('hex') !== '51731f1f2521918e8795f924248c70b6a8f8437d64ba607a0f8b6406226e6425') throw new Error(`${name}: the experimental focus seam no longer matches the source engine`)
+    if (source.split(marker).length !== 2 || createHash('sha256').update(legacy).digest('hex') !== '98a5669bb2c0e898c9229c296a8f3a4a874ff3766c170c78251c9223b187532b') throw new Error(`${name}: the experimental focus seam no longer matches the source engine`)
     source = source.slice(0, source.indexOf(marker)) + `(${installWritingViewport.toString()})();\n`
   }
   if (fragments || name === 'grammar-highlights.js') {

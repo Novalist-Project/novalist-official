@@ -11,16 +11,23 @@ let recentRefreshRequested = false
 
 let recentRefreshVersion = 0
 
-/** Fresh library data must be ready before an unloaded workspace is shown.
- * This must not join a pre-transition read held behind the resume barrier. */
-export async function prepareProjectLibrary(): Promise<void> {
+/** Start a fresh read rather than joining a pre-transition request held behind the resume barrier. */
+export async function prepareProjectLibrary(mode: 'blocking' | 'background' = 'blocking'): Promise<void> {
   const version = ++recentRefreshVersion
   recentRefreshRequested = false
-  const [recents] = await Promise.all([
-    rpc.request<RecentProjectDto[]>('project/recent', [true]),
-    useSettingsStore.getState().load()
-  ])
-  if (version === recentRefreshVersion) useProjectStore.setState({ recentProjects: recents })
+  const epoch = useProjectStore.getState().workspaceEpoch
+  const current = (): boolean => version === recentRefreshVersion && epoch === useProjectStore.getState().workspaceEpoch
+  if (mode === 'background') useProjectStore.setState({ libraryStatus: 'loading' })
+  try {
+    const [recents] = await Promise.all([
+      rpc.request<RecentProjectDto[]>('project/recent', [true]),
+      useSettingsStore.getState().load()
+    ])
+    if (current()) useProjectStore.setState({ recentProjects: recents, libraryStatus: 'ready' })
+  } catch (error) {
+    if (mode === 'blocking') throw error
+    if (current()) useProjectStore.setState({ libraryStatus: 'failed' })
+  }
 }
 
 function sameRecentProjects(left: RecentProjectDto[], right: RecentProjectDto[]): boolean {
@@ -53,7 +60,10 @@ export const createProjectLibraryActions: ProjectSlice<'loadRecents' | 'openProj
             recentRefreshRequested = true
             continue
           }
-          if (!sameRecentProjects(get().recentProjects, recents)) set({ recentProjects: recents })
+          const current = get()
+          if (!sameRecentProjects(current.recentProjects, recents) || (includeLibraryDetails && current.libraryStatus !== 'ready')) {
+            set({ recentProjects: recents, libraryStatus: includeLibraryDetails ? 'ready' : current.libraryStatus })
+          }
         } while (recentRefreshRequested)
       } finally { recentRefresh = null }
     })()

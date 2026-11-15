@@ -138,6 +138,9 @@ public sealed class DocumentTreeFileService : IFileService, IFileMetadataCache, 
             return result;
         }).ConfigureAwait(false);
     }
+    internal Task<string?> ReadDocumentPreviewAsync(string path, Func<DocumentTreeEntry, string?> read)
+        => Route(path, () => Task.FromResult<string?>(null), external => read(RequireFile(external)));
+
     public Task<byte[]> ReadBytesAsync(string path) => Route(path, () => local.ReadBytesAsync(path), external =>
     {
         var entry = RequireFile(external);

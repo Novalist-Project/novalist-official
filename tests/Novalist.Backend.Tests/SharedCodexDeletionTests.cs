@@ -5,6 +5,7 @@ using Novalist.Sync.Client;
 using Novalist.Sync.Client.Tests;
 using StreamJsonRpc;
 using Xunit;
+using SharedFileReader = Novalist.Backend.Tests.TestHelpers.SharedFileReader;
 
 namespace Novalist.Backend.Tests;
 

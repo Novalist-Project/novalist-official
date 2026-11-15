@@ -27,6 +27,7 @@ function runtime(t) {
   w.captureDictationPosition = () => null
   w.restoreDictationPosition = () => {}
   w.reapplyReadability = () => {}
+  w.eval(readFileSync(new URL('../src/renderer/public/editor/writing-scroll.js', import.meta.url), 'utf8'))
   w.eval(readFileSync(new URL('../src/renderer/public/editor/editor-content.js', import.meta.url), 'utf8'))
   w.eval(readFileSync(new URL('../src/renderer/public/editor/page-layout.js', import.meta.url), 'utf8'))
   w.setPageView(true)

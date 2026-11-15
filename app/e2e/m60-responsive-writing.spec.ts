@@ -312,7 +312,7 @@ test('the writing bar holds still while a selection is made', async () => {
   await expect(tip).toBeVisible()
   await tip.getByRole('button', { name: 'Try Focus Peek' }).click()
   await expect(h.page.locator('.peek-card')).toBeVisible({ timeout: 10_000 })
-  await expect(h.page.locator('.peek-title')).toContainText('Mira')
+  await expect(h.page.locator('.peek-card .peek-title')).toContainText('Mira')
   await expect(tip).toHaveCount(0)
 
   // It is persisted as a completed tip, rather than returning with the next

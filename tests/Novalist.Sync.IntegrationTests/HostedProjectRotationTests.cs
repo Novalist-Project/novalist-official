@@ -63,8 +63,10 @@ public sealed class HostedProjectRotationTests(CommunityServerFixture server) : 
                     return new MemoryStream(newBytes);
                 }, ct);
             await Assert.ThrowsAsync<HubException>(() => removedSession.Transport.GetProjectEpochGrantAsync(access.ProjectId, 0, ct));
+            using var ownerNext = await store.RefreshEpochAsync(access, owner, ownerSession.Transport, ct);
+            Assert.NotNull(ownerNext);
             var observed = new List<SequencedUpdate>();
-            await foreach (var update in ownerSession.Transport.CatchUpAsync(access.ProjectId, 0, ct)) observed.Add(update);
+            await foreach (var update in ownerSession.Transport.CatchUpAsync(access.ProjectId, ownerNext.FirstServerSequence - 1, ct)) observed.Add(update);
             var newEnvelope = observed.First(value => UpdateHeader.Parse(value.Envelope.Header).Epoch == 1).Envelope;
             using var oldCipher = removedAccess.CreateCipher();
             Assert.Throws<CryptographicException>(() => oldCipher.Open(newEnvelope, owner.SigningKey.PublicKey));

@@ -1,4 +1,5 @@
 using Microsoft.Maui.ApplicationModel;
+using Novalist.Mobile.Services;
 #if IOS
 using WebKit;
 #endif
@@ -10,11 +11,14 @@ public sealed partial class RendererHostPage
     private readonly TaskCompletionSource _rendererReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _bridgeFailed;
     private int _disposed;
+    private readonly MobileCallbackWatchdog _callbackWatchdog = new(TimeSpan.FromSeconds(15));
+
+    internal void SetBridgeForeground(bool foreground) => _callbackWatchdog.SetForeground(foreground);
 
     private async Task DeliverCallbackAsync(string script)
     {
-        var result = await MainThread.InvokeOnMainThreadAsync(() => EvaluateScriptAsync(script))
-            .WaitAsync(TimeSpan.FromSeconds(15), _cts.Token).ConfigureAwait(false);
+        var callback = MainThread.InvokeOnMainThreadAsync(() => EvaluateScriptAsync(script));
+        var result = await _callbackWatchdog.WaitAsync(callback, _cts.Token).ConfigureAwait(false);
         if (result?.Trim('"') != "accepted") throw new IOException("The editor did not accept its response.");
     }
 

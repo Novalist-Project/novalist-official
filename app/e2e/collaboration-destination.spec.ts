@@ -40,9 +40,17 @@ test('joining can select an existing local copy in relay and direct connection m
     await desktop.app.evaluate(({ dialog }, folder) => {
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [folder] })
     }, desktop.workDir)
+    await desktop.page.evaluate(() => {
+      const original = window.novalistRpc.request.bind(window.novalistRpc)
+      window.novalistRpc.request = async <T,>(method: string, params?: unknown): Promise<T> => {
+        if (method === 'collaboration/account/configuration') return { authenticationRequired: false } as T
+        return original<T>(method, params)
+      }
+    })
     await desktop.page.evaluate(() => document.querySelector<HTMLButtonElement>('[data-collaboration-trigger][aria-expanded="false"]')?.click())
     for (const mode of ['hosted', 'tcp']) {
       await desktop.page.getByLabel('Connection type', { exact: true }).selectOption(mode)
+      if (mode === 'hosted') await desktop.page.getByLabel('Server address', { exact: true }).fill('https://relay.example/')
       await expect(desktop.page.getByLabel('Use an existing local project', { exact: true })).toBeVisible()
       await desktop.page.getByLabel('Use an existing local project', { exact: true }).check()
       await desktop.page.getByRole('button', { name: 'Choose existing project folder', exact: true }).click()

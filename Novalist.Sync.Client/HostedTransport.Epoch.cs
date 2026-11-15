@@ -6,7 +6,7 @@ public sealed record HostedProjectDevice(Guid UserId, Guid DeviceId, uint Epoch,
 public sealed record HostedProjectEpoch(uint Epoch, long LastServerSeq);
 public sealed record BeginHostedEpoch(Guid ProjectId, Guid RotationId, uint PreviousEpoch, long PreviousServerSeq);
 public sealed record HostedEpochGrant(Guid DeviceId, byte[] Certificate, byte[] Payload);
-public sealed record CommitHostedEpoch(Guid RotationId, Guid RemovedMemberId, IReadOnlyList<HostedEpochGrant> Grants);
+public sealed record CommitHostedEpoch(Guid RotationId, Guid? RemovedMemberId, IReadOnlyList<HostedEpochGrant> Grants);
 public sealed record StoredHostedEpochGrant(uint Epoch, long FirstServerSeq, Guid GrantorDeviceId, byte[] Payload);
 
 public sealed partial class HostedTransport

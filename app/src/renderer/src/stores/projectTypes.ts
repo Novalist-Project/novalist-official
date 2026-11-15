@@ -131,6 +131,7 @@ export interface ProjectState {
   drafts: { id: string; name: string; isActive: boolean }[]
   chapters: ChapterDto[]
   recentProjects: RecentProjectDto[]
+  libraryStatus: 'loading' | 'ready' | 'failed'
   openChapterGuid: string | null
   openSceneId: string | null
   /**

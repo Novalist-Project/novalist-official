@@ -26,7 +26,7 @@ function runtime(t, paginated = false) {
   w.repaginatePageView = () => {}
   w.schedulePageViewRepaginate = () => {}
   w.clearGrammarHighlights = () => {}
-  for (const file of ['editor-content', 'writing-selection', 'writing-document', 'writing-transactions', 'content-input', 'prose-direction']) {
+  for (const file of ['writing-scroll', 'editor-content', 'writing-selection', 'writing-document', 'writing-transactions', 'content-input', 'prose-direction']) {
     w.eval(readFileSync(new URL(`../src/renderer/public/editor/${file}.js`, import.meta.url), 'utf8'))
   }
   if (paginated) {

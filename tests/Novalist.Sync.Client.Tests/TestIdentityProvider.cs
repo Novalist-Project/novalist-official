@@ -31,6 +31,8 @@ internal sealed class TestIdentityProvider : IAsyncDisposable
     public string? ClientConfigurationJson { get; set; }
     public bool MultiFactorAuthentication { get; set; }
     public string? RequestedMaxAge { get; private set; }
+    public int Authorizations { get; private set; }
+    public string LastNonce => nonce;
     internal SecurityKey VerificationKey => new RsaSecurityKey(rsa) { KeyId = "test" };
 
     private TestIdentityProvider()
@@ -81,6 +83,7 @@ internal sealed class TestIdentityProvider : IAsyncDisposable
     {
         var query = context.Request.Query;
         RequestedMaxAge = query["max_age"].ToString();
+        Authorizations++;
         if (query["client_id"] != "novalist" || query["response_type"] != "code" || query["code_challenge_method"] != "S256") return Results.BadRequest();
         challenge = query["code_challenge"].ToString();
         nonce = query["nonce"].ToString();

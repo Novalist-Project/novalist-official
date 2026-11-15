@@ -8,7 +8,7 @@ public sealed record HostedSignInOptions(Uri Authority, string ClientId, string 
 
 public static class HostedSignIn
 {
-    private sealed record EnrollmentLogin(string Nonce, string Subject, Action<string> Capture);
+    private sealed record EnrollmentLogin(string Nonce, string? Subject, Action<string> Capture);
     public static async Task<HostedSignInOptions> DiscoverAsync(Uri server, CancellationToken ct)
     {
         var configuration = await RelayServerDiscovery.DiscoverAsync(server, ct);
@@ -94,6 +94,28 @@ public static class HostedSignIn
         IHostedSignInBrowser browser, CancellationToken ct) => CaptureEnrollmentAsync(account, nonce,
             enrollment => AuthenticateAsync(account.SignInSettings, browser.RedirectUri,
                 (url, _, token) => browser.AuthenticateAsync(url, token), ct, enrollment));
+
+    // One fresh-MFA browser sign-in that both signs in and proves enrollment for keys the nonce was derived from.
+    internal static Task<(HostedAccount Account, string IdentityToken)> SignInForEnrollmentAsync(HostedSignInOptions settings,
+        string nonce, Func<Uri, CancellationToken, Task> openBrowser, CancellationToken ct)
+    {
+#if NOVALIST_LOOPBACK_SIGNIN
+        return CaptureSignInAsync(nonce, enrollment => SignInWithLoopbackAsync(settings, openBrowser, ct, enrollment));
+#else
+        throw new PlatformNotSupportedException("This platform requires a native sign-in browser.");
+#endif
+    }
+
+    internal static Task<(HostedAccount Account, string IdentityToken)> SignInForEnrollmentAsync(HostedSignInOptions settings,
+        string nonce, IHostedSignInBrowser browser, CancellationToken ct) => CaptureSignInAsync(nonce,
+            enrollment => AuthenticateAsync(settings, browser.RedirectUri, (url, _, token) => browser.AuthenticateAsync(url, token), ct, enrollment));
+
+    private static async Task<(HostedAccount, string)> CaptureSignInAsync(string nonce, Func<EnrollmentLogin, Task<HostedAccount>> authenticate)
+    {
+        string? identityToken = null;
+        var account = await authenticate(new(nonce, null, value => identityToken = value));
+        return (account, identityToken!); // AuthenticateAsync rejects sign-ins without an ID token.
+    }
 
     private static async Task<string> CaptureEnrollmentAsync(HostedAccount account, string nonce,
         Func<EnrollmentLogin, Task<HostedAccount>> authenticate)

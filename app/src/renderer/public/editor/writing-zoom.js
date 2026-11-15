@@ -52,10 +52,9 @@
         const fraction = { top: 0.33, middle: 0.5, bottom: 0.66 }[typewriterAnchor];
         const y = fraction ? wrapper.clientHeight * fraction
             : Math.max(margin, Math.min(caretAnchor.y, wrapper.clientHeight - caret.rect.height - margin));
-        if (window.NovalistEditorState) window.NovalistEditorState.programmaticScrollUntil = Date.now() + 150;
-        wrapper.scrollTop += caret.rect.top - viewport.top - y;
-        if (!document.body.classList.contains('unified-writing-canvas'))
-            wrapper.scrollLeft += caret.rect.left - viewport.left - x;
+        window.setWritingScroll(wrapper.scrollTop + caret.rect.top - viewport.top - y,
+            document.body.classList.contains('unified-writing-canvas') ? wrapper.scrollLeft
+                : wrapper.scrollLeft + caret.rect.left - viewport.left - x);
     }
 
     function clearLayout() {
@@ -145,8 +144,7 @@
         resizeSurface();
         layoutKey = key;
         appliedScale = scale;
-        wrapper.scrollTop = scrollTop * ratio;
-        wrapper.scrollLeft = textZoom ? 0 : scrollLeft * ratio;
+        window.setWritingScroll(scrollTop * ratio, textZoom ? 0 : scrollLeft * ratio);
         restoreCaretAnchor();
         window.scheduleCommentRender?.();
         window.schedulePageViewRepaginate?.();

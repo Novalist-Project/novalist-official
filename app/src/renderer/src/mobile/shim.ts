@@ -100,6 +100,11 @@ function requestBackendPort(): void {
 
 
 const hostCalls = new HostCallChannel(sendRaw)
+function syncHostVisibility(): void {
+  hostCalls.setVisible(document.visibilityState === 'visible')
+}
+window.addEventListener('visibilitychange', syncHostVisibility, true)
+syncHostVisibility()
 const closeCollaboration = installCollaborationHost(window, (id, ok, result) =>
   hostCall<void>('collaborationCompleted', [id, ok, result]))
 const backgroundSaves = new Set<() => Promise<void>>()
@@ -123,9 +128,7 @@ window.__novalistHostResult = (base64: string) => {
 }
 
 function hostCall<T>(method: string, args: unknown[]): Promise<T> {
-  const timeout = method.startsWith('pick') || method === 'shareExport'
-    ? 600_000 : method === 'readProjectAsset' ? 120_000 : 30_000
-  return hostCalls.request<T>(method, args, timeout)
+  return hostCalls.request<T>(method, args)
 }
 
 function notifyHost(method: string, args: unknown[]): void {

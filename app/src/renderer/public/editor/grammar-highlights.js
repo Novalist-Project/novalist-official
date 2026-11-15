@@ -205,7 +205,7 @@ function applyGrammarHighlights() {
     const restoreCaret = () => {
         window.restoreDictationPosition(savedDictation, true);
         restoreProofingSelection(savedSelection);
-        window.NovalistEditorState.wrapper.scrollTop = scrollTop;
+        window.setWritingScroll(scrollTop);
     };
 
     // Remove existing highlights

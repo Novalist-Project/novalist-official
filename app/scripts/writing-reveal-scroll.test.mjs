@@ -6,9 +6,9 @@ import { JSDOM } from 'jsdom'
 const source = name => readFileSync(new URL(`../src/renderer/public/editor/${name}`, import.meta.url), 'utf8')
 
 function fixture(t) {
-  const dom = new JSDOM('<div id="wrapper"><div id="editor" contenteditable="true"><section data-writing-scene="first"><p>First scene</p></section><section data-writing-scene="last"><p>Last scene</p></section></div></div>', { runScripts: 'outside-only' })
+  const dom = new JSDOM('<div id="editor-wrapper"><div id="editor" contenteditable="true"><section data-writing-scene="first"><p>First scene</p></section><section data-writing-scene="last"><p>Last scene</p></section></div></div>', { runScripts: 'outside-only' })
   t.after(() => dom.window.close())
-  const w = dom.window, editor = w.document.getElementById('editor'), wrapper = w.document.getElementById('wrapper')
+  const w = dom.window, editor = w.document.getElementById('editor'), wrapper = w.document.getElementById('editor-wrapper')
   const frames = [], timers = []
   w.requestAnimationFrame = callback => { frames.push(callback); return frames.length }
   w.setTimeout = (callback, delay) => { assert.equal(delay, 100); timers.push(callback); return timers.length }
@@ -19,6 +19,7 @@ function fixture(t) {
     w.getWritingSceneRoot(id).querySelector('p').scrollIntoView = () => { wrapper.scrollTop = top }
   }
   wrapper.scrollTop = 500
+  w.eval(source('writing-scroll.js'))
   w.eval(source('writing-selection.js'))
   w.eval(source('clipboard-focus-events.js'))
   editor.dispatchEvent(new w.FocusEvent('focus'))

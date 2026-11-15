@@ -5,7 +5,8 @@ import { loadRendererSource } from './renderer-source-loader.mjs'
 
 test('presence health publishes only actual transitions and preserves independent failures', () => {
   const { useHostedSessionStore: store } = loadRendererSource('src/collaboration/hostedSessionStore.ts', {
-    zustand: { create }, '../rpc/client': { rpc: {} }, '../stores/hostBridgeStore': { useHostBridgeStore: {} }
+    zustand: { create }, '../rpc/client': { rpc: {} }, '../stores/hostBridgeStore': { useHostBridgeStore: {} },
+    './projectPreferences': { readPreference: () => ({}) }
   })
   store.setState({ session: { sessionId: 'active' } })
   const observed = []

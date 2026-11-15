@@ -135,8 +135,8 @@ function revealWritingPoint(point, viewportOffset) {
             range.collapse(true);
             const caret = range.getBoundingClientRect();
             const top = caret.height ? caret.top : element.getBoundingClientRect().top;
-            viewport.scrollTop += top - viewport.getBoundingClientRect().top - viewportOffset;
-        } else element?.scrollIntoView({ block: point.offset === 0 ? 'start' : 'center' });
+            window.setWritingScroll(viewport.scrollTop + top - viewport.getBoundingClientRect().top - viewportOffset);
+        } else if (element) window.scrollWritingIntoView(element, { block: point.offset === 0 ? 'start' : 'center' });
         window.NovalistEditorState.savedScrollTop = viewport.scrollTop;
     };
     align();

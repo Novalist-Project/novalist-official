@@ -226,3 +226,63 @@ test('switching into a shared scene loads its own annotations before saving a ne
     document.destroy()
   }
 })
+
+test('typing in a shared scene saves one merged update per typing window', async () => {
+  const h = await launchApp('nl-shared-editor-batching-')
+  const document = new Y.Doc()
+  const prose = document.getText('prose')
+  prose.insert(0, 'The story.')
+  prose.insert(prose.length, '\n', { block: JSON.stringify([{ id: 'paragraph', tag: 'p', attributes: {} }]) })
+  const savedProse: string[] = []
+  try {
+    await h.page.clock.install()
+    const book = await seedBook(h, { Chapter: ['Shared'] })
+    const chapter = book.chapters[0]
+    await dismissTour(h.page)
+    await h.page.exposeFunction('readSharedTestScene', () => Buffer.from(Y.encodeStateAsUpdate(document)).toString('base64'))
+    await h.page.exposeFunction('writeSharedTestScene', (update: string) => {
+      Y.applyUpdate(document, new Uint8Array(Buffer.from(update, 'base64')))
+      savedProse.push(prose.toString())
+    })
+    await h.page.evaluate(({ chapter, initial }) => {
+      const original = window.novalistRpc.request.bind(window.novalistRpc)
+      const read = Reflect.get(window, 'readSharedTestScene') as () => Promise<string>
+      const write = Reflect.get(window, 'writeSharedTestScene') as (update: string) => Promise<void>
+      window.sharedPersistenceTest = { read, write, ordinaryWrites: 0 }
+      window.novalistRpc.request = async <T,>(method: string, params?: unknown): Promise<T> => {
+        const args = params as unknown[] | undefined
+        if (method === 'collaboration/readScene') return await read() as T
+        if (method === 'collaboration/writeScene') return await write(String(args?.[2])) as T
+        const result = await original<T>(method, params)
+        if (method === 'scenes/read' && args?.[1] === chapter.scenes[0].id) {
+          return { ...result, html: '<p>The story.</p>', shared: { sessionId: 'session-one', itemId: 'item-one', state: initial } }
+        }
+        return result
+      }
+    }, { chapter, initial: Buffer.from(Y.encodeStateAsUpdate(document)).toString('base64') })
+    await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), chapter)
+    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    await expect(editor).toHaveText('The story.')
+    await editor.click()
+    await h.page.clock.pauseAt(Date.now() + 60_000)
+    await h.page.keyboard.press('Control+End')
+    await h.page.evaluate(() => window.novalistStores.project.getState().flushPendingSave())
+    savedProse.length = 0
+
+    await h.page.keyboard.type(' It')
+    await h.page.clock.runFor(125)
+    await h.page.keyboard.type(' rained')
+    await h.page.clock.runFor(124)
+    expect(savedProse).toEqual([])
+    await h.page.clock.runFor(1)
+    await expect.poll(() => savedProse).toEqual(['The story. It rained\n'])
+    await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().isDirty)).toBe(false)
+
+    await h.page.keyboard.type(' all night.')
+    await h.page.clock.runFor(250)
+    await expect.poll(() => savedProse).toEqual(['The story. It rained\n', 'The story. It rained all night.\n'])
+  } finally {
+    await h.close()
+    document.destroy()
+  }
+})

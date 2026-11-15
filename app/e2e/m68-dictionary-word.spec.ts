@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { launchApp, seedBook, dismissTour, enterWriting } from './harness'
+import { launchApp, seedBook, dismissTour, enterWriting, resizeWindow } from './harness'
 
 /**
  * Teaching the checker a word from the prose.
@@ -15,11 +15,11 @@ test('a word taught from the prose lands in the writer own dictionary', async ()
   test.setTimeout(180_000)
   const h = await launchApp('nl-dict-')
   try {
+    await resizeWindow(h, 1000, 700)
     await seedBook(h, { 'Chapter One': ['Scene One'] })
-    // The tour opens once the project does; it covers the editor until closed.
+    await expect(h.page.locator('.tour-card')).toBeVisible()
     await dismissTour(h.page)
-    // Closing the tour hands back the workspace it borrowed, which can be the
-    // Dashboard; the binder belongs to Write.
+    await expect(h.page.locator('.tour-card')).toBeHidden()
     await enterWriting(h.page)
 
     await h.page.locator('.binder-scene-row').first().click()
@@ -40,11 +40,15 @@ test('a word taught from the prose lands in the writer own dictionary', async ()
     // Exercise revealing the prose before opening its menu. A scroll event
     // queued by scrollIntoViewIfNeeded must not dismiss the new menu.
     const paragraph = editor.locator('p').filter({ hasText: 'The Aelthorn banner burned.' }).first()
-    await editor.evaluate(element => {
-      const wrapper = element.parentElement!
+    const scrolled = await editor.evaluate(element => {
+      const wrapper = element.ownerDocument.getElementById('editor-wrapper')!
       wrapper.scrollTop = wrapper.scrollHeight
+      return wrapper.scrollTop
     })
+    expect(scrolled).toBeGreaterThan(0)
     await paragraph.scrollIntoViewIfNeeded()
+    expect(await editor.evaluate(element => element.ownerDocument.getElementById('editor-wrapper')!.scrollTop))
+      .toBeLessThan(scrolled)
     await paragraph.evaluate(async (element) => {
       const doc = element.ownerDocument
       // Browsers deliver pending scroll events before animation callbacks.

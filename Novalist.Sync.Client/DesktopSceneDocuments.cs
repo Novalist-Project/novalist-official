@@ -8,6 +8,8 @@ public sealed record SharedSceneSnapshot(byte[] State, IReadOnlyList<byte[]> Del
     public string? RecoveredText { get; init; }
 }
 public sealed record SceneApplyResult(bool Accepted, IReadOnlyList<string> Rejected);
+public sealed record SceneMergeConflict(string Id, string Local, string Server);
+public sealed record SceneMergeResult(bool Compatible, IReadOnlyList<SceneMergeConflict> Conflicts, byte[]? Update);
 
 public sealed class DesktopSceneDocuments(Guid sessionId, Func<object, CancellationToken, Task<JsonElement>> request) : IAsyncDisposable
 {
@@ -47,6 +49,15 @@ public sealed class DesktopSceneDocuments(Guid sessionId, Func<object, Cancellat
         if (response.ValueKind == JsonValueKind.Null) return null;
         return response.Deserialize<byte[]>(Json) is { Length: > 0 } update
             ? update : throw new InvalidDataException("The desktop returned an incomplete rename update.");
+    }
+
+    /// <summary>Merges prose written without a session into the shared document from the state this device last
+    /// synchronized. With <paramref name="choices"/> null, conflicting paragraphs are reported and nothing is produced.</summary>
+    public async Task<SceneMergeResult> MergeAsync(Guid item, byte[] baseState, string local, IReadOnlyDictionary<string, string>? choices, CancellationToken ct)
+    {
+        var response = await request(new { sessionId, action = "merge", id = item, @base = baseState, local, choices }, ct);
+        return response.Deserialize<SceneMergeResult>(Json) is { Conflicts: not null } result && result.Conflicts.All(conflict => conflict.Id is { Length: > 0 })
+            ? result : throw new InvalidDataException("The desktop returned an incomplete prose merge.");
     }
 
     public async Task<SharedSceneSnapshot> CaptureAsync(Guid item, CancellationToken ct)

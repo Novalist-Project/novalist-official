@@ -4,6 +4,10 @@ import type { SharedSelection, ParticipantSelection } from './remoteSelections'
 import { mergeUpdates } from 'yjs'
 import type { SharedSceneSession } from './SharedSceneSession'
 
+// Every saved update becomes its own encrypted, numbered envelope on the server, which
+// keeps it until the next key rotation. Merging a burst of keystrokes keeps that log small.
+export const SHARED_WRITE_DELAY_MS = 250
+
 export interface SharedEditorConnection {
   write(update: Uint8Array): Promise<void>
   read(): Promise<Uint8Array>
@@ -22,6 +26,7 @@ export class SharedEditorSession {
   private readonly unsubscribe: () => void
   private readonly pending: Uint8Array[] = []
   private writing: Promise<void> | null = null
+  private batch: ReturnType<typeof setTimeout> | null = null
   private error: Error | null = null
   private detached = false
   private content: Pick<SharedEditorStatus, 'html' | 'plainText'>
@@ -39,7 +44,7 @@ export class SharedEditorSession {
       onUpdate: update => {
         this.pending.push(update.slice())
         this.publish()
-        this.startWriting()
+        this.scheduleWriting()
       },
       onError: error => { this.error = error; this.publish() }
     })
@@ -68,7 +73,13 @@ export class SharedEditorSession {
     this.publish()
   }
 
+  private scheduleWriting(): void {
+    if (this.batch || this.writing) return
+    this.batch = setTimeout(() => { this.batch = null; this.startWriting() }, SHARED_WRITE_DELAY_MS)
+  }
+
   private startWriting(): void {
+    if (this.batch) { clearTimeout(this.batch); this.batch = null }
     if (!this.writing && this.pending.length) this.writing = Promise.resolve().then(() => this.writePending())
   }
 

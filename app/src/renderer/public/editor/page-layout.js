@@ -202,7 +202,7 @@ function repaginatePageView(root = window.NovalistEditorState.editor) {
     } finally {
         if (changed) {
             window.restoreDictationPosition(savedDictation);
-            window.NovalistEditorState.wrapper.scrollTop = savedScrollTop;
+            window.setWritingScroll(savedScrollTop);
         }
         window.NovalistEditorState.pageViewRepaginating = false;
         if (window.NovalistEditorState.pageViewMutationObserver && window.NovalistEditorState.pageViewEnabled) {

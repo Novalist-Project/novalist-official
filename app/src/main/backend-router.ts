@@ -1,6 +1,7 @@
 import { encodeRpcFrame, RpcFrameDecoder, type RpcId, type RpcMessage } from '../shared/rpcFraming'
 import { desktopRequestId } from '../shared/workspaceProtocol'
 import { isPlanningMetadataMutation, planningMetadataNotification } from '../shared/planningMetadata'
+import { DesktopOperationError } from './desktop-operation-error'
 
 export interface BackendClient {
   postMessage(message: unknown): void
@@ -167,8 +168,9 @@ export class BackendRouter {
     try {
       if (!this.desktopRequest) reply.error = { code: -32601, message: 'This desktop operation is unavailable.' }
       else reply.result = await this.desktopRequest(method, params) ?? null
-    } catch {
-      reply = { ...reply, error: { code: -32000, message: 'The desktop operation could not be completed.' } }
+    } catch (error) {
+      const message = error instanceof DesktopOperationError ? error.message : 'The desktop operation could not be completed.'
+      reply = { ...reply, error: { code: -32000, message } }
     }
     if (generation !== this.backendGeneration) return
     try { this.write(encodeRpcFrame(reply)) }

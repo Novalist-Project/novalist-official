@@ -100,6 +100,15 @@ async function suspendWorkspace(): Promise<void> {
   await flushWindowWrites()
 }
 
+async function prepareResumedWorkspace(): Promise<void> {
+  await useProjectStore.getState().refreshWorkspaceEditors()
+  const state = useProjectStore.getState()
+  if (state.isLoaded) return
+  if (window.novalist.platform !== 'android') await prepareProjectLibrary()
+  // Local close prepares its library once the broker releases the close reply.
+  else if (!state.closingProject) void prepareProjectLibrary('background')
+}
+
 function refreshResumedWorkspace(): void {
   const state = useProjectStore.getState()
   if (!state.isLoaded) return
@@ -185,8 +194,7 @@ export function useWorkspaceWindow(): WindowCloseStage | null {
           const project = useProjectStore.getState()
           const registry = project.getWritingRegistry()
           if (writingHistory && registry) await writingHistory.resume(registry.context, project.chapters, project.getWritingRegistry)
-          await useProjectStore.getState().refreshWorkspaceEditors()
-          if (!useProjectStore.getState().isLoaded) await prepareProjectLibrary()
+          await prepareResumedWorkspace()
         }
         if (event.token !== workspaceToken) return
         workspaceToken = null

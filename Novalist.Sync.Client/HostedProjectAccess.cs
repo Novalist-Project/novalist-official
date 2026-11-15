@@ -21,6 +21,11 @@ public sealed class HostedProjectAccess : IDisposable
     public Guid? InvitationId => State.InvitationId;
     public bool IsOwner { get; }
 
+    // The same keys with another history start: a saved journal's own start, or the boundary after a compaction.
+    // The key is copied because disposing either access wipes its own key in place.
+    public HostedProjectAccess StartingAt(long firstServerSequence, DeviceIdentity device) =>
+        new(State with { FirstServerSequence = firstServerSequence, EpochKey = State.EpochKey.ToArray() }, device);
+
     internal HostedProjectAccess(StoredProjectAccess state, DeviceIdentity device)
     {
         if (state.Version != 1 || state.ProjectId == Guid.Empty || state.DeviceId != device.Id ||

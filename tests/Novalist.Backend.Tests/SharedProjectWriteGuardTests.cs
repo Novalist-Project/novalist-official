@@ -12,6 +12,7 @@ using Novalist.Core.Services;
 using Novalist.Sync.Client;
 using StreamJsonRpc;
 using Xunit;
+using SharedFileReader = Novalist.Backend.Tests.TestHelpers.SharedFileReader;
 
 namespace Novalist.Backend.Tests;
 
@@ -644,10 +645,10 @@ public sealed partial class SharedProjectWriteGuardTests
             checkpoint = archive.ToArray();
         }
 
-        internal async Task AttachAsync(SharedProjectState state)
+        internal async Task AttachAsync(SharedProjectState state, bool joining = false)
         {
             using var archive = new MemoryStream(checkpoint);
-            await Host.Workspace.AttachSharedProjectAsync(SessionId, Updates, state, archive, TestContext.Current.CancellationToken);
+            await Host.Workspace.AttachSharedProjectAsync(SessionId, Updates, state, archive, TestContext.Current.CancellationToken, joining);
         }
 
         internal async Task<IReadOnlyDictionary<string, byte[]>> ReadCommittedFilesAsync()

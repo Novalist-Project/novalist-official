@@ -31,6 +31,7 @@ internal sealed class WorkspaceCoordinator(Workspace workspace, SemaphoreSlim ga
         or "writing/structure" or "writing/undoStructure" or "writing/redoStructure"
         or "collaboration/create" or "collaboration/join" or "collaboration/end" or "collaboration/resume" or "collaboration/copy"
         or "collaboration/deleteSharedProject" or "collaboration/removeMember"
+        or "collaboration/persistent/create" or "collaboration/persistent/join" or "collaboration/persistent/resume" or "collaboration/persistent/resolveConflicts"
         or "collaboration/peer/host" or "collaboration/peer/join" or "collaboration/steam/host" or "collaboration/steam/join";
 
     internal void Validate(WorkspaceRequestIdentity? identity, string? method)

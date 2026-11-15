@@ -53,9 +53,11 @@ public sealed partial class Workspace
         foreach (var update in updates)
         {
             var field = await RequireEditableSharedFieldAsync(sharedSession, update.ItemId, Guid.NewGuid());
-            var grant = await field.Fields.AcquireAsync(field.Lease, ct);
+            var deadline = (await field.Session.CreateFieldRequestAsync(update.ItemId, ct)).AcquireBefore;
+            var lease = field.Lease with { AcquireBefore = deadline };
+            var grant = await field.Fields.AcquireAsync(lease, ct);
             if (!grant.Lease.Acquired) throw new InvalidOperationException("A collaborator is editing an affected act reference.");
-            leases.Add(field.Lease);
+            leases.Add(lease);
             if (!JsonNode.DeepEquals(JsonNode.Parse(grant.Value), JsonNode.Parse(update.Before))) throw new WritingConflictException("An act reference changed before commit.");
             await ValidateSharedMetadataWriteAsync(fieldBindings[update.ItemId], JsonNode.Parse(update.After));
         }

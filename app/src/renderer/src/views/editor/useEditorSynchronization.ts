@@ -147,14 +147,13 @@ export function useEditorControls({ editorRef, isActiveEditor, openSceneId, sugg
   useEffect(() => {
     if (!isActiveEditor || !openSceneId) return
     const at = window.setTimeout(() => {
-      // A footnote or another text field may have taken the caret while the
-      // scene loaded. Its later editing gesture owns focus now.
       const active = document.activeElement
       if (active instanceof HTMLIFrameElement && active !== iframeRef.current) return
       if ([...document.querySelectorAll<HTMLIFrameElement>('iframe[title="editor"]')]
         .some(frame => frame !== iframeRef.current && frame.contentDocument?.hasFocus())) return
       if (active instanceof HTMLElement &&
-        (active.isContentEditable || active.matches('input, textarea, select'))) return
+        (active.isContentEditable || active.matches('input, textarea, select') ||
+          active.closest('.focus-bar, .editor-toolbar'))) return
       // The iframe first. Focusing an element inside a frame does nothing for
       // the keyboard while the frame itself is not focused - the caret appears
       // and the typing still goes to whatever the host had focused, which is

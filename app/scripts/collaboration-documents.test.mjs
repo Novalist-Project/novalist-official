@@ -205,3 +205,103 @@ test('a deleted scene stays deleted while concurrent and later edits survive in 
     assert.equal(restarted.deletions('scene-a').length, 1)
   } finally { writer.destroy(); owner.dispose(); guest.dispose(); restarted.dispose() }
 })
+
+function remoteEdit(host, id, edit) {
+  const writer = new Y.Doc()
+  try {
+    Y.applyUpdate(writer, host.state(id))
+    const previous = Y.encodeStateVector(writer)
+    edit(writer.getText('prose'))
+    host.receive(id, Y.encodeStateAsUpdate(writer, previous))
+  } finally { writer.destroy() }
+}
+
+function paragraphOffset(host, id, word) {
+  const writer = new Y.Doc()
+  try {
+    Y.applyUpdate(writer, host.state(id))
+    return writer.getText('prose').toString().indexOf(word)
+  } finally { writer.destroy() }
+}
+
+test('offline changes to other paragraphs merge with server changes without a conflict', () => {
+  const host = new ProseDocumentHost()
+  try {
+    const base = host.seed('scene', '<p>One.</p><p>Two.</p><p>Three.</p>')
+    remoteEdit(host, 'scene', text => text.insert(paragraphOffset(host, 'scene', 'Three'), 'Server '))
+    const result = host.merge('scene', base, '<p>Local one.</p><p>Two.</p><p>Three.</p>', null)
+    assert.equal(result.compatible, true)
+    assert.deepEqual(result.conflicts, [])
+    host.receive('scene', result.update)
+    assert.equal(host.project('scene'), '<p>Local one.</p><p>Two.</p><p>Server Three.</p>')
+  } finally { host.dispose() }
+})
+
+test('a paragraph changed on both sides is a conflict until a side is chosen', () => {
+  for (const choice of ['local', 'server']) {
+    const host = new ProseDocumentHost()
+    try {
+      const base = host.seed('scene', '<p>One.</p><p>Two.</p>')
+      remoteEdit(host, 'scene', text => text.insert(paragraphOffset(host, 'scene', 'Two'), 'Server '))
+      const local = '<p>Local one.</p><p>Local two.</p>'
+      const detected = host.merge('scene', base, local, null)
+      assert.equal(detected.update, null)
+      assert.equal(detected.conflicts.length, 1)
+      const [conflict] = detected.conflicts
+      assert.equal(conflict.local, '<p>Local one.</p><p>Local two.</p>')
+      assert.equal(conflict.server, '<p>One.</p><p>Server Two.</p>')
+      const resolved = host.merge('scene', base, local, { [conflict.id]: choice })
+      if (choice === 'server') assert.equal(resolved.update, null)
+      else host.receive('scene', resolved.update)
+      assert.equal(host.project('scene'), choice === 'local' ? local : '<p>One.</p><p>Server Two.</p>')
+    } finally { host.dispose() }
+  }
+})
+
+test('separate conflicts are chosen independently and identical changes need no choice', () => {
+  const host = new ProseDocumentHost()
+  try {
+    const base = host.seed('scene', '<p>A.</p><p>B.</p><p>C.</p><p>D.</p>')
+    remoteEdit(host, 'scene', text => {
+      text.insert(paragraphOffset(host, 'scene', 'D'), 'Server ')
+      text.insert(paragraphOffset(host, 'scene', 'C'), 'Same ')
+      text.insert(paragraphOffset(host, 'scene', 'A'), 'Server ')
+    })
+    const local = '<p>Local A.</p><p>B.</p><p>Same C.</p><p>Local D.</p>'
+    const detected = host.merge('scene', base, local, null)
+    assert.equal(detected.conflicts.length, 2)
+    const choices = { [detected.conflicts[0].id]: 'local', [detected.conflicts[1].id]: 'server' }
+    host.receive('scene', host.merge('scene', base, local, choices).update)
+    assert.equal(host.project('scene'), '<p>Local A.</p><p>B.</p><p>Same C.</p><p>Server D.</p>')
+  } finally { host.dispose() }
+})
+
+test('unchanged local prose produces no update and a foreign base can only be chosen whole', () => {
+  const host = new ProseDocumentHost()
+  const other = new ProseDocumentHost()
+  try {
+    const base = host.seed('scene', '<p>One.</p>')
+    assert.deepEqual(host.merge('scene', base, '<p>One.</p>', null), { compatible: true, conflicts: [], update: null })
+    const foreign = other.seed('scene', '<p>Elsewhere.</p>')
+    const detected = host.merge('scene', foreign, '<p>Mine.</p>', null)
+    assert.equal(detected.compatible, false)
+    assert.deepEqual(detected.conflicts, [{ id: 'document', local: '<p>Mine.</p>', server: '<p>One.</p>' }])
+    assert.equal(host.merge('scene', foreign, '<p>Mine.</p>', { document: 'server' }).update, null)
+    assert.equal(host.merge('scene', foreign, '<p>One.</p>', null).conflicts.length, 0)
+    host.receive('scene', host.merge('scene', foreign, '<p>Mine.</p>', { document: 'local' }).update)
+    assert.equal(host.project('scene'), '<p>Mine.</p>')
+  } finally { host.dispose(); other.dispose() }
+})
+
+test('plain-text prose merges by line', () => {
+  const host = new ProseDocumentHost()
+  try {
+    host.seedText('field', 'First line\nSecond line\n')
+    const base = host.state('field')
+    remoteEdit(host, 'field', text => text.insert(text.toString().indexOf('Second'), 'Server '))
+    const result = host.merge('field', base, 'Local first line\nSecond line\n', null)
+    assert.deepEqual(result.conflicts, [])
+    host.receive('field', result.update)
+    assert.equal(host.project('field'), 'Local first line\nServer Second line\n')
+  } finally { host.dispose() }
+})
