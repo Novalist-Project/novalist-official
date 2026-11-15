@@ -250,7 +250,9 @@ for (const lostAck of [false, true]) test(`shared recovery retains queued CRDT e
 for (const acknowledged of [false, true]) test(`shared recovery waits for old in-flight publication and replays its queued successors (old acknowledgement=${acknowledged})`, async t => {
   const f = sharedRecoveryFixture(t, { lostAck: true, heldWrite: true, acknowledged })
   await f.registry.read(ref)
+  t.mock.timers.enable({ apis: ['setTimeout'] })
   f.owner.transact(prose => prose.insert(4, ' local'))
+  t.mock.timers.tick(250)
   await Promise.resolve()
   f.owner.transact(prose => prose.insert(10, ' second'))
   let finished = false

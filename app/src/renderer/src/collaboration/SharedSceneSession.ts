@@ -4,6 +4,7 @@ import { SceneUpdateInbox } from './SceneUpdateInbox'
 import { validateSceneUpdate } from './validateSceneUpdate'
 import { registerPendingWrite } from '../stores/pendingWrites'
 import type { SharedEditorConnection } from './SharedEditorSession'
+import { SHARED_WRITE_DELAY_MS } from './sharedWriteDelay'
 import { updateRichText, type TextRun } from './richText'
 import { writingTextMapping } from '../views/editor/writingTextMapping'
 import type { WritingPoint } from '../views/editor/writingTypes'
@@ -37,6 +38,7 @@ export class SharedSceneSession {
   private unsubscribe: () => void
   private readonly unregisterPending: () => void
   private writing: Promise<void> | null = null
+  private batch: ReturnType<typeof setTimeout> | null = null
   private failure: Error | null = null
   private closed = false
   private currentRevision = 0
@@ -250,7 +252,7 @@ export class SharedSceneSession {
     this.cachedHtml = null
     if (this.origins.has(origin)) {
       this.pending.push(update.slice())
-      this.startWriting()
+      this.scheduleWriting()
     }
     for (const binding of this.bindings) this.notify(() => binding.render())
     this.publish()
@@ -293,7 +295,13 @@ export class SharedSceneSession {
       else queueMicrotask(() => { throw error })
     }
   }
+  private scheduleWriting(): void {
+    if (this.batch || this.writing || this.recovering) return
+    this.batch = setTimeout(() => { this.batch = null; this.startWriting() }, SHARED_WRITE_DELAY_MS)
+  }
+
   private startWriting(): void {
+    if (this.batch) { clearTimeout(this.batch); this.batch = null }
     if (!this.recovering && !this.writing && this.pending.length) this.writing = Promise.resolve().then(() => this.writePending())
   }
 

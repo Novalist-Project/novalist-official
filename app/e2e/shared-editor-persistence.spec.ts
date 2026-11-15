@@ -236,7 +236,7 @@ test('typing in a shared scene saves one merged update per typing window', async
   const savedProse: string[] = []
   try {
     await h.page.clock.install()
-    const book = await seedBook(h, { Chapter: ['Shared'] })
+    const book = await seedBook(h, { Chapter: ['Shared'] }, 'Spec', false)
     const chapter = book.chapters[0]
     await dismissTour(h.page)
     await h.page.exposeFunction('readSharedTestScene', () => Buffer.from(Y.encodeStateAsUpdate(document)).toString('base64'))
@@ -254,18 +254,19 @@ test('typing in a shared scene saves one merged update per typing window', async
         if (method === 'collaboration/readScene') return await read() as T
         if (method === 'collaboration/writeScene') return await write(String(args?.[2])) as T
         const result = await original<T>(method, params)
-        if (method === 'scenes/read' && args?.[1] === chapter.scenes[0].id) {
+        if (method === 'scenes/readPassive' && args?.[3] === chapter.scenes[0].id) {
           return { ...result, html: '<p>The story.</p>', shared: { sessionId: 'session-one', itemId: 'item-one', state: initial } }
         }
         return result
       }
     }, { chapter, initial: Buffer.from(Y.encodeStateAsUpdate(document)).toString('base64') })
     await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), chapter)
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    await h.page.locator('.writing-scope-segments').getByRole('button', { name: 'Scene', exact: true }).click()
+    const editor = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${chapter.scenes[0].id}"]`)
     await expect(editor).toHaveText('The story.')
     await editor.click()
     await h.page.clock.pauseAt(Date.now() + 60_000)
-    await h.page.keyboard.press('Control+End')
+    await h.page.keyboard.press('End')
     await h.page.evaluate(() => window.novalistStores.project.getState().flushPendingSave())
     savedProse.length = 0
 

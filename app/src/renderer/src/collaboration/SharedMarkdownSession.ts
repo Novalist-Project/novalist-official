@@ -6,7 +6,8 @@ import { diffChars } from 'diff'
 import { SceneUpdateInbox } from './SceneUpdateInbox'
 import { validateSceneUpdate } from './validateSceneUpdate'
 import { RemoteSelections, type ParticipantSelection, type SharedSelection } from './remoteSelections'
-import { SHARED_WRITE_DELAY_MS, type SharedEditorConnection } from './SharedEditorSession'
+import type { SharedEditorConnection } from './SharedEditorSession'
+import { SHARED_WRITE_DELAY_MS } from './sharedWriteDelay'
 
 export class SharedMarkdownSession {
   private readonly doc = new Y.Doc()

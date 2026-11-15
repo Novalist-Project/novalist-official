@@ -26,11 +26,12 @@ function fixture(t) {
     prose.insert(0, text)
     prose.insert(text.length, '\n', { block: JSON.stringify([{ id: text, tag: 'p', attributes: {} }]) })
     let fail = false
-    const connection = { read: async () => Y.encodeStateAsUpdate(server), write: async update => { if (fail) throw new Error('offline'); Y.applyUpdate(server, update) }, subscribe: () => () => {} }
+    const writes = []
+    const connection = { read: async () => Y.encodeStateAsUpdate(server), write: async update => { if (fail) throw new Error('offline'); writes.push(update); Y.applyUpdate(server, update) }, subscribe: () => () => {} }
     const owner = new SharedSceneSession(environment, Y.encodeStateAsUpdate(server), connection)
     sessions.push(owner)
     t.after(() => server.destroy())
-    return { owner, server, connection, fail: value => { fail = value } }
+    return { owner, server, connection, writes, fail: value => { fail = value } }
   }
   t.after(async () => { for (const owner of sessions) await owner.close() })
   const surface = id => {
@@ -39,6 +40,40 @@ function fixture(t) {
   }
   return { create, surface, environment }
 }
+
+test('retained shared scenes merge continuous keystrokes into periodic saved updates', async t => {
+  const shared = fixture(t).create('The story.')
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const typed = ' It rained all night.'
+  for (const [index, character] of Array.from(typed).entries()) {
+    shared.owner.transact(prose => prose.insert(prose.length - 1, character))
+    t.mock.timers.tick(25)
+    await new Promise(resolve => setImmediate(resolve))
+    assert.equal(shared.writes.length, Math.floor((index + 1) / 10))
+  }
+  t.mock.timers.tick(250)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(shared.writes.length, Math.ceil(typed.length / 10))
+  assert.equal(shared.server.getText('prose').toString(), `The story.${typed}\n`)
+  assert.equal(shared.owner.dirty, false)
+})
+
+test('flushing a detached shared surface saves its batch immediately without a later duplicate', async t => {
+  const f = fixture(t)
+  const shared = f.create('Original')
+  const surface = f.surface('one')
+  const binding = new SharedEditorSession(surface, Y.encodeStateAsUpdate(shared.server), shared.connection, () => {}, shared.owner)
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  surface.root.querySelector('p').textContent = 'Original local'
+  binding.capture()
+  binding.detach()
+  await shared.owner.flush()
+  assert.equal(shared.server.getText('prose').toString(), 'Original local\n')
+  assert.equal(shared.writes.length, 1)
+  t.mock.timers.tick(500)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(shared.writes.length, 1)
+})
 
 test('one grouped undo removes only local edits across two shared scenes after a peer insertion', async t => {
   const f = fixture(t)
