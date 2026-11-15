@@ -1,24 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { rpc } from '../rpc/client'
 import { useHostedSessionStore } from './hostedSessionStore'
+import { readPreference, writePreference } from './projectPreferences'
 
-interface Account { subject: string; displayName: string }
-interface Configuration { authenticationRequired: boolean }
-const preference = 'novalist.collaboration.server'
-
-export function useCollaborationAccount(enabled: boolean) {
-  const [server, setServer] = useState(() => localStorage.getItem(preference) ?? '')
+export interface CollaborationAccount { subject: string; displayName: string; deviceRegistered: boolean; hasRecoveryToken: boolean; deviceRegistrationError?: string | null; recoveryToken?: string | null }
+type Account = CollaborationAccount
+interface Configuration { authenticationRequired: boolean; accountIdentityReset?: boolean }
+export function useCollaborationAccount(enabled: boolean, project: string | null = null) {
+  const [server, setServer] = useState(() => readPreference(project).server ?? '')
   const [account, setAccount] = useState<Account | null>(null)
   const [configuration, setConfiguration] = useState<Configuration | null>(null)
-  const [busy, setBusy] = useState<'checking' | 'connecting' | 'signIn' | 'signOut' | null>(null)
+  const [busy, setBusy] = useState<'checking' | 'connecting' | 'signIn' | 'signOut' | 'saving' | null>(null)
   const [error, setError] = useState('')
+  const [recoveryToken, setRecoveryToken] = useState('')
   const [retry, setRetry] = useState(0)
   const generation = useRef(0)
   const active = useRef(false)
   const savedServer = useHostedSessionStore(state => state.saved?.server)
-  useEffect(() => {
-    if (savedServer) setServer(current => current || savedServer)
-  }, [savedServer])
+  useEffect(() => { setServer(readPreference(project).server ?? ''); setRecoveryToken('') }, [project])
+  // A project's saved session names the server it reconnects to.
+  useEffect(() => { if (savedServer) setServer(savedServer) }, [savedServer])
   useEffect(() => {
     if (!enabled || !server.trim()) return
     const current = ++generation.current
@@ -56,8 +57,9 @@ export function useCollaborationAccount(enabled: boolean) {
           value = await rpc.request<Account>('collaboration/account/signIn', [address])
         }
       }
-      localStorage.setItem(preference, address)
+      writePreference(project, { server: address })
       setServer(address); setAccount(value)
+      setRecoveryToken(value?.recoveryToken ?? '')
       return true
     } catch (reason) { setError(String(reason)); return false }
     finally { active.current = false; setBusy(null) }
@@ -68,16 +70,74 @@ export function useCollaborationAccount(enabled: boolean) {
     try {
       await rpc.request('collaboration/account/signOut', [server.trim()])
       setAccount(null)
+      setRecoveryToken('')
     } catch (reason) { setError(String(reason)) }
     finally { setBusy(null) }
   }
   const changeServer = (value: string): void => {
     generation.current++
-    setServer(value); setAccount(null); setConfiguration(null); setError(''); setBusy(null)
+    setServer(value); setAccount(null); setConfiguration(null); setError(''); setBusy(null); setRecoveryToken('')
+  }
+  const enrollDevice = async (): Promise<void> => {
+    if (active.current) return
+    active.current = true
+    generation.current++
+    setError(''); setBusy('connecting')
+    try {
+      const value = await rpc.request<Account>('collaboration/account/enrollDevice', [server.trim()])
+      setAccount(value); setRecoveryToken(value.recoveryToken ?? '')
+    }
+    catch (reason) { setError(String(reason)) }
+    finally { active.current = false; setBusy(null) }
   }
   const cancel = async (): Promise<void> => {
     try { await rpc.request('collaboration/account/cancel') }
     catch (reason) { setError(String(reason)) }
   }
-  return { server, account, configuration, busy, error, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
+  const saveRecoveryToken = async (): Promise<void> => {
+    if (active.current) return
+    active.current = true
+    setError(''); setBusy('saving')
+    try {
+      const path = await window.novalist.saveFile('novalist-recovery-token.txt')
+      if (!path) return
+      await rpc.request('collaboration/account/saveRecoveryToken', [server.trim(), path])
+      setRecoveryToken('')
+    } catch (reason) { setError(String(reason)) }
+    finally { active.current = false; setBusy(null) }
+  }
+  const recoverDevice = async (token: string): Promise<boolean> => {
+    if (active.current) return false
+    active.current = true
+    generation.current++
+    setError(''); setBusy('connecting')
+    try {
+      const value = await rpc.request<Account>('collaboration/account/recoverDevice', [server.trim(), token.trim()])
+      setAccount(value); setRecoveryToken('')
+      return true
+    } catch (reason) { setError(String(reason)); return false }
+    finally { active.current = false; setBusy(null) }
+  }
+  const resetIdentity = async (forfeitProjectAccess: boolean): Promise<boolean> => {
+    if (active.current || !forfeitProjectAccess) return false
+    active.current = true
+    generation.current++
+    setError(''); setBusy('connecting'); setRecoveryToken('')
+    try {
+      const value = await rpc.request<Account>('collaboration/account/resetIdentity', [server.trim(), true])
+      setAccount(value)
+      setRecoveryToken(value.recoveryToken ?? '')
+      return true
+    } catch (reason) {
+      setError(String(reason))
+      // Reset may have completed before automatic enrollment was cancelled. Reflect the new identity.
+      try { setAccount(await rpc.request<Account | null>('collaboration/account/status', [server.trim()])) }
+      catch (refreshReason) { setError(String(reason) + '\n' + String(refreshReason)) }
+      return false
+    }
+    finally { active.current = false; setBusy(null) }
+  }
+  return { server, account, configuration, busy, error, recoveryToken, dismissRecoveryToken: () => setRecoveryToken(''),
+    devicePaired: (value: Account) => { setAccount(value); setRecoveryToken('') },
+    enrollDevice, resetIdentity, recoverDevice, saveRecoveryToken, signIn, signOut, changeServer, cancel, retry: () => setRetry(value => value + 1) }
 }

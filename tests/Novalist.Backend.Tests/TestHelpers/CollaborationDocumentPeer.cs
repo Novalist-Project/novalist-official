@@ -10,16 +10,40 @@ internal sealed class CollaborationDocumentPeer
     private readonly Dictionary<Guid, byte[]> states = [];
     private readonly Dictionary<Guid, byte[]> removed = [];
     internal Func<CancellationToken, Task>? BeforeSeed { get; set; }
+    internal Action? BeforeCapture { get; set; }
     internal bool RejectNextLoad { get; set; }
     internal Guid? RejectLoadItem { get; set; }
     internal bool RemoveSeededScenes { get; set; }
     internal Guid? RejectRenameItem { get; set; }
     internal Func<Guid, Task>? AfterRename { get; set; }
 
+    internal List<(Guid Item, string Local, Dictionary<string, string>? Choices)> Merges { get; } = [];
+
+    // Whole-text stand-in for the Yjs merge: either side alone wins, both sides changing differently is one conflict.
+    private SceneMergeResult Merge(Guid item, byte[] baseState, string local, Dictionary<string, string>? choices)
+    {
+        Merges.Add((item, local, choices));
+        var current = Encoding.UTF8.GetString(states[item]);
+        var prefix = current.StartsWith("text:", StringComparison.Ordinal) ? "text:" : current.StartsWith("html:", StringComparison.Ordinal) ? "html:" : "";
+        var server = current[prefix.Length..];
+        var original = baseState is [0, 0] ? "" : Strip(Encoding.UTF8.GetString(baseState));
+        byte[] Update() => Encoding.UTF8.GetBytes(prefix + local);
+        if (local == original || local == server) return new(true, [], null);
+        if (server == original) return new(true, [], Update());
+        SceneMergeConflict[] conflicts = [new("0", local, server)];
+        return new(true, conflicts, choices?.GetValueOrDefault("0") == "local" ? Update() : null);
+    }
+
+    private static string Strip(string state) =>
+        state.StartsWith("text:", StringComparison.Ordinal) || state.StartsWith("html:", StringComparison.Ordinal) ? state[5..] : state;
+
     [JsonRpcMethod("collaboration/documents")]
     public async Task<object?> Documents(string action, JsonElement command = default, Guid? id = null,
-        string? entityId = null, string? oldName = null, string? newName = null, CancellationToken cancellationToken = default)
+        string? entityId = null, string? oldName = null, string? newName = null, byte[]? @base = null, string? local = null,
+        Dictionary<string, string>? choices = null, CancellationToken cancellationToken = default)
     {
+        if (action == "merge") return Merge(id ?? throw new ArgumentException("Missing merge identity."),
+            @base ?? throw new ArgumentException("Missing merge base."), local ?? throw new ArgumentException("Missing local prose."), choices);
         if (action == "rename")
         {
             if (id is null || string.IsNullOrEmpty(entityId) || string.IsNullOrEmpty(oldName) || newName is null)
@@ -54,6 +78,7 @@ internal sealed class CollaborationDocumentPeer
             }
         }
         if (action != "capture" || id is null) return null;
+        BeforeCapture?.Invoke();
         var state = states[id.Value];
         var value = Encoding.UTF8.GetString(state);
         if (value.StartsWith("html:", StringComparison.Ordinal)) value = value[5..];

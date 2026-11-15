@@ -133,6 +133,14 @@ public sealed partial class Workspace
         return field;
     }
 
+    /// <summary>Takes the field's editing lock. A persistent server only grants a request carrying a deadline it issued.</summary>
+    internal async Task<SharedFieldFocus> AcquireSharedFieldAsync(Guid sessionId, Guid item, Guid focus, CancellationToken ct)
+    {
+        var field = await RequireEditableSharedFieldAsync(sessionId, item, focus);
+        var deadline = (await field.Session.CreateFieldRequestAsync(item, ct)).AcquireBefore;
+        return await field.Fields.AcquireAsync(field.Lease with { AcquireBefore = deadline }, ct);
+    }
+
     private async Task ProjectFieldAsync(string root, SharedFieldBinding binding, string value)
     {
         if (binding.Metadata is not null) { await ProjectMetadataFieldAsync(root, binding, value); return; }

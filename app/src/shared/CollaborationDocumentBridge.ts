@@ -1,9 +1,10 @@
-import type { SceneCommand, SceneApplyResult, SharedSceneSnapshot } from './collaborationDocuments'
+import type { SceneCommand, SceneApplyResult, SharedSceneSnapshot, MergeChoices, ProseMergeReply } from './collaborationDocuments'
 import { encodeBase64, decodeBase64 } from './base64'
 
 export interface DocumentSession {
   execute(command: SceneCommand): Promise<SceneApplyResult | null | undefined>
   rename(id: string, entityId: string, oldName: string, newName: string): Promise<Uint8Array | null>
+  merge(id: string, base: Uint8Array, local: string, choices: MergeChoices | null): Promise<ProseMergeReply>
   capture(id: string): Promise<SharedSceneSnapshot>
   dispose(): void | Promise<void>
 }
@@ -33,6 +34,10 @@ export class DocumentBridge {
       case 'rename': {
         const update = await host.rename(identity(request.id), identity(request.entityId), name(request.oldName), name(request.newName))
         return update === null ? null : encodeBase64(update)
+      }
+      case 'merge': {
+        const result = await host.merge(identity(request.id), state(request.base), prose(request.local), mergeChoices(request.choices))
+        return { ...result, update: result.update === null ? null : encodeBase64(result.update) }
       }
       case 'capture': {
         const snapshot = await host.capture(identity(request.id))
@@ -64,6 +69,21 @@ function name(value: unknown): string {
   if (typeof value !== 'string' || !value.trim() || new TextEncoder().encode(value).length > 1024 * 1024)
     throw new Error('Invalid Codex name.')
   return value
+}
+
+function prose(value: unknown): string {
+  if (typeof value !== 'string' || new TextEncoder().encode(value).length > 64 * 1024 * 1024) throw new Error('Invalid local prose size.')
+  return value
+}
+
+function mergeChoices(value: unknown): MergeChoices | null {
+  if (value === null || value === undefined) return null
+  const choices: MergeChoices = {}
+  for (const [id, choice] of Object.entries(record(value))) {
+    if (!id || id.length > 4096 || (choice !== 'local' && choice !== 'server')) throw new Error('Invalid merge choice.')
+    choices[id] = choice
+  }
+  return choices
 }
 
 function state(value: unknown): Uint8Array {

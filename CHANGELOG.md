@@ -21,12 +21,22 @@ could encounter in a previously released version.
 
 ## [Unreleased]
 
+### Added
+
+- **Persistent project hosting** — choose Persistent server alongside relay and direct sessions to store encrypted projects and changes on your server. A step-by-step setup shows only the controls needed now. The first sign-in registers the device with fresh multi-factor authentication and shows a recovery token you can save to a file. Save it again from Account, or use it to register a replacement device without resetting your identity or forfeiting project access. Pair additional devices by reviewing and approving a signed, expiring request on an existing device, without sharing recovery secrets. Invite writers who can join while the owner is offline, and reconnect retained local copies to catch up. Writing done while disconnected merges with other writers' changes; where both changed the same paragraph, field or file, a dialog lets you choose which version to keep for each place, and undecided places are asked again on the next reconnect. The local copy from before reconnecting remains recoverable. Owners can remove writers with encryption-key renewal or delete the server copy. Edits are grouped before saving and any connected writer compacts old server history automatically, without new keys or interrupting others. If every device and recovery credential is lost, supporting servers let you explicitly forfeit old project access and ownership and reset your identity with fresh MFA while preserving shared history; device registration starts automatically afterward.
+- **Automatic reconnect** — projects with a saved persistent or relay connection reconnect when you open them. Each project has its own switch next to Reconnect, on by default.
+
+### Changed
+
+- Collaborate remembers the connection type and server you picked for each project. Projects you have not set up yet start from your last choice instead of always defaulting to Direct connection or Steam.
+
 ### Fixed
 
 - The scene notes placement picker no longer opens over Dashboard or Manuscript when a saved dock position is missing, or reappears after cancellation. Choose Notes to set its position again.
 - Scene synopses retain edits when switching views or closing the app while the field is still focused. Background refreshes no longer replace newer summary text, and failed saves keep the text available for retry.
 - Joining a live session no longer fails with "Shared metadata changed during capture" when opening the project updates it on your machine, for example when an installed extension adds its entity type. The update is shared with the host and the other writers. Sharing a project also no longer fails occasionally when a save lands while the project is being packed for a joining writer, and preparing that copy no longer blocks saves on Windows.
 - Editor context menus stay open when automatic caret scrolling is delayed by a busy app, so actions such as Add to Dictionary remain clickable.
+- Writing tools keep focus when opened just after returning to a scene, so delayed editor focus no longer hides the Leave focus button.
 - Collaboration sign-in and relay credentials can be saved on Linux desktops and window managers without built-in keyring detection, such as Hyprland, Sway, niri, COSMIC and LXQt. Novalist now finds the GNOME Keyring, KeePassXC or KWallet service running in your session, and still respects a keyring chosen with `--password-store`. When no keyring is available, the error now says which keyrings to start instead of a generic failure.
 
 ---

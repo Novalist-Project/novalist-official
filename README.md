@@ -44,12 +44,16 @@ For extension authors, the [Extension Guide](docs/extension-guide.md) walks thro
   and its [setup guide](https://github.com/QF0xB/novalist-sync-server/blob/main/docs/relay.md);
   use the HTTPS address of an instance run by you or your server administrator.
   The relay forwards encrypted packets without storing projects or edit history; the host stays online.
+  Desktop **Persistent server** mode stores encrypted checkpoints and updates instead, so invited writers can join and catch up while the owner is offline.
+  It requires account sign-in; the first sign-in on a device registers it with fresh MFA. Project keys stay on clients.
+  If all devices and recovery credentials are lost, supporting servers offer a fresh-MFA identity reset that forfeits old project access while preserving shared history.
   Sign-in renews without replacing the session or invitations, with a bounded grace period for provider outages.
   Connection and traffic limits protect hosts from repeated join requests.
   Joining reuses matching files in an existing local copy by relative path and SHA-256, with progress and cancellation.
   Shared Codex renames update scene mentions, section links, relationships, parent references and scene POV, and finish interrupted reference updates when retried or reopened.
   Shared prose stays writable during connection interruptions;
-  structure and metadata edits require reconnecting. Open **Collaborate** in the top bar. See [Collaboration](docs/manual/23-settings.md#collaboration)
+  structure and metadata edits require reconnecting. Projects with a saved relay or persistent connection reconnect when opened,
+  and each project remembers its connection type and server. Open **Collaborate** in the top bar. See [Collaboration](docs/manual/23-settings.md#collaboration)
   for the current capabilities and remaining work, or [Steam build requirements](docs/development/steam-collaboration.md)
   for the optional native integration.
   iPhone and iPad support relay-server and direct TCP sessions with desktop writers;

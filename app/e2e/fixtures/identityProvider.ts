@@ -5,7 +5,8 @@ import { once } from 'node:events'
 
 export const introspectionClient = { id: 'novalist-local-relay', secret: randomBytes(32).toString('hex') }
 
-export async function identityProvider(subject: () => string = () => 'writer', displayName: (subject: string) => string = () => 'Test Writer', port = 0, advertiseClientConfiguration = true, tls?: ServerOptions): Promise<{ address: string; disable(subject: string): void; close(): Promise<void> }> {
+export async function identityProvider(subject: () => string = () => 'writer', displayName: (subject: string) => string = () => 'Test Writer', port = 0, advertiseClientConfiguration = true, tls?: ServerOptions,
+  options: { accounts?: Record<string, string>; simulateMfa?: boolean } = {}): Promise<{ address: string; disable(subject: string): void; close(): Promise<void> }> {
   const keys = generateKeyPairSync('rsa', { modulusLength: 2048 })
   const publicKey = { ...keys.publicKey.export({ format: 'jwk' }), kid: 'test', alg: 'RS256', use: 'sig' }
   const codes = new Map<string, { challenge: string; redirect: string; nonce: string; subject: string }>()
@@ -42,7 +43,8 @@ export async function identityProvider(subject: () => string = () => 'writer', d
     const now = Math.floor(Date.now() / 1000)
     const encoded = (value: unknown): string => Buffer.from(JSON.stringify(value)).toString('base64url')
     const unsigned = encoded({ alg: 'RS256', kid: 'test', typ: 'JWT' }) + '.' +
-      encoded({ iss: address, aud: 'novalist', sub: identity.subject, name: displayName(identity.subject), nonce: identity.nonce, iat: now, exp: now + 300 })
+      encoded({ iss: address, aud: 'novalist', sub: identity.subject, name: displayName(identity.subject), nonce: identity.nonce, iat: now, exp: now + 300,
+        ...(options.simulateMfa ? { amr: ['mfa'], auth_time: now } : {}) })
     const signature = sign('RSA-SHA256', Buffer.from(unsigned), keys.privateKey).toString('base64url')
     const refresh = randomUUID()
     refreshTokens.set(refresh, identity.subject)
@@ -75,12 +77,27 @@ export async function identityProvider(subject: () => string = () => 'writer', d
           id_token_signing_alg_values_supported: ['RS256'], code_challenge_methods_supported: ['S256'] }); break
       case '/keys': send(response, { keys: [publicKey] }); break
       case '/authorize': {
+        const selected = url.searchParams.get('account')
+        if (options.accounts && selected === null) {
+          const escape = (text: string): string => text.replace(/[&<>"']/g, value => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[value]!)
+          const links = Object.entries(options.accounts).map(([id, name]) => {
+            const choice = new URL(url)
+            choice.searchParams.set('account', id)
+            return `<li><a href="${escape(choice.pathname + choice.search)}">Continue as ${escape(name)}</a></li>`
+          }).join('')
+          response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
+          response.end(`<!doctype html><html lang="en"><title>Novalist local test sign-in</title><h1>Choose a test writer</h1><p>Local testing only. This provider simulates multi-factor authentication.</p><p>Choose the same writer when registering their device.</p><ul>${links}</ul></html>`)
+          break
+        }
+        if (options.accounts && (selected === null || !Object.hasOwn(options.accounts, selected))) {
+          response.writeHead(400); response.end('Choose one of the local test writers.'); break
+        }
         const redirect = new URL(url.searchParams.get('redirect_uri') ?? 'about:blank')
         if (!(redirect.protocol === 'http:' && redirect.hostname === '127.0.0.1' || redirect.href === 'com.novalist.app:/oauth/callback') || url.searchParams.get('code_challenge_method') !== 'S256') {
           response.writeHead(400); response.end(); break
         }
         const code = randomUUID()
-        codes.set(code, { challenge: url.searchParams.get('code_challenge') ?? '', redirect: redirect.href, nonce: url.searchParams.get('nonce') ?? '', subject: subject() })
+        codes.set(code, { challenge: url.searchParams.get('code_challenge') ?? '', redirect: redirect.href, nonce: url.searchParams.get('nonce') ?? '', subject: options.accounts ? selected! : subject() })
         redirect.searchParams.set('code', code)
         redirect.searchParams.set('state', url.searchParams.get('state') ?? '')
         response.writeHead(302, { Location: redirect.href }); response.end(); break

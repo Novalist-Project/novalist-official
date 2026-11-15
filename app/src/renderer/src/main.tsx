@@ -18,6 +18,7 @@ import { useExtensionsStore } from './stores/extensionsStore'
 import { useOnboardingStore } from './stores/onboardingStore'
 import { useNarrationStore } from './stores/narrationStore'
 import { useManuscriptStore } from './stores/manuscriptStore'
+import { useHostedSessionStore } from './collaboration/hostedSessionStore'
 import { rpc } from './rpc/client'
 import { postThemeToFrame, themeTokens, watchTheme } from './shell/extensionTheme'
 
@@ -31,7 +32,8 @@ window.novalistStores = {
   extensions: useExtensionsStore,
   onboarding: useOnboardingStore,
   narration: useNarrationStore,
-  manuscript: useManuscriptStore
+  manuscript: useManuscriptStore,
+  hostedSession: useHostedSessionStore
 }
 window.novalistRpc = rpc
 // The theme bridge for extension frames. Exposed for the same reason as the

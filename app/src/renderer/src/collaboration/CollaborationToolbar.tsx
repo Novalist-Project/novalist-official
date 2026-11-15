@@ -18,12 +18,19 @@ export function CollaborationToolbar(): React.JSX.Element {
   const changing = useProjectStore(state => state.workspaceBusy || state.workspaceSuspended || state.closingProject)
   const session = useHostedSessionStore(state => state.session)
   const busy = useHostedSessionStore(state => state.busy)
+  // Each opened project gets one automatic reconnect attempt; closing it allows another on the next open.
+  const reconnected = useRef<string | null>(null)
+  useEffect(() => { if (!project) reconnected.current = null }, [project])
   useEffect(() => {
     if (!ready || changing) return
     let stopped = false
     let timer: ReturnType<typeof setTimeout>
     const refresh = async (): Promise<void> => {
       await useHostedSessionStore.getState().refresh(() => !stopped)
+      if (!stopped && project && reconnected.current !== project) {
+        reconnected.current = project
+        await useHostedSessionStore.getState().autoReconnect(project)
+      }
       if (!stopped) timer = setTimeout(() => void refresh(), 2000)
     }
     void refresh()

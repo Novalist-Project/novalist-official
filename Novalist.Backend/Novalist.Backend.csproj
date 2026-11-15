@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Novalist.Backend.Tests" />
+    <InternalsVisibleTo Include="Novalist.Sync.IntegrationTests" />
   </ItemGroup>
   <ItemGroup>
     <!-- Sdk is provided transitively by Core. A second direct edge can build

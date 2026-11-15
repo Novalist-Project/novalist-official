@@ -26,6 +26,25 @@ public static class HostedDeviceEnrollment
             .EnrollAsync(http, account.GetAccessTokenAsync, recovery, authenticate, ct);
     }
 
+    internal static string EnrollmentNonce(Uri server, DeviceIdentity device, DeviceIdentity recovery, byte[] salt) =>
+        new HostedDeviceRegistration(CanonicalAddress(server), device).EnrollmentNonce(recovery, salt);
+
+    internal static async Task EnrollKeyBoundAsync(Uri server, DeviceIdentity device, DeviceIdentity recovery, HostedAccount account,
+        string identityToken, byte[] salt, CancellationToken ct)
+    {
+        using var http = CreateHttpClient();
+        await new HostedDeviceRegistration(CanonicalAddress(server), device)
+            .EnrollKeyBoundAsync(http, await account.GetAccessTokenAsync(ct), recovery, identityToken, salt, ct);
+    }
+
+    // Re-submits an identity created earlier; the server accepts it only when those keys are already registered.
+    internal static async Task ConfirmAsync(Uri server, DeviceIdentity device, HostedAccount account, CancellationToken ct)
+    {
+        using var http = CreateHttpClient();
+        await new HostedDeviceRegistration(CanonicalAddress(server), device)
+            .RegisterAsync(http, await account.GetAccessTokenAsync(ct), Guid.Empty, null, null, ct);
+    }
+
     public static async Task EnrollAsync(Uri server, DeviceIdentity device, DeviceIdentity recovery,
         string deviceBoundMfaToken, CancellationToken ct)
     {
@@ -60,6 +79,6 @@ public static class HostedDeviceEnrollment
         return new(server.AbsoluteUri.TrimEnd('/') + '/');
     }
 
-    private static HttpClient CreateHttpClient() => new(new HttpClientHandler { AllowAutoRedirect = false })
+    internal static HttpClient CreateHttpClient() => new(new HttpClientHandler { AllowAutoRedirect = false })
         { MaxResponseContentBufferSize = 64 * 1024 };
 }
