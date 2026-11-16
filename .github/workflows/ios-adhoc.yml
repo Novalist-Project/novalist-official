@@ -1,0 +1,160 @@
+name: iOS Ad Hoc
+
+# Builds a signed Ad Hoc IPA of Novalist.Mobile for direct installation on
+# registered test devices (for example with `ideviceinstaller install` over
+# USB). Nothing is uploaded to App Store Connect.
+#
+# Run it on any branch with: gh workflow run ios-adhoc.yml --ref <branch>
+#
+# Signing mirrors the TestFlight job in release.yml: the same Apple
+# Distribution certificate (IOS_DIST_CSC_LINK, falling back to MAS_CSC_LINK)
+# signs Ad Hoc builds too. The only extra secret is IOS_ADHOC_PROVISION_BASE64,
+# an iOS Ad Hoc provisioning profile for com.novalist.app that lists the test
+# devices' UDIDs. A device missing from that profile refuses to install the IPA.
+
+on:
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22"
+
+concurrency:
+  group: ios-adhoc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-adhoc:
+    name: iOS Ad Hoc IPA
+    # macos-latest still carries Xcode 26; iOS 27 needs the dedicated image.
+    runs-on: xcode-27
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Select Xcode 27.0 and verify actool
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Same selection as release.yml: workload set 10.0.401.1 needs exactly
+          # the iOS 27.0 SDK, and actool must work for the asset catalog.
+          best=""
+          for cand in /Applications/Xcode_27.0.app /Applications/Xcode.app $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+            [ -d "$cand" ] || continue
+            dev="$cand/Contents/Developer"
+            sdk_version="$(DEVELOPER_DIR="$dev" xcrun --sdk iphoneos --show-sdk-version 2>/dev/null || true)"
+            if [ "$sdk_version" != "27.0" ]; then
+              echo "skip $cand (iOS SDK ${sdk_version:-unavailable}; requires 27.0)"
+              continue
+            fi
+            if DEVELOPER_DIR="$dev" "$dev/usr/bin/xcodebuild" -sdk "$dev/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" -find actool; then
+              best="$cand"; break
+            fi
+            echo "skip $cand (actool via its own MacOSX.sdk fails)"
+          done
+          if [ -z "$best" ]; then
+            echo "No Xcode with iOS SDK 27.0 and working actool found; use the xcode-27 runner image" >&2
+            exit 1
+          fi
+          echo "Selected (actool verified): $best"
+          sudo xcode-select -s "$best/Contents/Developer"
+          echo "DEVELOPER_DIR=$best/Contents/Developer" >> "$GITHUB_ENV"
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.401
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore MAUI iOS workload
+        run: dotnet workload install maui-ios --version 10.0.401.1
+
+      - name: Build mobile web bundle
+        working-directory: app
+        run: |
+          npm ci
+          npm run build:mobile
+
+      - name: Import signing certificate
+        env:
+          IOS_CERT_BASE64: ${{ secrets.IOS_DIST_CSC_LINK }}
+          IOS_CERT_PASSWORD: ${{ secrets.IOS_DIST_CSC_KEY_PASSWORD }}
+          MAS_CERT_BASE64: ${{ secrets.MAS_CSC_LINK }}
+          MAS_CERT_PASSWORD: ${{ secrets.MAS_CSC_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          CERT_BASE64="${IOS_CERT_BASE64:-$MAS_CERT_BASE64}"
+          CERT_PASSWORD="${IOS_CERT_PASSWORD:-$MAS_CERT_PASSWORD}"
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          KP="$(uuidgen)"
+          security create-keychain -p "$KP" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KP" "$KEYCHAIN"
+          echo "$CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$CERT_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KP" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" \
+            | grep -m1 "Apple Distribution" | sed -E 's/^[^"]*"([^"]+)".*$/\1/')
+          if [ -z "$IDENTITY" ]; then echo "No Apple Distribution identity imported" >&2; exit 1; fi
+          echo "identity=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Install Ad Hoc provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROVISION_BASE64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$PROFILE_BASE64" ]; then
+            echo "IOS_ADHOC_PROVISION_BASE64 is not set" >&2
+            exit 1
+          fi
+          DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$DIR"
+          echo "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/adhoc.mobileprovision"
+          security cms -D -i "$RUNNER_TEMP/adhoc.mobileprovision" > "$RUNNER_TEMP/pp.plist"
+          # An App Store profile has no device list and would build an IPA that
+          # no device accepts outside TestFlight, so refuse it here.
+          if ! /usr/libexec/PlistBuddy -c "Print :ProvisionedDevices" "$RUNNER_TEMP/pp.plist" >/dev/null 2>&1; then
+            echo "The profile in IOS_ADHOC_PROVISION_BASE64 lists no devices; it is not an Ad Hoc profile" >&2
+            exit 1
+          fi
+          UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$RUNNER_TEMP/pp.plist")
+          NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$RUNNER_TEMP/pp.plist")
+          cp "$RUNNER_TEMP/adhoc.mobileprovision" "$DIR/$UUID.mobileprovision"
+          echo "profile=$NAME" >> "$GITHUB_ENV"
+          echo "Provisioning profile: $NAME ($UUID)"
+
+      - name: Build signed Ad Hoc IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Serialized like release.yml: MAUI publish otherwise races on shared
+          # intermediate outputs of referenced projects.
+          dotnet publish Novalist.Mobile/Novalist.Mobile.csproj \
+            -maxcpucount:1 \
+            -f net10.0-ios -c Release \
+            -p:RuntimeIdentifier=ios-arm64 \
+            -p:CodesignKey="$identity" \
+            -p:CodesignProvision="$profile" \
+            -p:ApplicationVersion=${{ github.run_number }}
+          IPA=$(find Novalist.Mobile/bin -name "*.ipa" | head -n1)
+          if [ -z "$IPA" ]; then echo "No .ipa produced" >&2; exit 1; fi
+          echo "Built $IPA"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: novalist-ios-adhoc
+          path: Novalist.Mobile/bin/**/*.ipa
+          if-no-files-found: error
+          retention-days: 14
