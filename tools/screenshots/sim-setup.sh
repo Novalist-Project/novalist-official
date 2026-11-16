@@ -6,7 +6,7 @@ set -euo pipefail
 UDID="${1:?usage: sim-setup.sh <simulator-udid> [app-bundle]}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
-APP="${2:-$REPO/Novalist.Mobile/bin/Debug/net10.0-ios27.0/iossimulator-arm64/Novalist.Mobile.app}"
+APP="${2:-$REPO/Novalist.Mobile/bin/Debug/net10.0-ios/iossimulator-arm64/Novalist.Mobile.app}"
 [ -d "$APP" ] || { echo "Build the simulator app first: $APP" >&2; exit 1; }
 APP_ID="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Info.plist")"
 
