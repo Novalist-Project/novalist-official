@@ -76,7 +76,7 @@ jobs:
           dotnet build Novalist.Mobile/Novalist.Mobile.csproj -f net10.0-android
           -c ${{ inputs.alpha && 'Release' || 'Debug' }} -r ${{ matrix.runtime }}
           -t:InstallAndroidDependencies -p:AcceptAndroidSdkLicenses=True
-          -p:EnableImportApi=false -p:UseMonoRuntime=true
+          -p:EnableImportApi=false -p:UseMonoRuntime=true -p:SelfContained=true
           -p:AndroidSdkDirectory="$env:ANDROID_HOME" -p:JavaSdkDirectory="$env:JAVA_HOME"
       - name: Build standalone development APK
         if: ${{ !inputs.alpha }}
