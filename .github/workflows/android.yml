@@ -43,8 +43,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
+        id: dotnet
         with:
           dotnet-version: 10.0.303
+      - name: Select the installed .NET SDK
+        run: |
+          '{"sdk":{"version":"${{ steps.dotnet.outputs.dotnet-version }}","rollForward":"disable"}}' | Set-Content -LiteralPath global.json -Encoding utf8
+          dotnet --version
       - uses: actions/setup-java@v4
         with:
           distribution: microsoft
