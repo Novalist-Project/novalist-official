@@ -193,6 +193,10 @@ function handleEditorInput(event) {
             if (!span.textContent) window.clearCommentMark(span);
         });
     }
+    if (event && (event.inputType === 'insertParagraph' || event.inputType === 'insertLineBreak')) {
+        // Follow the new line after its paragraph has reached its final paper page.
+        window.repaginatePageView(inputRoot);
+    }
     window.scheduleTypewriterRecenter();
     // Typing over a passage being read back is the writer taking over.
     if (window.NovalistEditorState.readAloudActive) window.stopReadAloud();

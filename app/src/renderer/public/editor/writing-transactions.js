@@ -89,14 +89,68 @@ function ensureWritingCaret(range) {
     range.collapse(true);
 }
 
+function writingParagraphPoint(node, offset) {
+    while (node.nodeType === Node.ELEMENT_NODE && (node.hasAttribute('data-writing-scene') || node.classList.contains('nv-page'))) {
+        const child = node.childNodes[offset] || node.lastChild;
+        if (!child || child.nodeType === Node.ELEMENT_NODE && !child.firstChild) break;
+        const atStart = offset < node.childNodes.length;
+        node = child;
+        offset = atStart ? 0 : node.nodeType === Node.TEXT_NODE ? node.data.length : node.childNodes.length;
+    }
+    return [node, offset];
+}
+
+function ensureWritingParagraph() {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    const root = window.writingSceneOf(selection.getRangeAt(0).startContainer);
+    if (!root) return;
+    const anchor = writingParagraphPoint(selection.anchorNode, selection.anchorOffset);
+    const focus = writingParagraphPoint(selection.focusNode, selection.focusOffset);
+    if (anchor[0] !== selection.anchorNode || focus[0] !== selection.focusNode) {
+        selection.setBaseAndExtent(...anchor, ...focus);
+    }
+    const range = selection.getRangeAt(0);
+    const blocks = 'address,article,aside,blockquote,div,dl,dt,dd,figure,figcaption,footer,header,' +
+        'h1,h2,h3,h4,h5,h6,hr,li,main,nav,ol,p,pre,section,table,thead,tbody,tfoot,tr,td,th,ul';
+    const isBlock = node => node.nodeType === Node.ELEMENT_NODE && (node.matches(blocks) || node.querySelector(blocks) !== null);
+    let node = range.startContainer;
+    if (node === root || node.nodeType === Node.ELEMENT_NODE && node.classList.contains('nv-page')) {
+        node = node.childNodes[range.startOffset] || node.lastChild;
+    }
+    if (!node) return;
+    while (node.parentNode !== root && !node.parentElement?.classList.contains('nv-page')) {
+        if (isBlock(node) || !node.parentNode) return;
+        node = node.parentNode;
+    }
+    if (isBlock(node)) return;
+    const parent = node.parentNode;
+    let first = node, after = node.nextSibling;
+    while (first.previousSibling && !isBlock(first.previousSibling)) first = first.previousSibling;
+    while (after && !isBlock(after)) after = after.nextSibling;
+    const children = Array.from(parent.childNodes);
+    const start = children.indexOf(first), end = after ? children.indexOf(after) : children.length;
+    const paragraph = document.createElement('p');
+    parent.insertBefore(paragraph, first);
+    for (const child of children.slice(start, end)) paragraph.appendChild(child);
+    const remap = ([node, offset]) => {
+        if (node !== parent) return [node, offset];
+        if (offset >= start && offset <= end) return [paragraph, offset - start];
+        return [parent, offset < start ? offset : offset - (end - start) + 1];
+    };
+    selection.setBaseAndExtent(...remap(anchor), ...remap(focus));
+}
+
 function writingBeforeInput(event) {
     const state = window.NovalistWritingDocument;
-    if (!state.enabled || window.NovalistEditorState.isComposing || event.defaultPrevented) return;
+    if (!state.enabled || window.NovalistEditorState.isComposing || event.defaultPrevented ||
+        event.target.closest?.('[data-editor-chrome]')) return;
     state.beforeSelection ||= window.getWritingSelection();
     const nativeSelection = window.getSelection();
     if (nativeSelection?.isCollapsed && nativeSelection.anchorNode === window.NovalistEditorState.editor) {
         window.restoreWritingSelection(window.getWritingSelection());
     }
+    if (event.inputType === 'insertParagraph') ensureWritingParagraph();
     if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
         event.preventDefault();
         window.sendMessage({ type: 'writingHistoryRequested', direction: event.inputType === 'historyUndo' ? 'undo' : 'redo' });

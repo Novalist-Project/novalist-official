@@ -57,7 +57,7 @@ export function fragmentSceneMarkupSource(source: string): string {
       container = child
     }
     const safe = container as Element`)
-  replace('    const previous = Array.from(parent.childNodes)\n    const used = new Set<Node>()\n    let index = 0\n    for (const target of Array.from(desired.childNodes)) {', `    const surface = parent === this.root ? this.surface : undefined
+  replace('    const previous = this.proseChildren(parent)\n    const current = [...previous]\n    const used = new Set<Node>()\n    let index = 0\n    for (const target of Array.from(desired.childNodes)) {', `    const surface = parent === this.root ? this.surface : undefined
     const previous = Array.from(surface ? surface.atoms() : parent.childNodes)
     const targets = Array.from(desired.childNodes)
     const keyed = new Map(targets.flatMap(target => {
@@ -70,7 +70,7 @@ export function fragmentSceneMarkupSource(source: string): string {
     const ordered: Node[] = []
     for (const target of targets) {`)
   replace('      const existing = id ? previous.find(node => !used.has(node) && this.identities.get(node) === id && node.nodeName === target.nodeName) : previous[index]', `      const existing = id ? keyed.get(target) : previous.find(node => !used.has(node) && !reserved.has(node) && node.nodeType === target.nodeType && node.nodeName === target.nodeName)`)
-  replace('      if (parent.childNodes[index] !== node) parent.insertBefore(node, parent.childNodes[index] ?? null)\n      used.add(node)\n      index++\n    }\n    while (parent.childNodes.length > index) parent.lastChild?.remove()', `      used.add(node)
+  replace('      const next = current[index] ?? null\n      if (next !== node) {\n        (next?.parentNode ?? current.at(-1)?.parentNode ?? parent).insertBefore(node, next)\n        const from = current.indexOf(node)\n        if (from !== -1) current.splice(from, 1)\n        current.splice(index, 0, node)\n      }\n      used.add(node)\n      index++\n    }\n    for (const node of previous) if (!used.has(node)) node.parentNode?.removeChild(node)', `      used.add(node)
       ordered.push(node)
     }
     let next: Node | null = null

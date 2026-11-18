@@ -14,8 +14,7 @@ new Function('require', 'module', 'exports', bundle.outputFiles[0].text)(require
 const { SceneMarkup, ProseDocumentHost } = module.exports
 const withAttributes = runs => runs.map(run => ({ ...run, attributes: run.attributes ?? {} }))
 
-function fixture(t, paginated) {
-  const html = '<p><b>Opening</b> prose</p><p>Second paragraph</p>'
+function fixture(t, paginated, html = '<p><b>Opening</b> prose</p><p>Second paragraph</p>') {
   const dom = new JSDOM('<section contenteditable="true">' + (paginated ? '<div class="nv-page">' + html + '</div>' : html) + '</section>')
   const document = dom.window.document, root = document.querySelector('section')
   const environment = { document, sanitizeSceneFragment(html) {
@@ -26,6 +25,31 @@ function fixture(t, paginated) {
   const markup = new SceneMarkup(environment, root)
   t.after(() => { doc.destroy(); host.dispose(); dom.window.close() })
   return { dom, root, markup, runs: doc.getText('prose').toDelta() }
+}
+
+for (const order of ['CABD', 'CAD', 'DCAB', 'BDA']) {
+  test(`shared block reorder, insertion and deletion preserve paper and prose order: ${order}`, t => {
+    const { dom, root, markup, runs } = fixture(t, true, '<p>A</p><p>B</p><p>C</p>')
+    const original = [...root.querySelectorAll('p')]
+    const pages = original.map(node => {
+      const page = dom.window.document.createElement('div')
+      page.className = 'nv-page'
+      page.append(node)
+      return page
+    })
+    root.replaceChildren(...pages)
+    markup.render(runs)
+    const groups = { A: runs.slice(0, 2), B: runs.slice(2, 4), C: runs.slice(4),
+      D: [{ insert: 'D' }, { insert: '\n', attributes: {
+        block: JSON.stringify([{ id: 'new-paragraph', tag: 'p', attributes: {} }]) } }] }
+    markup.render([...order].flatMap(letter => groups[letter]))
+    assert.deepEqual([...root.querySelectorAll('p')].map(node => node.textContent), [...order])
+    assert.deepEqual([...root.children], pages)
+    for (const [index, letter] of [...'ABC'].entries()) {
+      assert.equal(original[index].isConnected, order.includes(letter))
+      if (order.includes(letter)) assert.equal(root.querySelectorAll('p')[order.indexOf(letter)], original[index])
+    }
+  })
 }
 
 for (const paginated of [false, true]) {

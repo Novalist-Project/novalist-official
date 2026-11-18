@@ -137,10 +137,14 @@ for (const paginated of [false, true]) test(`two shared pane runtimes acknowledg
     const previousPages = panes.map(pane => pane.getWritingSceneRoot('typing').querySelector('.nv-page'))
     panes[0].getWritingSceneRoot('typing').querySelector('b').firstChild.appendData('x')
     capture(0)
+    for (const [paneIndex, pane] of panes.entries()) {
+      assert.equal(pane.getWritingSceneRoot('typing').querySelector('.nv-page'), previousPages[paneIndex],
+        'shared edits must keep the paper and text width before deferred pagination')
+    }
     await flushPagination(panes)
     for (const [paneIndex, pane] of panes.entries()) {
-      assert.notEqual(pane.getWritingSceneRoot('typing').querySelector('.nv-page'), previousPages[paneIndex])
-      assert.equal(previousPages[paneIndex].isConnected, false)
+      assert.equal(pane.getWritingSceneRoot('typing').querySelector('.nv-page'), previousPages[paneIndex])
+      assert.equal(previousPages[paneIndex].isConnected, true)
     }
     await documents[0].owner.flush()
     capture(0); capture(1)

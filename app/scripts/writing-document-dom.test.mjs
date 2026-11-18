@@ -23,6 +23,107 @@ function editor(extraScripts = []) {
 const scene = (sceneId, html) => ({ bookId: 'b', draftId: 'd', chapterGuid: 'c', sceneId, html, hash: 'h', revision: 0 })
 const point = (sceneId, offset) => ({ sceneId, offset, affinity: 'after' })
 
+for (const pages of [false, true]) test(`Enter prepares loose rich prose without moving its selection or neighbouring blocks, pages=${pages}`, () => {
+  const w = editor()
+  const html = '<p>Before</p>Loose <b>bold</b> tail<p>After</p>'
+  w.setWritingProjection([scene('s1', html)], null)
+  const root = w.getWritingSceneRoot('s1')
+  let container = root
+  if (pages) {
+    container = w.document.createElement('div')
+    container.className = 'nv-page'
+    container.append(...root.childNodes)
+    root.append(container)
+  }
+  const before = container.firstChild, after = container.lastChild
+  const bold = container.querySelector('b'), text = bold.firstChild
+  const selection = w.getSelection()
+  selection.setBaseAndExtent(text, 3, text, 1)
+  w.NovalistEditorState.editor.dispatchEvent(new w.InputEvent('beforeinput', { inputType: 'insertParagraph', bubbles: true }))
+  assert.equal(container.innerHTML, '<p>Before</p><p>Loose <b>bold</b> tail</p><p>After</p>')
+  assert.equal(container.firstChild, before)
+  assert.equal(container.lastChild, after)
+  assert.equal(container.querySelector('b'), bold)
+  assert.equal(selection.anchorNode, text)
+  assert.equal(selection.anchorOffset, 3)
+  assert.equal(selection.focusOffset, 1)
+  assert.equal(w.captureWritingChanges()[0].changes[0].beforeHtml, html)
+  w.close()
+})
+
+for (const input of ['line', 'canceled', 'composition', 'chrome']) test(`loose prose stays untouched by ${input} input`, () => {
+  const w = editor()
+  w.setWritingProjection([scene('s1', 'Loose prose')], null)
+  const root = w.getWritingSceneRoot('s1')
+  const text = root.firstChild
+  w.getSelection().setBaseAndExtent(text, 5, text, 5)
+  const event = new w.InputEvent('beforeinput', { inputType: input === 'line' ? 'insertLineBreak' : 'insertParagraph', bubbles: true, cancelable: true })
+  if (input === 'canceled') event.preventDefault()
+  w.NovalistEditorState.isComposing = input === 'composition'
+  let target = w.NovalistEditorState.editor
+  if (input === 'chrome') {
+    target = w.document.createElement('textarea')
+    target.dataset.editorChrome = 'writing'
+    w.NovalistEditorState.editor.prepend(target)
+  }
+  target.dispatchEvent(event)
+  assert.equal(root.innerHTML, 'Loose prose')
+  assert.equal(root.firstChild, text)
+  w.close()
+})
+
+for (const boundary of ['<hr>', '<article>Block</article>', '<span class="nv-comment" data-comment-id="note"><p>Marked block</p></span>']) {
+  test(`Enter beside ${boundary} preserves the neighbouring block and its annotations`, () => {
+    const w = editor()
+    w.setWritingProjection([scene('s1', `Loose${boundary}After`)], null)
+    const root = w.getWritingSceneRoot('s1'), text = root.firstChild, block = root.children[0]
+    w.getSelection().setBaseAndExtent(text, 5, text, 5)
+    w.NovalistEditorState.editor.dispatchEvent(new w.InputEvent('beforeinput', { inputType: 'insertParagraph', bubbles: true }))
+    assert.equal(root.innerHTML, `<p>Loose</p>${boundary}After`)
+    assert.equal(root.children[1], block)
+    const reloaded = w.document.createElement('section')
+    reloaded.innerHTML = root.innerHTML
+    assert.equal(reloaded.innerHTML, root.innerHTML, 'the new paragraph must remain valid after saving and reloading')
+    w.close()
+  })
+}
+
+for (const reverse of [false, true]) test(`Enter confines a selection spanning a paper wrapper to its prose, reverse=${reverse}`, () => {
+  const w = editor()
+  w.setWritingProjection([scene('s1', '<div class="nv-page">Loose prose</div>')], null)
+  const root = w.getWritingSceneRoot('s1'), page = root.firstChild, text = page.firstChild
+  const selection = w.getSelection()
+  selection.setBaseAndExtent(root, reverse ? 1 : 0, root, reverse ? 0 : 1)
+  w.NovalistEditorState.editor.dispatchEvent(new w.InputEvent('beforeinput', { inputType: 'insertParagraph', bubbles: true }))
+  assert.equal(page.innerHTML, '<p>Loose prose</p>')
+  assert.equal(selection.toString(), 'Loose prose')
+  assert.equal(selection.anchorNode, text)
+  assert.equal(selection.focusNode, text)
+  assert.equal(selection.anchorOffset, reverse ? 11 : 0)
+  assert.equal(selection.focusOffset, reverse ? 0 : 11)
+  w.close()
+})
+
+for (const pages of [false, true]) for (const reverse of [false, true]) {
+  for (const html of ['<img src="cover.png">', '<hr>', '<br>', '<p>Text</p><img src="cover.png">', '<img src="cover.png"><p>Text</p>']) {
+    test(`Enter preserves selected leaf elements, pages=${pages}, reverse=${reverse}, html=${html}`, () => {
+      const w = editor()
+      w.setWritingProjection([scene('s1', pages ? `<div class="nv-page">${html}</div>` : html)], null)
+      const root = w.getWritingSceneRoot('s1'), selection = w.getSelection()
+      selection.setBaseAndExtent(root, reverse ? root.childNodes.length : 0, root, reverse ? 0 : root.childNodes.length)
+      const selected = () => selection.getRangeAt(0).cloneContents().querySelectorAll('img,hr,br').length
+      assert.equal(selected(), 1)
+      w.NovalistEditorState.editor.dispatchEvent(new w.InputEvent('beforeinput', { inputType: 'insertParagraph', bubbles: true }))
+      assert.equal(selection.isCollapsed, false)
+      assert.equal(selected(), 1, 'Enter must still replace the selected image, rule or line break')
+      assert.equal(selection.toString(), html.includes('Text') ? 'Text' : '')
+      selection.getRangeAt(0).deleteContents()
+      assert.equal(root.querySelector('img,hr,br'), null, 'the whole leaf must be inside the replacement range')
+      w.close()
+    })
+  }
+}
+
 test('a cross-scene comment emits one scene-qualified annotation batch without moving scene roots', () => {
   const w = editor(['annotations', 'comment-bridge'])
   const messages = []

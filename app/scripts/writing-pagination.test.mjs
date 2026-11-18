@@ -52,6 +52,43 @@ test('shared scene layout requests coalesce without synchronously repaginating a
   assert.equal(root('b').textContent, 'Second prose')
 })
 
+for (const inputType of ['insertParagraph', 'insertLineBreak']) test(`${inputType} keeps the caret visible after pagination`, t => {
+  const { w, root } = runtime(t)
+  const state = w.NovalistEditorState
+  Object.defineProperty(w.HTMLElement.prototype, 'offsetHeight', { get() { return 500 } })
+  Object.defineProperty(state.wrapper, 'clientHeight', { value: 800 })
+  state.wrapper.getBoundingClientRect = () => ({ top: 0 })
+  const paragraph = w.document.createElement('p')
+  paragraph.innerHTML = inputType === 'insertParagraph' ? '<br>' : 'Continued<br>'
+  root('a').firstChild.append(paragraph)
+  w.getSelection().setBaseAndExtent(paragraph, 0, paragraph, 0)
+  w.Range.prototype.getBoundingClientRect = () => ({ top: 0, bottom: 0 })
+  paragraph.getBoundingClientRect = () => {
+    const page = [...root('a').children].indexOf(paragraph.parentNode)
+    const top = page * 900 - state.wrapper.scrollTop
+    return { top, bottom: top + 20, height: 20, width: 400 }
+  }
+  const frames = []
+  w.requestAnimationFrame = callback => { frames.push(callback); return frames.length }
+  w.isCaretInEditor = selection => selection.isCollapsed && root('a').contains(selection.anchorNode)
+  state.dismissedGrammarIssues = new Set()
+  const rootScene = root('a')
+  w.getWritingSceneRoot = () => rootScene
+  w.requestReadability = () => {}
+  w.requestGrammarCheck = () => {}
+  for (const file of ['typewriter-scroll', 'content-input']) {
+    w.eval(readFileSync(new URL(`../src/renderer/public/editor/${file}.js`, import.meta.url), 'utf8'))
+  }
+  w.handleEditorInput(new w.InputEvent('input', { inputType }))
+  for (const callback of frames.splice(0)) callback()
+  w.repaginatePageView(rootScene)
+  assert.equal(w.getSelection().anchorNode, paragraph)
+  assert.equal(w.getSelection().anchorOffset, 0)
+  assert.equal(rootScene.children.length, 2)
+  assert.ok(paragraph.getBoundingClientRect().bottom <= state.wrapper.clientHeight,
+    'delayed pagination must not move the new paragraph below the viewport')
+})
+
 test('shared rendering refreshes ornament presentation only in its scene before queued layout', t => {
   const { w, root, page } = runtime(t)
   root('b').querySelector('p').textContent = '***'
