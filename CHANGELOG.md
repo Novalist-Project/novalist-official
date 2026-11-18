@@ -36,6 +36,7 @@ could encounter in a previously released version.
 
 ### Fixed
 
+- Saving, ending collaboration, and closing the app remain possible after focusing an unchanged shared field while its host is offline.
 - Pressing Enter or Shift+Enter at the bottom of a paper page keeps the new paragraph or line visible after it moves to the next page.
 - Views added by extensions, such as the AI Assistant's chat and analysis panels, now show their names in the interface language and switch immediately when you change language.
 - Application and editor shortcuts work with Arabic and other non-Latin keyboard layouts, including custom shortcut recording, while preserving Latin-layout bindings and composition input.
