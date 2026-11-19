@@ -1,4 +1,4 @@
-import type { SceneChange, SceneRef, SceneSnapshot, WritingSelection } from './writingTypes'
+import type { HistoryResult, SceneChange, SceneRef, SceneSnapshot, WritingSelection } from './writingTypes'
 import type { WritingSearchCapture } from '../../../../shared/writingSearchProtocol'
 
 export interface WritingFindOptions {
@@ -31,6 +31,11 @@ export interface WritingSearchResult {
   request: WritingSearchRequest
   targets: WritingSearchTarget[]
   matches: WritingMatch[]
+}
+
+export interface WritingReplacement {
+  count: number
+  undo?: () => Promise<HistoryResult>
 }
 
 export function searchRefKey(ref: SceneRef): string {

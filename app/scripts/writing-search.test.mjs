@@ -98,11 +98,11 @@ test('one-window mixed replacement uses the durable coordinator before either ch
     '../../collaboration/SharedWritingHistory': {},
     '../../collaboration/sharedWritingSessions': { getSharedWritingSession: () => ({ html: shared.html, revision: shared.revision }) },
     './writingSearchCapture': { captureWritingSearch: async () => [{ owner: 1, snapshots }] },
-    './writingSearchExternal': { replaceWritingAcrossWindows: async () => { coordinated++; return 2 } },
+    './writingSearchExternal': { replaceWritingAcrossWindows: async () => { coordinated++; return { count: 2 } } },
     './writingSearch': search, './writingTextMapping': { writingTextMapping }
   }, { crypto: { randomUUID } })
   const result = { request: { targets: [ref, sharedRef], overrides: [], expectedEpoch: 4 }, matches: [], targets: [] }
-  assert.equal(await host.replaceWriting(result, [{ ref }, { ref: sharedRef }], 'fox'), 2)
+  assert.equal((await host.replaceWriting(result, [{ ref }, { ref: sharedRef }], 'fox')).count, 2)
   assert.equal(coordinated, 1)
 })
 

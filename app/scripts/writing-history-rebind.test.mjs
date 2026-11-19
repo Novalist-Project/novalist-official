@@ -74,6 +74,21 @@ test('rebinding the other book updates the initiating book history and workspace
   disposeWritingHistories(context.workspaceId)
 })
 
+test('dialog undo only replays the confirmed entry, including when another undo is queued', async () => {
+  const owner = registry(1, 'Tornado')
+  await owner.read(ref)
+  const undoDeletion = acceptWritingBatch(owner, [{ registry: owner, transaction: transaction(owner, 'Tornado', '') }])
+  acceptWritingTransaction(owner, transaction(owner, '', 'later'))
+  assert.equal((await undoDeletion()).status, 'blocked')
+  assert.equal(owner.getSnapshot(ref).html, 'later')
+  assert.equal((await getWritingHistory(owner).undo()).status, 'applied')
+  const results = await Promise.all([undoDeletion(), undoDeletion()])
+  assert.deepEqual(results.map(result => result.status), ['applied', 'blocked'])
+  assert.equal(owner.getSnapshot(ref).html, 'Tornado')
+  await owner.close()
+  disposeWritingHistories(context.workspaceId)
+})
+
 test('external inverse callbacks serialize and block new acceptance before model mutation', async () => {
   const owner = registry(1, '<p>before</p>')
   await owner.read(ref)

@@ -637,6 +637,14 @@
     "recovered": "Wiederhergestellt"
   },
   "findReplace": {
+    "deleteCurrent": "Aktuellen Treffer löschen",
+    "deleteMatches": "Alle Treffer löschen",
+    "deleteNoteMatches": "Treffer in Notizen und Zusammenfassungen löschen",
+    "confirmDeletion": "Das Ersatzfeld ist leer. Sollen die gefundenen Textstellen gelöscht werden? Treffer: {{count}}. Betroffene Szenen: {{scenes}}.",
+    "confirmReplacement": "Gefundene Textstellen durch „{{replacement}}“ ersetzen? Treffer: {{count}}. Betroffene Szenen: {{scenes}}.",
+    "undoReplacement": "Ersetzen rückgängig machen",
+    "undone": "Ersetzung rückgängig gemacht.",
+    "snapshotRecovery": "Zum Wiederherstellen einer Szene die Szenen-Stände öffnen und den Stand „Before find/replace“ auswählen.",
     "scopeProjection": "Aktuelle Schreibansicht", "previous": "Zurück", "next": "Weiter", "replaceCurrent": "Aktuellen Treffer ersetzen",
     "replaceNotes": "Notizen und Zusammenfassungen ersetzen", "retryReplacement": "Ersetzen erneut versuchen",
     "failed": "Suchen oder Ersetzen fehlgeschlagen: {{message}}",

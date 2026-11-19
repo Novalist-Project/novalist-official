@@ -3454,6 +3454,11 @@
   align-items: center;
 }
 
+.findreplace-card .dialog-actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
 .findreplace-scope {
   width: auto;
 }

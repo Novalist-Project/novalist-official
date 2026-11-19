@@ -773,6 +773,14 @@
     "recovered": "⁧مُستعاد⁩"
   },
   "findReplace": {
+    "deleteCurrent": "⁧حذف التطابق الحالي⁩",
+    "deleteMatches": "⁧حذف كل التطابقات⁩",
+    "deleteNoteMatches": "⁧حذف التطابقات في الملاحظات والملخصات⁩",
+    "confirmDeletion": "⁧حقل الاستبدال فارغ. هل تريد حذف النص المطابق؟ عدد التطابقات: {{count}}. عدد المشاهد: {{scenes}}.⁩",
+    "confirmReplacement": "⁧هل تريد استبدال النص المطابق بالنص «{{replacement}}»؟ عدد التطابقات: {{count}}. عدد المشاهد: {{scenes}}.⁩",
+    "undoReplacement": "⁧التراجع عن الاستبدال⁩",
+    "undone": "⁧تم التراجع عن الاستبدال.⁩",
+    "snapshotRecovery": "⁧لاستعادة مشهد، افتح لقطات المشهد واختر لقطة «Before find/replace».⁩",
     "failed": "⁧فشل البحث أو الاستبدال: {{message}}⁩",
     "title": "⁧البحث والاستبدال⁩",
     "find": "⁧بحث⁩",

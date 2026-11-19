@@ -766,6 +766,14 @@
     "recovered": "Recovered"
   },
   "findReplace": {
+    "deleteCurrent": "Delete current match",
+    "deleteMatches": "Delete all matches",
+    "deleteNoteMatches": "Delete matches in notes and synopses",
+    "confirmDeletion": "The replacement is empty. Delete the matching text? Matches: {{count}}. Scenes: {{scenes}}.",
+    "confirmReplacement": "Replace the matching text with “{{replacement}}”? Matches: {{count}}. Scenes: {{scenes}}.",
+    "undoReplacement": "Undo replacement",
+    "undone": "Replacement undone.",
+    "snapshotRecovery": "To restore a scene, open Scene snapshots and choose its “Before find/replace” snapshot.",
     "scopeProjection": "Current writing view", "previous": "Previous", "next": "Next", "replaceCurrent": "Replace current",
     "replaceNotes": "Replace notes and synopses", "retryReplacement": "Retry replacement",
     "failed": "Search or replacement failed: {{message}}",

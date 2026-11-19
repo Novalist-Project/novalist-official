@@ -44,9 +44,11 @@ Click a prose result to reveal and select its exact text in the editor. **Previo
 
 ## Replacing
 
-Choose **Replace current** for the selected prose match or **Replace All** for all prose matches in the selected scope. Replace All is one undoable action, including across scenes and books. Formatting and scene boundaries are preserved. If the text changed after the search, search again before replacing; a failed save remains available through **Retry replacement**.
+Run **Find** first. On desktop, choose **Replace current** for the selected prose match or **Replace All** for all prose matches in the selected scope. Before a bulk change, the confirmation shows the replacement text and the number of matches and scenes it will affect. An empty replacement changes the action to **Delete all matches**. **Cancel** keeps the text intact.
 
-**Replace notes and synopses** is a separate action for those fields. Comments and Codex entries are search-only. Notes and synopsis replacements use their existing snapshot recovery rather than the prose editor's undo history.
+After a desktop prose replacement, choose **Undo replacement** in the dialog or press `Ctrl+Z` (`Cmd+Z` on macOS) while the undo button has focus. One undo restores the whole replacement, including matches across scenes and books. You can also undo in the editor after closing the dialog. Formatting and scene boundaries are preserved. If the preview is stale, run **Find** again. A failed multi-window save can be completed with **Retry replacement**.
+
+**Replace notes and synopses** has its own confirmation. On mobile, **Replace All** includes these fields when enabled. These operations save each affected scene before replacement. To recover one, open the scene, choose **Scene snapshots**, and restore the **Before find/replace** entry for that run. Comments and Codex entries are search-only.
 
 ## Regex notes
 

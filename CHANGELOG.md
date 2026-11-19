@@ -39,6 +39,7 @@ could encounter in a previously released version.
 
 ### Fixed
 
+- Find and Replace now highlights **Find** and asks for confirmation before changing all matches. An empty replacement is labeled as deletion. You can undo a prose replacement directly in the dialog, and replacements in notes and synopses tell you where to restore the saved scene versions.
 - Saving, ending collaboration, and closing the app remain possible after focusing an unchanged shared field while its host is offline.
 - Workspace layouts now save the panes you opened in their own windows, and applying one reopens them where they were, in place of the separate windows that are open. Before, only the main window was restored. If an open window cannot be closed, the layout is not applied and the main window stays as it was.
 - Pressing Enter or Shift+Enter at the bottom of a paper page keeps the new paragraph or line visible after it moves to the next page.

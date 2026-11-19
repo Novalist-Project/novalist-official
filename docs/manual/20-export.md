@@ -57,7 +57,7 @@ Volumes are read without being opened, so building a box set never changes which
 
 **Replacements on export** at the bottom of the Export view holds substitutions applied to the exported file — never to your prose — every time you export.
 
-This is deliberately not [Find and Replace](21-find-replace.md). That one rewrites the source scenes and snapshots each one it touches, which is right for fixing a character's name and wrong for "the submission copy spells it out and the ebook uses the glyph". A replacement here runs on the way out, so turning it off leaves nothing to undo.
+Use an export rule when the submission copy needs a different spelling or glyph. To change a character’s name in the manuscript itself, use **Find and Replace**. Desktop prose replacements can be undone together. See [Find & Replace](21-find-replace.md#replacing).
 
 Each rule has:
 

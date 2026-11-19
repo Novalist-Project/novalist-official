@@ -162,7 +162,7 @@ English and German **dictation** writes directly at the editor caret. Built-in s
 
 - Plain-text, whole-word, case-sensitive, or .NET regex search.
 - Start with the current writing view, including selected or filtered scenes; widen to a scene, chapter, book, or the whole project. Search includes unsaved and offscreen prose.
-- Navigate to exact matches, replace the current match, or replace all prose matches as one undoable action. Replacement text is literal, including in regex searches. Notes and synopses have a separate replacement action; comments and Codex entries are search-only.
+- Navigate to exact matches or replace the current match. Bulk replacement shows how many matches and scenes will change, labels an empty replacement as deletion, and lets you undo the whole prose edit in one step. Replacement text is literal, including in regex searches. Notes and synopses have a separate replacement action. Comments and Codex entries are search-only.
 
 ### Customization
 

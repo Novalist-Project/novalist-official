@@ -4,7 +4,7 @@ import { recordExternalWritingTransaction } from '../../stores/writingHistory'
 import { prepareSharedWritingGroup, type PreparedSharedWritingGroup } from '../../collaboration/sharedWritingGroup'
 import { getSharedWritingSession } from '../../collaboration/sharedWritingSessions'
 import { captureSearchOverrides, searchRefKey } from './writingSearch'
-import type { WritingMatch, WritingSearchResult } from './writingSearch'
+import type { WritingMatch, WritingReplacement, WritingSearchResult } from './writingSearch'
 import type { HistoryResult, SceneChange, SceneRef, WritingCommitRequest, WritingContext } from './writingTypes'
 import type { WritingSearchLease } from '../../../../shared/writingSearchProtocol'
 
@@ -108,7 +108,7 @@ async function replay(context: WritingContext, original: SceneChange[], shared: 
 }
 
 export async function replaceWritingAcrossWindows(context: WritingContext, result: WritingSearchResult,
-  matches: WritingMatch[], replacement: string): Promise<number> {
+  matches: WritingMatch[], replacement: string): Promise<WritingReplacement> {
   if (!pending) {
     const refs = [...new Map(matches.map(match => [searchRefKey(match.ref), match.ref])).values()]
     await ensureOwners(context, refs, result.request.overrides)
@@ -135,7 +135,7 @@ export async function replaceWritingAcrossWindows(context: WritingContext, resul
   return retryWritingReplacement()
 }
 
-export async function retryWritingReplacement(): Promise<number> {
+export async function retryWritingReplacement(): Promise<WritingReplacement> {
   const receipt = pending
   if (!receipt || receipt.action !== 'replace') throw new Error('No replacement is waiting for a retry.')
   if (!useProjectStore.getState().getWritingRegistry(receipt.context)) throw new Error('The replacement history owner is unavailable.')
@@ -148,11 +148,11 @@ export async function retryWritingReplacement(): Promise<number> {
     if (state.projectPath !== context.workspaceId) throw new Error('The replacement belongs to another workspace.')
     return { ...context, workspaceEpoch: state.workspaceEpoch }
   }
-  recordExternalWritingTransaction(owner, { id: receipt.request.transactionId, context, origin: 'find-replace', kind: 'replace',
+  const undo = recordExternalWritingTransaction(owner, { id: receipt.request.transactionId, context, origin: 'find-replace', kind: 'replace',
     changes: receipt.changes, annotationChanges: [], beforeSelection: null, afterSelection: null }, {
     refs: [...receipt.changes.map(change => change.ref), ...receipt.shared?.intent.changes.map(change => change.ref) ?? []],
     undo: () => replay(currentContext(), receipt.changes, receipt.shared, receipt.historyId, false), redo: () => replay(currentContext(), receipt.changes, receipt.shared, receipt.historyId, true),
     dispose: () => receipt.shared?.dispose()
   })
-  return receipt.count
+  return { count: receipt.count, undo }
 }

@@ -13,7 +13,7 @@ namespace Novalist.Backend.Tests;
 public sealed class WritingSearchRpcTests
 {
     [Fact]
-    public async Task RendererContractReachesRegisteredHostWithoutWriting()
+    public async Task RendererContractsPreviewWithoutWritingAndDeleteOnlyAfterConfirmation()
     {
         using var directory = new TempDir();
         var workspace = new Workspace(directory.Path);
@@ -35,6 +35,12 @@ public sealed class WritingSearchRpcTests
         var changes = await client.InvokeAsync<Novalist.Core.Models.SceneChange[]>("writingSearch/prepareReplace", request, matches, "fox");
         Assert.Equal("<p>fox</p>", Assert.Single(changes).AfterHtml);
         Assert.Equal("<p>wolf</p>", await workspace.Projects.ReadSceneContentAsync(chapter, scene));
+        var legacyMatches = await client.InvokeWithCancellationAsync<FindMatchDto[]>("search/find",
+            ["wolf", false, false, false, "ActiveBook", null, null, false, false], default);
+        var count = await client.InvokeWithCancellationAsync<int>("search/replaceAll",
+            ["wolf", "", false, false, false, "ActiveBook", null, null, false, legacyMatches], default);
+        Assert.Equal(1, count);
+        Assert.Equal("<p></p>", await workspace.Projects.ReadSceneContentAsync(chapter, scene));
     }
 
     [Fact]
@@ -83,7 +89,12 @@ public sealed class WritingSearchRpcTests
         var request = new WritingSearchRequest(new() { Pattern = "wolf", IncludeSceneNotes = true, IncludeCodex = true }, [reference], [], 0);
         var found = await rpc.FindAsync(request, default);
         Assert.Equal(new[] { "prose", "synopsis", "notes", "comment", "codex" }, found.Select(match => match.Field));
-        Assert.Equal(2, await rpc.ReplaceNotesAsync(request, "fox", default));
+        var confirmed = found.Where(match => match.Field is "synopsis" or "notes").ToArray();
+        scene.Notes = "wolf wolf note";
+        await Assert.ThrowsAsync<InvalidOperationException>(() => rpc.ReplaceNotesAsync(request, "fox", confirmed, default));
+        Assert.Equal("wolf synopsis", scene.Synopsis);
+        scene.Notes = "wolf note";
+        Assert.Equal(2, await rpc.ReplaceNotesAsync(request, "fox", confirmed, default));
         Assert.Equal("wolf hidden", hidden.Notes);
         Assert.Equal("fox note", scene.Notes);
         Assert.Equal("wolf conversation", scene.Comments[0].Text);

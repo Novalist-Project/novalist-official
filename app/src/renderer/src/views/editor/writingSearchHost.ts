@@ -10,7 +10,7 @@ import { captureWritingSearch } from './writingSearchCapture'
 import { replaceWritingAcrossWindows } from './writingSearchExternal'
 import { captureSearchOverrides, matchSelection, searchRefKey, validateSearchChanges } from './writingSearch'
 import { writingTextMapping } from './writingTextMapping'
-import type { WritingFindOptions, WritingMatch, WritingSearchResult, WritingSearchTarget } from './writingSearch'
+import type { WritingFindOptions, WritingMatch, WritingReplacement, WritingSearchResult, WritingSearchTarget } from './writingSearch'
 import type { SceneChange, WritingContext, WritingTransaction } from './writingTypes'
 
 export function currentSearchContext(): WritingContext {
@@ -42,12 +42,12 @@ function transaction(context: WritingContext, changes: SceneChange[], id: string
   return { id, context, origin: 'find-replace', kind: 'replace', changes, annotationChanges: [], beforeSelection: null, afterSelection: null }
 }
 
-export function replaceWritingNotes(result: WritingSearchResult, replacement: string): Promise<number> {
-  return rpc.request('writingSearch/replaceNotes', [result.request, replacement])
+export function replaceWritingNotes(result: WritingSearchResult, matches: WritingMatch[], replacement: string): Promise<number> {
+  return rpc.request('writingSearch/replaceNotes', [result.request, replacement, matches])
 }
 
-export async function replaceWriting(result: WritingSearchResult, selected: WritingMatch[], replacement: string): Promise<number> {
-  if (!selected.length) return 0
+export async function replaceWriting(result: WritingSearchResult, selected: WritingMatch[], replacement: string): Promise<WritingReplacement> {
+  if (!selected.length) return { count: 0 }
   const context = currentSearchContext()
   if (context.workspaceEpoch !== result.request.expectedEpoch) throw new Error('The writing workspace changed.')
   const captures = await captureWritingSearch(context)
@@ -85,10 +85,8 @@ export async function replaceWriting(result: WritingSearchResult, selected: Writ
   if (sessions.size && changes.some(change => !sessions.has(searchRefKey(change.ref)))) {
     return replaceWritingAcrossWindows(context, { ...result, request }, selected, replacement)
   }
-  if (sessions.size) {
-    acceptSharedWritingBatch(owner, entries, new SharedWritingHistory(), sessions)
-  } else acceptWritingBatch(owner, entries)
-  return selected.length
+  const undo = sessions.size ? acceptSharedWritingBatch(owner, entries, new SharedWritingHistory(), sessions) : acceptWritingBatch(owner, entries)
+  return { count: selected.length, undo }
 }
 
 async function revealValidatedMatch(navigation: WritingNavigationSurface, match: WritingMatch): Promise<boolean> {

@@ -801,6 +801,14 @@
     "recovered": "已恢复"
   },
   "findReplace": {
+    "deleteCurrent": "删除当前匹配项",
+    "deleteMatches": "删除全部匹配项",
+    "deleteNoteMatches": "删除笔记和梗概中的匹配项",
+    "confirmDeletion": "替换内容为空。要删除匹配的文本吗？共 {{count}} 处，涉及 {{scenes}} 个场景。",
+    "confirmReplacement": "要将匹配的文本替换为“{{replacement}}”吗？共 {{count}} 处，涉及 {{scenes}} 个场景。",
+    "undoReplacement": "撤销替换",
+    "undone": "已撤销替换。",
+    "snapshotRecovery": "如需恢复某个场景，请打开场景快照，选择“Before find/replace”快照。",
     "scopeProjection": "当前写作视图", "previous": "上一个", "next": "下一个", "replaceCurrent": "替换当前项",
     "replaceNotes": "替换笔记和梗概", "retryReplacement": "重试替换",
     "failed": "搜索或替换失败：{{message}}",

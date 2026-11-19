@@ -278,7 +278,7 @@ The Timeline's **Add structure...** dropdown can lay out a known story structure
 
 ## Snapshots
 
-Take a snapshot of the open scene from the **Scene snapshots** button on the writing bar (with an optional label such as "Before rewrite") and restore any earlier snapshot from the same list. Automatic snapshots are also taken before destructive operations such as Replace All. See [Snapshots](17-snapshots.md).
+Take a snapshot of the open scene from the **Scene snapshots** button on the writing bar (with an optional label such as "Before rewrite") and restore any earlier snapshot from the same list. Novalist takes automatic snapshots before replacing notes and synopses. For desktop prose replacements, choose **Undo replacement** in Find and Replace. See [Snapshots](17-snapshots.md).
 
 ## Starting a scene from a template
 

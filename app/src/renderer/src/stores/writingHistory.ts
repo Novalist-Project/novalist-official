@@ -63,21 +63,24 @@ class SessionWritingHistory implements WritingHistory {
     this.recordParts([{ registry: this.registry, transaction, inverse }])
   }
 
-  recordParts(parts: HistoryPart[], shared?: HistoryEntry['shared'], annotations?: SharedAnnotationHistory): void {
+  recordParts(parts: HistoryPart[], shared?: HistoryEntry['shared'], annotations?: SharedAnnotationHistory) {
     this.assertAvailable()
     if (!shared && !annotations && !parts.some(part => part.transaction.changes.length || part.transaction.annotationChanges.length)) return
     const retained = parts.map(part => ({ registry: part.registry, transaction: structuredClone(part.transaction), inverse: structuredClone(part.inverse) }))
     for (const part of retained) this.rememberRevisions(part)
-    this.past.push({ parts: retained, shared, annotations })
-    for (const entry of this.future) { entry.shared?.history.discard(entry.shared.id); entry.external?.dispose?.() }
-    this.future.length = 0
+    return this.append({ parts: retained, shared, annotations })
   }
 
-  recordExternal(external: WritingExternalHistory): void {
+  recordExternal(external: WritingExternalHistory) {
     this.assertAvailable()
+    return this.append({ parts: [], external })
+  }
+
+  private append(recorded: HistoryEntry): () => Promise<HistoryResult> {
     for (const entry of this.future) { entry.shared?.history.discard(entry.shared.id); entry.external?.dispose?.() }
     this.future.length = 0
-    this.past.push({ parts: [], external })
+    this.past.push(recorded)
+    return () => this.enqueue(false, recorded)
   }
 
   prepareRebind(previous: WritingDocumentRegistry, next: WritingDocumentRegistry, changes: readonly WritingHistoryRebase[]): () => void {
@@ -153,12 +156,13 @@ class SessionWritingHistory implements WritingHistory {
     } }
   }
 
-  private async change(redo: boolean): Promise<HistoryResult> {
+  private async change(redo: boolean, expected?: HistoryEntry): Promise<HistoryResult> {
     if (this.disposed) return { status: 'blocked', reason: 'writing.historyClosed' }
     const source = redo ? this.future : this.past
     const target = redo ? this.past : this.future
     const entry = source.at(-1)
     if (!entry) return { status: 'blocked', reason: 'writing.historyEmpty' }
+    if (expected && entry !== expected) return { status: 'blocked', reason: 'writing.historyConflict' }
     try {
       if (entry.external) {
         this.externalPending = true
@@ -171,7 +175,7 @@ class SessionWritingHistory implements WritingHistory {
         return result
       }
       entry.shared?.history.capturePending(entry.shared.id)
-      if (source.at(-1) !== entry) return this.change(redo)
+      if (source.at(-1) !== entry) return this.change(redo, expected)
       const batch = entry.parts.map(part => this.prepare(part, redo))
       for (const part of batch) part.registry.validate(part.transaction)
       entry.annotations?.validate(redo)
@@ -199,8 +203,8 @@ class SessionWritingHistory implements WritingHistory {
     } finally { this.externalPending = false }
   }
 
-  private enqueue(redo: boolean): Promise<HistoryResult> {
-    const operation = this.queue.then(() => this.change(redo))
+  private enqueue(redo: boolean, expected?: HistoryEntry): Promise<HistoryResult> {
+    const operation = this.queue.then(() => this.change(redo, expected))
     this.queue = operation.then(() => {})
     return operation
   }
@@ -226,7 +230,7 @@ export function acceptWritingTransaction(registry: WritingDocumentRegistry, tran
 }
 
 /** Retains every participating registry so a project replacement remains one undo. */
-export function acceptWritingBatch(owner: WritingDocumentRegistry, entries: WritingBatchEntry[]): void {
+export function acceptWritingBatch(owner: WritingDocumentRegistry, entries: WritingBatchEntry[]) {
   getWritingHistory(owner)
   histories.get(owner)!.assertAvailable()
   const parts = entries.map(entry => ({ ...entry, transaction: structuredClone(entry.transaction), inverse: structuredClone(invert(entry.transaction)) }))
@@ -234,8 +238,9 @@ export function acceptWritingBatch(owner: WritingDocumentRegistry, entries: Writ
   if (parts.length > 1) reserveWritingBatch(parts.map(part => part.registry))
   WritingDocumentRegistry.applyBatch(parts)
   getWritingHistory(owner)
-  histories.get(owner)!.recordParts(parts)
+  const undo = histories.get(owner)!.recordParts(parts)
   for (const part of parts) scheduleWritingSave(part.registry)
+  return undo
 }
 
 export function acceptSharedWritingTransaction(registry: WritingDocumentRegistry, transaction: WritingTransaction,
@@ -249,19 +254,20 @@ export function acceptSharedWritingTransaction(registry: WritingDocumentRegistry
 }
 
 export function acceptSharedWritingBatch(owner: WritingDocumentRegistry, entries: readonly WritingBatchEntry[],
-  history: SharedWritingHistory, sessions: ReadonlyMap<string, SharedSceneSession>, options: SharedBatchOptions = {}): void {
+  history: SharedWritingHistory, sessions: ReadonlyMap<string, SharedSceneSession>, options: SharedBatchOptions = {}) {
   getWritingHistory(owner)
   histories.get(owner)!.assertAvailable()
   const accepted = applySharedWritingBatch(owner, entries, history, sessions, options)
-  histories.get(owner)!.recordParts(accepted.parts, accepted.shared, accepted.annotations)
+  const undo = histories.get(owner)!.recordParts(accepted.parts, accepted.shared, accepted.annotations)
   for (const part of accepted.parts) if (part.transaction.changes.length || part.transaction.annotationChanges.length) scheduleWritingSave(part.registry)
+  return undo
 }
 
 export function recordExternalWritingTransaction(registry: WritingDocumentRegistry, transaction: WritingTransaction,
-  external: WritingExternalHistory): void {
+  external: WritingExternalHistory) {
   registry.validate({ ...transaction, changes: [], annotationChanges: [] })
   getWritingHistory(registry)
-  histories.get(registry)!.recordExternal(external)
+  return histories.get(registry)!.recordExternal(external)
 }
 
 export function getWritingHistoryReferences(registry: WritingDocumentRegistry): SceneRef[] {

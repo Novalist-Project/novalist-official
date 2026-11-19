@@ -252,7 +252,7 @@ Because everything is a regular folder of regular files, your options for safeke
 - **Cloud sync** — Dropbox, OneDrive, iCloud Drive, etc. all work. Avoid editing the same scene on two machines at the same time.
 - **Git** — Novalist has first-class Git support inside the app. See [Git](18-git.md).
 
-Novalist also supports per-scene snapshots — a manual version history per scene plus auto-snapshots taken before destructive operations such as Replace All. See [Snapshots](17-snapshots.md) — it is complementary to Git, not a replacement.
+Each scene also has its own version history. You can take snapshots manually, and Novalist takes them automatically before manuscript cleanup and bulk replacement of notes and synopses. See [Snapshots](17-snapshots.md).
 
 ## Importing from other tools
 

@@ -15,14 +15,19 @@ public sealed class WritingSearchRpc(Workspace workspace)
     public async Task<WritingMatch[]> FindAsync(WritingSearchRequest request, CancellationToken ct)
     {
         var prose = FindReplaceService.FindWriting(request.Options, await ReadAsync(request, ct, requireCurrentHash: false));
+        var extras = await FindExtrasAsync(request, ct);
+        ValidateEpoch(request.ExpectedEpoch);
+        return [.. prose, .. extras];
+    }
+
+    private async Task<WritingMatch[]> FindExtrasAsync(WritingSearchRequest request, CancellationToken ct)
+    {
         var reader = new SceneDocumentReader(workspace.Projects, workspace.FileService);
         var scenes = new List<ResolvedWritingScene>();
         if (request.Options.IncludeSceneNotes)
             foreach (var reference in request.Targets) scenes.Add(await reader.ResolveAsync(reference, ct));
         var service = new FindReplaceService(workspace.Projects, new EntityService(workspace.Projects));
-        var extras = await service.FindWritingExtrasAsync(request.Options, scenes);
-        ValidateEpoch(request.ExpectedEpoch);
-        return [.. prose, .. extras];
+        return await service.FindWritingExtrasAsync(request.Options, scenes);
     }
 
     [JsonRpcMethod("writingSearch/prepareReplace")]
@@ -31,12 +36,20 @@ public sealed class WritingSearchRpc(Workspace workspace)
         => FindReplaceService.PrepareWritingReplace(request.Options, await ReadAsync(request, ct), matches, replacement);
 
     [JsonRpcMethod("writingSearch/replaceNotes")]
-    public async Task<int> ReplaceNotesAsync(WritingSearchRequest request, string replacement, CancellationToken ct)
+    public async Task<int> ReplaceNotesAsync(WritingSearchRequest request, string replacement,
+        WritingMatch[]? confirmed = null, CancellationToken ct = default)
     {
         await ReadAsync(request, ct);
         var options = new FindOptions { Pattern = request.Options.Pattern, Replacement = replacement,
             MatchCase = request.Options.MatchCase, WholeWord = request.Options.WholeWord, UseRegex = request.Options.UseRegex,
             IncludeSceneNotes = true, Scope = FindScope.Project };
+        if (confirmed is not null)
+        {
+            var extras = await FindExtrasAsync(request with { Options = options }, ct);
+            if (!extras.Where(match => match.Field is "notes" or "synopsis").SequenceEqual(confirmed))
+                throw new InvalidOperationException("The search results changed. Search again before replacing.");
+            ValidateEpoch(request.ExpectedEpoch);
+        }
         return await new FindReplaceService(workspace.Projects).ReplaceNotesAsync(options, request.Targets,
             new SnapshotService(workspace.Projects, workspace.FileService), ct);
     }

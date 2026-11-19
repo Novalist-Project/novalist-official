@@ -59,6 +59,7 @@ Every other view — Structure, Wiki, Maps, Languages, Gallery, Dialogue, Planni
 | Command | Gesture |
 | --- | --- |
 | Find and Replace | `Ctrl+Shift+F` |
+| Undo the prose replacement while **Undo replacement** has focus | `Ctrl+Z` (`Cmd+Z` on macOS) |
 | Quick capture (jot a note) | `Ctrl+Shift+K` |
 | Clean up the manuscript | *(unbound — it rewrites the prose in every scene it touches, so it ships without a gesture)* |
 | New chapter | *(unbound)* |
