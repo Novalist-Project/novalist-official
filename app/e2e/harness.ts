@@ -24,6 +24,14 @@ export type Harness = {
   close(): Promise<void>
 }
 
+/** Quit through the application's save-and-close flow before reopening a profile. */
+export async function quitNovalist(h: Harness): Promise<void> {
+  const closed = Promise.all(h.app.windows().map(page => page.waitForEvent('close', { timeout: 30_000 })))
+  await h.app.evaluate(({ app }) => { setImmediate(() => app.quit()) })
+  await closed
+  await h.close()
+}
+
 export async function closeTestApp(app: ElectronApplication): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined
   try {

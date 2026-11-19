@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { dismissTour, launchApp, seedBook, type Harness } from './harness'
+import { dismissTour, launchApp, quitNovalist, seedBook, type Harness } from './harness'
 import type { PaneNode } from '../src/renderer/src/stores/shellTypes'
 
 /**
@@ -43,15 +43,6 @@ async function splitMainWindow(h: Harness, sceneId: string, chapterGuid: string)
     window.novalistStores.shell.getState().setPaneSizes(root.id, [65, 35])
   })
   await expect.poll(() => shape(h)).toEqual({ direction: 'row', sizes: [65, 35], views: ['write', 'codex'], activeIndex: 1, scenes: [sceneId, null] })
-  // The arrangement is recorded after a short pause.
-  await h.page.waitForTimeout(800)
-}
-
-async function closeNovalist(h: Harness): Promise<void> {
-  const closed = Promise.all(h.app.windows().map((page) => page.waitForEvent('close', { timeout: 30_000 })))
-  await h.app.evaluate(({ app }) => { setImmediate(() => app.quit()) })
-  await closed
-  await h.close().catch(() => {})
 }
 
 async function open(h: Harness, projectPath: string): Promise<void> {
@@ -72,7 +63,7 @@ test('the main window\'s split comes back after a restart, with its views, scene
     await splitMainWindow(h, chapter.scenes[1].id, chapter.guid)
     const projectPath = (await h.page.evaluate(() => window.novalistStores.project.getState().projectPath))!
     const workDir = h.workDir
-    await closeNovalist(h)
+    await quitNovalist(h)
 
     h = await launchApp('nl-main-split-', {}, workDir)
     await open(h, projectPath)
@@ -120,7 +111,7 @@ test('an unsplit main window opens as before, on the Dashboard', async () => {
     await h.page.waitForTimeout(800)
     const projectPath = (await h.page.evaluate(() => window.novalistStores.project.getState().projectPath))!
     const workDir = h.workDir
-    await closeNovalist(h)
+    await quitNovalist(h)
 
     h = await launchApp('nl-main-unsplit-', {}, workDir)
     await open(h, projectPath)
@@ -141,7 +132,7 @@ test('a recorded scene that no longer exists leaves its pane empty and the rest 
     await splitMainWindow(h, chapter.scenes[1].id, chapter.guid)
     const projectPath = (await h.page.evaluate(() => window.novalistStores.project.getState().projectPath))!
     const workDir = h.workDir
-    await closeNovalist(h)
+    await quitNovalist(h)
 
     // Stands in for a scene deleted on another machine or outside Novalist:
     // the recorded id no longer names a scene in the project.

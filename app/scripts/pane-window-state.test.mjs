@@ -40,6 +40,7 @@ function harness({ switchDuring = false, panes: startPanes, extensions = [] } = 
     '../stores/shellStore': { useShellStore: shell },
     '../stores/projectStore': { useProjectStore: project, editorPane: () => ({}) },
     '../stores/manuscriptStore': { useManuscriptStore: manuscript },
+    '../stores/pendingWrites': loadRendererSource('src/stores/pendingWrites.ts'),
     '../stores/extensionsStore': { useExtensionsStore: store({ views: extensions }) }
   }, environment)
   return { state, panes, shell, opened, manuscript }

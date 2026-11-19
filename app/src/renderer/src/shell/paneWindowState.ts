@@ -6,6 +6,7 @@ import { useShellStore, type DockEdge, type PaneNode } from '../stores/shellStor
 import { editorPane, useProjectStore } from '../stores/projectStore'
 import { useManuscriptStore } from '../stores/manuscriptStore'
 import { useExtensionsStore } from '../stores/extensionsStore'
+import { registerPendingWrite } from '../stores/pendingWrites'
 
 /** What this undocked window shows: ids and view names, never text. */
 export function capturePaneWindowContent(): PaneWindowContent {
@@ -186,7 +187,7 @@ export function usePaneWindowSession(): void {
   }, [restoredFor])
 }
 
-/** Calls `send` now and, debounced, whenever the panes, editors or selected run change. */
+/** Coalesce layout changes during a drag and send the latest layout before the workspace closes. */
 function watchPaneContent(send: () => void): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
   const schedule = (): void => {
@@ -194,7 +195,10 @@ function watchPaneContent(send: () => void): () => void {
     timer = setTimeout(send, 250)
   }
   send()
-  const stops = [useShellStore.subscribe(schedule), useProjectStore.subscribe(schedule), useManuscriptStore.subscribe(schedule)]
+  const stops = [
+    useShellStore.subscribe(schedule), useProjectStore.subscribe(schedule), useManuscriptStore.subscribe(schedule),
+    registerPendingWrite(send)
+  ]
   return () => { clearTimeout(timer); for (const stop of stops) stop() }
 }
 
