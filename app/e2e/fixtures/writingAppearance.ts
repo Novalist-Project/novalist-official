@@ -16,6 +16,7 @@ const sources: Record<string, string> = {
   } } }));`,
   dictationStore: `import { create } from 'zustand'; export const useDictation = create(() => ({ recording: false, starting: false }));`,
   DictationBar: `export const DictationBar = () => null;`,
+  UndockButton: `export const PaneUndockButton = () => null;`,
   MotionPresence: `export const MotionPresence = ({ children }) => children; export const useMotionPresent = () => true;`,
   commands: `export const runCommand = command => window.commands.push(command);`,
   commandContext: `export const updateEditorSetting = patch => window.updateAppearanceSettings(patch);`,

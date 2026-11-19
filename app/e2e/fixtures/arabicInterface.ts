@@ -133,6 +133,7 @@ export async function buildArabicInterface(): Promise<string> {
   stubs.set('../stores/projectStore', 'export const editorPane = () => ({ sceneId: null }); export const useProjectStore = select => select({ chapters: [] });')
   stubs.set('../stores/extensionsStore', 'export const useExtensionsStore = select => select({ views: [] });')
   stubs.set('./DesktopViewFrame', 'export const DesktopViewFrame = ({ children }) => children;')
+  stubs.set('./UndockButton', "import { createContext } from 'react'; export const UndockSlot = createContext(null);")
   stubs.set('../stores/editorBridgeStore', 'export const useEditorBridge = { getState: () => ({ editor: null }) };')
   stubs.set('./commands', 'export const runCommand = () => {};')
   stubs.set('./Binder', "import React from 'react'; export const Binder = () => React.createElement('div', { className: 'binder' }, 'Navigation');")
