@@ -355,6 +355,9 @@
 :root,
 :root[data-theme='dark'] {
   --nl-base: 15 18 25; /* raw rgb of Ink Night, for the material layer */
+  /* Which palette the browser paints native parts in: checkboxes, radios,
+     colour wells, date pickers, the select popup. A light theme says light. */
+  --nl-color-scheme: dark;
   --nl-surface-window: var(--nv-ground);
   --nl-surface-sidebar: var(--nv-ground);
   --nl-surface-toolbar: var(--nv-ground);
@@ -424,6 +427,7 @@
    links and controls keep their contrast on every light surface. */
 :root[data-theme='light'] {
   --nl-base: 247 243 234; /* raw rgb of the paper ground, for the material layer */
+  --nl-color-scheme: light;
   --nl-surface-window: #f7f3ea;
   --nl-surface-sidebar: #eee8dc;
   --nl-surface-toolbar: #f3eee4;

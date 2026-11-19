@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { dismissTour, launchApp, resizeWindow, seedBook, selectCodexTab } from './harness'
+import { expectReadableReferenceList } from './referenceListLayout'
 
 test('custom entries keep gallery images after leaving and reopening the entry', async () => {
   const h = await launchApp('nl-custom-images-')
@@ -72,6 +73,43 @@ test('custom type reference controls stay readable and the dialog can be resized
     await h.page.mouse.move(before.x + before.width - 103, before.y + before.height + 35, { steps: 10 })
     await h.page.mouse.up()
     expect((await manager.boundingBox())!.width).toBeLessThan(before.width - 50)
+  } finally {
+    await h.close()
+  }
+})
+
+test('reference lists in the entry details stay readable beside text fields', async () => {
+  const h = await launchApp('nl-custom-ref-layout-')
+  try {
+    await seedBook(h, {})
+    await dismissTour(h.page)
+    const longName = 'Gaspard Péladan of the Northern Reach, Keeper of the Seven Doors and Warden of the Silent Shadows'
+    for (const name of ['Gaspard Péladan', longName, ...Array.from({ length: 10 }, (_, index) => `Member ${index + 1}`)]) {
+      await h.rpc('entities/create', ['character', name])
+    }
+    await h.rpc('entities/saveCustomType', [{ typeKey: 'circle', displayName: 'Circle', fields: [
+      { key: 'Faction', displayName: 'Faction', type: 'String' },
+      { key: 'Members', displayName: 'Members', type: 'EntityRefList', enumOptions: ['character'] },
+      { key: 'Group', displayName: 'Group', type: 'String' }
+    ] }])
+    const entry = await h.rpc<{ id: string }>('entities/create', ['circle', 'Gaspard'])
+    await h.page.evaluate(async id => {
+      window.novalistStores.shell.getState().setMainView('codex')
+      await window.novalistStores.codex.getState().setType('circle')
+      await window.novalistStores.codex.getState().select(id)
+    }, entry.id)
+    const members = h.page.getByRole('group', { name: 'Members', exact: true })
+    await expect(members.getByRole('checkbox')).toHaveCount(12)
+    await members.getByRole('checkbox', { name: 'Gaspard Péladan', exact: true }).check()
+    await resizeWindow(h, 1680, 830)
+    expect(await expectReadableReferenceList(members)).toEqual(expect.arrayContaining(['Gaspard Péladan', 'Member 10']))
+    await resizeWindow(h, 900, 830)
+    await expectReadableReferenceList(members)
+    expect(await members.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true)
+    const last = members.getByRole('checkbox').last()
+    await last.scrollIntoViewIfNeeded()
+    await expect(last).toBeInViewport()
+    await expect.poll(() => members.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
   } finally {
     await h.close()
   }

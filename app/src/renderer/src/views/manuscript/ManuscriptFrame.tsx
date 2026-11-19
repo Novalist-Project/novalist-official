@@ -5,6 +5,7 @@ import { useSettingsStore, type EffectiveSettings } from '../../stores/settingsS
 import { registerPendingWrite } from '../../stores/pendingWrites'
 import { pushWritingTypography } from '../editor/writingTypography'
 import { pushEditorLanguage } from '../editor/editorConfiguration'
+import { pushFrameColorScheme } from '../editor/frameColorScheme'
 import { useWritingZoomStore } from '../../stores/writingZoomStore'
 import { SharedManuscriptEditors, type ManuscriptEditingWindow } from './SharedManuscriptEditors'
 import { rpc } from '../../rpc/client'
@@ -65,6 +66,7 @@ function presentManuscript(win: ManuscriptWindow, eff?: EffectiveSettings): void
     token('--nl-scrollbar-thumb-hover'),
     token('--nl-scrollbar-thumb-active')
   )
+  pushFrameColorScheme(win, token)
   // Manuscript mode is the same prose in a longer strip, so it reads with the
   // writer's own face and leading rather than the page's defaults.
   if (eff) {

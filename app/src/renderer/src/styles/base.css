@@ -13,10 +13,11 @@ body,
 
 /* The browser paints scrollbars, form widgets and the select popup itself, and
    defaults them to the light OS look regardless of our surfaces. color-scheme
-   flips those native parts dark; accent-color tints checkbox / radio / range /
+   paints those native parts in the theme's own palette (--nl-color-scheme,
+   light or dark per theme); accent-color tints checkbox / radio / range /
    progress with the theme accent instead of the OS highlight colour. */
 :root {
-  color-scheme: dark;
+  color-scheme: var(--nl-color-scheme);
   accent-color: var(--nl-accent);
 }
 

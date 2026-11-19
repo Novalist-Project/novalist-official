@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { join } from 'node:path'
 import { dismissTour, launchApp, seedBook, type Harness } from './harness'
+import { expectReadableReferenceList } from './referenceListLayout'
 
 test('shared custom multiline and reference fields save through their focus leases', async () => {
   const apps: Harness[] = []
@@ -43,6 +44,7 @@ test('shared custom multiline and reference fields save through their focus leas
 
     const ownerMembers = owner.page.getByRole('group', { name: 'Members', exact: true })
     const guestMembers = guest.page.getByRole('group', { name: 'Members', exact: true })
+    for (const members of [ownerMembers, guestMembers]) await expectReadableReferenceList(members)
     const ownerFirst = ownerMembers.getByRole('checkbox', { name: 'Mira', exact: true })
     const guestFirst = guestMembers.getByRole('checkbox', { name: 'Mira', exact: true })
     await ownerFirst.focus()

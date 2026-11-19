@@ -4,6 +4,7 @@ import { useNarrationStore } from '../../stores/narrationStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { type NarrationState } from './useNarrationView'
 import { pushEditorLanguage } from '../editor/editorConfiguration'
+import { pushFrameColorScheme } from '../editor/frameColorScheme'
 
 /** The frame's side of the bridge. Same shape as the manuscript frame's. */
 export interface NarrationWindow extends Window {
@@ -57,6 +58,7 @@ function pushNarrationBook({frameRef, readyRef, book, colours, voiceInfersDelive
       token('--nl-scrollbar-thumb-hover'),
       token('--nl-scrollbar-thumb-active')
     )
+    pushFrameColorScheme(frame, token)
     const effective = useSettingsStore.getState().view?.effective
     if (effective) {
       frame.setFont(effective.editorFontFamily, effective.editorFontSize)

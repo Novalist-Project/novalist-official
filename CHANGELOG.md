@@ -50,6 +50,8 @@ could encounter in a previously released version.
 - Editor context menus stay open when automatic caret scrolling is delayed by a busy app, so actions such as Add to Dictionary remain clickable.
 - Writing tools keep focus when opened just after returning to a scene, so delayed editor focus no longer hides the Leave focus button.
 - Collaboration sign-in and relay credentials can be saved on Linux desktops and window managers without built-in keyring detection, such as Hyprland, Sway, niri, COSMIC and LXQt. Novalist now finds the GNOME Keyring, KeePassXC or KWallet service running in your session, and still respects a keyring chosen with `--password-store`. When no keyring is available, the error now says which keyrings to start instead of a generic failure.
+- Reference list fields on a Codex entry are readable again: each entry shows a normal-sized checkbox with its name beside it, instead of an oversized checkbox and a name squeezed into one letter per line.
+- In the Light theme, checkboxes, radio buttons, colour pickers and dropdown lists, including those in the editor, are drawn light to match it: unticked boxes no longer show as solid dark squares. Custom light themes can do the same by setting `--nl-color-scheme` to `light`.
 
 ---
 

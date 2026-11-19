@@ -288,7 +288,9 @@
   margin-bottom: var(--nl-space-sm);
   color: var(--nl-text-dim);
 }
-:root[data-shell='desktop'] .codex-field dd :is(input, select) {
+/* Text boxes and selects only: a checkbox or radio given this width and height
+   grows to fill the row and pushes its label into a one-letter column. */
+:root[data-shell='desktop'] .codex-field dd :is(input:not([type='checkbox'], [type='radio']), select) {
   min-height: var(--nl-view-control-height);
   width: 100%;
 }

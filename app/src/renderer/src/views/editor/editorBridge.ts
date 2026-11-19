@@ -6,6 +6,7 @@
  */
 
 import { applyFocusAppearance } from './focusAppearance'
+import { pushFrameColorScheme } from './frameColorScheme'
 import type { WritingTextMapping } from './writingTextMapping'
 import type { SceneSnapshot, WritingContext, WritingPoint, WritingSelection, WritingTransaction } from './writingTypes'
 
@@ -348,5 +349,6 @@ export function pushEditorTheme(editor: EditorWindow): void {
     token('--nl-scrollbar-thumb-hover'),
     token('--nl-scrollbar-thumb-active')
   )
+  pushFrameColorScheme(editor, token)
   applyFocusAppearance(editor, token)
 }
