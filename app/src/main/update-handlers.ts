@@ -12,7 +12,8 @@ import {
 export function registerUpdateHandlers(
   getMainWindow: () => BrowserWindow | null,
   windowCloses: WindowCloseCoordinator,
-  approvedCloses: Set<number>
+  approvedCloses: Set<number>,
+  closingAll: () => void = () => {}
 ): void {
   const pendingAppUpdates = new Map<
     number,
@@ -49,6 +50,7 @@ export function registerUpdateHandlers(
     try { await launchAppUpdate(pending.update) }
     catch (error) { await prepared.abort(); throw error }
     await prepared.commit()
+    closingAll()
     // This authenticated handoff already awaited the renderer's save and backup
     // preflight while editing was locked. Do not start that work a second time.
     for (const target of BrowserWindow.getAllWindows()) approvedCloses.add(target.id)

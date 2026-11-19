@@ -26,6 +26,7 @@ const sources = {
   sharedMarkdown: `export const openSharedMarkdown = () => { throw Error('Unexpected shared synopsis'); };`,
   MarkdownEditor: `export const MarkdownEditor = () => { throw Error('Unexpected shared editor'); };`,
   EditorFrame: `export const EditorFrame = () => null;`,
+  UndockButton: `export const PaneUndockButton = () => null;`,
   i18n: `export default { t: key => key };`,
   client: `export const rpc = { request: (...args) => window.request(...args) };`
 }

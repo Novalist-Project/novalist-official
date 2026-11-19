@@ -4886,6 +4886,39 @@
   color: var(--nl-text);
 }
 
+/* Open in its own window: one control, the same in a pane header, a view
+   heading and the writing scope bar. */
+.undock-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--nl-space-tightest);
+  border: none;
+  border-radius: var(--nl-radius-sm);
+  background: none;
+  color: var(--nl-text-dim);
+  cursor: pointer;
+}
+
+.undock-button:hover {
+  background: var(--nl-surface-hover);
+  color: var(--nl-text);
+}
+
+/* Desktop view headings size their controls for text buttons; this one keeps
+   its own square shape. */
+:root[data-shell='desktop'] .desktop-view-heading .undock-button {
+  min-height: 0;
+}
+
+.desktop-view-heading-end {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--nl-space-sm);
+}
+
 .pane-picker-scrim {
   position: fixed;
   inset: 0;

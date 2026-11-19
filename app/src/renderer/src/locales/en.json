@@ -3920,7 +3920,8 @@
   },
   "layouts": {
     "title": "Workspace layouts",
-    "hint": "Saves the panels, widths, tabs and view you are in right now.",
+    "hint": "Saves the panels, widths, tabs and view you are in right now, and the windows you opened separately.",
+    "windowsNotApplied": "The layout was not applied because an open window could not be closed. Resolve its changes and apply the layout again.",
     "namePlaceholder": "Name this layout",
     "save": "Save current",
     "empty": "No layouts saved yet.",

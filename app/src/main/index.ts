@@ -9,7 +9,11 @@ import {
   type WebContents
 } from 'electron'
 import { join } from 'node:path'
-import { normalizeDetachedPaneRequest } from '../shared/detachedPane'
+import { detachedPaneQuery, normalizeDetachedPaneRequest, type DetachedPaneRequest } from '../shared/detachedPane'
+import { contentFromRequest, normalizePaneWindowContent, normalizeSavedPaneWindows, paneWindowLeaves, placePaneWindow, type PaneWindowContent, type PaneWindowPlacement, type SavedPaneWindow } from '../shared/paneWindows'
+import { PaneWindowRegistry } from './pane-windows'
+import { PaneWindowSessions, fileSessionStorage, projectSessionKey } from './pane-window-sessions'
+import { PaneWindowReplace } from './pane-window-replace'
 import { readFileSync } from 'node:fs'
 import { BackendProcess } from './backend-process'
 import { DesktopCollaborationServices } from './collaboration/DesktopCollaborationServices'
@@ -98,8 +102,32 @@ let setFocusWindow: ((enabled: boolean) => Promise<void>) | null = null
 const approvedCloses = new Set<number>()
 const closeRequests = new WindowCloseRequests(windowCloses, {
   getMainWindow: () => mainWindow, getWindows: () => BrowserWindow.getAllWindows(), approvedCloses,
-  quit: () => { uiDirectionRestart.quitStarting(); app.quit() }
+  quit: () => { uiDirectionRestart.quitStarting(); app.quit() },
+  closingAll: () => closingAllWindows()
 })
+
+const paneWindowFile = (): string => join(app.getPath('userData'), 'pane-windows.json')
+const paneSessions = new PaneWindowSessions({
+  read: () => fileSessionStorage(paneWindowFile()).read(),
+  write: (text) => fileSessionStorage(paneWindowFile()).write(text)
+})
+let paneSessionTimer: ReturnType<typeof setTimeout> | undefined
+function recordPaneWindowsNow(): void {
+  clearTimeout(paneSessionTimer)
+  paneSessionTimer = undefined
+  paneSessions.record(paneWindows.list())
+}
+/** Moves and resizes arrive in bursts; one write after they settle. */
+function recordPaneWindows(): void {
+  clearTimeout(paneSessionTimer)
+  paneSessionTimer = setTimeout(recordPaneWindowsNow, 300)
+}
+/** The main window or the app is closing every window: remember them as they are. */
+function closingAllWindows(): void {
+  recordPaneWindowsNow()
+  paneSessions.freeze()
+}
+const paneWindows = new PaneWindowRegistry<BrowserWindow>((bounds) => screen.getDisplayMatching(bounds).workArea, recordPaneWindows)
 
 function prepareWindowClose(win: BrowserWindow, quit: boolean): void {
   void closeRequests.request(win, quit).catch(() => {})
@@ -174,7 +202,12 @@ function attachWindowLifecycle(win: BrowserWindow): void {
   win.on('closed', () => {
     release()
     approvedCloses.delete(win.id)
-    if (mainWindow === win) mainWindow = null
+    if (mainWindow === win) {
+      // However the main window went, the undocked windows that outlive it are
+      // what this project had open.
+      closingAllWindows()
+      mainWindow = null
+    }
   })
 }
 
@@ -250,35 +283,99 @@ function showMainWindow(): void {
  * editor produced a window saying "open a project" that had no binder to open
  * one with.
  */
-ipcMain.handle(
-  'novalist:open-pane-window',
-  (
-    _event,
-    input: unknown
-  ) => {
-    const request = normalizeDetachedPaneRequest(input)
-    const win = createAppWindow({ width: 720, height: 900, minWidth: 360, minHeight: 400 })
-    win.once('ready-to-show', () => win.show())
-    attachWindowLifecycle(win)
-    attachSpellingMenu(win, () => spellingMenuLabels)
+function createPaneWindow(request: DetachedPaneRequest, content: PaneWindowContent, saved: PaneWindowPlacement | null = null): void {
+  const fallback = screen.getDisplayMatching(mainWindow && !mainWindow.isDestroyed() ? mainWindow.getBounds() : screen.getPrimaryDisplay().bounds).workArea
+  const placed = saved ? placePaneWindow(saved, screen.getAllDisplays().map((display) => display.workArea), fallback) : null
+  const win = createAppWindow({ ...(placed?.bounds ?? { width: 720, height: 900 }), minWidth: 360, minHeight: 400 })
+  const owner = win.webContents.id
+  paneSessions.thaw()
+  paneWindows.add(owner, win, content, request.restore === true)
+  win.once('ready-to-show', () => {
+    if (win.isDestroyed()) return
+    if (placed?.maximized) win.maximize()
+    win.show()
+  })
+  attachWindowLifecycle(win)
+  attachSpellingMenu(win, () => spellingMenuLabels)
+  win.on('move', recordPaneWindows)
+  win.on('resize', recordPaneWindows)
+  win.on('closed', () => {
+    // Torn down after the main window is gone, it was not closed by hand.
+    if (!mainWindow || mainWindow.isDestroyed()) paneSessions.freeze()
+    paneWindows.remove(owner)
+  })
 
-    const query: Record<string, string> = { pane: request.view }
-    if (request.projectPath) query.project = request.projectPath
-    if (request.chapterGuid) query.chapter = request.chapterGuid
-    if (request.sceneId) query.scene = request.sceneId
-    if (request.bookId) query.book = request.bookId
-    if (request.draftId) query.draft = request.draftId
-    if (request.writingScope) query.writingScope = request.writingScope
-    if (request.selectedSceneIds) query.selectedScenes = JSON.stringify(request.selectedSceneIds)
-
-    if (process.env.ELECTRON_RENDERER_URL) {
-      const search = new URLSearchParams(query).toString()
-      void win.loadURL(`${process.env.ELECTRON_RENDERER_URL}?${search}`)
-    } else {
-      void win.loadFile(join(__dirname, '../renderer/index.html'), { query })
-    }
+  const query = detachedPaneQuery(request)
+  if (process.env.ELECTRON_RENDERER_URL) {
+    const search = new URLSearchParams(query).toString()
+    void win.loadURL(`${process.env.ELECTRON_RENDERER_URL}?${search}`)
+  } else {
+    void win.loadFile(join(__dirname, '../renderer/index.html'), { query })
   }
-)
+}
+
+/** Opens recorded windows. Their content waits in the registry for each to collect. */
+function openSavedPaneWindows(windows: SavedPaneWindow[]): void {
+  for (const saved of windows) {
+    const view = paneWindowLeaves(saved.content.panes)[saved.content.activePane]?.view ?? 'write'
+    createPaneWindow({ view, projectPath: null, chapterGuid: null, sceneId: null, restore: true }, saved.content, saved.placement)
+  }
+}
+
+ipcMain.handle('novalist:open-pane-window', (_event, input: unknown) => {
+  const request = { ...normalizeDetachedPaneRequest(input), restore: false }
+  createPaneWindow(request, contentFromRequest(request))
+})
+ipcMain.on('novalist:pane-window-state', (event, content: unknown) => paneWindows.report(event.sender.id, content))
+ipcMain.handle('novalist:pane-window-content', (event) => paneWindows.take(event.sender.id))
+ipcMain.handle('novalist:list-pane-windows', (event) =>
+  event.sender === mainWindow?.webContents ? paneWindows.list() : [])
+
+/**
+ * A saved layout's windows replace the open ones. The open ones close through
+ * the ordinary save-and-close transaction, so one refusal keeps every window
+ * open and nothing new is opened.
+ */
+const paneWindowReplace = new PaneWindowReplace<BrowserWindow>({
+  open: () => paneWindows.windows(),
+  close: (windows) => closeRequests.requestOwn(windows),
+  closingAll: () => paneSessions.isFrozen,
+  openSaved: openSavedPaneWindows
+})
+ipcMain.handle('novalist:restore-pane-windows', (event, input: unknown) => {
+  const sender = event.sender
+  if (sender !== mainWindow?.webContents) throw new Error('Only the main window applies layouts.')
+  return paneWindowReplace.replace(normalizeSavedPaneWindows(input),
+    () => !!mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents === sender)
+})
+
+/**
+ * The main window's own split, per project. The main window reports it as it
+ * changes (null when it is not split) and asks for it when a project loads.
+ */
+ipcMain.on('novalist:main-panes-state', (event, projectPath: unknown, content: unknown) => {
+  if (event.sender !== mainWindow?.webContents || typeof projectPath !== 'string' || projectPath.length === 0) return
+  paneSessions.recordMain(projectSessionKey(projectPath), content === null ? null : normalizePaneWindowContent(content))
+})
+ipcMain.handle('novalist:main-panes-session', (event, projectPath: unknown) =>
+  event.sender === mainWindow?.webContents && typeof projectPath === 'string' && projectPath.length > 0
+    ? paneSessions.mainFor(projectSessionKey(projectPath)) : null)
+
+/**
+ * The project in the main window has loaded: its remembered undocked windows
+ * come back, unless undocked windows are already open - they followed the
+ * workspace here and now belong to this project instead.
+ */
+ipcMain.handle('novalist:restore-pane-window-session', (event, projectPath: unknown) => {
+  if (event.sender !== mainWindow?.webContents || typeof projectPath !== 'string' || projectPath.length === 0) return 0
+  const remembered = paneSessions.enter(projectSessionKey(projectPath), paneWindows.size > 0)
+  if (paneWindows.size > 0) {
+    recordPaneWindowsNow()
+    return 0
+  }
+  openSavedPaneWindows(remembered)
+  return remembered.length
+})
 
 let spellingMenuLabels = {
   addToDictionary: 'Add to dictionary',
@@ -299,7 +396,7 @@ ipcMain.handle('novalist:set-focus-window', (event, enabled: boolean) => {
   }
 })
 
-registerUpdateHandlers(() => mainWindow, windowCloses, approvedCloses)
+registerUpdateHandlers(() => mainWindow, windowCloses, approvedCloses, closingAllWindows)
 
 // The menu bar's contents come from the renderer's command registry, because
 // that registry is what decides an application-scoped command exists at all. A
@@ -510,6 +607,7 @@ app.on('before-quit', (event) => {
 })
 
 app.on('will-quit', () => {
+  if (paneSessionTimer) recordPaneWindowsNow()
   uiDirectionRestart.willQuit(() => app.relaunch(relaunchOptions(process.env, process.argv)))
   backend.dispose()
   void collaboration.reset()

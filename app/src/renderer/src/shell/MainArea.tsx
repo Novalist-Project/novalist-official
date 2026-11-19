@@ -9,6 +9,7 @@ import {
 } from '../stores/shellStore'
 import { editorPane, useProjectStore } from '../stores/projectStore'
 import { PaneHeader } from './PaneHeader'
+import { UndockSlot } from './UndockButton'
 import { ViewIntro } from './ViewIntro'
 import { DesktopViewFrame } from './DesktopViewFrame'
 import { EditorFrame } from '../views/editor/EditorFrame'
@@ -141,6 +142,7 @@ function PaneTree({
   }
 
   if (node.view === 'sceneNotes') return <div className="pane-leaf" data-view="sceneNotes">{showNotes && <SceneNotesPanel />}</div>
+  const headerShown = headers === 'always' || !only
 
   return (
     <div
@@ -152,14 +154,17 @@ function PaneTree({
       onPointerDownCapture={() => setActivePane(node.id)}
       onFocusCapture={() => setActivePane(node.id)}
     >
-      {(headers === 'always' || !only) && <PaneHeader paneId={node.id} view={node.view} />}
+      {headerShown && <PaneHeader paneId={node.id} view={node.view} />}
       {/* What this view is for, the first time it is opened. Above the content
           rather than over it: a screen you are being told about is a screen you
           should be able to see. */}
       <ViewIntro view={node.view} />
-      <DesktopViewFrame view={node.view}>
-        <MainAreaContent view={node.view} paneId={node.id} />
-      </DesktopViewFrame>
+      {/* Without a pane header, the view's own heading carries the undock button. */}
+      <UndockSlot.Provider value={headerShown || window.novalist.isMobile ? null : { paneId: node.id, view: node.view }}>
+        <DesktopViewFrame view={node.view}>
+          <MainAreaContent view={node.view} paneId={node.id} />
+        </DesktopViewFrame>
+      </UndockSlot.Provider>
       <NotesDockTargets paneId={node.id} />
     </div>
   )

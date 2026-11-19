@@ -6,6 +6,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { DeepLink } from '../main/deeplink'
 import { selfUpdateDisabled } from '../shared/selfUpdatePolicy'
 import { normalizeDetachedPaneRequest, type DetachedPaneRequest } from '../shared/detachedPane'
+import type { PaneWindowContent, SavedPaneWindow } from '../shared/paneWindows'
 
 const material =
   process.argv.find((a) => a.startsWith('--nl-material='))?.split('=')[1] ?? 'opaque'
@@ -210,6 +211,34 @@ contextBridge.exposeInMainWorld('novalist', {
    *  has open and - for the editor - the scene it is showing. */
   openPaneWindow(request: DetachedPaneRequest): Promise<void> {
     return ipcRenderer.invoke('novalist:open-pane-window', normalizeDetachedPaneRequest(request))
+  },
+  /** An undocked window telling main what it shows now. */
+  reportPaneWindowState(content: PaneWindowContent): void {
+    ipcRenderer.send('novalist:pane-window-state', content)
+  },
+  /** The recorded content a restored undocked window opens with, or null. */
+  paneWindowContent(): Promise<PaneWindowContent | null> {
+    return ipcRenderer.invoke('novalist:pane-window-content')
+  },
+  /** The undocked windows open now, for a workspace layout. Main window only. */
+  listPaneWindows(): Promise<SavedPaneWindow[]> {
+    return ipcRenderer.invoke('novalist:list-pane-windows')
+  },
+  /** Closes the open undocked windows and opens these instead. Main window only. */
+  restorePaneWindows(windows: SavedPaneWindow[]): Promise<void> {
+    return ipcRenderer.invoke('novalist:restore-pane-windows', windows)
+  },
+  /** The main window's split as it is now, for this project; null when unsplit. */
+  reportMainPanes(projectPath: string, content: PaneWindowContent | null): void {
+    ipcRenderer.send('novalist:main-panes-state', projectPath, content)
+  },
+  /** The main window's split this project had last time, or null. */
+  mainPaneSession(projectPath: string): Promise<PaneWindowContent | null> {
+    return ipcRenderer.invoke('novalist:main-panes-session', projectPath)
+  },
+  /** Reopens the undocked windows this project had open last time. Main window only. */
+  restorePaneWindowSession(projectPath: string): Promise<number> {
+    return ipcRenderer.invoke('novalist:restore-pane-window-session', projectPath)
   },
 
   registerExtensionRoots(roots: Record<string, string>): Promise<void> {

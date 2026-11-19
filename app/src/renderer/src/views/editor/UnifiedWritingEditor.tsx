@@ -14,6 +14,7 @@ import { PanelRight, FileText, Layers } from 'lucide-react'
 import { useShellStore } from '../../stores/shellStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { updateEditorSetting } from '../../shell/commandContext'
+import { PaneUndockButton } from '../../shell/UndockButton'
 import type { SceneRef } from './writingTypes'
 import './unified-writing.css'
 
@@ -67,6 +68,7 @@ export function UnifiedWritingEditor({ paneId }: { paneId: string }): React.JSX.
         aria-label={t('blockStyle.pageView')} onClick={() => writing.adapter.changePageView?.(!pageView)}><Layers size={17} /></button>
       <button className="writing-toolbar-icon" type="button" title={t('desktopRefresh.sceneDetails')}
         aria-label={t('desktopRefresh.sceneDetails')} onClick={() => useShellStore.getState().toggleInspector()}><PanelRight size={17} className="icon-directional" /></button>
+      <PaneUndockButton />
       {(writing.selectedSceneIds !== null || !isEmptyFilter(filter)) && <>
         <span>{t('unifiedWriting.limitedRun')}</span>
         <button type="button" onClick={() => {

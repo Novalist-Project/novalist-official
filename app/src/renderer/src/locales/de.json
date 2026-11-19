@@ -3928,7 +3928,8 @@
   },
   "layouts": {
     "title": "Arbeitsbereich-Layouts",
-    "hint": "Speichert Panels, Breiten, Reiter und Ansicht so, wie sie gerade sind.",
+    "hint": "Speichert Panels, Breiten, Reiter und Ansicht so, wie sie gerade sind, und die separat geöffneten Fenster.",
+    "windowsNotApplied": "Das Layout wurde nicht angewendet, weil sich ein offenes Fenster nicht schließen ließ. Klären Sie dessen Änderungen und wenden Sie das Layout erneut an.",
     "namePlaceholder": "Layout benennen",
     "save": "Aktuelles speichern",
     "empty": "Noch keine Layouts gespeichert.",

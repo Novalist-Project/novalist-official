@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, Columns2, ExternalLink, Rows2, X, ListChecks } from 'lucide-react'
+import { ChevronDown, Columns2, Rows2, X, ListChecks } from 'lucide-react'
 import { useShellStore, type MainView } from '../stores/shellStore'
 import { HOME_VIEW, MODES, MODE_VIEWS } from './modes'
-import { editorPane, useProjectStore } from '../stores/projectStore'
-import { useManuscriptStore } from '../stores/manuscriptStore'
+import { useProjectStore } from '../stores/projectStore'
 import { MotionPresence } from './MotionPresence'
-import { canClosePane, findPane } from '../stores/shellPanes'
+import { canClosePane } from '../stores/shellPanes'
+import { UndockButton } from './UndockButton'
 
 /**
  * Everything a pane can show, grouped by mode.
@@ -110,14 +110,7 @@ export function PaneHeader({ paneId, view }: { paneId: string; view: MainView })
         >
           <Rows2 size={14} strokeWidth={1.75} />
         </button>
-        <button
-          className="pane-header-button"
-          title={t('panes.popOut')}
-          aria-label={t('panes.popOut')}
-          onClick={() => void popOut(view, paneId)}
-        >
-          <ExternalLink size={14} strokeWidth={1.75} />
-        </button>
+        <UndockButton paneId={paneId} view={view} />
         {/* The last pane in the window stays: a content area with nothing in it
             is not a layout, it is a broken window. */}
         {canClose && (
@@ -157,26 +150,4 @@ export function PaneHeader({ paneId, view }: { paneId: string; view: MainView })
       )}</MotionPresence>
     </div>
   )
-}
-
-/**
- * Tears a pane off into its own window, carrying the project it is looking at
- * and, for the editor, the scene - a window that opened on whichever project
- * happened to be most recent and no scene at all was a window showing "open a
- * project" with nothing able to change it.
- */
-export async function popOut(view: MainView, paneId = useShellStore.getState().activePaneId): Promise<void> {
-  const project = useProjectStore.getState()
-  const pane = findPane(useShellStore.getState().panes, paneId)
-  const editor = editorPane(project, paneId)
-  await window.novalist.openPaneWindow({
-    view,
-    projectPath: project.projectPath,
-    chapterGuid: view === 'write' ? editor.chapterGuid : null,
-    sceneId: view === 'write' ? editor.sceneId : null,
-    bookId: project.activeBookId,
-    draftId: project.activeDraftId,
-    writingScope: pane?.kind === 'leaf' ? pane.writingScope : undefined,
-    selectedSceneIds: useManuscriptStore.getState().composed
-  })
 }

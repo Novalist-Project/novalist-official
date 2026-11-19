@@ -2,6 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { type MainView, useShellStore } from '../stores/shellStore'
+import { PaneUndockButton } from './UndockButton'
 
 const ActionTarget = createContext<HTMLElement | null>(null)
 const headings: Partial<Record<MainView, [string, string]>> = {
@@ -49,7 +50,10 @@ export function DesktopViewFrame({
             <h1>{t(heading[0])}</h1>
             <p>{t(heading[1])}</p>
           </div>
-          <div className="desktop-view-actions" ref={setTarget} />
+          <div className="desktop-view-heading-end">
+            <div className="desktop-view-actions" ref={setTarget} />
+            <PaneUndockButton />
+          </div>
         </header>
       )}
       {children}

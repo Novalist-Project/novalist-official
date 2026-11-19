@@ -152,6 +152,13 @@ interface Window {
     resolveStoredProjectPath?(path: string): Promise<string | null>
     endProjectAccess(path: string): void
     openPaneWindow(request: import('../../shared/detachedPane').DetachedPaneRequest): Promise<void>
+    reportPaneWindowState?(content: import('../../shared/paneWindows').PaneWindowContent): void
+    paneWindowContent?(): Promise<import('../../shared/paneWindows').PaneWindowContent | null>
+    listPaneWindows?(): Promise<import('../../shared/paneWindows').SavedPaneWindow[]>
+    restorePaneWindows?(windows: import('../../shared/paneWindows').SavedPaneWindow[]): Promise<void>
+    restorePaneWindowSession?(projectPath: string): Promise<number>
+    reportMainPanes?(projectPath: string, content: import('../../shared/paneWindows').PaneWindowContent | null): void
+    mainPaneSession?(projectPath: string): Promise<import('../../shared/paneWindows').PaneWindowContent | null>
     registerExtensionRoots(roots: Record<string, string>): Promise<void>
     publishSceneNotesContext?(context: import('../../shared/sceneNotesProtocol').SceneNotesContext | null): void
     sceneNotesWindowState?(): Promise<import('../../shared/sceneNotesProtocol').SceneNotesWindowState>

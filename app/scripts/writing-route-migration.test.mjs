@@ -121,7 +121,7 @@ test('mobile legacy manuscript stays available and scope changes alter layout id
   assert.equal(split.root.children[1].writingScope, 'manuscript')
 })
 
-test('named workspaces restore independent scopes and pane geometry after restart', () => {
+test('named workspaces restore independent scopes and pane geometry after restart', async () => {
   const storage = new Map()
   const globals = { localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     window: { novalist: {} } }
@@ -136,9 +136,11 @@ test('named workspaces restore independent scopes and pane geometry after restar
   const dependencies = { zustand: { create }, '../shell/modes': { modeOf: () => 'write' },
     './shellPanes': paneTools, './writingLayoutMigration': migration(),
     './shellStore': { useShellStore: shell, BINDER_MIN: 180, BINDER_MAX: 480, INSPECTOR_MIN: 200, INSPECTOR_MAX: 480,
-      savePanelSize() {}, withSavedPanes: (_ids, proceed) => proceed(), setPaneViewIn: paneTools.setPaneViewIn } }
+      savePanelSize() {}, withSavedPanes: (_ids, proceed) => proceed(), setPaneViewIn: paneTools.setPaneViewIn },
+    '../../../shared/paneWindows': loadRendererSource('../shared/paneWindows.ts'),
+    './hostBridgeStore': { useHostBridgeStore: { getState: () => ({ pushToast() {} }) } }, '../i18n': { default: { t: key => key } } }
   const first = loadRendererSource('src/stores/layoutStore.ts', dependencies, globals)
-  first.useLayoutStore.getState().save('Two scopes')
+  await first.useLayoutStore.getState().save('Two scopes')
   shell.setState({ panes: { kind: 'leaf', id: 'only', view: 'codex' }, activePaneId: 'only', mainView: 'codex' })
   const reopened = loadRendererSource('src/stores/layoutStore.ts', dependencies, globals)
   reopened.useLayoutStore.getState().apply('Two scopes')

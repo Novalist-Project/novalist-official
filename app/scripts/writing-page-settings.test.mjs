@@ -42,6 +42,7 @@ const bundle = await build({ stdin: { resolveDir: directory, loader: 'tsx', cont
       i18n: `export default { t: key => key };`,
       SettingsInputs: `export const SettingInput = () => null; export const SettingNumber = () => null;`,
       EditorFrame: `export const EditorFrame = () => null;`,
+      UndockButton: `export const PaneUndockButton = () => null;`,
       WritingCanvasChrome: `export const WritingCanvasChrome = () => null;`,
       useUnifiedWritingDocument: `export const useUnifiedWritingDocument = pane => window.models[pane];`,
       useWritingCanvas: `export const useWritingCanvasStyles = () => false;`,
