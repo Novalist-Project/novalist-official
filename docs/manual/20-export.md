@@ -28,6 +28,7 @@ On **iPhone**, open **Write** and tap **Export** above the chapter list. On **iP
 - **Author** — author name printed on the title page and in document metadata.
 - **Title page** — toggle. Include or omit a generated title page.
 - **Include the book cover** — toggle, shown for **EPUB**, **PDF** and any extension format that can hold a cover. On by default. The image is the book's cover, falling back to the project cover — the same one the Dashboard and the welcome screen show. Turn it off for a submission manuscript, which should not carry one.
+- **Cover description** — shown under the cover toggle for **EPUB** when the book has a cover. Describe what the cover shows for a reader who cannot see it. The e-book uses it as the cover's text alternative, and its accessibility summary says whether the cover is described (see [Accessibility](39-accessibility.md#accessible-epub-metadata)). It is saved with the book when you leave the field, and cleared when you replace the cover, because a description of the old picture is wrong for the new one. Left empty, the cover is named by the book's title.
 - **Chapter selection** — a checkbox per chapter, with **Select All** and **Select None** buttons and a running "*n* of *m*" count. All chapters are included by default; untick chapters to exclude them. This list is hidden only for the **Codex** formats, which export entries rather than chapters. Extension-contributed formats honour it too, so sending somebody the first three chapters is not limited to the built-in formats.
 - **Codex entry selection** — for the two **Codex** formats the chapter list is replaced by a checkbox per codex entry, grouped by Characters, Locations, Items, and Lore and sorted by name inside each group, exactly as the exported file is ordered. Everything is ticked by default; untick the entries you do not want in the file — for example, to send a collaborator only the characters they are writing.
   - A **search box** above the list filters entries by name as you type.
@@ -87,7 +88,7 @@ These are **typed**, not chapters. That matters because each kind is set differe
 Each page has:
 
 - **Heading** — leave it empty to use the convention for that kind. Kinds that traditionally carry no heading at all (half title, title page, copyright, dedication, epigraph) print none; the rest print their name. Type your own heading to override either way.
-- **Content** — the page's text.
+- **Content** — the page's text, exactly as you type it: an ampersand or an angle bracket is printed as that character. A blank line starts a new paragraph; a single line break stays a line break inside the paragraph, which is what an imprint or a credits list needs.
 - **Include in exports** — off keeps the page but leaves it out of the file, for something written but not ready.
 - **List in the table of contents** — pre-set per kind. A foreword or prologue is listed; a copyright page is not.
 - **Put this after the story** — moves a page between front and back matter. Epilogue, afterword, acknowledgments, about the author and also-by start at the back; everything else starts at the front.
@@ -96,7 +97,24 @@ Use the arrows to order pages within the front or back group.
 
 A page with no content is skipped even when included — an empty page is not a book page yet.
 
-In **EPUB**, each page becomes its own file with the correct `epub:type` (`dedication`, `copyright-page`, `epigraph`, and so on), so readers and stylesheets can set a copyright page differently from an epigraph without guessing. In **DOCX**, each starts on a new page.
+In **EPUB**, each page becomes its own file with the correct `epub:type` (`dedication`, `copyright-page`, `epigraph`, and so on) and, where one exists, the matching ARIA role (`doc-prologue`, `doc-afterword`, ...), so readers and stylesheets can set a copyright page differently from an epigraph without guessing. The page's `body` keeps the classes `matter` and `matter-<kind>` (for example `matter-copyright`) for your own export-layout CSS. A page marked **List in the table of contents** is listed in both of the EPUB's contents files, the EPUB 3 navigation and the older NCX that some readers still use. In **DOCX**, each starts on a new page.
+
+## Line breaks inside a paragraph
+
+In the editor, **Enter** starts a new paragraph and **Shift+Enter** a new line inside the same paragraph. Each export writes that line break in its own form:
+
+| Format | A line break inside a paragraph becomes |
+| --- | --- |
+| **EPUB** | `<br/>` inside the paragraph |
+| **DOCX** | A Word line break (what Shift+Enter makes in Word) |
+| **PDF** | A new line of the same paragraph, without paragraph spacing or indent |
+| **Markdown** | A backslash at the end of the line (CommonMark's hard line break), continued inside a quote or list item; verse is an indented block that keeps its lines as they are |
+| **LaTeX** | `\\`, which inside `verse` is the line separator the environment expects |
+| **Normseiten** | A new line on the grid, with no blank line before it |
+| **Final Draft** | A newline inside the action paragraph's text |
+| **Audiobook** | A pause, the same as between paragraphs |
+
+A heading is a single line in Markdown and on the Normseiten grid, so a line break inside a heading becomes a space there. Front and back matter pages follow the same rules, with a single line break in their text box standing for Shift+Enter.
 
 ## Sending a manuscript to an editor and getting it back
 
@@ -108,6 +126,8 @@ Export **DOCX**, send it to whoever is reading for you, and read their marked-up
 
 - **Comments** — with the author, what they wrote, and the passage they marked. **Add comments to the open scene** attaches them to whichever scene you have open, with the editor's name kept at the front of each note.
 - **Tracked changes** — every insertion and deletion, with who made it. These are shown for you to work through, **not applied automatically**. Novalist did not lay out the file your editor edited, so silently rewriting your prose from it would risk damage that is hard to notice and harder to undo. Read the list, make the edits you agree with.
+
+A line break inside a paragraph, yours or one the editor typed with Shift+Enter in Word, keeps its two lines apart in both lists rather than running them together.
 
 A file that is not a Word document, or has no review marks in it, reports "nothing found" rather than an error.
 

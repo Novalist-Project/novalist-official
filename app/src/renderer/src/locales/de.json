@@ -2015,6 +2015,8 @@
     "exportAction": "Exportieren",
     "selectedOfTotal": "{{selected}} von {{total}} ausgewählt",
     "includeCover": "Buchcover einbinden",
+    "coverAltText": "Coverbeschreibung",
+    "coverAltTextHint": "Was das Cover zeigt, für Leserinnen und Leser, die es nicht sehen können. Das E-Book verwendet sie als Textalternative des Covers und gibt in seiner Barrierefreiheitszusammenfassung an, ob das Cover beschrieben ist.",
     "content": "Was exportiert wird",
     "contentManuscript": "Das Manuskript",
     "contentCodex": "Das Kompendium (Weltenbibel)",

@@ -169,6 +169,10 @@ Pasting a heading from a web page or a Word document keeps its structure in the 
 
 The [Exposé](32-expose.md) view has its own Title / Section / Body buttons, because that document type's structure depends on them differently.
 
+### New paragraph or new line
+
+**Enter** starts a new paragraph; **Shift+Enter** starts a new line inside the same paragraph, for an address, a sign, a letter's closing or a line of verse. Every export keeps the difference: the new line stays a line break in the same paragraph, without the paragraph spacing or first-line indent a new paragraph gets, and is never flattened into a space. A heading is the one exception: a heading is a single line in Markdown and on the Normseiten grid, so a line break inside one becomes a space there. See [Export](20-export.md#line-breaks-inside-a-paragraph) for how each format writes it.
+
 ## The editor context menu
 
 Right-click inside the text. The menu is about **the thing under the pointer**, which is what a right-click menu is for:

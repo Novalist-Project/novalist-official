@@ -56,7 +56,7 @@ public partial class ExportService
             bodyHtml.AppendLine("    <section epub:type=\"footnotes\" class=\"footnotes\">");
             for (var n = 1; n <= footnoteDefs.Count; n++)
                 bodyHtml.AppendLine(
-                    $"      <aside epub:type=\"footnote\" id=\"fn{n}\"><p>"
+                    $"      <aside epub:type=\"footnote\" role=\"doc-footnote\" id=\"fn{n}\"><p>"
                     + $"<a href=\"#fnref{n}\">{n}.</a> {EscapeXml(footnoteDefs[n - 1])}</p></aside>");
             bodyHtml.AppendLine("    </section>");
         }
@@ -64,14 +64,14 @@ public partial class ExportService
         return $"""
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE html>
-            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="{EscapeXml(options.Language)}">
+            {XhtmlRoot(options)}
             <head>
               <meta charset="UTF-8"/>
               <title>{EscapeXml(chapter.Title)}</title>
               <link rel="stylesheet" type="text/css" href="styles.css"/>
             </head>
             <body>
-              <section epub:type="chapter">
+              <section epub:type="chapter" role="doc-chapter">
                 {ChapterHeadingXhtml(chapter, preset, number)}
             {bodyHtml}
               </section>
@@ -91,12 +91,17 @@ public partial class ExportService
         var sb = new StringBuilder();
         foreach (var seg in segments)
         {
+            if (seg.LineBreak)
+            {
+                sb.Append("<br/>");
+                continue;
+            }
             if (seg.FootnoteText != null)
             {
                 if (footnoteDefs == null) continue;
                 footnoteDefs.Add(seg.FootnoteText);
                 var n = footnoteDefs.Count;
-                sb.Append($"<a class=\"noteref\" epub:type=\"noteref\" id=\"fnref{n}\" href=\"#fn{n}\"><sup>{n}</sup></a>");
+                sb.Append($"<a class=\"noteref\" epub:type=\"noteref\" role=\"doc-noteref\" id=\"fnref{n}\" href=\"#fn{n}\"><sup>{n}</sup></a>");
                 continue;
             }
             var text = EscapeXml(seg.Text);
@@ -117,29 +122,57 @@ public partial class ExportService
     /// One matter page as XHTML. The kind rides along as an <c>epub:type</c> and
     /// a class, which is what lets a reader or a stylesheet set a copyright page
     /// differently from an epigraph without guessing from the heading.
+    ///
+    /// The class stays on <c>body</c>, where stylesheets have always found it.
+    /// The <c>epub:type</c> sits on a section inside it, because the matching
+    /// DPUB-ARIA role is not allowed on <c>body</c> and a term without its role
+    /// is what accessibility checkers flag.
     /// </summary>
-    private static string GenerateMatterXhtml(MatterExportContent matter)
+    private static string GenerateMatterXhtml(MatterExportContent matter, ExportOptions options)
     {
         var cssClass = "matter matter-" + matter.Kind.ToLowerInvariant();
         var heading = string.IsNullOrEmpty(matter.Title)
             ? string.Empty
             : $"<h1 class=\"matter-title\">{EscapeXml(matter.Title)}</h1>";
+        var epubType = EpubTypeFor(matter.Kind);
+        var role = DpubRoleFor(epubType) is { } dpub ? $" role=\"{dpub}\"" : string.Empty;
+
+        // Through the same parser and escaper as the prose, so the page is
+        // well-formed whatever characters the writer typed.
+        var paragraphs = ParseHtmlToBlocks(matter.HtmlContent)
+            .Where(b => b.ImagePath == null)
+            .Select(b => $"    <p>{SegmentsToXhtml(b.Segments)}</p>");
 
         return $"""
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE html>
-            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+            {XhtmlRoot(options)}
             <head>
+              <meta charset="UTF-8"/>
               <title>{EscapeXml(string.IsNullOrEmpty(matter.Title) ? matter.Kind : matter.Title)}</title>
               <link rel="stylesheet" type="text/css" href="styles.css"/>
             </head>
-            <body class="{cssClass}" epub:type="{EpubTypeFor(matter.Kind)}">
-              {heading}
-              {matter.HtmlContent}
+            <body class="{cssClass}">
+              <section epub:type="{epubType}"{role}>
+                {heading}
+            {string.Join("\n", paragraphs)}
+              </section>
             </body>
             </html>
             """;
     }
+
+    /// <summary>
+    /// The DPUB-ARIA role that goes with a structural-semantics term, or null
+    /// for the terms that have none (copyright page, title pages, the generic
+    /// front matter). Ace by DAISY reports a mapped term that lacks its role.
+    /// </summary>
+    private static string? DpubRoleFor(string epubType) => epubType switch
+    {
+        "dedication" or "epigraph" or "toc" or "foreword" or "preface" or "prologue"
+            or "epilogue" or "afterword" or "acknowledgments" => "doc-" + epubType,
+        _ => null
+    };
 
     /// <summary>
     /// EPUB structural semantics vocabulary name for a matter kind. Kinds with
@@ -182,7 +215,7 @@ public partial class ExportService
         return $"""
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE html>
-            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="{EscapeXml(options.Language)}">
+            {XhtmlRoot(options)}
             <head>
               <meta charset="UTF-8"/>
               <title>{EscapeXml(options.Title)}</title>

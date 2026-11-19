@@ -36,8 +36,10 @@ public enum BookMatterPlacement
 }
 
 /// <summary>
-/// One front- or back-matter page. Content is the same HTML the scene editor
-/// produces, so these are written with the tools the writer already knows.
+/// One front- or back-matter page. Content is the text the writer typed into
+/// the page's plain text box; export turns it into paragraphs. A page whose
+/// content opens with block markup is read as HTML instead, which is how
+/// pages written as markup before that conversion existed keep exporting.
 /// </summary>
 public class BookMatterElement
 {

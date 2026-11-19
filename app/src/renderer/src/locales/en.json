@@ -2420,6 +2420,8 @@
     "exportAction": "Export",
     "selectedOfTotal": "{{selected}} of {{total}} selected",
     "includeCover": "Include the book cover",
+    "coverAltText": "Cover description",
+    "coverAltTextHint": "What the cover shows, for readers who cannot see it. The e-book uses it as the cover's text alternative and says in its accessibility summary whether the cover is described.",
     "content": "What to export",
     "contentManuscript": "The manuscript",
     "contentCodex": "The codex (world bible)",

@@ -70,7 +70,11 @@ Before an export runs, the [Export view](20-export.md#what-this-export-will-cont
 
 ## Accessible EPUB metadata
 
-An exported EPUB declares what it actually contains: `schema:accessMode`, `accessModeSufficient`, `accessibilityFeature`, `accessibilityHazard` and a plain-language `accessibilitySummary`. A book with no images says it is text only; a book with images says its pictures carry the descriptions the author wrote.
+An exported EPUB declares what it actually contains: `schema:accessMode`, `accessModeSufficient`, `accessibilityFeature`, `accessibilityHazard` and a plain-language `accessibilitySummary`. A book with no images says it has none to describe. For pictures in the prose, the summary says whether all of them, only some, or none carry a description, counting only the pictures that actually end up in the file (the chapters you selected, and only images whose file could be found). The cover counts as a picture too: a book with a cover is declared visual, and the summary says whether the cover has a description. Alternative text is claimed only when every picture in the file, cover included, has one. Write the description under **Include the book cover** in the [Export view](20-export.md#the-export-form).
+
+The summary is written in the book's language for English, German, Chinese and Arabic, the languages Novalist itself ships in. A book in any other language gets the English summary, marked as English.
+
+Every page of the EPUB states the book's language, and the book's structural parts (chapters, the table of contents, a prologue or afterword, footnotes) carry the matching ARIA roles that screen readers and checkers such as DAISY Ace look for.
 
 The declaration is built from the file rather than asserted, because claiming alt text that is not there is worse than claiming nothing — and under the European Accessibility Act it is a claim a distributor relies on.
 

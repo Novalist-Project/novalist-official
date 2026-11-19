@@ -290,6 +290,47 @@ public class BookMatterTests : IDisposable
         Assert.Contains("pageBreakBefore", ReadEntry(docx, "word/document.xml"));
     }
 
+    // ── Text typed into the matter page's text box ──
+
+    [Theory]
+    [InlineData("A & B", "<p>A &amp; B</p>")]
+    [InlineData("a < b > c", "<p>a &lt; b &gt; c</p>")]
+    [InlineData("Eins\nZwei", "<p>Eins<br/>Zwei</p>")]
+    [InlineData("Eins  \r\n\r\n \n\nZwei\rDrei", "<p>Eins</p><p>Zwei<br/>Drei</p>")]
+    [InlineData("\n\n Über \n\n", "<p>Über</p>")]
+    [InlineData("   ", "")]
+    [InlineData("", "")]
+    public void MatterContentToHtml_TreatsTypedTextAsText(string typed, string expected) =>
+        Assert.Equal(expected, ExportProse.MatterContentToHtml(typed));
+
+    [Theory]
+    [InlineData("<p>For R.</p>")]
+    [InlineData("  <P class=\"x\">A</P>")]
+    [InlineData("<figure><img src=\"device.png\" alt=\"\" /></figure>")]
+    [InlineData("<h2>Heading</h2><p>Body</p>")]
+    public void MatterContentToHtml_KeepsContentWrittenAsMarkup(string html) =>
+        Assert.Equal(html, ExportProse.MatterContentToHtml(html));
+
+    [Fact]
+    public async Task Docx_TypedMatterTextKeepsItsCharactersParagraphsAndLineBreaks()
+    {
+        var docx = await ExportAsync(
+            [Element(BookMatterKind.Copyright, "Bilder & Grafiken: a < b\nZeile zwei\n\nAbsatz zwei")],
+            ExportFormat.Docx, ".docx");
+
+        var document = System.Xml.Linq.XDocument.Parse(ReadEntry(docx, "word/document.xml"));
+        System.Xml.Linq.XNamespace w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+        var paragraphs = document.Descendants(w + "p")
+            .Where(p => p.Descendants(w + "t").Any(t => t.Value is "Absatz zwei" || t.Value.StartsWith("Bilder")))
+            .ToList();
+
+        Assert.Equal(2, paragraphs.Count);
+        Assert.Equal(
+            ["Bilder & Grafiken: a < b", "Zeile zwei"],
+            paragraphs[0].Descendants(w + "t").Select(t => t.Value));
+        Assert.Single(paragraphs[0].Descendants(w + "br"));
+    }
+
     [Fact]
     public async Task Epub_NoMatter_ProducesTheSameBookAsBefore()
     {

@@ -55,7 +55,8 @@ public partial class ExportService
         // Matter pages get their own files, each carrying its kind as an
         // epub:type so a reader can style a copyright page as one.
         for (var i = 0; i < options.Matter.Count; i++)
-            await WriteEntryAsync(zip, $"OEBPS/matter-{i + 1}.xhtml", GenerateMatterXhtml(options.Matter[i]));
+            await WriteEntryAsync(
+                zip, $"OEBPS/matter-{i + 1}.xhtml", GenerateMatterXhtml(options.Matter[i], options));
 
         // Images used in the prose. Copied once each however many chapters
         // reference them, and named by position rather than by file name so a
@@ -76,6 +77,27 @@ public partial class ExportService
         await WriteEntryAsync(
             zip, "OEBPS/content.opf",
             GenerateContentOpf(chapters, options, bookId, modifiedDate, images));
+    }
+
+    /// <summary>
+    /// The language every part of the package declares: the OPF's
+    /// <c>dc:language</c> and <c>xml:lang</c>, and each document's
+    /// <c>lang</c>. One value for all of them, so a reading system never sees a
+    /// book that disagrees with itself about what language it is in.
+    /// </summary>
+    private static string EpubLanguage(ExportOptions options) =>
+        string.IsNullOrWhiteSpace(options.Language) ? "en" : options.Language.Trim();
+
+    /// <summary>
+    /// The opening <c>html</c> tag of every XHTML document in the book. Both
+    /// <c>lang</c> and <c>xml:lang</c>, with the same value: the first is what
+    /// HTML-based checkers such as Ace read, the second what XML tooling reads.
+    /// </summary>
+    private static string XhtmlRoot(ExportOptions options)
+    {
+        var language = EscapeXml(EpubLanguage(options));
+        return "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\""
+            + $" lang=\"{language}\" xml:lang=\"{language}\">";
     }
 
     /// <summary>
@@ -118,14 +140,25 @@ public partial class ExportService
     /// img so the image scales to the reader's screen without distortion, which
     /// is the shape Kindle and Apple Books both expect.
     /// </summary>
+    /// <remarks>
+    /// The picture is named the way inline SVG is named for assistive
+    /// technology: <c>role="img"</c> on the svg, labelled by its own
+    /// <c>title</c>. That name is the writer's description when there is one
+    /// and the book's title (or, failing that, the word for a cover) when
+    /// there is not, so the cover is never an unnamed image; the accessibility summary is what says whether it was
+    /// actually described.
+    /// </remarks>
     private static string GenerateCoverXhtml(ExportOptions options, string extension)
     {
+        var name = new[] { options.CoverAltText, options.Title }
+            .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n))?.Trim()
+            ?? EpubAccessibilitySummary.CoverWord(options.Language);
         // $$ raw string: interpolation holes are {{...}}, so the CSS braces below
         // stay literal instead of being parsed as format specifiers.
         return $$"""
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE html>
-            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+            {{XhtmlRoot(options)}}
             <head>
               <title>{{EscapeXml(options.Title)}}</title>
               <style type="text/css">
@@ -135,7 +168,9 @@ public partial class ExportService
             </head>
             <body epub:type="cover">
               <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-                   version="1.1" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid meet">
+                   version="1.1" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid meet"
+                   role="img" aria-labelledby="cover-description">
+                <title id="cover-description">{{EscapeXml(name)}}</title>
                 <image width="100" height="160" xlink:href="cover{{extension}}"/>
               </svg>
             </body>

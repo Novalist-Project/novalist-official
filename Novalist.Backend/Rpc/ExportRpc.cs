@@ -200,6 +200,9 @@ public sealed class ExportRpc
                 // The cover the Dashboard already collects, and the book's
                 // writing language rather than a hardcoded "en".
                 CoverImagePath = includeCover ? _workspace.ActiveCoverAbsolutePath() ?? string.Empty : string.Empty,
+                // The description written under the cover in the Export view,
+                // saved with the book, so it travels with the cover it describes.
+                CoverAltText = _workspace.Projects.ActiveBook?.CoverAltText ?? string.Empty,
                 Language = ExportService.NormalizeLanguageTag(
                     _workspace.Settings.Effective.AutoReplacementLanguage),
                 // Contents shape and the publisher's Word template. All three
