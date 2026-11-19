@@ -108,15 +108,19 @@ test('the Focus surround shows through the editor frame in the Light theme', asy
     await expect.poll(async () => {
       const frameBox = (await frame.boundingBox())!
       const paperBox = (await paper.boundingBox())!
-      const gap = paperBox.x - frameBox.x
-      if (gap < 8) return `paper sits ${gap}px from the frame edge`
-      const strip = await h.page.screenshot({ clip: {
-        x: frameBox.x + 2, y: frameBox.y + 40, width: Math.floor(gap / 2), height: 80
+      // The left margin contains scene controls. Sample the clear space between
+      // the paper's right edge and the frame scrollbar, beside the visible page.
+      const paperRight = paperBox.x + paperBox.width
+      const gap = frameBox.x + frameBox.width - paperRight
+      const top = Math.max(frameBox.y, paperBox.y)
+      const bottom = Math.min(frameBox.y + frameBox.height, paperBox.y + paperBox.height)
+      if (gap < 8 || bottom - top < 4) return Infinity
+      const sample = await h.page.screenshot({ clip: {
+        x: Math.floor(paperRight + gap / 2) - 2, y: Math.floor((top + bottom) / 2) - 2, width: 4, height: 4
       } })
-      const pixels = await pngPixels(h.page, strip, 0)
-      const dark = pixels.filter((p) => distance(p, surround) > distance(p, [17, 17, 17])).length
-      return `${dark} of ${pixels.length} pixels beside the paper are dark`
-    }, { timeout: 15_000 }).toMatch(/^0 of \d+ pixels/)
+      const pixels = await pngPixels(h.page, sample, 0)
+      return Math.max(...pixels.map(pixel => distance(pixel, surround)))
+    }, { message: 'The frame should show the configured Focus surround beside the paper', timeout: 15_000 }).toBeLessThan(32)
   } finally {
     await h.close()
   }
