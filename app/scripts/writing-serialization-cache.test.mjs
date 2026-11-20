@@ -44,6 +44,32 @@ test('unchanged global captures avoid cloning scene DOM but synchronous text and
   assert.deepEqual(cleaned, [])
 })
 
+test('continuous input in a shared scene reaches the writing host while typing continues', t => {
+  const { w, snapshots } = runtime(t)
+  w.updateWritingScene({ ...snapshots[0], shared: { sessionId: 'session', itemId: 'item', state: '' } })
+  w.NovalistEditorState.dismissedGrammarIssues = new Set()
+  w.refreshSceneBreakClasses = w.scheduleTypewriterRecenter = w.requestReadability = w.requestGrammarCheck = () => {}
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  w.setTimeout = setTimeout
+  w.clearTimeout = clearTimeout
+  const reports = []
+  w.sendMessage = message => {
+    if (message.type === 'writingChanged') reports.push(...w.captureWritingChanges().map(change => change.changes[0].afterHtml))
+  }
+  const root = w.getWritingSceneRoot('one')
+  const text = root.querySelector('p').firstChild
+  w.NovalistEditorState.editor.addEventListener('input', w.handleEditorInput)
+  for (const character of 'abcd') {
+    text.appendData(character)
+    root.dispatchEvent(new w.InputEvent('input', { bubbles: true, inputType: 'insertText', data: character }))
+    t.mock.timers.tick(25)
+  }
+  assert.deepEqual(reports, [
+    '<p data-author="writer">one &amp; proseab</p>',
+    '<p data-author="writer">one &amp; proseabcd</p>'
+  ])
+})
+
 test('remote rendering, presentation wrappers, and undo projections never return stale cached prose', t => {
   const { w, snapshots } = runtime(t)
   const remote = { ...snapshots[0], html: '<p><b>Remote</b> prose</p>', revision: 1 }

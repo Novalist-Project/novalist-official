@@ -11,6 +11,7 @@ declare global {
       write(update: string): Promise<void>
       ordinaryWrites: number
       annotationIds?: string[]
+      sceneDirty?: boolean
     }
   }
 }
@@ -253,6 +254,7 @@ test('typing in a shared scene saves one merged update per typing window', async
         const args = params as unknown[] | undefined
         if (method === 'collaboration/readScene') return await read() as T
         if (method === 'collaboration/writeScene') return await write(String(args?.[2])) as T
+        if (method === 'scenes/setEditing') window.sharedPersistenceTest.sceneDirty = args?.[2] === true
         const result = await original<T>(method, params)
         if (method === 'scenes/readPassive' && args?.[3] === chapter.scenes[0].id) {
           return { ...result, html: '<p>The story.</p>', shared: { sessionId: 'session-one', itemId: 'item-one', state: initial } }
@@ -270,18 +272,29 @@ test('typing in a shared scene saves one merged update per typing window', async
     await h.page.evaluate(() => window.novalistStores.project.getState().flushPendingSave())
     savedProse.length = 0
 
-    await h.page.keyboard.type(' It')
-    await h.page.clock.runFor(125)
-    await h.page.keyboard.type(' rained')
-    await h.page.clock.runFor(124)
+    const typeContinuously = async (text: string): Promise<void> => {
+      for (const character of text) {
+        await h.page.keyboard.type(character)
+        await h.page.clock.runFor(20)
+      }
+    }
+    const sceneDirty = () => h.page.evaluate(() => window.sharedPersistenceTest.sceneDirty)
+    await typeContinuously(' It')
+    await expect.poll(sceneDirty).toBe(true)
+    await typeContinuously(' rained')
     expect(savedProse).toEqual([])
-    await h.page.clock.runFor(1)
-    await expect.poll(() => savedProse).toEqual(['The story. It rained\n'])
-    await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().isDirty)).toBe(false)
 
-    await h.page.keyboard.type(' all night.')
+    await typeContinuously(' all ni')
+    await expect.poll(() => savedProse).toHaveLength(1)
+    const [duringTyping] = savedProse
+    expect(duringTyping).toMatch(/^The story\. It rained[^\n]*\n$/)
+    expect('The story. It rained all ni').toContain(duringTyping.slice(0, -1))
+
+    await typeContinuously('ght.')
+    await h.page.clock.runFor(50)
     await h.page.clock.runFor(250)
-    await expect.poll(() => savedProse).toEqual(['The story. It rained\n', 'The story. It rained all night.\n'])
+    await expect.poll(() => savedProse).toEqual([duringTyping, 'The story. It rained all night.\n'])
+    await expect.poll(sceneDirty).toBe(false)
   } finally {
     await h.close()
     document.destroy()

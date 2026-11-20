@@ -211,11 +211,16 @@ function handleEditorInput(event) {
         }, 600);
     }
 
-    if (window.NovalistEditorState.contentChangeTimer) clearTimeout(window.NovalistEditorState.contentChangeTimer);
-    window.NovalistEditorState.contentChangeTimer = setTimeout(() => {
-        window.NovalistEditorState.contentChangeTimer = null;
-        reportContentChanged();
-    }, 50);
+    const state = window.NovalistEditorState;
+    const scene = window.NovalistWritingDocument?.scenes?.get(inputRoot.dataset.writingScene);
+    // Keep the first report due so shared saves can progress during continuous typing.
+    if (!state.contentChangeTimer || !scene?.snapshot.shared) {
+        clearTimeout(state.contentChangeTimer);
+        state.contentChangeTimer = setTimeout(() => {
+            state.contentChangeTimer = null;
+            reportContentChanged();
+        }, 50);
+    }
 
     // Request grammar check after typing pause
     window.requestGrammarCheck();
