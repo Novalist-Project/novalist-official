@@ -26,10 +26,9 @@ function harness({ switchDuring = false, panes: startPanes, extensions = [] } = 
   const project = store({
     workspaceEpoch: 1, projectPath: 'A',
     chapters: [{ guid: 'c', scenes: [{ id: 's1' }, { id: 's2' }] }],
-    openSceneIn: async (paneId, chapterGuid, sceneId) => {
+    openSceneIn: async (paneId, chapterGuid, sceneId, mode) => {
       opened.push(sceneId)
-      // The real action makes the scene's pane the active one.
-      shell.getState().setActivePane(paneId)
+      if (mode !== 'background') shell.getState().setActivePane(paneId)
       // Another window switched the shared workspace while this scene opened.
       if (switchDuring) project.setState({ workspaceEpoch: 2, projectPath: 'B' })
     }
@@ -76,7 +75,10 @@ test('a workspace switch while a restored window opens its scenes stops it there
 
 test('the main window gets back its split: sizes, views, scopes, scene and active pane', async () => {
   const h = harness()
-  await h.state.restoreMainPanes(recorded)
+  const restoring = h.state.restoreMainPanes(recorded)
+  const loading = h.shell.getState()
+  assert.equal(loading.activePaneId, loading.panes.children[1].id, 'the Codex stays active while its neighbouring scene loads')
+  await restoring
   const { panes, activePaneId, mainView } = h.shell.getState()
   assert.equal(panes.kind, 'split')
   assert.equal(panes.direction, 'row')

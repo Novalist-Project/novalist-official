@@ -37,7 +37,7 @@ export const createProjectEditorActions: ProjectSlice<'getWritingRegistry' | 'op
     await get().openSceneIn(targetEditorPane(), chapterGuid, sceneId)
   },
 
-  openSceneIn: (paneId, chapterGuid, sceneId) => runSceneContext(async () => {
+  openSceneIn: (paneId, chapterGuid, sceneId, mode = 'foreground') => runSceneContext(async () => {
     cancelBackgroundReads()
     const epoch = get().workspaceEpoch
     const shell = useShellStore.getState()
@@ -45,14 +45,11 @@ export const createProjectEditorActions: ProjectSlice<'getWritingRegistry' | 'op
     // all come through here, so a screen holding unsaved edits gets its say
     // before the editor takes the pane.
     if (Object.values(shell.unsavedGuards).some((g) => g.isDirty())) {
-      shell.guardLeave(() => void get().openSceneIn(paneId, chapterGuid, sceneId))
+      shell.guardLeave(() => void get().openSceneIn(paneId, chapterGuid, sceneId, mode))
       return
     }
-    // The pane holds the editor from here on, and it is the one the writer is
-    // now in: opening a scene somewhere the caret is not is how the old split
-    // pane lost people.
     shell.setPaneView(paneId, 'write')
-    shell.setActivePane(paneId)
+    if (mode === 'foreground') shell.setActivePane(paneId)
     capturePendingWrites()
     if (window.novalist.isMobile) await get().flushPane(paneId)
     if (get().sceneConflict || get().editors[paneId]?.isDirty) return
@@ -88,16 +85,17 @@ export const createProjectEditorActions: ProjectSlice<'getWritingRegistry' | 'op
           isDirty: false
         }
       }
+      const activeEditorPaneId = mode === 'foreground' ? paneId : s.activeEditorPaneId ?? paneId
       return {
         editors,
-        activeEditorPaneId: paneId,
+        activeEditorPaneId,
         sceneHashes: { ...s.sceneHashes, [sceneId]: content.hash },
-        ...mirror(editors, paneId)
+        ...mirror(editors, activeEditorPaneId)
       }
     })
     if (window.novalist.isMobile) useShellStore.getState().setMobileTab('manuscript')
     else if (registry && ref) await revealWritingSceneInPane(paneId, ref, registry.context,
-      () => current() && get().activeEditorPaneId === paneId && get().editors[paneId]?.sceneId === sceneId)
+      () => current() && (mode === 'background' || get().activeEditorPaneId === paneId) && get().editors[paneId]?.sceneId === sceneId)
   }),
 
   openSceneInSplit: async (chapterGuid, sceneId) => {

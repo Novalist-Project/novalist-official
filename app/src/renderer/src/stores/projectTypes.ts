@@ -176,7 +176,7 @@ export interface ProjectState {
   closeProject(): Promise<void>
   openScene(chapterGuid: string, sceneId: string): Promise<void>
   /** Opens a scene in one named pane, turning that pane into an editor. */
-  openSceneIn(paneId: string, chapterGuid: string, sceneId: string): Promise<void>
+  openSceneIn(paneId: string, chapterGuid: string, sceneId: string, mode?: 'foreground' | 'background'): Promise<void>
   /** Splits the content area and opens the scene in the pane that appears. */
   openSceneInSplit(chapterGuid: string, sceneId: string): Promise<void>
   closeTab(paneId: string, sceneId: string): Promise<void>

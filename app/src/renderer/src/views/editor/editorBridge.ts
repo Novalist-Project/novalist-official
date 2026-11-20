@@ -158,7 +158,7 @@ export interface EditorWindow extends Window {
   captureWritingChanges(): WritingTransaction[]
   getWritingSelection(retainChromeBookmark?: boolean): WritingSelection | null
   restoreWritingSelection(selection: WritingSelection | null): void
-  revealWritingPoint(point: WritingPoint, viewportOffset?: number): void
+  revealWritingPoint(point: WritingPoint, viewportOffset?: number, placeCaret?: boolean): void
   writingDomPoint(point: WritingPoint): { node: Node; offset: number } | null
   getWritingSceneRoot(sceneId?: string): HTMLElement | null
   serializeWritingScene(sceneId: string): string

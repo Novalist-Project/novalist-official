@@ -44,6 +44,14 @@ test('focus-only restoration still prevents an unsolicited browser scroll jump',
   assert.equal(w.NovalistEditorState.isFocusing, false)
 })
 
+test('restoring a background scene scrolls to its prose without installing a caret', t => {
+  const { w, wrapper, finishFocus } = fixture(t)
+  w.revealWritingPoint({ sceneId: 'last', offset: 0, affinity: 'after' }, undefined, false)
+  finishFocus()
+  assert.equal(wrapper.scrollTop, 800)
+  assert.equal(w.getSelection().rangeCount, 0)
+})
+
 test('the newest explicit reveal owns scroll while an older focus callback remains queued', t => {
   const { w, wrapper, finishFocus } = fixture(t)
   w.revealWritingPoint({ sceneId: 'first', offset: 0, affinity: 'after' })

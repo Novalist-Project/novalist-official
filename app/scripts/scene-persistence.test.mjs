@@ -46,7 +46,7 @@ function fixture(isMobile = false) {
     '../rpc/client': { rpc }, './projectStore': helpers, './sceneWriteQueue': queue,
     '../collaboration/sharedEditors': { flushSharedEditor() { throw new Error('This fixture only opens local scenes') } }
   }, { setTimeout: (fn) => (timers.push(fn), timers.length), clearTimeout() {} })
-  const shell = { unsavedGuards: {}, setPaneView() {}, setActivePane() {}, panes: {}, mobileTab: 'dashboard', setMobileTab(tab) { this.mobileTab = tab } }
+  const shell = { unsavedGuards: {}, setPaneView() {}, activePaneId: 'a', setActivePane(id) { this.activePaneId = id }, panes: {}, mobileTab: 'dashboard', setMobileTab(tab) { this.mobileTab = tab } }
   const storage = new Map()
   const journal = loadRendererSource('src/mobile/recoveryJournal.ts', {}, { localStorage: {
     getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key)
@@ -122,6 +122,21 @@ test('desktop navigation reads retained canonical prose and preserves pane scope
   assert.equal(refs.length, 1)
   assert.equal(f.store.getState().editors.a.sceneId, 'next')
   await owner.close()
+})
+
+test('restoring a background editor leaves the active pane and its editor context in place', async () => {
+  const f = fixture()
+  const owner = new writingDocuments.WritingDocumentRegistry({
+    context: { workspaceId: '/synthetic/project', workspaceEpoch: 1, bookId: 'book', draftId: 'draft' },
+    isCurrent: () => true, transport: { read: async () => ({ html: 'Restored prose', hash: 'restored' }) }
+  })
+  try {
+    f.store.setState({ getWritingRegistry: () => owner, chapters: [{ guid: 'c', scenes: [{ id: 'next' }] }] })
+    await f.store.getState().openSceneIn('b', 'c', 'next', 'background')
+    assert.equal(f.store.getState().editors.b.html, 'Restored prose')
+    assert.equal(f.shell.activePaneId, 'a')
+    assert.equal(f.store.getState().activeEditorPaneId, 'a')
+  } finally { await owner.close() }
 })
 
 for (const scope of ['scene', 'chapter', 'manuscript']) {

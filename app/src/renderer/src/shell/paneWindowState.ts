@@ -48,20 +48,17 @@ export async function openRestoredScenes(content: PaneWindowContent, panes: Pane
     const now = useProjectStore.getState()
     return now.workspaceEpoch !== joined.workspaceEpoch || now.projectPath !== joined.projectPath
   }
-  // Opening a scene makes its pane the active one; the recorded active pane
-  // is put back afterwards.
-  const activePaneId = useShellStore.getState().activePaneId
   const leaves = paneLeaves(panes)
   for (const scene of content.scenes) {
     if (switched()) return
     const leaf = leaves[scene.pane]
     const project = useProjectStore.getState()
     const chapter = project.chapters.find((item) => item.guid === scene.chapterGuid)
-    if (!leaf || !findPane(useShellStore.getState().panes, leaf.id) || !chapter?.scenes.some((item) => item.id === scene.sceneId)) continue
-    await project.openSceneIn(leaf.id, chapter.guid, scene.sceneId)
+    const shell = useShellStore.getState()
+    if (!leaf || !findPane(shell.panes, leaf.id) || !chapter?.scenes.some((item) => item.id === scene.sceneId)) continue
+    await project.openSceneIn(leaf.id, chapter.guid, scene.sceneId, leaf.id === shell.activePaneId ? 'foreground' : 'background')
   }
   if (switched()) return
-  if (useShellStore.getState().activePaneId !== activePaneId) useShellStore.getState().setActivePane(activePaneId)
   const present = new Set(useProjectStore.getState().chapters.flatMap((item) => item.scenes.map((scene) => scene.id)))
   useManuscriptStore.setState({ composed: content.selectedSceneIds?.filter((id) => present.has(id)) ?? null })
 }

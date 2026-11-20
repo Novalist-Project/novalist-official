@@ -116,14 +116,14 @@ function cancelWritingReveal() {
     stopWritingReveal = null;
 }
 
-function revealWritingPoint(point, viewportOffset) {
+function revealWritingPoint(point, viewportOffset, placeCaret = true) {
     cancelWritingReveal();
     const root = window.getWritingSceneRoot(point.sceneId);
     if (!root) return;
     const visibility = root.style.contentVisibility;
     root.style.contentVisibility = 'visible';
     window.repaginatePageView?.(root);
-    restoreWritingSelection({ anchor: point, focus: point });
+    if (placeCaret) restoreWritingSelection({ anchor: point, focus: point });
     const viewport = window.NovalistEditorState.wrapper;
     const align = () => {
         if (!root.isConnected) { cancelWritingReveal(); return; }

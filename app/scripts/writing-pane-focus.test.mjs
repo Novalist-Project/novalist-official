@@ -10,7 +10,7 @@ const sources = {
   WritingSharedPresence: `export class WritingSharedPresence { update() {} close() {} }`,
   projectStore: `const state = { editors: {}, setContextScene() {} }; export const editorPane = (state, id) => state.editors[id] ?? {};
     export const useProjectStore = { getState: () => state, setState: update => Object.assign(state, update(state)) };`,
-  shellStore: `export const useShellStore = { getState: () => ({ setActivePane() {} }) };`,
+  shellStore: `export const useShellStore = { getState: () => ({ activePaneId: 'pane', setActivePane() {} }) };`,
   writingHistory: `export const acceptSharedWritingTransaction = () => {}; export const acceptWritingTransaction = () => {}; export const getWritingHistory = () => {};`,
   sharedWritingSessions: `export const createSharedWritingBinding = () => {}; export const getSharedWritingSession = () => {};`,
   SharedWritingHistory: `export class SharedWritingHistory {}`,
@@ -130,13 +130,13 @@ test('caret navigation within a manuscript activates its new scene from the prev
   assert.deepEqual(f.errors, [])
 })
 
-function projectionFixture(selection, retainedSelection = selection) {
+function projectionFixture(selection, retainedSelection = selection, paneId = 'pane') {
   const calls = [], errors = []
   const roots = new Map(['first', 'second'].map((id, index) => [id, { isConnected: true,
     getBoundingClientRect: () => ({ top: index ? 300 : -500, bottom: index ? 900 : -100 }) }]))
   const refs = ['first', 'second'].map(sceneId => ({ bookId: 'book', draftId: 'draft', chapterGuid: 'chapter', sceneId }))
   let domProjection = refs
-  const controller = new WritingPaneController('pane', { ready() {}, selection() {}, projection() {}, structure() {}, error: reason => errors.push(reason) })
+  const controller = new WritingPaneController(paneId, { ready() {}, selection() {}, projection() {}, structure() {}, error: reason => errors.push(reason) })
   controller.registry = { context: { workspaceEpoch: 1 } }
   controller.references = new Map(refs.map(ref => [ref.sceneId, ref]))
   controller.ready({ configureWritingTextMapping() {}, setWritingContext() {}, setWritingStructureEnabled() {},
@@ -149,7 +149,8 @@ function projectionFixture(selection, retainedSelection = selection) {
     captureWritingChanges: () => [], getWritingSelection: retainChromeBookmark => retainChromeBookmark ? retainedSelection : selection,
     writingServiceState: () => null,
     setWritingProjection(next) { domProjection = next }, focusEditor: () => calls.push('focus'),
-    revealWritingPoint: (point, viewportOffset) => calls.push({ reveal: point, ...(viewportOffset !== undefined ? { viewportOffset } : {}) }),
+    revealWritingPoint: (point, viewportOffset, placeCaret = true) =>
+      calls.push({ reveal: point, ...(viewportOffset !== undefined ? { viewportOffset } : {}), ...(!placeCaret ? { placeCaret } : {}) }),
     restoreWritingSelection: range => calls.push({ selection: range }) })
   controller.project(refs)
   return { controller, refs, calls, errors, roots, domProjection: refs => { domProjection = refs } }
@@ -164,6 +165,14 @@ test('Focus scene waits for projection application and preserves the caret range
   f.controller.message({ type: 'writingProjectionApplied' })
   assert.deepEqual(f.calls, ['focus', { reveal: selection.focus }, { selection }])
   assert.deepEqual(f.errors, [])
+})
+
+test('a background pane reveals its scene without taking the selection from the active pane', () => {
+  const f = projectionFixture(null, null, 'background')
+  f.controller.message({ type: 'writingProjectionApplied' })
+  const point = { sceneId: 'second', offset: 0, affinity: 'after' }
+  assert.equal(f.controller.reveal(f.refs[1], { anchor: point, focus: point }), true)
+  assert.deepEqual(f.calls, [{ reveal: point, placeCaret: false }])
 })
 
 test('Focus scene starts at the target beginning when the caret belongs to another scene', () => {

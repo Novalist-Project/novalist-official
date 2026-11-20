@@ -206,8 +206,9 @@ export class WritingPaneController implements WritingFrameAdapter {
           snapshot.bookId === ref.bookId && snapshot.draftId === ref.draftId) ||
         !this.editor.getWritingSceneRoot(ref.sceneId)?.isConnected) return false
     this.capture()
-    this.editor.revealWritingPoint(selection.focus, viewportOffset)
-    this.editor.restoreWritingSelection(selection)
+    const active = useShellStore.getState().activePaneId === this.paneId
+    this.editor.revealWritingPoint(selection.focus, viewportOffset, active)
+    if (active) this.editor.restoreWritingSelection(selection)
     this.focusRequest = null
     return true
   }
