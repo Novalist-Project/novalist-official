@@ -191,21 +191,22 @@ test('switching into a shared scene loads its own annotations before saving a ne
   }
 })
 
-test('typing in a shared scene merges keystrokes into a few saved updates', async () => {
+test('typing in a shared scene saves one merged update per typing window', async () => {
   const h = await launchApp('nl-shared-editor-batching-')
   const document = new Y.Doc()
   const prose = document.getText('prose')
   prose.insert(0, 'The story.')
   prose.insert(prose.length, '\n', { block: JSON.stringify([{ id: 'paragraph', tag: 'p', attributes: {} }]) })
-  let writes = 0
+  const savedProse: string[] = []
   try {
+    await h.page.clock.install()
     const book = await seedBook(h, { Chapter: ['Shared'] })
     const chapter = book.chapters[0]
     await dismissTour(h.page)
     await h.page.exposeFunction('readSharedTestScene', () => Buffer.from(Y.encodeStateAsUpdate(document)).toString('base64'))
     await h.page.exposeFunction('writeSharedTestScene', (update: string) => {
-      writes++
       Y.applyUpdate(document, new Uint8Array(Buffer.from(update, 'base64')))
+      savedProse.push(prose.toString())
     })
     await h.page.evaluate(({ chapter, initial }) => {
       const original = window.novalistRpc.request.bind(window.novalistRpc)
@@ -227,13 +228,23 @@ test('typing in a shared scene merges keystrokes into a few saved updates', asyn
     const editor = h.page.frameLocator('.editor-frame').locator('#editor')
     await expect(editor).toHaveText('The story.')
     await editor.click()
+    await h.page.clock.pauseAt(Date.now() + 60_000)
     await h.page.keyboard.press('Control+End')
-    const typed = ' It rained all night.'
-    await h.page.keyboard.type(typed, { delay: 25 })
-    await expect.poll(() => prose.toString()).toBe(`The story.${typed}\n`)
-    // About half a second of typing at 25 ms per key: each 250 ms window saves one merged update.
-    expect(writes).toBeGreaterThan(0)
-    expect(writes).toBeLessThanOrEqual(4)
+    await h.page.evaluate(() => window.novalistStores.project.getState().flushPendingSave())
+    savedProse.length = 0
+
+    await h.page.keyboard.type(' It')
+    await h.page.clock.runFor(125)
+    await h.page.keyboard.type(' rained')
+    await h.page.clock.runFor(124)
+    expect(savedProse).toEqual([])
+    await h.page.clock.runFor(1)
+    await expect.poll(() => savedProse).toEqual(['The story. It rained\n'])
+    await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().isDirty)).toBe(false)
+
+    await h.page.keyboard.type(' all night.')
+    await h.page.clock.runFor(250)
+    await expect.poll(() => savedProse).toEqual(['The story. It rained\n', 'The story. It rained all night.\n'])
   } finally {
     await h.close()
     document.destroy()
