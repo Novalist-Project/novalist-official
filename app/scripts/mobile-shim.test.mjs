@@ -37,6 +37,8 @@ function fixture(t, userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Ma
     postMessage() {},
     addEventListener: (name, callback) => listeners.set(name, callback)
   }
+  const document = { visibilityState: 'visible' }
+  let checkHealth
   const module = loadRendererSource('src/mobile/shim.ts', {
     i18next: { default: { t: (key) => key } },
     './projectImages': { installProjectImageLoader() {}, clearProjectImageCache() {} },
@@ -45,14 +47,18 @@ function fixture(t, userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Ma
     './collaboration': { installCollaborationHost: () => () => {} },
     './backend': { MobileBackend }
   }, {
-    window, document: { visibilityState: 'visible' }, navigator: { userAgent }, MessageChannel: Channel,
+    window, document, navigator: { userAgent }, MessageChannel: Channel,
     TextDecoder, Uint8Array, btoa, atob,
-    setInterval: () => 1, clearInterval() {}, console: { error() {} }
+    setInterval: callback => { checkHealth = callback; return 1 }, clearInterval() {}, console: { error() {} }
   })
   t.after(() => listeners.get('pagehide')())
   const reply = (request, result = null) => window.__novalistHostResult(encode({ id: request.id, ok: true, result }))
   const hostRequests = () => sent.filter((message) => message.startsWith('{')).map((message) => JSON.parse(message))
-  return { window, channels, sent, reply, hostRequests, initialize: module.initializeMobileHost }
+  function setVisibility(state) {
+    document.visibilityState = state
+    listeners.get('visibilitychange')?.()
+  }
+  return { window, channels, sent, reply, hostRequests, checkHealth, setVisibility, initialize: module.initializeMobileHost }
 }
 
 test('Android host identifies itself before renderer startup', async (t) => {
@@ -125,6 +131,55 @@ test('bridge failure rejects pending and future calls and pauses the renderer', 
   assert.equal(f.sent.length, count)
   assert.equal(f.window.__novalistRecv(btoa('late')), 'unavailable')
   assert.equal(f.channels[0].port2.messages[0].novalistControl, 'backend-recovery-failed')
+})
+
+test('a folder picker can cover the editor while a bridge health reply is pending', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const f = fixture(t)
+  f.window.novalist.requestBackendPort()
+  f.reply(f.hostRequests()[0])
+  f.checkHealth()
+  const picker = f.window.novalist.pickFolder('Novalist').catch(error => error)
+  f.setVisibility('hidden')
+  t.mock.timers.tick(60_000)
+  await turn()
+  f.setVisibility('visible')
+  const [ready, health, folder] = f.hostRequests()
+  assert.deepEqual([ready.method, health.method, folder.method], ['bridgeReady', 'bridgeHealth', 'pickFolder'])
+  f.reply(health)
+  f.reply(folder, 'selected')
+  assert.equal(await picker, 'selected')
+  assert.deepEqual(f.channels[0].port2.messages, [])
+  assert.equal(f.hostRequests().length, 3)
+})
+
+test('an unanswered health check still stops the connection after returning to the foreground', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const f = fixture(t)
+  f.window.novalist.requestBackendPort()
+  f.reply(f.hostRequests()[0])
+  f.checkHealth()
+  f.setVisibility('hidden')
+  t.mock.timers.tick(60_000)
+  await turn()
+  assert.deepEqual(f.channels[0].port2.messages, [])
+  f.setVisibility('visible')
+  t.mock.timers.tick(30_000)
+  await turn()
+  assert.equal(f.channels[0].port2.messages[0]?.novalistControl, 'backend-recovery-failed')
+})
+
+test('an abandoned folder picker retains its own deadline while covering the editor', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const f = fixture(t)
+  let outcome
+  const picker = f.window.novalist.pickFolder('Novalist').then(value => { outcome = value }, error => { outcome = error.message })
+  f.setVisibility('hidden')
+  t.mock.timers.tick(600_000)
+  await turn()
+  assert.match(outcome ?? '', /did not acknowledge pickFolder/)
+  await picker
+  assert.equal(f.hostRequests().length, 1)
 })
 
 test('native sharing allows a human decision but keeps a bounded deadline', async (t) => {

@@ -2,7 +2,7 @@ using Novalist.Core.Services;
 
 namespace Novalist.Mobile.Services;
 
-public sealed class AndroidProjectAccess : MobileProjectAccess
+public sealed class AndroidProjectAccess : MobileProjectAccess, Backend.IDocumentProjectLibrary
 {
     private readonly DocumentTreeMounts _mounts = new(Path.Combine(FileSystem.AppDataDirectory, "Documents"), uri => new AndroidDocumentTree(uri));
     private readonly DocumentTreeFileService _files;
@@ -16,6 +16,8 @@ public sealed class AndroidProjectAccess : MobileProjectAccess
     }
 
     public bool IsExternalPath(string path) => _mounts.IsExternalPath(path);
+
+    public Task<string?> ReadCoverAsync(string path) => _files.ReadDocumentPreviewAsync(path, AndroidCoverPreview.Read);
 
     public override string? Resolve(string storedPath)
     {

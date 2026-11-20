@@ -103,6 +103,72 @@ public sealed class WorkspaceTests : IDisposable
     }
 
     [Fact]
+    public async Task AndroidLibraryReadsEachPresentManifestAndProviderPreviewWithoutLoadingOriginalCovers()
+    {
+        var files = Substitute.For<IFileService>();
+        files.CombinePath(Arg.Any<string[]>()).Returns(call => Path.Combine(call.Arg<string[]>()));
+        files.ExistsAsync(Arg.Any<string>()).Returns(true);
+        files.ReadTextAsync(Arg.Any<string>()).Returns("""
+            {"name":"Novel","books":[{"id":"volume","name":"Book","folderName":"book","coverImage":"cover.png"}]}
+            """);
+        var resolver = Substitute.For<IStoredPathResolver, IDocumentProjectLibrary>();
+        var library = (IDocumentProjectLibrary)resolver;
+        const string preview = "data:image/webp;base64,AQID";
+        library.IsExternalPath(Arg.Any<string>()).Returns(true);
+        library.ReadCoverAsync(Arg.Any<string>()).Returns(preview);
+        using var workspace = new Workspace(Path.Combine(_root, "settings"), resolver, files);
+        for (var i = 0; i < 6; i++) workspace.Settings.AddRecentProject("Saved name", Path.Combine(_root, $"book-{i}"));
+        await workspace.Settings.SaveAsync();
+
+        var recents = await workspace.GetRecentProjectsAsync();
+
+        Assert.Equal(6, recents.Length);
+        Assert.All(recents, recent => Assert.Equal(preview, Assert.Single(recent.Books!).Cover));
+        await files.Received(6).ReadTextAsync(Arg.Any<string>());
+        await library.Received(6).ReadCoverAsync(Arg.Any<string>());
+        await files.DidNotReceive().ReadBytesAsync(Arg.Any<string>());
+        await files.DidNotReceive().ExistsAsync(Arg.Any<string>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AndroidLibraryKeepsTheBookWhenTheProviderCannotDecodeItsCover(bool revoked)
+    {
+        var library = Substitute.For<IDocumentProjectLibrary>();
+        library.ReadCoverAsync(Arg.Any<string>()).Returns(Task.FromException<string?>(
+            revoked ? new UnauthorizedAccessException() : new IOException("Unreadable cover")));
+        using var workspace = CreateWorkspace();
+        const string manifest = """
+            {"name":"Illustrated","books":[{"id":"first","name":"Book One","folderName":"first","coverImage":"cover.png"}]}
+            """;
+        var entry = await workspace.ReadLibrarySummaryAsync(new RecentProjectDto("Saved", _root, null), manifest, library);
+        var book = Assert.Single(entry.Books!);
+        Assert.Equal("Book One", book.Name);
+        Assert.Null(book.Cover);
+    }
+
+    [Fact]
+    public async Task AndroidLibraryKeepsAnUnreadableManifestWithoutReadingItTwice()
+    {
+        var provider = Substitute.For<IStoredPathResolver, IDocumentProjectLibrary>();
+        ((IDocumentProjectLibrary)provider).IsExternalPath(Arg.Any<string>()).Returns(true);
+        var files = Substitute.For<IFileService>();
+        files.CombinePath(Arg.Any<string[]>()).Returns(call => Path.Combine(call.Arg<string[]>()));
+        files.ExistsAsync(Arg.Any<string>()).Returns(true);
+        files.ReadTextAsync(Arg.Any<string>()).Returns(Task.FromException<string>(new IOException("Offline")));
+        using var workspace = new Workspace(Path.Combine(_root, "settings"), provider, files);
+        workspace.Settings.AddRecentProject("Saved name", _root);
+        await workspace.Settings.SaveAsync();
+
+        var project = Assert.Single(await workspace.GetRecentProjectsAsync());
+
+        Assert.Equal("Saved name", project.Name);
+        Assert.Null(project.Books);
+        await files.Received(1).ReadTextAsync(Arg.Any<string>());
+    }
+
+    [Fact]
     public async Task Recents_MenuRefreshOmitsLibraryPayloads()
     {
         using var workspace = await CreateOpenProjectAsync();

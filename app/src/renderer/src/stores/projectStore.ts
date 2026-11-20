@@ -41,6 +41,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   drafts: [],
   chapters: [],
   recentProjects: [],
+  libraryStatus: 'loading',
   openChapterGuid: null,
   openSceneId: null,
   setContextScene: (chapterGuid, sceneId) => {

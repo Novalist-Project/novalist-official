@@ -291,6 +291,8 @@
     "notes": "梗概与笔记"
   },
   "bookshelf": {
+    "loading": "正在加载书架…",
+    "loadFailed": "无法加载书架。",
     "closingProject": "正在关闭项目…",
     "earlier": "向前移动 {{name}}",
     "later": "向后移动 {{name}}",

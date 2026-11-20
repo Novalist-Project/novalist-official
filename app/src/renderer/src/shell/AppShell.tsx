@@ -147,11 +147,12 @@ export function AppShell(): React.JSX.Element {
         {isMobile ? (
           isLoaded ? (
             !workspaceSuspended ? <MobileShell /> : null
-          ) : !workspaceSuspended && !closingProject ? (
+          ) : !closingProject && (!workspaceSuspended || window.novalist.platform === 'android') ? (
             /* No project yet. The desktop shell's welcome content, in the
                mobile frame - the rail and the panes it sits beside are not
                phone controls. */
             <MobileWelcome
+              suspended={workspaceSuspended}
               recentProjects={recentProjects}
               onOpenPath={(path, bookId) => openProject(path, bookId)}
             />

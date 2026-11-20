@@ -291,6 +291,8 @@
     "notes": "Synopsis and notes"
   },
   "bookshelf": {
+    "loading": "Loading library…",
+    "loadFailed": "The library could not be loaded.",
     "closingProject": "Closing project…",
     "earlier": "Move {{name}} earlier",
     "later": "Move {{name}} later",

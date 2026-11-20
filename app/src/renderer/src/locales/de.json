@@ -291,6 +291,8 @@
     "notes": "Zusammenfassung und Notizen"
   },
   "bookshelf": {
+    "loading": "Bibliothek wird geladen…",
+    "loadFailed": "Die Bibliothek konnte nicht geladen werden.",
     "closingProject": "Projekt wird geschlossen…",
     "earlier": "{{name}} nach vorne verschieben",
     "later": "{{name}} nach hinten verschieben",

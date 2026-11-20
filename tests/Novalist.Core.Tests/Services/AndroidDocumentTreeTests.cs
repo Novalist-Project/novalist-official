@@ -8,6 +8,25 @@ namespace Novalist.Core.Tests.Services;
 
 public sealed partial class AndroidDocumentTreeTests
 {
+    [Fact]
+    public async Task CoverPreviewReceivesTheCurrentGrantedDocumentWithoutReadingOriginalBytes()
+    {
+        using var fixture = new DocumentFixture();
+        var file = fixture.Provider.Combine("cover.png");
+        var path = Path.Combine(fixture.Mount, "cover.png");
+        fixture.Tree.ReadOverride = _ => throw new InvalidOperationException("Preview loaded original bytes.");
+        File.WriteAllBytes(file, [1]);
+        using (fixture.Files.UseFreshReads())
+            Assert.Equal(file, await fixture.Files.ReadDocumentPreviewAsync(path, document => document.Id));
+
+        File.WriteAllBytes(file, [1, 2, 3]);
+        using (fixture.Files.UseFreshReads())
+            Assert.Equal("3", await fixture.Files.ReadDocumentPreviewAsync(path, document => document.Size.ToString()));
+
+        fixture.Tree.Granted = false;
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.Files.ReadDocumentPreviewAsync(path, _ => "stale"));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
