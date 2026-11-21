@@ -87,7 +87,8 @@ export function ExportTitleFields({ model }: { model: ExportModel }): React.JSX.
   const { t } = useTranslation()
   const {
     title, setTitle, author, setAuthor, isData, includeTitlePage, setIncludeTitlePage, format,
-    extFormats, includeCover, setIncludeCover, forReaders, setForReaders
+    extFormats, includeCover, setIncludeCover, forReaders, setForReaders, hasCover,
+    coverAltText, setCoverAltText, saveCoverAltText
   } = model
   return (
     <>
@@ -140,6 +141,25 @@ export function ExportTitleFields({ model }: { model: ExportModel }): React.JSX.
           />
           {t('export.includeCover')}
         </label>
+      )}
+
+      {/* The EPUB is the format that names its cover for a reader who cannot
+        see it, so the description is asked for there, under the cover. */}
+      {format === 'Epub' && includeCover && hasCover && (
+        <div className="export-field">
+          <label className="inspector-label" htmlFor="export-cover-alt">
+            {t('export.coverAltText')}
+          </label>
+          <textarea
+            id="export-cover-alt"
+            className="dialog-input"
+            rows={2}
+            value={coverAltText}
+            onChange={(e) => setCoverAltText(e.target.value)}
+            onBlur={() => void saveCoverAltText().catch(() => {})}
+          />
+          <span className="export-preset-desc">{t('export.coverAltTextHint')}</span>
+        </div>
       )}
 
       {/* Only on the formats that carry the world out of the app. On a

@@ -29,7 +29,7 @@ public partial class ExportService
             : $"<w:r><w:rPr><w:smallCaps/></w:rPr><w:t xml:space=\"preserve\">{EscapeXml(opener.LeadIn)}</w:t></w:r>";
 
         return initial
-            + $"<w:p>{lead}<w:r><w:t xml:space=\"preserve\">{EscapeXml(opener.Tail)}</w:t></w:r></w:p>";
+            + $"<w:p>{lead}{DocxTextWithBreaks(opener.Tail)}</w:p>";
     }
 
     private static string DocxImageContentType(string extension) => extension switch

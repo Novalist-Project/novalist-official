@@ -4,7 +4,7 @@ using Novalist.Core.Models;
 
 namespace Novalist.Core.Services;
 
-public sealed class WordHistoryService : IWordHistoryService
+public sealed partial class WordHistoryService : IWordHistoryService
 {
     private readonly IFileService _fileService;
     private readonly IProjectService _projectService;

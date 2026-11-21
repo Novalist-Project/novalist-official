@@ -276,6 +276,14 @@ const novalist: Window['novalist'] = {
     notifyHost('endProjectAccess', [path])
   },
   openPaneWindow: () => Promise.resolve(),
+  // No undocked windows on mobile: nothing to report, list or restore.
+  reportPaneWindowState: () => {},
+  paneWindowContent: async () => null,
+  listPaneWindows: async () => [],
+  restorePaneWindows: () => Promise.resolve(),
+  restorePaneWindowSession: async () => 0,
+  reportMainPanes: () => {},
+  mainPaneSession: async () => null,
   registerExtensionRoots: () => Promise.resolve(),
   // Store-delivered updates: no self-update on mobile.
   checkAppUpdate: async () => null,

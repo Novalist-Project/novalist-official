@@ -18,7 +18,7 @@ public class UiPumpTests
         int runThread = 0;
         pump.Post(() => { runThread = Environment.CurrentManagedThreadId; done.Set(); });
 
-        Assert.True(done.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(done.Wait(TestWait.Deadline));
         Assert.NotEqual(Environment.CurrentManagedThreadId, runThread);
     }
 
@@ -35,7 +35,7 @@ public class UiPumpTests
         }
         pump.Post(done.Set);
 
-        Assert.True(done.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(done.Wait(TestWait.Deadline));
         Assert.Equal(Enumerable.Range(0, 50), order.ToArray());
     }
 
@@ -48,7 +48,7 @@ public class UiPumpTests
         using var done = new ManualResetEventSlim();
         var onPump = false;
         pump.Post(() => { onPump = pump.CheckAccess(); done.Set(); });
-        Assert.True(done.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(done.Wait(TestWait.Deadline));
         Assert.True(onPump);
     }
 
@@ -113,7 +113,7 @@ public class UiPumpTests
         using var done = new ManualResetEventSlim();
         pump.Post(() => throw new InvalidOperationException("first action throws"));
         pump.Post(done.Set); // must still run after the faulted one
-        Assert.True(done.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(done.Wait(TestWait.Deadline));
     }
 
     [Fact]
@@ -152,9 +152,9 @@ public class UiPumpTests
             pump.Post(() =>
             {
                 entered.Set();
-                release.Wait(TimeSpan.FromSeconds(5));
+                release.Wait(TestWait.Deadline);
             });
-            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            Assert.True(entered.Wait(TestWait.Deadline));
             release.Set();
             pump.Dispose();
         }
@@ -181,14 +181,14 @@ public class UiPumpTests
         var drained = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var shutdown = pump.InvokeAsync(() =>
         {
-            if (!release.Wait(TimeSpan.FromSeconds(5)))
+            if (!release.Wait(TestWait.Deadline))
                 throw new TimeoutException("Queued actions were not released.");
             pump.Dispose();
         });
         pump.Post(() => drained.SetResult(pump.CheckAccess()));
         release.Set();
 
-        await shutdown.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.True(await drained.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+        await shutdown.WaitAsync(TestWait.Deadline);
+        Assert.True(await drained.Task.WaitAsync(TestWait.Deadline));
     }
 }

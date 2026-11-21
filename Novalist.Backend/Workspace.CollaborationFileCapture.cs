@@ -44,7 +44,18 @@ public sealed partial class Workspace
         }
         if (path == ".novalist/project.json") PreserveNavigation(current, original);
         MaskSharedProse(path, current, original);
+        MaskSharedSceneCounts(current, original);
         return Encoding.UTF8.GetBytes(current.ToJsonString());
+    }
+
+    private void MaskSharedSceneCounts(JsonObject target, JsonObject source)
+    {
+        if (target["chapters"] is not JsonObject chapters || source["chapters"] is not JsonObject before) return;
+        var originals = before.SelectMany(chapter => chapter.Value as JsonArray ?? []).OfType<JsonObject>()
+            .ToDictionary(scene => scene["id"]?.GetValue<string>() ?? throw new InvalidDataException("Missing shared scene identity."));
+        foreach (var scene in chapters.SelectMany(chapter => chapter.Value as JsonArray ?? []).OfType<JsonObject>())
+            if (scene["id"]?.GetValue<string>() is { } id && sharedSceneFiles.Values.Any(file => file.SceneId == id) && originals.TryGetValue(id, out var original))
+                scene["wordCount"] = original["wordCount"]?.DeepClone();
     }
 
     private static void PreserveNavigation(JsonObject target, JsonObject source)

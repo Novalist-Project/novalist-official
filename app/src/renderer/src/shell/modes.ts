@@ -33,8 +33,8 @@ export type Mode = 'write' | 'plan' | 'world' | 'publish' | 'series'
  *   otherwise about one book carrying one view that was not.
  */
 export const MODE_VIEWS: Record<Mode, MainView[]> = {
-  write: ['write', 'manuscript', 'drafts', 'narration'],
-  plan: ['timeline', 'plotGrid', 'calendar', 'canvas', 'relationships', 'dialogue'],
+  write: ['write', 'drafts', 'narration'],
+  plan: ['structure', 'timeline', 'plotGrid', 'calendar', 'canvas', 'relationships', 'dialogue'],
   world: ['codex', 'wiki', 'maps', 'research', 'gallery', 'languages'],
   publish: ['expose', 'export', 'git', 'style'],
   series: ['series']
@@ -60,11 +60,11 @@ export interface ViewGroup {
 
 export const MODE_GROUPS: Record<Mode, ViewGroup[]> = {
   write: [
-    { labelKey: 'modes.group.drafting', views: ['write', 'manuscript', 'drafts'] },
+    { labelKey: 'modes.group.drafting', views: ['write', 'drafts'] },
     { labelKey: 'modes.group.hearIt', views: ['narration'] }
   ],
   plan: [
-    { labelKey: 'modes.group.shape', views: ['timeline', 'plotGrid', 'canvas'] },
+    { labelKey: 'modes.group.shape', views: ['structure', 'timeline', 'plotGrid', 'canvas'] },
     { labelKey: 'modes.group.castAndTime', views: ['relationships', 'calendar', 'dialogue'] }
   ],
   world: [
@@ -120,6 +120,7 @@ const VIEW_MODE = new Map<MainView, Mode>(
 
 /** The mode this view belongs to, or null for the ones that belong to none. */
 export function modeOf(view: MainView): Mode | null {
+  if (view === 'manuscript') return 'write'
   return VIEW_MODE.get(view) ?? null
 }
 

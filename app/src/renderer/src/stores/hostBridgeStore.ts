@@ -6,6 +6,9 @@ import { registerSharedProjectNotifications } from '../collaboration/sharedProje
 import { useExtensionsStore } from './extensionsStore'
 import { useShellStore } from './shellStore'
 import { invalidateSceneContext } from '../shell/sceneContextData'
+import { registerWritingAnnotationNotifications } from './writingAnnotationNotifications'
+import { writingErrorMessage } from '../views/editor/writingError'
+import { invalidatePlanningMetadata } from './planningStore'
 
 /**
  * Bridges the backend extension host's imperative UI capabilities — toasts,
@@ -187,6 +190,7 @@ function registerViewNotifications(): void {
 }
 
 function registerProjectNotifications(): void {
+  registerWritingAnnotationNotifications(rpc, reason => useHostBridgeStore.getState().pushToast(writingErrorMessage(String(reason))))
   rpc.onNotification('collaboration/fieldUpdated', params => {
     const change = firstParam<{ sessionId: string; itemId: string; value: string } | null>(params)
     if (change) applySharedCodexField(change)
@@ -207,7 +211,11 @@ function registerProjectNotifications(): void {
     const epoch = useProjectStore.getState().workspaceEpoch
     void rpc
       .request<ProjectStateDto>('project/getState')
-      .then((state) => { if (useProjectStore.getState().workspaceEpoch === epoch) useProjectStore.getState().applyState(state) })
+      .then((state) => {
+        if (useProjectStore.getState().workspaceEpoch !== epoch) return
+        useProjectStore.getState().applyState(state)
+        invalidatePlanningMetadata()
+      })
       .catch(() => {})
   })
 

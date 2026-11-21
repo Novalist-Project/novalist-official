@@ -20,9 +20,10 @@ async function alignedFocusBounds(frame: Locator) {
   return bounds
 }
 
-test('F11 works in prose and panel fields, and focus width follows editor zoom', async () => {
+test('F11 works in prose and panel fields, and text zoom preserves the focus column', async () => {
   const h = await launchApp('nl-focus-zoom-')
   try {
+    await h.page.evaluate(() => window.novalistStores.settings.getState().update('global', { pageViewEnabled: true }))
     const book = await seedBook(h, { Chapter: ['Scene'] })
     await dismissTour(h.page)
     await resizeWindow(h, 1500, 950)
@@ -32,6 +33,7 @@ test('F11 works in prose and panel fields, and focus width follows editor zoom',
     }, book.chapters[0])
     const frame = h.page.locator('iframe.editor-frame')
     const editor = h.page.frameLocator('iframe.editor-frame').locator('#editor')
+    await expect(h.page.frameLocator('iframe.editor-frame').locator('body')).toHaveClass(/\bpage-view\b/)
     await editor.click()
     await h.page.keyboard.type('A page with room to grow.')
     await editor.evaluate((element) => { element.dataset.focusProbe = 'retained' })
@@ -55,16 +57,23 @@ test('F11 works in prose and panel fields, and focus width follows editor zoom',
     const initialHoverWidth = initialBounds.hoverWidth
     expect(initialHoverWidth).toBeGreaterThan(24)
     const paper = h.page.frameLocator('iframe.editor-frame').locator('.nv-page').first()
-    const paperWidth = () => paper.evaluate(element => element.getBoundingClientRect().width)
-    const initialPaperWidth = await paperWidth()
+    const textSize = () => h.page.frameLocator('iframe.editor-frame').locator('[data-writing-scene] p').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))
+    const initialTextSize = await textSize()
     await editor.evaluate((element) => element.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -100, bubbles: true, cancelable: true })))
-    await expect.poll(async () => (await frame.boundingBox())!.width).toBeGreaterThan(initialWidth)
-    await expect.poll(paperWidth).toBeGreaterThan(initialPaperWidth)
+    await expect.poll(textSize).toBeGreaterThan(initialTextSize)
+    await expect.poll(async () => (await frame.boundingBox())!.width).toBe(initialWidth)
+    const paperBounds = (await paper.boundingBox())!
+    const frameBounds = (await frame.boundingBox())!
+    expect(paperBounds.x).toBeGreaterThanOrEqual(frameBounds.x)
+    expect(paperBounds.x + paperBounds.width).toBeLessThanOrEqual(frameBounds.x + frameBounds.width)
+    expect(await h.page.frameLocator('iframe.editor-frame').locator('#editor-wrapper')
+      .evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
     expect(await h.page.evaluate(() => window.novalistStores.settings.getState().view?.effective.editorFontSize)).toBe(17)
     const zoomedWidth = (await frame.boundingBox())!.width
     await h.page.evaluate(() => window.novalistStores.settings.getState().update('global', { editorFontSize: 30 }))
-    await expect.poll(async () => (await frame.boundingBox())!.width).toBeGreaterThan(zoomedWidth)
-    await expect.poll(async () => (await h.page.locator('.focus-edge-left').boundingBox())!.width).toBeLessThan(initialHoverWidth)
+    await expect.poll(textSize).toBeGreaterThan(30)
+    await expect.poll(async () => (await frame.boundingBox())!.width).toBe(zoomedWidth)
+    await expect.poll(async () => (await h.page.locator('.focus-edge-left').boundingBox())!.width).toBe(initialHoverWidth)
     const zoomedBounds = await alignedFocusBounds(frame)
     expect(zoomedBounds.frame.x + zoomedBounds.frame.width <= zoomedBounds.viewportWidth).toBe(true)
     await expect(editor).toHaveAttribute('data-focus-probe', 'retained')
@@ -152,14 +161,13 @@ test('edge hover reveals overlay panels without taking the caret or resizing the
 test('context is prepared before reveal, retained between hovers, and follows scene changes', async () => {
   const h = await launchApp('nl-focus-ready-')
   try {
-    const book = await seedBook(h, { Chapter: ['First scene', 'Second scene'] })
+    const book = await seedBook(h, { Chapter: ['First scene', 'Second scene'] }, 'Spec', false)
     await dismissTour(h.page)
     const chapter = book.chapters[0]
     for (const scene of chapter.scenes) {
       await h.rpc('scenes/write', [chapter.guid, scene.id, `<p>${scene.title} has some words.</p>`, `${scene.title} has some words.`, null])
     }
     await h.page.evaluate(async (chapter) => {
-      await window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id)
       const original = window.novalistRpc.request.bind(window.novalistRpc)
       // Hold real data until the test releases it, so busy/ready assertions
       // do not depend on how quickly this machine completes the UI actions.
@@ -173,7 +181,10 @@ test('context is prepared before reveal, retained between hovers, and follows sc
         }
         return original(method, params)
       }
-      window.novalistStores.shell.getState().toggleFocusMode()
+      await window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id)
+      const shell = window.novalistStores.shell.getState()
+      shell.setPaneWritingScope(shell.activePaneId, 'scene')
+      shell.toggleFocusMode()
     }, chapter)
     await expect.poll(() => h.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isFullScreen())).toBe(true)
     const editor = h.page.frameLocator('iframe.editor-frame').locator('#editor')
@@ -222,8 +233,10 @@ test('context is prepared before reveal, retained between hovers, and follows sc
     await h.page.keyboard.type(' More saved prose for the prepared context.')
     await expect.poll(() => h.page.locator('body').getAttribute('data-analysis-calls')).not.toBe(calls)
     await h.page.locator('.focus-edge-right').hover()
-    await expect(h.page.locator('.focus-edge-right')).toHaveAttribute('aria-busy', 'true')
-    await expect(inspector).toHaveCount(0)
+    // Live prose refresh keeps the current scene's editable fields mounted.
+    await expect(h.page.locator('.focus-edge-right')).toHaveAttribute('aria-busy', 'false')
+    await expect(inspector).toBeVisible()
+    await expect(inspector).toHaveAttribute('data-retained', 'yes')
     await releaseAnalysis()
     await expect(inspector).toBeVisible()
 

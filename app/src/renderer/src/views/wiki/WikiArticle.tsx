@@ -1,4 +1,5 @@
 import { MotionPresence } from '../../shell/MotionPresence'
+import { contentDirection } from '../../shell/contentDirection'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
@@ -77,7 +78,7 @@ function stripCalloutMarker(children: React.ReactNode): React.ReactNode {
       if (stripped.trim().length === 0) parts.shift()
       else parts[0] = stripped
     }
-    return <p key={index}>{parts}</p>
+    return <p dir="auto" key={index}>{parts}</p>
   })
 }
 
@@ -140,7 +141,7 @@ export function WikiArticle({ article }: { article: Article }): React.JSX.Elemen
     <article className="wiki-article">
       <header className="wiki-article-header">
         <div className="wiki-article-heading">
-          <h1>{article.title}</h1>
+          <h1 dir={contentDirection(article.title)}>{article.title}</h1>
           <div className="wiki-article-meta">
             <span className="wiki-type-chip">{typeLabel(article, t)}</span>
             <span className={`wiki-scope-chip${article.isWorldBible ? ' worldbible' : ''}`}>
@@ -166,7 +167,7 @@ export function WikiArticle({ article }: { article: Article }): React.JSX.Elemen
             )}
             {lead && <span> {'—'} {lead}</span>}
           </p>
-          {article.description && <p className="wiki-lead">{article.description}</p>}
+          {article.description && <p dir={contentDirection(article.description)} className="wiki-lead">{article.description}</p>}
 
           {(article.generatorAvailable || article.generated) && (
             <div className="wiki-summary">
@@ -178,7 +179,7 @@ export function WikiArticle({ article }: { article: Article }): React.JSX.Elemen
                       <span className="wiki-summary-stale">{t('wiki.summaryStale')}</span>
                     )}
                   </div>
-                  <p className="wiki-summary-text">{article.generated.summary}</p>
+                  <p dir={contentDirection(article.generated.summary)} className="wiki-summary-text">{article.generated.summary}</p>
                 </>
               )}
               {article.generatorAvailable && (
@@ -246,7 +247,7 @@ export function WikiArticle({ article }: { article: Article }): React.JSX.Elemen
 
           {article.sections.map((section, i) => (
             <section className="wiki-section" id={`sec-${i}`} key={`${section.title}-${i}`}>
-              {section.title && <h2>{section.title}</h2>}
+              {section.title && <h2 dir={contentDirection(section.title)}>{section.title}</h2>}
               {/* Section content is authored Markdown in the Codex; rendered read-only.
                   Entity references are pre-linked by the backend as `nventity:` links. */}
               <div className="wiki-prose">
@@ -319,11 +320,33 @@ function Stat({ label, value }: { label: string; value: string }): React.JSX.Ele
   )
 }
 
+function setProseContainerDirection(node: HTMLElement | null): void {
+  if (!node) return
+  const probe = document.createElement('bdi')
+  probe.dir = 'auto'
+  probe.textContent = node.textContent
+  node.dir = probe.matches(':dir(rtl)') ? 'rtl' : 'ltr'
+}
+
 function createProseComponents(openArticle: ReturnType<typeof useWikiStore.getState>['openArticle']) {
   // Renders section-prose links: an `nventity:{type}/{id}` href (produced by the
   // backend WikiProseLinker) becomes a click-through to that article; any other
   // href stays an ordinary external link.
   return {
+    p: ({ children }: { children?: React.ReactNode }) => <p dir="auto">{children}</p>,
+    h1: ({ children }: { children?: React.ReactNode }) => <h1 dir="auto">{children}</h1>,
+    h2: ({ children }: { children?: React.ReactNode }) => <h2 dir="auto">{children}</h2>,
+    h3: ({ children }: { children?: React.ReactNode }) => <h3 dir="auto">{children}</h3>,
+    h4: ({ children }: { children?: React.ReactNode }) => <h4 dir="auto">{children}</h4>,
+    h5: ({ children }: { children?: React.ReactNode }) => <h5 dir="auto">{children}</h5>,
+    h6: ({ children }: { children?: React.ReactNode }) => <h6 dir="auto">{children}</h6>,
+    li: ({ children, className }: { children?: React.ReactNode; className?: string }) => <li ref={node => setProseContainerDirection(node)} className={className}>{children}</li>,
+    ul: ({ children, className }: { children?: React.ReactNode; className?: string }) => <ul ref={node => setProseContainerDirection(node)} className={className}>{children}</ul>,
+    ol: ({ children, start, className }: { children?: React.ReactNode; start?: number; className?: string }) => <ol ref={node => setProseContainerDirection(node)} start={start} className={className}>{children}</ol>,
+    td: ({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) => <td dir="auto" style={style}>{children}</td>,
+    th: ({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) => <th dir="auto" style={style}>{children}</th>,
+    pre: ({ children }: { children?: React.ReactNode }) => <pre dir="ltr">{children}</pre>,
+    code: ({ children, className }: { children?: React.ReactNode; className?: string }) => <code dir="ltr" className={className}>{children}</code>,
     /**
      * A blockquote whose first line reads `[!note] Title` is a callout - the
      * convention Obsidian uses, which stays a plain quote anywhere that does
@@ -332,10 +355,10 @@ function createProseComponents(openArticle: ReturnType<typeof useWikiStore.getSt
     blockquote: ({ children }: { children?: React.ReactNode }): React.JSX.Element => {
       const text = calloutText(children)
       const match = text ? /^\[!(\w+)\]\s*(.*)$/.exec(text.trim()) : null
-      if (!match) return <blockquote>{children}</blockquote>
+      if (!match) return <blockquote ref={node => setProseContainerDirection(node)}>{children}</blockquote>
       return (
-        <div className="wiki-callout" data-kind={match[1].toLowerCase()}>
-          {match[2].length > 0 && <div className="wiki-callout-title">{match[2]}</div>}
+        <div dir="auto" className="wiki-callout" data-kind={match[1].toLowerCase()}>
+          {match[2].length > 0 && <div dir="auto" className="wiki-callout-title">{match[2]}</div>}
           <div className="wiki-callout-body">{stripCalloutMarker(children)}</div>
         </div>
       )

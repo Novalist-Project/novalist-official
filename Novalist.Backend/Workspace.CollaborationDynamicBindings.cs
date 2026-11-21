@@ -14,7 +14,11 @@ public sealed partial class Workspace
             if (document.TextField is not null) { sharedProse[document.ItemId] = document; continue; }
             var content = await FileService.ReadTextAsync(SharedProjectPath.Resolve(root, document.Path));
             if (!FileFrontMatter.TryParse(content, out var marker)) throw new InvalidDataException("A shared scene needs an identity.");
-            if (sharedSceneFiles.TryGetValue(document.ItemId, out var previous)) sharedItems.Remove(previous.Relative);
+            if (sharedSceneFiles.TryGetValue(document.ItemId, out var previous))
+            {
+                sharedItems.Remove(previous.Relative);
+                sharedSceneProjected[document.ItemId] = FileFrontMatter.Strip(content);
+            }
             else
             {
                 sharedSceneProjected.Add(document.ItemId, FileFrontMatter.Strip(content));
@@ -26,6 +30,7 @@ public sealed partial class Workspace
         if (sharedScenes is { } scenes)
         {
             await scenes.AddAsync(added.Documents, ct);
+            foreach (var document in added.Documents.Where(document => document.TextField is null)) await scenes.ReadAsync(document.ItemId, ct);
             foreach (var (item, file) in sharedSceneFiles)
                 if (!await FileService.ExistsAsync(SharedProjectPath.Resolve(root, file.Relative)))
                     await scenes.RemoveAsync(item, sharedSceneBaseline[item], ct);

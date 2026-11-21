@@ -188,12 +188,22 @@ public partial class ExportService
     /// document. Numbering runs across the whole file, because two scenes each
     /// starting at 1 would collide in one document.
     /// </summary>
+    /// <remarks>
+    /// A line break is written as <paramref name="lineBreak"/>: the block it
+    /// sits in decides the form, because a second line has to stay inside a
+    /// quote, a list item or an indented verse block to belong to it.
+    /// </remarks>
     private static string SegmentsToMarkdown(
-        List<InlineSegment> segments, List<string>? footnoteDefs = null)
+        List<InlineSegment> segments, List<string>? footnoteDefs, string lineBreak)
     {
         var sb = new StringBuilder();
         foreach (var seg in segments)
         {
+            if (seg.LineBreak)
+            {
+                sb.Append(lineBreak);
+                continue;
+            }
             if (seg.FootnoteText != null)
             {
                 if (footnoteDefs == null) continue;
@@ -234,7 +244,7 @@ public partial class ExportService
                 sb.AppendLine("\\end{figure}");
                 continue;
             }
-            var body = string.Concat(block.Segments.Select(LatexSegment));
+            var body = LatexRuns(block.Segments);
 
             if (block.List != openList)
             {
@@ -264,7 +274,8 @@ public partial class ExportService
 
             sb.AppendLine(opener != null
                 ? $"\\lettrine{{{LatexEscape(opener.Value.Initial)}}}"
-                    + $"{{{LatexEscape(opener.Value.LeadIn)}}}{LatexEscape(opener.Value.Tail)}"
+                    + $"{{{LatexEscape(opener.Value.LeadIn)}}}"
+                    + LatexLines([.. opener.Value.Tail.Split('\n').Select(LatexEscape)])
                 : block.StyleId switch
                 {
                     "heading" => $"\\section*{{{body}}}",
@@ -281,6 +292,33 @@ public partial class ExportService
                 ? "\\end{enumerate}" : "\\end{itemize}");
     }
 
+    /// <summary>
+    /// A paragraph's runs as LaTeX, each line break the writer typed a
+    /// <c>\\</c>. Inside <c>verse</c> that is the line separator the
+    /// environment expects; elsewhere it is a line break without a new
+    /// paragraph.
+    /// </summary>
+    private static string LatexRuns(List<InlineSegment> segments)
+    {
+        var lines = new List<string> { string.Empty };
+        foreach (var seg in segments)
+        {
+            if (seg.LineBreak) lines.Add(string.Empty);
+            else lines[^1] += LatexSegment(seg);
+        }
+        return LatexLines(lines);
+    }
+
+    /// <summary>
+    /// Lines joined with <c>\\</c>. An empty line becomes <c>\mbox{}</c>,
+    /// because two breaks in a row with nothing between them are a LaTeX error
+    /// ("There's no line here to end") rather than an empty line.
+    /// </summary>
+    private static string LatexLines(IReadOnlyList<string> lines) =>
+        lines.Count == 1
+            ? lines[0]
+            : string.Join("\\\\" + Environment.NewLine, lines.Select(line => line.Length == 0 ? "\\mbox{}" : line));
+
     private static string LatexSegment(InlineSegment seg)
     {
         // LaTeX has had this all along: a real footnote, set
@@ -294,6 +332,9 @@ public partial class ExportService
         if (seg.Italic) return $"\\textit{{{t}}}";
         return t;
     }
+
+    /// <summary>Same line ending as the rest of the file, which is written line by line.</summary>
+    private static readonly string MarkdownHardBreak = "\\" + Environment.NewLine;
 
     private static void AppendMarkdownScene(StringBuilder sb, SceneExportContent scene, List<string> footnoteDefs)
     {
@@ -309,16 +350,31 @@ public partial class ExportService
                 continue;
             }
 
-            var text = SegmentsToMarkdown(block.Segments, footnoteDefs);
             if (block.List != ListKind.None)
             {
                 ordinal = block.List == ListKind.Number ? ordinal + 1 : 0;
-                sb.AppendLine(block.List == ListKind.Number ? $"{ordinal}. {text}" : $"- {text}");
+                var marker = block.List == ListKind.Number ? $"{ordinal}. " : "- ";
+                // The next line is indented to the item's text, so it stays in the item.
+                var item = SegmentsToMarkdown(
+                    block.Segments, footnoteDefs, MarkdownHardBreak + new string(' ', marker.Length));
+                sb.AppendLine(marker + item);
                 sb.AppendLine();
                 continue;
             }
 
             ordinal = 0;
+            // CommonMark's backslash hard break, which the parser behind the
+            // app's own Markdown import reads as a line break. A heading is one
+            // line by definition and verse is an indented block whose newlines
+            // are already kept, so those two take a space and a plain newline.
+            var lineBreak = block.StyleId switch
+            {
+                "heading" or "subheading" => " ",
+                "blockquote" => MarkdownHardBreak + "> ",
+                "poetry" => Environment.NewLine + "    ",
+                _ => MarkdownHardBreak
+            };
+            var text = SegmentsToMarkdown(block.Segments, footnoteDefs, lineBreak);
             sb.AppendLine(block.StyleId switch
             {
                 "heading" => $"# {text}",

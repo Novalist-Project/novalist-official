@@ -24,17 +24,21 @@ export const createProjectWorkspaceActions: ProjectSlice<'applyWorkspaceSnapshot
   },
 
   refreshWorkspaceEditors: async (preserveDirty = false) => {
-    const epoch = get().workspaceEpoch
+    const before = get()
+    const { workspaceEpoch: epoch, projectPath, activeBookId: bookId, activeDraftId: draftId } = before
+    const registry = window.novalist.isMobile ? null : before.getWritingRegistry()
+    if (!window.novalist.isMobile && !registry) return
     const isDirty = (state: ProjectState, id: string): boolean => !!state.dirtyMap[id] || Object.values(state.editors).some((editor) => editor.sceneId === id && editor.isDirty)
     const scenes = new Map(Object.values(get().editors).filter((editor) => !preserveDirty || !editor.sceneId || !isDirty(get(), editor.sceneId)).flatMap((editor) =>
       editor.chapterGuid && editor.sceneId ? [[editor.sceneId, { chapterGuid: editor.chapterGuid, sceneId: editor.sceneId }] as const] : []))
-    // These are deliberately fresh reads. A coalesced pre-change read could
-    // be waiting behind the original RPC's all-window resume barrier.
     const contents = new Map(await Promise.all([...scenes.values()].map(async (scene) => {
-      const content = await rpc.request<{ html: string; hash: string; shared?: SharedSceneIdentity | null }>('scenes/read', [scene.chapterGuid, scene.sceneId])
+      const content = registry
+        ? await registry.read({ bookId: registry.context.bookId, draftId: registry.context.draftId, ...scene })
+        : await rpc.request<{ html: string; hash: string; shared?: SharedSceneIdentity | null }>('scenes/read', [scene.chapterGuid, scene.sceneId])
       return [scene.sceneId, content] as const
     })))
-    if (get().workspaceEpoch !== epoch) return
+    const current = get()
+    if (current.workspaceEpoch !== epoch || current.projectPath !== projectPath || current.activeBookId !== bookId || current.activeDraftId !== draftId) return
     set((state) => {
       const editors = mapEditors(state.editors, (editor) => {
         const content = editor.sceneId ? contents.get(editor.sceneId) : null

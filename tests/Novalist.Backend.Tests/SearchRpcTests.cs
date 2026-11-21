@@ -110,11 +110,28 @@ public sealed class SearchRpcTests : IDisposable
 
         var count = await _rpc.ReplaceAllAsync(
             "wolf", "bear", false, false, false, "ActiveBook", null, null, true,
-            CancellationToken.None);
+            cancellationToken: CancellationToken.None);
 
         Assert.Equal(3, count);
         var (_, reread) = _workspace.ResolveScene(_chapterGuid, _sceneId);
         Assert.Equal("the bear leaves", reread.Synopsis);
+    }
+
+    [Fact]
+    public async Task ConfirmedDeletionRejectsChangedMatchesAndPreservesSnapshotsForTheApprovedRun()
+    {
+        var preview = await _rpc.FindAsync("wolf", false, false, false, "ActiveBook", null, null, false, false, default);
+        var (chapter, scene) = _workspace.ResolveScene(_chapterGuid, _sceneId);
+        await _workspace.Projects.WriteSceneContentAsync(chapter, scene, "<p>wolf wolf wolf</p>");
+        Task<int> Delete(FindMatchDto[] confirmed) =>
+            _rpc.ReplaceAllAsync("wolf", "", false, false, false, "ActiveBook", null, null, false, confirmed, default);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Delete(preview));
+        Assert.Equal("<p>wolf wolf wolf</p>", await _workspace.Projects.ReadSceneContentAsync(chapter, scene));
+        var snapshots = new Novalist.Core.Services.SnapshotService(_workspace.Projects, _workspace.FileService);
+        Assert.Empty(await snapshots.ListAsync(scene));
+        var refreshed = await _rpc.FindAsync("wolf", false, false, false, "ActiveBook", null, null, false, false, default);
+        Assert.Equal(3, await Delete(refreshed));
+        Assert.StartsWith("Before find/replace", Assert.Single(await snapshots.ListAsync(scene)).Label);
     }
 
     [Fact]
@@ -146,7 +163,7 @@ public sealed class SearchRpcTests : IDisposable
     public async Task ReplaceAll_WritesThroughToDisk()
     {
         var count = await _rpc.ReplaceAllAsync(
-            "wolf", "bear", false, false, false, "ActiveBook", null, null, false, CancellationToken.None);
+            "wolf", "bear", false, false, false, "ActiveBook", null, null, false, cancellationToken: CancellationToken.None);
         Assert.Equal(2, count);
 
         var (chapter, scene) = _workspace.ResolveScene(_chapterGuid, _sceneId);

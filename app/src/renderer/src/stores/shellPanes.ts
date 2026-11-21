@@ -1,4 +1,6 @@
 import { type MainView, type PaneView, type DockEdge, type PaneNode, type SavedLayout } from './shellTypes'
+import type { WritingScope } from '../views/editor/writingTypes'
+import { normalizeWritingLayout } from './writingLayoutMigration'
 
 let paneSeq = 0
 
@@ -8,7 +10,7 @@ function paneId(): string {
 }
 
 export function newLeaf(view: PaneView): PaneNode {
-  return { kind: 'leaf', id: paneId(), view }
+  return { kind: 'leaf', id: paneId(), view, ...(view === 'write' ? { writingScope: 'manuscript' as const } : {}) }
 }
 
 /**
@@ -21,7 +23,10 @@ export function newLeaf(view: PaneView): PaneNode {
  */
 export function sameArrangement(a: PaneNode, b: PaneNode): boolean {
   if (a.kind !== b.kind) return false
-  if (a.kind === 'leaf') return a.view === (b as typeof a).view
+  if (a.kind === 'leaf') {
+    const other = b as typeof a
+    return a.view === other.view && (a.view !== 'write' || (a.writingScope ?? 'manuscript') === (other.writingScope ?? 'manuscript'))
+  }
 
   const other = b as typeof a
   return (
@@ -179,6 +184,11 @@ export function setPaneViewIn(node: PaneNode, id: string, view: MainView): PaneN
   return { ...node, children: node.children.map((c) => setPaneViewIn(c, id, view)) }
 }
 
+export function setPaneWritingScopeIn(node: PaneNode, id: string, writingScope: WritingScope): PaneNode {
+  if (node.kind === 'leaf') return node.id === id ? { ...node, writingScope } : node
+  return { ...node, children: node.children.map(child => setPaneWritingScopeIn(child, id, writingScope)) }
+}
+
 function even(count: number): number[] {
   return Array.from({ length: count }, () => 100 / count)
 }
@@ -207,7 +217,7 @@ function readLayouts(): SavedLayout[] {
     // Anything without a pane tree is not a pane layout, whoever wrote it.
     return (parsed as SavedLayout[]).filter(
       (layout) => typeof layout?.name === 'string' && isPaneNode(layout.root)
-    )
+    ).map(layout => ({ name: layout.name, root: normalizeWritingLayout(layout.root, !window.novalist.isMobile) }))
   } catch {
     return []
   }

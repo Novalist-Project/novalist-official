@@ -71,14 +71,18 @@ public sealed partial class AudiobookRpc
 
             lock (_gate)
             {
-                _state = _state with
+                if (ReferenceEquals(_running, cancellation))
                 {
-                    Phase = outcome.Completed ? "done" : "stopped",
-                    Files = [.. result.Files],
-                    DeliveredFormat = result.Format.ToString(),
-                    Note = result.Note,
-                    Error = outcome.Error
-                };
+                    _state = _state with
+                    {
+                        Phase = outcome.Completed ? "done" : "stopped",
+                        Files = [.. result.Files],
+                        DeliveredFormat = result.Format.ToString(),
+                        Note = result.Note,
+                        Error = outcome.Error
+                    };
+                    _running = null;
+                }
             }
 
             Log.Info(
@@ -89,20 +93,19 @@ public sealed partial class AudiobookRpc
         }
         catch (Exception ex)
         {
-            // By type. An engine's message can carry the line it choked on.
-            Log.Warn($"audiobook failed type={ex.GetType().Name}.");
-            lock (_gate)
-            {
-                _state = _state with { Phase = "failed", Error = ex.GetType().Name };
-            }
-        }
-        finally
-        {
             lock (_gate)
             {
                 if (ReferenceEquals(_running, cancellation))
+                {
+                    _state = _state with { Phase = "failed", Error = ex.GetType().Name };
                     _running = null;
+                }
             }
+            // By type. An engine's message can carry the line it choked on.
+            Log.Warn($"audiobook failed type={ex.GetType().Name}.");
+        }
+        finally
+        {
             cancellation.Dispose();
         }
     }

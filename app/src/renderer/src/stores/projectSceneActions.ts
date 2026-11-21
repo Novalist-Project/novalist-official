@@ -1,8 +1,12 @@
 import { rpc } from '../rpc/client'
 import { flushPendingWrites } from './pendingWrites'
 import i18n from '../i18n'
-import { type ProjectStateDto, type ProjectSlice } from './projectTypes'
+import { type ChapterDateRange, type ProjectStateDto, type ProjectSlice } from './projectTypes'
 import { useProjectStore, reconcileSceneEditors } from './projectStore'
+import { executeWritingStructure } from './writingStructure'
+import { chapterActCommand, insertChapterCommand, reorderChapterCommand } from './chapterStructureCommands'
+import type { PlanningAct, PlanningStateDto } from './planningTypes'
+import type { StructureCommand } from '../views/editor/writingStructureTypes'
 
 let pendingSceneContexts = 0
 
@@ -22,8 +26,31 @@ function ensureSceneStructureReady(): void {
   }
 }
 
+async function readEmptyActOrder(act: string | undefined): Promise<readonly PlanningAct[]> {
+  const owner = useProjectStore.getState()
+  if (!act || owner.chapters.some(chapter => chapter.act.toLocaleLowerCase() === act.toLocaleLowerCase())) return []
+  const planning = await rpc.request<PlanningStateDto>('planning/get')
+  const current = useProjectStore.getState()
+  if (current.workspaceBusy || current.workspaceEpoch !== owner.workspaceEpoch || current.projectPath !== owner.projectPath ||
+      current.activeBookId !== owner.activeBookId || current.activeDraftId !== owner.activeDraftId) throw new Error('writing.structureWorkspaceChanged')
+  return planning.acts
+}
+
+export async function prepareChapterInsertion(title: string, order?: number, act?: string, dateRange?: ChapterDateRange): Promise<StructureCommand> {
+  const acts = await readEmptyActOrder(act)
+  return insertChapterCommand(useProjectStore.getState().chapters, title, order, act, acts, dateRange)
+}
+
+export async function prepareChapterAct(chapterGuid: string, act: string): Promise<StructureCommand> {
+  const acts = await readEmptyActOrder(act)
+  return chapterActCommand(useProjectStore.getState().chapters, chapterGuid, act, acts)
+}
+
 export const createProjectSceneActions: ProjectSlice<'createChapter' | 'createScene' | 'renameChapter' | 'renameScene' | 'deleteChapter' | 'deleteScene' | 'setChapterAct' | 'reorderChapter' | 'reorderScene' | 'moveScenes' | 'mutateSceneStructure'> = (set, get) => ({
-  createChapter: async (title, insertAtOrder) => {
+  createChapter: async (title, insertAtOrder, act, dateRange) => {
+    if (!window.novalist.isMobile) {
+      return executeWritingStructure(await prepareChapterInsertion(title, insertAtOrder, act, dateRange))
+    }
     const state = await rpc.request<ProjectStateDto>('project/createChapter', [
       title,
       insertAtOrder ?? null
@@ -57,24 +84,44 @@ export const createProjectSceneActions: ProjectSlice<'createChapter' | 'createSc
   },
 
   setChapterAct: async (chapterGuid, act) => {
+    if (!window.novalist.isMobile) {
+      if (get().chapters.find(chapter => chapter.guid === chapterGuid)?.act === act) return
+      return executeWritingStructure(await prepareChapterAct(chapterGuid, act))
+    }
     get().applyState(
       await rpc.request<ProjectStateDto>('project/setChapterAct', [chapterGuid, act])
     )
   },
 
   reorderChapter: async (chapterGuid, newOrder) => {
+    if (!window.novalist.isMobile) return executeWritingStructure(reorderChapterCommand(get().chapters, chapterGuid, newOrder))
     get().applyState(
       await rpc.request<ProjectStateDto>('project/reorderChapter', [chapterGuid, newOrder])
     )
   },
 
   reorderScene: async (chapterGuid, sceneId, newOrder) => {
+    if (!window.novalist.isMobile) {
+      const scenes = get().chapters.find(chapter => chapter.guid === chapterGuid)?.scenes
+      if (!scenes?.some(scene => scene.id === sceneId)) throw new Error('writing.structureConflict')
+      const full = [...scenes].sort((a, b) => a.order - b.order)
+      const index = full.findIndex(scene => scene.order === newOrder)
+      if (index < 0) throw new Error('writing.structureConflict')
+      return executeWritingStructure({ kind: 'moveScenes', sceneIds: [sceneId], targetChapterGuid: chapterGuid,
+        beforeSceneId: full.filter(scene => scene.id !== sceneId)[index]?.id ?? null })
+    }
     get().applyState(
       await rpc.request<ProjectStateDto>('project/reorderScene', [chapterGuid, sceneId, newOrder])
     )
   },
 
   moveScenes: async (sceneIds, targetChapterGuid, targetIndex) => {
+    if (!window.novalist.isMobile) {
+      const scenes = get().chapters.find(chapter => chapter.guid === targetChapterGuid)?.scenes
+      if (!scenes) throw new Error('writing.structureConflict')
+      const remaining = [...scenes].sort((a, b) => a.order - b.order).filter(scene => !sceneIds.includes(scene.id))
+      return executeWritingStructure({ kind: 'moveScenes', sceneIds, targetChapterGuid, beforeSceneId: remaining[targetIndex]?.id ?? null })
+    }
     await get().mutateSceneStructure('project/moveScenes', [sceneIds, targetChapterGuid, targetIndex])
   },
 

@@ -43,7 +43,9 @@ test('a writer can add their own replacement rules, plain and pattern', async ()
   await enterWriting(page)
 
   await page.locator('.binder-scene-row').first().click()
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
+  await page.locator('.writing-scope-segments').getByRole('button', { name: 'Scene', exact: true }).click()
+  const sceneId = await page.evaluate(() => window.novalistStores.project.getState().openSceneId!)
+  const editor = page.frameLocator('.editor-frame').locator(`[data-writing-scene="${sceneId}"]`)
   await expect(editor).toBeVisible({ timeout: 30_000 })
   await page.evaluate(() => window.novalistStores.settings.getState().load())
 
@@ -59,7 +61,7 @@ test('a writer can add their own replacement rules, plain and pattern', async ()
     await window.novalistStores.settings.getState().load()
   })
 
-  await editor.click()
+  await editor.locator('p').first().click()
   await page.keyboard.type('go -> there, 12x9 feet', { delay: 30 })
   await expect
     .poll(async () => editor.innerText(), { timeout: 15_000 })
@@ -213,9 +215,11 @@ test('the preview beside a rule agrees with what the editor actually types', asy
   // so the alternating rule counts from a clean line as the preview does.
   await enterWriting(page)
   await page.locator('.binder-scene-row').first().click()
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
+  await page.locator('.writing-scope-segments').getByRole('button', { name: 'Scene', exact: true }).click()
+  const sceneId = await page.evaluate(() => window.novalistStores.project.getState().openSceneId!)
+  const editor = page.frameLocator('.editor-frame').locator(`[data-writing-scene="${sceneId}"]`)
   await expect(editor).toBeVisible({ timeout: 30_000 })
-  await editor.click()
+  await editor.locator('p').first().click()
 
   const typed: string[] = []
   for (const sample of samples) {

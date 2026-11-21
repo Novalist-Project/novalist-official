@@ -287,7 +287,7 @@ function StoreDetail({
     <div className="store-detail" ref={detailRef}>
       <div className="store-detail-head">
         <button type="button" className="export-inline-btn" onClick={onBack}>
-          <ArrowLeft size={13} strokeWidth={2} /> {t('extensions.store.back')}
+          <ArrowLeft size={13} strokeWidth={2} className="icon-directional" /> {t('extensions.store.back')}
         </button>
         <div className="store-detail-title">
           <span className="extension-card-name">{entry.name}</span>

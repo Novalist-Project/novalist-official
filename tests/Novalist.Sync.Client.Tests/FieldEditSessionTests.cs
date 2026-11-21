@@ -55,7 +55,7 @@ public sealed class FieldEditSessionTests
             await session.CommitFieldAsync(item, "Age: 42"u8.ToArray(), request, ct);
             Assert.Single(session.ReadCommittedItem(item));
         }
-        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+        finally { TestFiles.DeleteTree(folder); }
     }
 
     [Theory]
@@ -98,9 +98,9 @@ public sealed class FieldEditSessionTests
             var writing = session.CommitFieldAsync(item, "A retained field draft"u8.ToArray(), lease, cancellation.Token);
             try
             {
-                await started.Task.WaitAsync(TimeSpan.FromSeconds(3), ct);
+                await started.Task.WaitAsync(TestWait.Deadline, ct);
                 var stopping = stop switch { "pause" => session.PauseAsync(ct), "close" => session.CloseAsync(ct), _ => session.DisposeAsync().AsTask() };
-                await stopping.WaitAsync(TimeSpan.FromSeconds(3), ct);
+                await stopping.WaitAsync(TestWait.Deadline, ct);
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => writing);
                 if (stallCatchUp) Assert.Equal("A retained field draft"u8.ToArray(), Assert.Single(session.ReadCommittedItem(item)).Payload);
                 else Assert.Single(journal.PendingFieldEdits());
@@ -115,7 +115,7 @@ public sealed class FieldEditSessionTests
             }
             finally { cancellation.Cancel(); try { await writing; } catch (OperationCanceledException) { Assert.True(cancellation.IsCancellationRequested); } }
         }
-        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+        finally { TestFiles.DeleteTree(folder); }
     }
 
     private static async IAsyncEnumerable<SequencedUpdate> EmptyUpdates()

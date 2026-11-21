@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { loadRendererSource } from './renderer-source-loader.mjs'
-const panes = loadRendererSource('src/stores/shellPanes.ts', {}, { localStorage: { getItem: () => null } })
+import { loadPaneSources } from './pane-source-loader.mjs'
+const { panes } = loadPaneSources({ localStorage: { getItem: () => null } })
 
 for (const edge of ['left', 'right', 'top', 'bottom']) test(`notes dock ${edge} of a nested pane without replacing its content`, () => {
   const editor = panes.newLeaf('write')

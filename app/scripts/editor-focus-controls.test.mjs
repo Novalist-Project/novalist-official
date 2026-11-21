@@ -6,7 +6,7 @@ import { loadRendererSource } from './renderer-source-loader.mjs'
 function fixture(t) {
   const dom = new JSDOM('<button id="scene">Scene</button><iframe></iframe><div class="focus-bar"><button>Writing tools</button></div><div class="editor-toolbar"><button>Bold</button></div><textarea></textarea>')
   t.after(() => dom.window.close())
-  const { document, HTMLElement } = dom.window
+  const { document, HTMLElement, HTMLIFrameElement } = dom.window
   const iframe = document.querySelector('iframe')
   const editor = iframe.contentDocument.createElement('textarea')
   iframe.contentDocument.body.append(editor)
@@ -28,7 +28,7 @@ function fixture(t) {
     '../../stores/pendingWrites': {},
     '../../collaboration/sharedEditors': { captureSharedEditor: () => false }
   }
-  const globals = { document, HTMLElement, window: {
+  const globals = { document, HTMLElement, HTMLIFrameElement, window: {
     novalist: { onSpellingContext() {} },
     setTimeout(callback, delay) { const id = Symbol(); timers.set(id, { callback, delay }); return id },
     clearTimeout: id => timers.delete(id)

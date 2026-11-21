@@ -9,6 +9,7 @@ function workspace(platform = 'android') {
   let epoch = 0
   const state = {
     dirtyMap: {}, recentProjects: [], libraryStatus: 'ready',
+    getWritingRegistry: () => null,
     flushPendingSave() {}, refreshWorkspaceEditors() {}, applyState() {}, loadDrafts: async () => {},
     applyWorkspaceSnapshot(snapshot) { this.isLoaded = snapshot.state.isLoaded; this.workspaceEpoch = snapshot.epoch }
   }
@@ -48,6 +49,8 @@ function workspace(platform = 'android') {
     '../stores/codexStore': {}, '../stores/settingsStore': { useSettingsStore: settings }, '../stores/hostBridgeStore': {},
     './useWorkspaceDialogGuard': { hasWorkspaceDialogDraft: () => false }, './useBackupScheduler': {},
     '../mobile/recovery': { restoreMobileRecovery() {} }, './hotkeys': { setHotkeysEnabled() {} },
+    '../stores/writingWorkspaceHistory': {}, '../stores/writingWorkspaceLifecycle': {},
+    '../stores/writingDocuments': {}, '../views/editor/writingSearchLease': {}, '../stores/writingWorkspaceRecovery': {},
     '../collaboration/hostedSessionStore': { useHostedSessionStore: { setState() {} } }
   }, { window, document: { querySelector: () => null } })
   hook.useWorkspaceWindow()

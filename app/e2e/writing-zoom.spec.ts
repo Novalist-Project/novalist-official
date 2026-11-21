@@ -16,8 +16,9 @@ for (const view of ['write', 'manuscript'] as const) {
     test(`Ctrl+wheel zooms ${view} without changing font settings, book width=${bookWidth}`, async () => {
       const h = await launchApp('nl-writing-zoom-')
       try {
-        await seedBook(h, { One: ['Opening'] })
-        await h.page.locator('.binder-scene-row').first().click()
+        const book = await seedBook(h, { One: ['Opening'] }, 'Zoom fixture', false)
+        await h.rpc('scenes/write', [book.chapters[0].guid, book.chapters[0].scenes[0].id, '<p>A sentence to zoom.</p>', 'A sentence to zoom.'])
+        await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), book.chapters[0])
         await h.page.evaluate(async (enabled) => {
           await window.novalistStores.settings.getState().load()
           await window.novalistStores.settings.getState().update('global', {
@@ -25,12 +26,16 @@ for (const view of ['write', 'manuscript'] as const) {
             pageViewEnabled: false
           })
         }, bookWidth)
-        await h.page.evaluate(v => window.novalistStores.shell.getState().setMainView(v), view)
-        const frame = h.page.frameLocator(`iframe[title="${view === 'write' ? 'editor' : 'manuscript'}"]`)
-        const editor = frame.locator(view === 'write' ? '#editor' : '.scene-editor').first()
+        await h.page.evaluate(view => {
+          const shell = window.novalistStores.shell.getState()
+          shell.setPaneWritingScope(shell.activePaneId, view === 'write' ? 'scene' : 'manuscript')
+        }, view)
+        const frame = h.page.frameLocator('iframe[title="editor"]')
+        const editor = frame.locator('[data-writing-scene]').first()
+        await expect(editor).toHaveText('A sentence to zoom.')
+        const zoom = await editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))
         const initial = bookWidth ? 17 : 20
-        await expect(editor).toHaveCSS('font-size', `${initial}px`)
-        await editor.fill('A sentence to zoom.')
+        await expect(editor).toHaveCSS('font-size', `${initial * zoom}px`)
         const initialHeight = await glyphHeight(editor)
         await editor.hover()
         await h.page.keyboard.down('Control')
@@ -40,7 +45,7 @@ for (const view of ['write', 'manuscript'] as const) {
         await expect.poll(() => glyphHeight(editor)).toBe(initialHeight)
         await h.page.keyboard.up('Control')
         await h.page.mouse.wheel(0, 100)
-        await expect(editor).toHaveCSS('font-size', `${initial}px`)
+        await expect(editor).toHaveCSS('font-size', `${initial * zoom}px`)
 
         const sizes = await h.page.evaluate(() => {
           const settings = window.novalistStores.settings.getState().view!.effective
@@ -50,7 +55,7 @@ for (const view of ['write', 'manuscript'] as const) {
 
         const field = bookWidth ? 'bookFontSize' : 'editorFontSize'
         await h.page.evaluate(key => window.novalistStores.settings.getState().update('project', { [key]: 22 }), field)
-        await expect(editor).toHaveCSS('font-size', '22px')
+        await expect.poll(() => editor.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeCloseTo(22 * zoom, 1)
         const projectHeight = await glyphHeight(editor)
         await editor.hover()
         await h.page.keyboard.down('Control')

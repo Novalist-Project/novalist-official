@@ -1,6 +1,6 @@
 # Custom themes and language packs
 
-Novalist ships three themes and three interface languages, but neither set is closed. You can add your own by dropping a file into a folder, and extensions can contribute themes too. Everything you add appears in the normal **Settings, Appearance** dropdowns alongside what ships in the box.
+Novalist ships three themes and four interface languages, but neither set is closed. You can add your own by dropping a file into a folder, and extensions can contribute themes too. Everything you add appears in the normal **Settings, Appearance** dropdowns alongside what ships in the box.
 
 Nothing here executes code. A theme is a colour table or a stylesheet, and a language is a JSON file of strings — a file you download from someone else can change how Novalist looks and reads, but it cannot run anything.
 
@@ -102,6 +102,7 @@ The full, current list lives in `app/src/renderer/src/styles/tokens.css` in the 
 | `--nl-border` / `--nl-border-subtle` / `--nl-border-firm` | Panel edges, hairline dividers, chip outlines. |
 | `--nl-success` / `--nl-warning` / `--nl-danger` | Status colours. |
 | `--nl-scrollbar-thumb` (and `-hover` / `-active`) | Scrollbars, which the browser paints itself. |
+| `--nl-color-scheme` | `light` or `dark`: the palette for the controls the browser paints itself, such as checkboxes, radio buttons, colour wells and dropdown lists. Defaults to `dark`; a light theme should set `light`. |
 | `--nl-base` | The window ground as a raw `r g b` triple (`46 52 64`), used by the translucent macOS material layer. |
 
 Set `--nl-base` if you set `--nl-surface-window`, or the frosted chrome on macOS will tint toward the old colour.

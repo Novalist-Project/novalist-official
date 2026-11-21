@@ -8,7 +8,10 @@ import {
   List,
   ListOrdered,
   Mic,
+  PilcrowLeft,
+  PilcrowRight,
   PenLine,
+  Plus,
   Settings2,
   Square,
   Volume2
@@ -22,6 +25,7 @@ import { useShellStore } from '../../stores/shellStore'
 import { DictationBar } from '../../dictation/DictationBar'
 import { useDictation } from '../../dictation/dictationStore'
 import { dismissOnAndroidBack } from '../../mobile/backEvents'
+import type { WritingFrameAdapter } from './writingFrameAdapter'
 
 export interface FormattingState {
   bold: boolean
@@ -30,6 +34,8 @@ export interface FormattingState {
   strikethrough: boolean
   highlight: boolean
   alignment: 'left' | 'center' | 'right' | 'justify'
+  /** The direction the caret's paragraph reads in, explicit or resolved from its content. */
+  direction: 'ltr' | 'rtl'
   /** Named block style on the paragraph the caret is in; empty for body text. */
   paragraphStyle: string
   bulletList: boolean
@@ -45,6 +51,7 @@ interface EditorToolbarProps {
   /** True while the scene is being read back, so the bar offers Stop. */
   speaking: boolean
   active: boolean
+  writing?: WritingFrameAdapter
 }
 
 /**
@@ -65,19 +72,44 @@ interface EditorToolbarProps {
 // placement-container: viewBar
 const PARAGRAPH_STYLES = ['', 'heading', 'subheading', 'blockquote', 'poetry'] as const
 
-function useEditorToolbar(formatting: FormattingState) {
-  const { t } = useTranslation()
+type ToolbarButton = {
+  command: string
+  labelKey: string
+  active: boolean
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
+}
+
+/**
+ * Left and right stay physical. In a right-to-left interface the group reads
+ * Right, Center, Left, Justify so each icon sits on the side it aligns to.
+ */
+function alignmentButtons(alignment: FormattingState['alignment'], rtl: boolean): ToolbarButton[] {
+  const left = { command: 'paragraph.alignLeft', labelKey: 'blockStyle.left', active: alignment === 'left', icon: AlignLeft }
+  const center = { command: 'paragraph.alignCenter', labelKey: 'blockStyle.center', active: alignment === 'center', icon: AlignCenter }
+  const right = { command: 'paragraph.alignRight', labelKey: 'blockStyle.right', active: alignment === 'right', icon: AlignRight }
+  const justify = { command: 'paragraph.alignJustify', labelKey: 'blockStyle.justify', active: alignment === 'justify', icon: AlignJustify }
+  return rtl ? [right, center, left, justify] : [left, center, right, justify]
+}
+
+/**
+ * Shown only in a right-to-left interface. The pilcrow arrows are physical, so
+ * they are never mirrored: the arrow points the way the text runs.
+ */
+function directionButtons(direction: FormattingState['direction']): ToolbarButton[] {
+  return [
+    { command: 'paragraph.directionRtl', labelKey: 'blockStyle.directionRtl', active: direction === 'rtl', icon: PilcrowLeft },
+    { command: 'paragraph.directionLtr', labelKey: 'blockStyle.directionLtr', active: direction === 'ltr', icon: PilcrowRight }
+  ]
+}
+
+function useEditorToolbar(formatting: FormattingState, writing?: WritingFrameAdapter) {
+  const { t, i18n } = useTranslation()
   const [optionsOpen, setOptionsOpen] = useState(false)
   const recording = useDictation((s) => s.recording || s.starting)
   const suggesting = useShellStore((s) => s.suggestionMode)
   const effective = useSettingsStore((s) => s.view?.effective)
 
-  const buttons: {
-    command: string
-    labelKey: string
-    active: boolean
-    icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
-  }[] = [
+  const buttons: ToolbarButton[] = [
     {
       command: 'paragraph.bulletList',
       labelKey: 'blockStyle.bulletList',
@@ -90,30 +122,8 @@ function useEditorToolbar(formatting: FormattingState) {
       active: formatting.numberList,
       icon: ListOrdered
     },
-    {
-      command: 'paragraph.alignLeft',
-      labelKey: 'blockStyle.left',
-      active: formatting.alignment === 'left',
-      icon: AlignLeft
-    },
-    {
-      command: 'paragraph.alignCenter',
-      labelKey: 'blockStyle.center',
-      active: formatting.alignment === 'center',
-      icon: AlignCenter
-    },
-    {
-      command: 'paragraph.alignRight',
-      labelKey: 'blockStyle.right',
-      active: formatting.alignment === 'right',
-      icon: AlignRight
-    },
-    {
-      command: 'paragraph.alignJustify',
-      labelKey: 'blockStyle.justify',
-      active: formatting.alignment === 'justify',
-      icon: AlignJustify
-    }
+    ...alignmentButtons(formatting.alignment, i18n.dir() === 'rtl'),
+    ...(i18n.dir() === 'rtl' ? directionButtons(formatting.direction) : [])
   ]
 
   /** One writing preference, flipped where the writer is already editing. */
@@ -126,8 +136,8 @@ function useEditorToolbar(formatting: FormattingState) {
     <label key={option.setting} data-command={option.command}>
       <input
         type="checkbox"
-        checked={(effective as Record<string, unknown> | undefined)?.[option.setting] === true}
-        onChange={() => runCommand(option.command)}
+        checked={option.setting === 'pageViewEnabled' && writing ? writing.pageViewEnabled : (effective as Record<string, unknown> | undefined)?.[option.setting] === true}
+        onChange={() => option.setting === 'pageViewEnabled' && writing ? writing.changePageView?.(!writing.pageViewEnabled) : runCommand(option.command)}
       />
       {option.icon}
       {t(option.labelKey)}
@@ -137,8 +147,8 @@ function useEditorToolbar(formatting: FormattingState) {
   return { t, buttons, recording, suggesting, optionsOpen, setOptionsOpen, option }
 }
 
-export function EditorToolbar({ formatting, speaking, active }: EditorToolbarProps): React.JSX.Element {
-  const { t, buttons, recording, suggesting, optionsOpen, setOptionsOpen, option } = useEditorToolbar(formatting)
+export function EditorToolbar({ formatting, speaking, active, writing }: EditorToolbarProps): React.JSX.Element {
+  const { t, buttons, recording, suggesting, optionsOpen, setOptionsOpen, option } = useEditorToolbar(formatting, writing)
 
   return (
     <div className="editor-toolbar">
@@ -153,12 +163,23 @@ export function EditorToolbar({ formatting, speaking, active }: EditorToolbarPro
             runCommand(`paragraph.style.${event.target.value || 'body'}`)
           }
         >
+          <option value="mixed" disabled>{t('writing.mixedStyles')}</option>
           {PARAGRAPH_STYLES.map((style) => (
             <option key={style || 'body'} value={style}>
               {t(`blockStyle.${style || 'body'}`)}
             </option>
           ))}
         </select>
+        {writing && <>
+          <button type="button" className="writing-structure-action" data-command="writing.sceneBreak" onMouseDown={event => event.preventDefault()}
+            onClick={() => writing.requestStructure?.('sceneBreak')}>
+            <Plus size={14} />{t('unifiedWriting.scene')}
+          </button>
+          <button type="button" className="writing-structure-action" data-command="writing.chapterHeading" onMouseDown={event => event.preventDefault()}
+            onClick={() => writing.requestStructure?.('chapterHeading')}>
+            <Plus size={14} />{t('unifiedWriting.chapter')}
+          </button>
+        </>}
         {buttons.map(({ command, labelKey, active, icon: Icon }) => (
           <button
             type="button"

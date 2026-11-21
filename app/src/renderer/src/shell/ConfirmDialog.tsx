@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDialogKeyboard } from './useDialogKeyboard'
 
@@ -19,15 +20,16 @@ export function ConfirmDialog({
   onCancel
 }: ConfirmDialogProps): React.JSX.Element {
   const { t } = useTranslation()
+  const messageId = useId()
   const keyboard = useDialogKeyboard(onCancel)
   return (
     <div
       className="dialog-overlay"
       onPointerDown={(e) => e.target === e.currentTarget && onCancel()}
     >
-      <div className="dialog-card" role="dialog" aria-modal="true" aria-label={title} {...keyboard}>
+      <div className="dialog-card" role="dialog" aria-modal="true" aria-label={title} aria-describedby={messageId} {...keyboard}>
         <div className="dialog-title">{title}</div>
-        <p className="dialog-message">{message}</p>
+        <p className="dialog-message" id={messageId}>{message}</p>
         <div className="dialog-actions">
           <button className="dialog-button" onClick={onCancel}>
             {t('dialog.cancel')}

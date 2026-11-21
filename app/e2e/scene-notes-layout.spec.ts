@@ -131,12 +131,20 @@ test('notes dock around nested panes, reflow with their size and float without l
     await h.page.evaluate(() => window.novalistStores.shell.getState().saveLayout('Notes beside editor'))
     // Toggle before the iframe's debounced change report. Its DOM, caret and
     // undo history must survive hiding and restoring the auxiliary notes slot.
-    const prose = h.page.frameLocator('.editor-frame').locator('#editor')
+    const prose = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${scene.id}"]`).first()
+    await prose.click()
+    await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().openSceneId)).toBe(scene.id)
     await prose.evaluate(element => {
       const editor = element as HTMLElement & { notesToggleIdentity?: string }
       editor.notesToggleIdentity = 'original-editor'
-      editor.innerHTML = '<p>A character typed just before hiding notes.</p>'
-      editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: '.' }))
+      const range = element.ownerDocument.createRange()
+      range.selectNodeContents(element)
+      const selection = element.ownerDocument.getSelection()!
+      selection.removeAllRanges()
+      selection.addRange(range)
+      const transfer = new DataTransfer()
+      transfer.setData('text/html', '<p>A character typed just before hiding notes.</p>')
+      editor.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }))
       ;(element.ownerDocument.defaultView!.parent as Window).novalistStores.shell.getState().toggleNotesDock()
     })
     await expect(panel).toHaveCount(0)

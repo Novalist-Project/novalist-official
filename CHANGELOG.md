@@ -23,21 +23,54 @@ could encounter in a previously released version.
 
 ### Added
 
+- **Collaboration status indicator** — see the shared project's connection status directly beside Collaboration in the top bar, with details on hover.
+- **Arabic interface and right-to-left writing** — choose Arabic in Settings for translated menus and a right-to-left interface, with independently directed mixed Arabic/English prose, metadata, Codex fields and Wiki articles. Markdown editing supports per-line direction, and writing zoom keeps RTL prose within the pane. When a paragraph's direction is detected wrongly, for example Arabic that opens with a Latin name, set it to left-to-right, right-to-left or back to automatic from the right-click menu or the command palette, or from two buttons on the writing bar in the Arabic interface; this is independent of alignment. On Windows and Linux the menu bar and its dropdowns follow the interface direction after a restart, which Settings offers when one is needed. Panels of extensions that are translated into Arabic are laid out right to left as well, while an extension without an Arabic translation keeps its left-to-right layout. Interface language and writing-language settings remain independent. (by @Ammar-Banna)
+- **Unified writing and Structure planning** — switch between Scene, Chapter, and Manuscript while keeping your place in a continuous document, with outline navigation in the same editor, editable scene, chapter and act names, stage selectors, and consistently sized scene information panels that follow the prose while scrolling. Synopses expand within the panel without shifting the manuscript. Writing starts at a readable size; Ctrl+wheel enlarges prose, headings and scene information within the pane. Optional book width and paper pages honor saved book typography and page settings, preserving the previous editor's page proportions and margins during local and collaborative editing. Shared scenes save as you type. Enter starts a new paragraph and Shift+Enter adds a line within the current paragraph, including in imported plain text. Includes cross-scene editing and undo, scope-aware Find/Replace, independent pane scopes, and selected-scene and filtered runs. Plan's Structure view organizes acts, chapters, and scenes alongside Corkboard, Outliner, and Board. Insert scene breaks and chapter headings from the writing toolbar or quick edit, or add scenes and chapters at inline boundaries. Quick edit offers paragraph styles beside selected text or at the caret, with mixed-style indicators and keyboard access.
 - **Persistent project hosting** — choose Persistent server alongside relay and direct sessions to store encrypted projects and changes on your server. A step-by-step setup shows only the controls needed now. The first sign-in registers the device with fresh multi-factor authentication and shows a recovery token you can save to a file. Save it again from Account, or use it to register a replacement device without resetting your identity or forfeiting project access. Pair additional devices by reviewing and approving a signed, expiring request on an existing device, without sharing recovery secrets. Invite writers who can join while the owner is offline, and reconnect retained local copies to catch up. Writing done while disconnected merges with other writers' changes; where both changed the same paragraph, field or file, a dialog lets you choose which version to keep for each place, and undecided places are asked again on the next reconnect. The local copy from before reconnecting remains recoverable. Owners can remove writers with encryption-key renewal or delete the server copy. Edits are grouped before saving and any connected writer compacts old server history automatically, without new keys or interrupting others. If every device and recovery credential is lost, supporting servers let you explicitly forfeit old project access and ownership and reset your identity with fresh MFA while preserving shared history; device registration starts automatically afterward.
 - **Automatic reconnect** — projects with a saved persistent or relay connection reconnect when you open them. Each project has its own switch next to Reconnect, on by default.
+- **Cover description** — describe what your cover shows, under the cover option in Export, for readers who cannot see it. EPUB exports use it as the cover's text alternative. It is saved with the book and cleared when you replace the cover.
+- **Panes and windows reopen with their project** — a split main window and the panes you opened in their own windows come back the next time you open the project, after a restart or a switch to another project, with their views, sizes, scenes and the active pane, and separate windows at their positions, without saving a layout. Divider changes are saved even if you quit immediately after resizing. Windows you close yourself stay closed. A main window with a single pane opens as before.
 
 ### Changed
 
 - Collaborate remembers the connection type and server you picked for each project. Projects you have not set up yet start from your last choice instead of always defaulting to Direct connection or Steam.
+- With animations turned off in your operating system, a book on the shelf still opens its cover when you hover, focus or select it, at once instead of staying shut.
+- **Open in its own window** no longer needs a split window: with a single pane it sits at the right of the view's heading, or of the scope bar in the Write view. The Dashboard, Settings, About and extension views keep it in the View menu and command palette. An extension's view opened in its own window now keeps showing that extension instead of the view underneath.
+
+### Fixed
+
+- Find and Replace now highlights **Find** and asks for confirmation before changing all matches. An empty replacement is labeled as deletion. You can undo a prose replacement directly in the dialog, and replacements in notes and synopses tell you where to restore the saved scene versions.
+- Saving, ending collaboration, and closing the app remain possible after focusing an unchanged shared field while its host is offline.
+- Workspace layouts now save the panes you opened in their own windows, and applying one reopens them where they were, in place of the separate windows that are open. Before, only the main window was restored. If an open window cannot be closed, the layout is not applied and the main window stays as it was.
+- Pressing Enter or Shift+Enter at the bottom of a paper page keeps the new paragraph or line visible after it moves to the next page.
+- Views added by extensions, such as the AI Assistant's chat and analysis panels, now show their names in the interface language and switch immediately when you change language.
+- Application and editor shortcuts work with Arabic and other non-Latin keyboard layouts, including custom shortcut recording, while preserving Latin-layout bindings and composition input.
+- Opening a project or changing collaboration sessions no longer shows a spurious workspace-changed error from background invitation polling.
+- Starting or joining collaboration is faster for large projects.
+- Restarting an audiobook export immediately after it finishes reliably starts the new render.
+- Clicking a spelling or grammar count keeps the issue popup open after scrolling to the marked text.
+- The editor follows the configured proofing language without replacing it with the interface language or quote preset.
+- An export that has already written its file no longer ends with a "file in use" error when a temporary copy of one of its images cannot be removed right away.
+- Joining a live session no longer fails with "Shared metadata changed during capture" when opening the project updates it on your machine, for example when an installed extension adds its entity type. The update is shared with the host and the other writers. Sharing a project also no longer fails occasionally when a save lands while the project is being packed for a joining writer, and preparing that copy no longer blocks saves on Windows.
+- Editor context menus stay open when automatic caret scrolling is delayed by a busy app, so actions such as Add to Dictionary remain clickable.
+- Writing tools keep focus when opened just after returning to a scene, so delayed editor focus no longer hides the Leave focus button.
+- Collaboration sign-in and relay credentials can be saved on Linux desktops and window managers without built-in keyring detection, such as Hyprland, Sway, niri, COSMIC and LXQt. Novalist now finds the GNOME Keyring, KeePassXC or KWallet service running in your session, and still respects a keyring chosen with `--password-store`. When no keyring is available, the error now says which keyrings to start instead of a generic failure.
+- Reference list fields on a Codex entry are readable again: each entry shows a normal-sized checkbox with its name beside it, instead of an oversized checkbox and a name squeezed into one letter per line.
+- In the Light theme, checkboxes, radio buttons, colour pickers and dropdown lists, including those in the editor, are drawn light to match it: unticked boxes no longer show as solid dark squares. Custom light themes can do the same by setting `--nl-color-scheme` to `light`.
+- Front and back matter pages in EPUB exports no longer break the book when their text contains an ampersand or angle brackets, and keep their paragraphs and line breaks: a blank line starts a new paragraph and a single line break stays a line break. Word exports keep them the same way.
+- Front and back matter pages marked for the table of contents now appear in the table of contents of e-readers that use the older EPUB 2 contents, not only in newer ones.
+- EPUB exports state the book's language on every page and on the book itself, and chapters, the table of contents, prologues, afterwords and similar pages, and footnotes carry the roles screen readers expect, so accessibility checkers such as DAISY Ace no longer report them.
+- The accessibility summary of an EPUB is written in the book's language for English, German, Chinese and Arabic books, and tells the truth about its pictures: it no longer claims there are no images when the book has a cover, says when some or all pictures in the prose have no description instead of claiming they are all described, and the book declares alternative text only when every picture has one.
+- A line break made with Shift+Enter inside a paragraph is kept in EPUB, Word, PDF, Markdown, LaTeX and standard-manuscript (Normseiten) exports instead of turning into a space, while Enter still starts a new paragraph. Line breaks in imported or pasted text are kept the same way, and the word count shown in Export no longer counts the last word of one such line and the first word of the next as one. Tracked changes read back from an edited Word file no longer run two lines together.
+
+---
+
+## [3.7.2] - 2026-11-09
 
 ### Fixed
 
 - The scene notes placement picker no longer opens over Dashboard or Manuscript when a saved dock position is missing, or reappears after cancellation. Choose Notes to set its position again.
 - Scene synopses retain edits when switching views or closing the app while the field is still focused. Background refreshes no longer replace newer summary text, and failed saves keep the text available for retry.
-- Joining a live session no longer fails with "Shared metadata changed during capture" when opening the project updates it on your machine, for example when an installed extension adds its entity type. The update is shared with the host and the other writers. Sharing a project also no longer fails occasionally when a save lands while the project is being packed for a joining writer, and preparing that copy no longer blocks saves on Windows.
-- Editor context menus stay open when automatic caret scrolling is delayed by a busy app, so actions such as Add to Dictionary remain clickable.
-- Writing tools keep focus when opened just after returning to a scene, so delayed editor focus no longer hides the Leave focus button.
-- Collaboration sign-in and relay credentials can be saved on Linux desktops and window managers without built-in keyring detection, such as Hyprland, Sway, niri, COSMIC and LXQt. Novalist now finds the GNOME Keyring, KeePassXC or KWallet service running in your session, and still respects a keyring chosen with `--password-store`. When no keyring is available, the error now says which keyrings to start instead of a generic failure.
 
 ---
 
@@ -1888,7 +1921,8 @@ First public release.
 
 ---
 
-[Unreleased]: https://github.com/Drommedhar/novalist-official/compare/v3.7.0...HEAD
+[Unreleased]: https://github.com/Drommedhar/novalist-official/compare/v3.7.2...HEAD
+[3.7.2]: https://github.com/Drommedhar/novalist-official/compare/v3.7.0...v3.7.2
 [3.7.0]: https://github.com/Drommedhar/novalist-official/compare/v3.6.2...v3.7.0
 [3.6.2]: https://github.com/Drommedhar/novalist-official/compare/v3.6.1...v3.6.2
 [3.6.1]: https://github.com/Drommedhar/novalist-official/compare/v3.6.0...v3.6.1

@@ -30,6 +30,7 @@ import { extensionsAvailable } from '../views/extensions/ExtensionsUnavailable'
 export const VIEW_INTROS: Record<MainView, { titleKey: string; bodyKey: string }> = {
   write: { titleKey: 'intro.write.title', bodyKey: 'intro.write.body' },
   manuscript: { titleKey: 'intro.manuscript.title', bodyKey: 'intro.manuscript.body' },
+  structure: { titleKey: 'structure.title', bodyKey: 'structure.introduction' },
   drafts: { titleKey: 'intro.drafts.title', bodyKey: 'intro.drafts.body' },
   narration: { titleKey: 'intro.narration.title', bodyKey: 'intro.narration.body' },
   dashboard: { titleKey: 'intro.dashboard.title', bodyKey: 'intro.dashboard.body' },

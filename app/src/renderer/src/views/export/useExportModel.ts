@@ -4,11 +4,45 @@ import { rpc } from '../../rpc/client'
 import { useBookScope, useProjectStore } from '../../stores/projectStore'
 import { useStageStore } from '../../stores/stageStore'
 import { useShellStore } from '../../stores/shellStore'
-import { flushPendingWrites } from '../../stores/pendingWrites'
+import { flushPendingWrites, persistPendingWrite } from '../../stores/pendingWrites'
 import {
   codexLabels, ENTITY_KINDS, FORMATS, type Content, type EntityOption,
   type ExtensionFormatDto, type PresetDto, type PreviewDto
 } from './exportTypes'
+
+/**
+ * The book's description of its cover, edited under the cover toggle and
+ * saved with the book on leaving the field. Offered only when the book has a
+ * cover: a description of nothing would be a field that changes nothing.
+ */
+function useCoverAltText() {
+  const bookScope = useBookScope()
+  const [hasCover, setHasCover] = useState(false)
+  const [coverAltText, setCoverAltText] = useState('')
+  useEffect(() => {
+    let current = true
+    void Promise.all([
+      rpc.request<string | null>('dashboard/getCover'),
+      rpc.request<string>('dashboard/getCoverAltText')
+    ])
+      .then(([cover, text]) => {
+        if (!current) return
+        setHasCover(Boolean(cover))
+        setCoverAltText(text)
+      })
+      .catch(() => {
+        if (current) setHasCover(false)
+      })
+    return () => {
+      current = false
+    }
+  }, [bookScope])
+  const saveCoverAltText = (): Promise<void> =>
+    persistPendingWrite('export:coverAltText', () =>
+      rpc.request('dashboard/setCoverAltText', [coverAltText])
+    )
+  return { hasCover, coverAltText, setCoverAltText, saveCoverAltText }
+}
 
 function useExportOptions() {
   const projectName = useProjectStore((s) => s.projectName)
@@ -61,7 +95,7 @@ function useExportOptions() {
   return {
     projectName, content, setContent, format, setFormat, presetId, setPresetId,
     presets, setPresets, extFormats, title, setTitle, author, setAuthor,
-    includeTitlePage, setIncludeTitlePage, includeCover, setIncludeCover,
+    includeTitlePage, setIncludeTitlePage, includeCover, setIncludeCover, ...useCoverAltText(),
     forReaders, setForReaders, tocDepth, setTocDepth, tocTitle, setTocTitle,
     referenceDoc, setReferenceDoc, retailers, retailerKey, setRetailerKey,
     reviewOpen, setReviewOpen, isData, chaptersVisible, activePreset
@@ -239,7 +273,7 @@ function useExportRun(model: ExportInputs) {
     extFormats, format, title, author, includeTitlePage, chaptersVisible, selected,
     presetId, entitiesVisible, selectedEntities, isCodex, includeCover, stageFilter,
     tocDepth, tocTitle, referenceDoc, codexParts, pickedSections, sectionTitles,
-    retailerKey, extraBooks, forReaders
+    retailerKey, extraBooks, forReaders, hasCover, saveCoverAltText
   } = model
   const extFormat = extFormats.find((entry) => entry.formatKey === format)
   const [busy, setBusy] = useState(false)
@@ -254,6 +288,8 @@ function useExportRun(model: ExportInputs) {
         extFormat?.fileExtension ?? FORMATS.find((f) => f.format === format)?.extension ?? ''
       output = await window.novalist.saveFile(`${title || 'manuscript'}${extension}`)
       if (!output) return
+      // The cover description as it reads now, even if the field still has focus.
+      if (hasCover) await saveCoverAltText()
       await flushPendingWrites()
       await useProjectStore.getState().flushPendingSave()
       const exported = await rpc.request<{ outputPath: string; success: boolean }>('export/run', [

@@ -51,6 +51,7 @@ window.NovalistEditorState.editor.addEventListener('compositionend', () => {
         window.applyGrammarHighlights();
         window.updateGrammarStatusBar();
         window.handleEditorInput();
+        window.flushWritingProjection();
         window.schedulePageViewRepaginate();
     }, 0);
 });
@@ -179,6 +180,9 @@ document.addEventListener('selectionchange', () => {
     window.notifyFormattingChanged();
     const pos = window.getCaretPosition();
     window.sendMessage({ type: 'caretPosition', line: pos.line, column: pos.column });
+    if (window.NovalistWritingDocument?.enabled) {
+        window.sendMessage({ type: 'writingSelectionChanged', selection: window.getWritingSelection() });
+    }
     // Close mention picker if caret leaves the pending span.
     if (window.NovalistEditorState.mentionState) {
         const sel = window.getSelection();

@@ -61,6 +61,12 @@ public class BookData
     [JsonPropertyName("coverImage")]
     public string CoverImage { get; set; } = string.Empty;
 
+    /// <summary>The writer's description of the cover, for a reader who cannot
+    /// see it. Kept beside the cover it describes and cleared when the cover is
+    /// replaced, because a description of the old picture is wrong for the new.</summary>
+    [JsonPropertyName("coverAltText")]
+    public string CoverAltText { get; set; } = string.Empty;
+
     /// <summary>Wide banner image (shown on the Dashboard). Stored as a
     /// book-root-relative path. When empty, the Dashboard falls back to
     /// <see cref="CoverImage"/> so pre-split projects keep their banner.</summary>

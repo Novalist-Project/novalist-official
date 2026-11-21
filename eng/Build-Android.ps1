@@ -46,7 +46,7 @@ try {
     }
     $verb = if ($Configuration -eq 'Release') { 'publish' } else { 'build' }
     & dotnet $verb Novalist.Mobile/Novalist.Mobile.csproj -f net10.0-android -c $Configuration -r $Runtime -maxcpucount:1 `
-        -p:EnableImportApi=false -p:UseMonoRuntime=true `
+        -p:EnableImportApi=false -p:UseMonoRuntime=true -p:SelfContained=true `
         "-p:ApplicationDisplayVersion=$DisplayVersion" "-p:ApplicationVersion=$VersionCode" @signing `
         "-p:AndroidSdkDirectory=$AndroidSdkDirectory" "-p:JavaSdkDirectory=$JavaSdkDirectory"
     if ($LASTEXITCODE -ne 0) { throw 'Android build failed.' }

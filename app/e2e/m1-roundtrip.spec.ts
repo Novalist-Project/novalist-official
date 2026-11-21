@@ -65,16 +65,17 @@ test('project + binder + editor round-trip', async () => {
   await page.evaluate(() => window.novalistStores.project.getState().createChapter('Chapter One'))
   await expect(page.locator('.binder-chapter-title')).toHaveText('Chapter One')
 
-  await page.evaluate(() => {
+  const sceneId = await page.evaluate(async () => {
     const store = window.novalistStores.project.getState()
-    return store.createScene(store.chapters[0].guid, 'Opening')
+    await store.createScene(store.chapters[0].guid, 'Opening')
+    return window.novalistStores.project.getState().chapters[0].scenes.find(scene => scene.title === 'Opening')!.id
   })
-  const sceneRow = page.locator('.binder-scene-row')
+  const sceneRow = page.locator('.binder-scene-row').filter({ hasText: 'Opening' })
   await expect(sceneRow).toHaveCount(1)
 
   // Open the scene: the real editor.html loads in the iframe.
   await sceneRow.click()
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
+  const editor = page.frameLocator('.editor-frame').locator(`[data-writing-scene="${sceneId}"]`)
   await expect(editor).toBeVisible({ timeout: 30_000 })
 
   // Browser-painted chrome (scrollbars, form widgets) must follow the theme
@@ -105,19 +106,20 @@ test('project + binder + editor round-trip', async () => {
   // Type prose and let the 2s autosave fire.
   await editor.click()
   await page.keyboard.type('It was a dark and stormy night.')
-  await page.waitForTimeout(4000)
 
-  // The scene file on disk now contains the typed text.
+  // The scene file on disk now contains the typed text. The autosave runs on a
+  // timer and a slow machine can take longer than any fixed wait to finish it.
   const projectRoot = join(workDir, 'E2E Novel')
-  const sceneFiles = findSceneFiles(projectRoot)
-  const hit = sceneFiles.find((f) => readFileSync(f, 'utf8').includes('dark and stormy night'))
-  expect(hit, `scene files searched: ${sceneFiles.join(', ')}`).toBeTruthy()
+  await expect.poll(() => {
+    const sceneFiles = findSceneFiles(projectRoot)
+    return sceneFiles.some((f) => readFileSync(f, 'utf8').includes('dark and stormy night'))
+  }, { message: 'the typed prose should reach a scene file', timeout: 30_000 }).toBe(true)
 
   // Reopen the project fresh: state round-trips with a persisted word count.
   const reopened = (await page.evaluate((root) => {
     return window.novalistRpc.request('project/open', [root])
-  }, projectRoot)) as { chapters: { scenes: { wordCount: number }[] }[] }
-  expect(reopened.chapters[0].scenes[0].wordCount).toBe(7)
+  }, projectRoot)) as { chapters: { scenes: { id: string; wordCount: number }[] }[] }
+  expect(reopened.chapters[0].scenes.find(scene => scene.id === sceneId)?.wordCount).toBe(7)
 
   await app.close()
 })

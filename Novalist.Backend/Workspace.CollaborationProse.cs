@@ -50,6 +50,7 @@ public sealed partial class Workspace
         if ((target[field.Key]?.GetValue<string>() ?? "") == snapshot.Text) return;
         target[field.Key] = snapshot.Text;
         await FileService.WriteTextAsync(path, entity.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        if (projectingSharedFiles) return;
         if (field.SceneId is not null) ProjectSceneNote(binding, field, snapshot.Text);
         if (field.ResearchItemId is { } researchId)
         {

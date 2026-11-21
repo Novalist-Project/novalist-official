@@ -24,7 +24,7 @@ export function WorkspaceLayoutsDialog({
 
   const save = (): void => {
     if (name.trim().length === 0) return
-    useLayoutStore.getState().save(name)
+    void useLayoutStore.getState().save(name)
     setName('')
   }
 

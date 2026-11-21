@@ -7,6 +7,10 @@ import { useProjectStore, type ChapterDto, type ProjectStateDto } from '../store
 import { useManuscriptPropsStore } from '../stores/manuscriptPropsStore'
 import { ManuscriptPropertyField } from './ManuscriptPropertyField'
 import { ChapterDateFields, useChapterDates } from './ChapterDateFields'
+import { ChapterActField } from './ChapterActField'
+import { prepareChapterAct, prepareChapterInsertion } from '../stores/projectSceneActions'
+import { executeWritingStructure } from '../stores/writingStructure'
+import { writingErrorMessage } from '../views/editor/writingError'
 import './shellDialogs.css'
 
 /** What a chapter is, as opposed to what it is called. */
@@ -22,6 +26,29 @@ interface ChapterDialogProps {
   onClose(): void
 }
 
+async function assignChapterAct(guid: string, act: string, submitStructure: ReturnType<typeof useWorkspaceDialogGuard>): Promise<void> {
+  if (window.novalist.isMobile) return useProjectStore.getState().setChapterAct(guid, act)
+  const command = await prepareChapterAct(guid, act)
+  await submitStructure(() => executeWritingStructure(command))
+}
+
+async function createDraftChapter(name: string, act: string, dates: ReturnType<typeof useChapterDates>, submitStructure: ReturnType<typeof useWorkspaceDialogGuard>): Promise<void> {
+  if (!window.novalist.isMobile) {
+    const dateRange = dates.changed ? { start: dates.start, end: dates.end, note: dates.note } : undefined
+    const command = await prepareChapterInsertion(name, undefined, act, dateRange)
+    await submitStructure(() => executeWritingStructure(command))
+    return
+  }
+  const previous = new Set(useProjectStore.getState().chapters.map(chapter => chapter.guid))
+  let state = await rpc.request<ProjectStateDto>('project/createChapter', [name])
+  const created = state.chapters.find(chapter => !previous.has(chapter.guid))
+  if (created) {
+    if (dates.changed) state = await dates.save(created.guid)
+    if (act) state = await rpc.request<ProjectStateDto>('project/setChapterAct', [created.guid, act])
+  }
+  useProjectStore.getState().applyState(state)
+}
+
 function useChapterSectionTypes(): SectionType[] {
   const [sectionTypes, setSectionTypes] = useState<SectionType[]>([])
   useEffect(() => {
@@ -32,7 +59,7 @@ function useChapterSectionTypes(): SectionType[] {
 }
 
 function useChapterDraft({ chapter, onClose }: ChapterDialogProps) {
-  useWorkspaceDialogGuard()
+  const submitStructure = useWorkspaceDialogGuard()
   const { t } = useTranslation()
   const isEdit = !!chapter
   const [title, setTitle] = useState(chapter?.title ?? '')
@@ -43,6 +70,7 @@ function useChapterDraft({ chapter, onClose }: ChapterDialogProps) {
   const [sectionType, setSectionType] = useState(chapter?.sectionTypeKey ?? '')
   const sectionTypes = useChapterSectionTypes()
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const definitions = useManuscriptPropsStore((s) => s.definitions)
   const chapterProps = definitions.filter((d) => d.scope === 'Chapter')
@@ -65,11 +93,11 @@ function useChapterDraft({ chapter, onClose }: ChapterDialogProps) {
     const name = title.trim()
     if (!name || busy) return
     setBusy(true)
+    setError(null)
     const store = useProjectStore.getState()
     try {
       if (isEdit && chapter) {
         if (name !== chapter.title) await store.renameChapter(chapter.guid, name)
-        if (act.trim() !== chapter.act) await store.setChapterAct(chapter.guid, act.trim())
         if (dates.changed) store.applyState(await dates.save(chapter.guid))
         if (
           subtitle.trim() !== (chapter.subtitle ?? '') ||
@@ -85,31 +113,23 @@ function useChapterDraft({ chapter, onClose }: ChapterDialogProps) {
             ])
           )
         }
+        if (act.trim() !== chapter.act) await assignChapterAct(chapter.guid, act.trim(), submitStructure)
       } else {
-        const prev = new Set(store.chapters.map((c) => c.guid))
-        let state = await rpc.request<ProjectStateDto>('project/createChapter', [name])
-        const created = state.chapters.find((c) => !prev.has(c.guid))
-        if (created) {
-          if (dates.changed) state = await dates.save(created.guid)
-          if (act.trim())
-            state = await rpc.request<ProjectStateDto>('project/setChapterAct', [
-              created.guid,
-              act.trim()
-            ])
-        }
-        useProjectStore.getState().applyState(state)
+        await createDraftChapter(name, act.trim(), dates, submitStructure)
       }
       onClose()
+    } catch (reason) {
+      setError(writingErrorMessage(String(reason)))
     } finally {
       setBusy(false)
     }
   }
 
-  return { busy, t, isEdit, inputRef, title, setTitle, submit, sectionType, setSectionType, sectionTypes, subtitle, setSubtitle, hideHeading, setHideHeading, act, setAct, chapterProps, values, setValues, dates }
+  return { busy, error, t, isEdit, inputRef, title, setTitle, submit, sectionType, setSectionType, sectionTypes, subtitle, setSubtitle, hideHeading, setHideHeading, act, setAct, chapterProps, values, setValues, dates }
 }
 
 export function ChapterDialog({ chapter, onClose }: ChapterDialogProps): React.JSX.Element {
-  const { busy, t, isEdit, inputRef, title, setTitle, submit, sectionType, setSectionType, sectionTypes, subtitle, setSubtitle, hideHeading, setHideHeading, act, setAct, chapterProps, values, setValues, dates } = useChapterDraft({ chapter, onClose })
+  const { busy, error, t, isEdit, inputRef, title, setTitle, submit, sectionType, setSectionType, sectionTypes, subtitle, setSubtitle, hideHeading, setHideHeading, act, setAct, chapterProps, values, setValues, dates } = useChapterDraft({ chapter, onClose })
 
   return (
     <div
@@ -172,13 +192,7 @@ export function ChapterDialog({ chapter, onClose }: ChapterDialogProps): React.J
         </label>
 
         <label className="inspector-label">{t('dialog.act')}</label>
-        <input
-          className="dialog-input"
-          value={act}
-          placeholder={t('dialog.actWatermark')}
-          onChange={(e) => setAct(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && void submit()}
-        />
+        <ChapterActField value={act} onChange={setAct} />
 
         <ChapterDateFields dates={dates} />
 
@@ -207,6 +221,7 @@ export function ChapterDialog({ chapter, onClose }: ChapterDialogProps): React.J
           </>
         )}
 
+        {error && <p role="alert">{error}</p>}
         <div className="dialog-actions">
           <button className="dialog-button" disabled={busy} onClick={onClose}>
             {t('dialog.cancel')}

@@ -1,5 +1,5 @@
 import { test, expect, _electron as electron } from '@playwright/test'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { evaluateWhenReady, waitForAppReady } from './appReady'
@@ -109,6 +109,66 @@ test('export separates what from how, and targets are reachable from Settings', 
   await expect(page.locator('.dashboard-target-row')).toHaveCount(1, { timeout: 10_000 })
   const formattedTarget = await page.evaluate(() => (4000).toLocaleString())
   await expect(page.locator('.dashboard-target-row')).toContainText(formattedTarget)
+
+  await app.close()
+})
+
+/**
+ * The EPUB names its cover for a reader who cannot see it. The description is
+ * asked for under the cover toggle, only when there is a cover to describe, and
+ * is saved with the book so the next export uses it.
+ */
+test('the cover description sits under the cover and is saved with the book', async () => {
+  test.setTimeout(120_000)
+
+  const workDir = mkdtempSync(join(tmpdir(), 'nl-cover-alt-'))
+  const cover = join(workDir, 'cover.png')
+  writeFileSync(cover, Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64'
+  ))
+  const env: Record<string, string> = Object.fromEntries(
+    Object.entries(process.env).filter(([k, v]) => v !== undefined && k !== 'ELECTRON_RUN_AS_NODE')
+  ) as Record<string, string>
+  env.NOVALIST_NO_SPLASH = '1'
+  env.NOVALIST_SETTINGS_DIR = join(workDir, 'settings')
+
+  const app = await electron.launch({ args: ['out/main/index.js', `--user-data-dir=${join(workDir, 'profile')}`], env })
+  const page = await app.firstWindow()
+  await waitForAppReady(page)
+
+  await evaluateWhenReady(page, async (parent) => {
+    const state = await window.novalistRpc.request('project/create', [parent, 'Covered', 'Book One'])
+    window.novalistStores.project.getState().applyState(state as never)
+    const withChapter = await window.novalistRpc.request('project/createChapter', ['Chapter One'])
+    window.novalistStores.project.getState().applyState(withChapter as never)
+  }, workDir)
+  await dismissTour(page)
+
+  // No cover yet: there is nothing to describe, so the field is not offered.
+  await page.evaluate(() => window.novalistStores.shell.getState().setMainView('export'))
+  await expect(page.locator('#export-format')).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('#export-cover-alt')).toHaveCount(0)
+
+  // With a cover the field appears under the cover toggle once Export reopens.
+  await page.evaluate((path) => window.novalistRpc.request('dashboard/setCover', [path]), cover)
+  await page.evaluate(() => window.novalistStores.shell.getState().setMainView('dashboard'))
+  await page.evaluate(() => window.novalistStores.shell.getState().setMainView('export'))
+  const field = page.locator('#export-cover-alt')
+  await expect(field).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByLabel('Cover description')).toBeVisible()
+
+  await field.fill('A lighthouse in a storm')
+  await field.blur()
+  await expect
+    .poll(() => page.evaluate(() => window.novalistRpc.request('dashboard/getCoverAltText')), {
+      timeout: 10_000
+    })
+    .toBe('A lighthouse in a storm')
+
+  // Leaving the cover out of the file leaves nothing to describe.
+  await page.getByLabel('Include the book cover').uncheck()
+  await expect(field).toHaveCount(0)
 
   await app.close()
 })

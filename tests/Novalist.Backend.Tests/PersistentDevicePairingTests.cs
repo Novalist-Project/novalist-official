@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Novalist.Backend.Tests;
 
+[Collection("BackendStatics")]
 public sealed class PersistentDevicePairingTests
 {
     [Fact]

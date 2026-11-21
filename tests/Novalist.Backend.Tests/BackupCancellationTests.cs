@@ -38,14 +38,14 @@ public sealed class BackupCancellationTests
         client.StartListening();
         using var cancellation = new CancellationTokenSource();
         var backup = client.InvokeWithCancellationAsync<BackupDto?>("backup/create", ["open"], cancellation.Token);
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitAsync(TestWait.Deadline);
         var reading = client.InvokeAsync<SceneContentDto>("scenes/read", chapter.Guid, scene.Id);
         Assert.False(reading.IsCompleted);
 
         cancellation.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => backup);
-        var content = await reading.WaitAsync(TimeSpan.FromSeconds(5));
+        var content = await reading.WaitAsync(TestWait.Deadline);
         Assert.Equal("<p>Preserved text</p>", content.Html);
         Assert.Empty(Directory.GetFiles(workspace.Settings.Settings.BackupFolder, "*.zip", SearchOption.AllDirectories));
     }

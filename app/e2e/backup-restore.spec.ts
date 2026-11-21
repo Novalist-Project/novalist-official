@@ -120,7 +120,14 @@ test('restoring a kept version removes later scenes and clears stale editor stat
     // Queue an editor save and click Restore in the same turn, before autosave.
     await version1.evaluate((row) => {
       const project = window.novalistStores.project.getState()
-      project.onEditorContentChanged(project.activeEditorPaneId!, '<p>Pending version two.</p>', 'Pending version two.')
+      const registry = project.getWritingRegistry()!
+      const ref = { bookId: registry.context.bookId, draftId: registry.context.draftId,
+        chapterGuid: project.openChapterGuid!, sceneId: project.openSceneId! }
+      const before = registry.getSnapshot(ref)!
+      registry.apply({ id: crypto.randomUUID(), context: registry.context, origin: 'restore-fixture', kind: 'input',
+        changes: [{ ref, beforeHtml: before.html, afterHtml: '<p>Pending version two.</p>',
+          expectedHash: before.hash, expectedRevision: before.revision }], annotationChanges: [],
+        beforeSelection: null, afterSelection: null })
       const button = [...row.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Restore')!
       button.click()
     })

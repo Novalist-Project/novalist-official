@@ -1,0 +1,176 @@
+/* Arabic interface styles adapted from Ammar-Banna's contribution in #78.
+   Prose direction and alignment remain controlled by the content itself. */
+:root[dir='rtl'] :is(.binder, .mode-panel, .map-toolrail, .wiki-index) {
+  border-right: 0;
+  border-left: var(--nl-rule-width) solid var(--nl-border);
+}
+
+:root[dir='rtl'] :is(.inspector, .map-layerpanel, .library-inspector) {
+  border-left: 0;
+  border-right: var(--nl-rule-width) solid var(--nl-border);
+}
+
+:root[dir='rtl'] .panel-resizer-right {
+  right: auto;
+  left: calc(-1 * var(--nl-rule-width-emphasis));
+}
+
+:root[dir='rtl'] .panel-resizer-left {
+  left: auto;
+  right: calc(-1 * var(--nl-rule-width-emphasis));
+}
+
+/* Saved pane positions and docking edges are physical coordinates. */
+:root[dir='rtl'] :is(.pane-split, .notes-dock-targets) {
+  direction: ltr;
+}
+
+:root[dir='rtl'] :is(.pane-leaf, .notes-dock-target, .notes-dock-cancel) {
+  direction: rtl;
+}
+
+:root[dir='rtl'] :is(.mode-panel-count, .library-actions, .library-filters,
+  .shelf-actions, .peek-actions, .research-inbox-count, .series-book-author,
+  .view-intro-close, .codex-tab-manage, .codex-tab-unlinked, .writing-scope-description) {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+:root[dir='rtl'] :is(.research-inbox-badge, .matter-custom-title,
+  .scene-checklist-details > summary .scene-checklist-count) {
+  margin-left: 0;
+  margin-right: var(--nl-space-sm);
+}
+
+:root[dir='rtl'] :is(.scene-bulk-count, .editor-toolbar-style) {
+  margin-right: 0;
+  margin-left: var(--nl-space-tighter);
+}
+
+:root[dir='rtl'] .scene-checklist-completed > summary svg {
+  margin-right: 0;
+  margin-left: var(--nl-space-sm);
+}
+
+:root[dir='rtl'] :is(.toolbar-more-menu, .library-more-menu, .editor-writing-options) {
+  right: auto;
+  left: 0;
+}
+
+:root[dir='rtl'] .map-flyout {
+  left: auto;
+  right: calc(100% + var(--nl-space-tighter));
+}
+
+:root[dir='rtl'] :is(.help-close, .wiki-lightbox-close, .toast-host) {
+  right: auto;
+  left: var(--nl-space-lg);
+}
+
+:root[dir='rtl'] :is(.tour-card, .focus-return) {
+  right: auto;
+  left: var(--nl-space-xl);
+}
+
+:root[dir='rtl'] :is(.tour-close, .dashboard-cover-actions, .map-measure-bar, .map-peek) {
+  right: auto;
+  left: var(--nl-space-md);
+}
+
+:root[dir='rtl'] .peek-card-anchor.pinned {
+  left: auto;
+  right: var(--nl-space-lg);
+}
+
+:root[dir='rtl'] .binder-scene-row {
+  padding-left: var(--nl-space-sm);
+  padding-right: calc(var(--nl-space-xl) + var(--nl-space-sm));
+}
+
+:root[dir='rtl'] .binder-scene-row.changed {
+  box-shadow: inset calc(-1 * var(--nl-space-hairline)) 0 0 0 var(--nl-git-dirty);
+}
+
+:root[dir='rtl'] :is(.binder-scene-row.selected, .corkboard-card.selected,
+  .outliner-row.selected, .calendar-event.selected) {
+  box-shadow: inset calc(-1 * var(--nl-space-hairline)) 0 0 var(--nl-accent);
+}
+
+:root[dir='rtl'] .icon-directional { scale: -1 1; }
+
+:root[dir='rtl'] {
+  --nl-book-cover-turn: -1;
+  --nl-book-spine-angle: 270deg;
+}
+
+:root[dir='rtl'] .volume-cover {
+  border-radius: var(--nl-radius-md) var(--nl-radius-sm) var(--nl-radius-sm) var(--nl-radius-md);
+  perspective-origin: right center;
+}
+
+:root[dir='rtl'] .volume-cover-front { transform-origin: right center; }
+
+:root[dir='rtl'] .editor-tab {
+  border-right: 0;
+  border-left: var(--nl-rule-width) solid var(--nl-border-subtle);
+}
+
+:root[dir='rtl'] :is(.binder-chapter-row, .pane-header-view) {
+  text-align: start;
+}
+
+:root[dir='rtl'] :is(.chart-axis, .analytics-cells, .plot-lanes,
+  .timeline-span-track, .timeline-span-bar) {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+:root[dir='rtl'] :is(input[type='email'], input[type='url'], input[type='password'],
+  input[type='number'], pre, code, kbd, samp, .git-diff, .snapshot-diff,
+  .token-name, .language-pack-code) {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: start;
+}
+
+:root[dir='rtl'] :is(.status-stats > span, .status-overview-words,
+  .status-metric, .status-goal-label) {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+:root[dir='rtl'] .focus-edge-left {
+  left: auto;
+  right: 0;
+  width: var(--nl-focus-hover-right);
+}
+
+:root[dir='rtl'] .focus-edge-right {
+  right: auto;
+  left: 0;
+  width: var(--nl-focus-hover-left);
+}
+
+:root[dir='rtl'] .focus-panel-binder {
+  left: auto;
+  right: var(--nl-space-lg);
+  transform: translateX(calc(100% + var(--nl-space-lg)));
+}
+
+:root[dir='rtl'] .focus-panel-inspector {
+  right: auto;
+  left: var(--nl-space-lg);
+  transform: translateX(calc(-100% - var(--nl-space-lg)));
+}
+
+:root[dir='rtl'] :is(.focus-panel-binder, .focus-panel-inspector).focus-panel-open {
+  transform: translateX(0);
+}
+
+:root[dir='rtl'][data-shell='desktop'] .motion-presence > :is(.binder, .mode-panel) {
+  --presence-x: var(--nl-motion-distance);
+}
+
+:root[dir='rtl'][data-shell='desktop'] .motion-presence > .inspector {
+  --presence-x: calc(-1 * var(--nl-motion-distance));
+}

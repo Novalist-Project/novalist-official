@@ -4,6 +4,8 @@ import { mirror, useProjectStore } from './projectStore'
 import type { ProjectState } from './projectTypes'
 import { stripHtml } from './projectPersistence'
 import { useManuscriptStore, applyExternalManuscriptScene } from './manuscriptStore'
+import { captureWritingSavedHashes, getCurrentWritingConflict, getPendingWritingResolution, refreshWritingOwners } from './writingExternalRefresh'
+import type { WritingDiskConflict } from './writingDocuments'
 
 export interface SceneDiskChange {
   chapterGuid: string
@@ -23,11 +25,16 @@ const sharedWorkspace = (state: ProjectState): boolean =>
 /** Recheck on application focus; never flush stale prose before reading disk. */
 export async function refreshExternalScenes(): Promise<void> {
   const initial = useProjectStore.getState()
-  if (refreshing || !initial.isLoaded || initial.workspaceBusy || initial.workspaceSuspended || initial.changingSceneStructure || sharedWorkspace(initial)) return
+  if (refreshing || !initial.isLoaded || initial.workspaceBusy || initial.workspaceSuspended || initial.changingSceneStructure ||
+      (window.novalist.isMobile && sharedWorkspace(initial))) return
   refreshing = true
   try {
     capturePendingWrites()
     const before = useProjectStore.getState()
+    if (!window.novalist.isMobile) {
+      await refreshDesktopWriting(before)
+      return
+    }
     const manuscript = useManuscriptStore.getState().sections
     const versions = [
       ...Object.values(before.editors).flatMap(editor => editor.sceneId && editor.chapterGuid && editor.hash
@@ -74,4 +81,33 @@ export async function refreshExternalScenes(): Promise<void> {
       if (prior) applyExternalManuscriptScene(change, prior.hash)
     }
   } finally { refreshing = false }
+}
+
+async function refreshDesktopWriting(before: ProjectState): Promise<void> {
+  if (!before.projectPath || !before.activeBookId || !before.activeDraftId) return
+  const context = { workspaceId: before.projectPath, workspaceEpoch: before.workspaceEpoch,
+    bookId: before.activeBookId, draftId: before.activeDraftId }
+  publishWritingConflict(getPendingWritingResolution(context))
+  const countsRead = rpc.request<{ counts: { sceneId: string; wordCount: number; hash: string }[] }>('scenes/refresh', [[]])
+  const [conflicts, result] = await Promise.all([refreshWritingOwners(context), countsRead])
+  const current = useProjectStore.getState()
+  if (current.projectPath !== context.workspaceId || current.workspaceEpoch !== context.workspaceEpoch ||
+      current.workspaceBusy || current.workspaceSuspended || current.changingSceneStructure) return
+  for (const conflict of conflicts) publishWritingConflict(conflict)
+  if (current.activeBookId !== context.bookId || current.activeDraftId !== context.draftId) return
+  const latestHashes = captureWritingSavedHashes(context)
+  const counts = new Map(result.counts.filter(item => !latestHashes.has(item.sceneId) || item.hash === latestHashes.get(item.sceneId))
+    .map(item => [item.sceneId, item.wordCount]))
+  useProjectStore.setState(state => ({ chapters: state.chapters.map(chapter => ({ ...chapter,
+    scenes: chapter.scenes.map(scene => !scene.sharedProse && counts.has(scene.id) ? { ...scene, wordCount: counts.get(scene.id)! } : scene)
+  })) }))
+}
+
+function publishWritingConflict(conflict: WritingDiskConflict | null | undefined): void {
+  const owned = conflict && getCurrentWritingConflict(conflict)
+  const current = useProjectStore.getState()
+  if (!owned || current.sceneConflict || current.projectPath !== owned.context.workspaceId ||
+      current.workspaceEpoch !== owned.context.workspaceEpoch) return
+  useProjectStore.setState({ sceneConflict: { chapterGuid: owned.ref.chapterGuid, sceneId: owned.ref.sceneId,
+    mine: owned.mine, theirs: owned.theirs, plainText: stripHtml(owned.mine), writing: owned } })
 }

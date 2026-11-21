@@ -76,6 +76,45 @@ public class ExtensionLocalizationServiceTests
     }
 
     [Fact]
+    public void Language_IsTheOneTheStringsAreIn_NotTheOneAskedFor()
+    {
+        using var dir = new TempDir();
+        WriteLocale(dir, "en", """{ "g": "Hello" }""");
+        WriteLocale(dir, "ar", """{ "g": "مرحبا" }""");
+        WriteLocale(dir, "de", "{}");
+        WriteLocale(dir, "zh-CN", "{ not valid json");
+
+        Assert.Equal("ar", new ExtensionLocalizationService(dir.Path, "ar").Language);
+        Assert.Equal("en", new ExtensionLocalizationService(dir.Path, "en").Language);
+        Assert.Equal("en", new ExtensionLocalizationService(dir.Path, "EN").Language);
+        // No file, an empty file and an unreadable file all leave every key
+        // falling back to English, so English is what the panel shows.
+        Assert.Equal("en", new ExtensionLocalizationService(dir.Path, "fr").Language);
+        Assert.Equal("en", new ExtensionLocalizationService(dir.Path, "de").Language);
+        Assert.Equal("en", new ExtensionLocalizationService(dir.Path, "zh-CN").Language);
+        // An extension with no locale folder at all.
+        Assert.Equal("en", new ExtensionLocalizationService(string.Empty, "ar").Language);
+    }
+
+    [Fact]
+    public void Language_FollowsReload_InBothDirections()
+    {
+        using var dir = new TempDir();
+        WriteLocale(dir, "en", """{ "g": "Hello" }""");
+        WriteLocale(dir, "ar", """{ "g": "مرحبا" }""");
+        var sut = new ExtensionLocalizationService(dir.Path, "en");
+
+        sut.Reload("ar");
+        Assert.Equal("ar", sut.Language);
+        sut.Reload("fr");
+        Assert.Equal("en", sut.Language);
+        sut.Reload("ar");
+        Assert.Equal("ar", sut.Language);
+        sut.Reload("en");
+        Assert.Equal("en", sut.Language);
+    }
+
+    [Fact]
     public void Reload_SwitchesLanguage_AndRaisesPropertyChanged()
     {
         using var dir = new TempDir();

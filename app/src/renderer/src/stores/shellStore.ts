@@ -3,10 +3,10 @@ import { parseSettingsDestination, setSettingsDestination } from '../views/setti
 import { isSettingsSectionKey } from '../views/settings/settingsRegistry'
 import { HOME_VIEW, MODE_VIEWS, modeOf, type Mode } from '../shell/modes'
 import { type MainView, type PaneView, type InspectorTab, type ShellState } from './shellTypes'
-import { newLeaf, findPane, paneLeaves, splitPane, closePane, canClosePane, setPaneViewIn, resize, reidentify, persistLayouts, storedLayouts, initialPanes } from './shellPanes'
+import { newLeaf, findPane, paneLeaves, splitPane, closePane, canClosePane, setPaneViewIn, setPaneWritingScopeIn, resize, reidentify, persistLayouts, storedLayouts, initialPanes } from './shellPanes'
 import { BINDER_MIN, BINDER_MAX, INSPECTOR_MIN, INSPECTOR_MAX, shellCapacityForWidth, clamp, savePanelSize, initialPanelSize, storedPanels, screenW } from './shellPanels'
 
-function withSavedPanes(ids: string[], proceed: () => void): void {
+export function withSavedPanes(ids: string[], proceed: () => void): void {
   void (async () => {
     const [{ useProjectStore }, { capturePendingWrites, flushPendingWrites }] = await Promise.all([
       import('./projectStore'), import('./pendingWrites')
@@ -56,6 +56,10 @@ function showView(
   ShellState,
   'mainView' | 'mode' | 'extView' | 'panes' | 'binderOverlayOpen' | 'inspectorOverlayOpen'
 > {
+  const legacyManuscript = mainView === 'manuscript' && !window.novalist.isMobile
+  if (legacyManuscript) mainView = 'write'
+  let panes = setPaneViewIn(state.panes, state.activePaneId, mainView)
+  if (legacyManuscript) panes = setPaneWritingScopeIn(panes, state.activePaneId, 'manuscript')
   return {
     // A view carries its mode with it, so a deep link, a hotkey or the palette
     // lands the writer in the workspace that view belongs to rather than
@@ -63,7 +67,7 @@ function showView(
     // Settings and About belong to no mode and leave the last one standing.
     mainView, mode: state.mode, ...viewState(state, mainView),
     extView: null,
-    panes: setPaneViewIn(state.panes, state.activePaneId, mainView),
+    panes,
     binderOverlayOpen: false,
     inspectorOverlayOpen: false
   }
@@ -215,6 +219,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
       return { modePanelVisible }
     }),
 
+  setPaneWritingScope: (id, scope) => set(state => ({ panes: setPaneWritingScopeIn(state.panes, id, scope) })),
   setActivePane: (activePaneId) =>
     set((s) => {
       const pane = findPane(s.panes, activePaneId)
@@ -226,9 +231,13 @@ export const useShellStore = create<ShellState>((set, get) => ({
   setPaneView: (id, view) =>
     set((s) => {
       const pane = findPane(s.panes, id)
-      if (!pane || pane.kind !== 'leaf' || pane.view === view) return {}
+      const legacyManuscript = view === 'manuscript' && !window.novalist.isMobile
+      if (legacyManuscript) view = 'write'
+      if (!pane || pane.kind !== 'leaf' || (pane.view === view && !legacyManuscript)) return {}
+      let panes = setPaneViewIn(s.panes, id, view)
+      if (legacyManuscript) panes = setPaneWritingScopeIn(panes, id, 'manuscript')
       return {
-        panes: setPaneViewIn(s.panes, id, view),
+        panes,
         // The label the toolbar and the palette read follows the pane the writer
         // is in, so retargeting some other pane must not move it.
         ...(id === s.activePaneId ? { ...viewState(s, view), extView: null } : {})

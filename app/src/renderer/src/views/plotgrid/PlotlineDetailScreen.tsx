@@ -153,7 +153,7 @@ export function PlotlineDetailScreen(props: {
     <div className="plotline-detail" ref={detailRef} role="region" aria-label={props.plotline.name}>
       <div className="plotline-detail-header">
         <button className="plotline-detail-back" onClick={leave}>
-          <ArrowLeft size={14} strokeWidth={2} />
+          <ArrowLeft size={14} strokeWidth={2} className="icon-directional" />
           {t('plotGrid.backToGrid')}
         </button>
         <span className="plotline-detail-name">

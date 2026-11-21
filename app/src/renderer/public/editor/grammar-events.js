@@ -48,7 +48,7 @@ window.NovalistEditorState.editor.addEventListener('click', (e) => {
 grammarPopup.querySelector('.gp-dismiss').addEventListener('click', window.dismissGrammarIssue);
 
 // Hide popup on scroll or outside click
-window.NovalistEditorState.wrapper.addEventListener('scroll', window.hideGrammarPopup);
+window.NovalistEditorState.wrapper.addEventListener('scroll', () => window.hideGrammarPopup(true));
 
 document.addEventListener('click', (e) => {
     if (!grammarPopup.contains(e.target) && !e.target.closest('.grammar-issue')) {

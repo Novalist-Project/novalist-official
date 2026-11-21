@@ -918,8 +918,8 @@ public class ExportServiceTests : IDisposable
             zip.Entries.Single(e => e.FullName == "OEBPS/chapter-1.xhtml").Open());
         var xhtml = await reader.ReadToEndAsync();
 
-        Assert.Contains("epub:type=\"noteref\" id=\"fnref1\" href=\"#fn1\"", xhtml);
-        Assert.Contains("epub:type=\"footnote\" id=\"fn1\"", xhtml);
+        Assert.Contains("epub:type=\"noteref\" role=\"doc-noteref\" id=\"fnref1\" href=\"#fn1\"", xhtml);
+        Assert.Contains("epub:type=\"footnote\" role=\"doc-footnote\" id=\"fn1\"", xhtml);
         Assert.Contains("Rebuilt in 1911.", xhtml);
     }
 

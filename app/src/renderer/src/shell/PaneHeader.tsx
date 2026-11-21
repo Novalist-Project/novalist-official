@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, Columns2, ExternalLink, Rows2, X, ListChecks } from 'lucide-react'
+import { ChevronDown, Columns2, Rows2, X, ListChecks } from 'lucide-react'
 import { useShellStore, type MainView } from '../stores/shellStore'
 import { HOME_VIEW, MODES, MODE_VIEWS } from './modes'
 import { useProjectStore } from '../stores/projectStore'
 import { MotionPresence } from './MotionPresence'
 import { canClosePane } from '../stores/shellPanes'
+import { UndockButton } from './UndockButton'
 
 /**
  * Everything a pane can show, grouped by mode.
@@ -109,14 +110,7 @@ export function PaneHeader({ paneId, view }: { paneId: string; view: MainView })
         >
           <Rows2 size={14} strokeWidth={1.75} />
         </button>
-        <button
-          className="pane-header-button"
-          title={t('panes.popOut')}
-          aria-label={t('panes.popOut')}
-          onClick={() => void popOut(view)}
-        >
-          <ExternalLink size={14} strokeWidth={1.75} />
-        </button>
+        <UndockButton paneId={paneId} view={view} />
         {/* The last pane in the window stays: a content area with nothing in it
             is not a layout, it is a broken window. */}
         {canClose && (
@@ -156,20 +150,4 @@ export function PaneHeader({ paneId, view }: { paneId: string; view: MainView })
       )}</MotionPresence>
     </div>
   )
-}
-
-/**
- * Tears a pane off into its own window, carrying the project it is looking at
- * and, for the editor, the scene - a window that opened on whichever project
- * happened to be most recent and no scene at all was a window showing "open a
- * project" with nothing able to change it.
- */
-export async function popOut(view: MainView): Promise<void> {
-  const project = useProjectStore.getState()
-  await window.novalist.openPaneWindow({
-    view,
-    projectPath: project.projectPath,
-    chapterGuid: view === 'write' ? project.openChapterGuid : null,
-    sceneId: view === 'write' ? project.openSceneId : null
-  })
 }

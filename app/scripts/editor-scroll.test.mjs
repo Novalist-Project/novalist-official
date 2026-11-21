@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom'
 const editorDirectory = new URL('../src/renderer/public/editor/', import.meta.url)
 const scripts = [...readFileSync(new URL('editor.html', editorDirectory), 'utf8').matchAll(/<script src="([^"]+)"/g)]
   .map(match => match[1])
-  .filter(name => ['writing-scroll.js', 'typewriter-scroll.js', 'grammar-highlights.js',
+  .filter(name => ['writing-scroll.js', 'writing-selection.js', 'typewriter-scroll.js', 'grammar-highlights.js',
     'clipboard-focus-events.js', 'context-menu-actions.js', 'context-menu-events.js'].includes(name))
 
 function editorFixture(t) {
@@ -65,6 +65,22 @@ test('focus restoration keeps an open menu through delayed scroll delivery', t =
   fixture.openMenu()
   fixture.deliverScroll()
   assert.equal(fixture.menu.classList.contains('visible'), true)
+})
+
+for (const viewportOffset of [40, undefined]) test(`a delayed writing scene reveal with offset ${viewportOffset} keeps the dictionary menu actionable`, t => {
+  const fixture = editorFixture(t)
+  const scene = fixture.editor.querySelector('p')
+  scene.dataset.writingScene = 'scene'
+  scene.scrollIntoView = () => { fixture.wrapper.scrollTop = 60 }
+  fixture.window.getWritingSceneRoot = () => scene
+  fixture.window.revealWritingPoint({ sceneId: 'scene', offset: 4, affinity: 'after' }, viewportOffset)
+  assert.equal(fixture.wrapper.scrollTop, 60)
+  fixture.advance(250)
+  fixture.openMenu()
+  fixture.deliverScroll()
+  assert.equal(fixture.menu.classList.contains('visible'), true)
+  fixture.menu.querySelector('[data-action="addToDictionary"]').click()
+  assert.deepEqual(JSON.parse(JSON.stringify(fixture.messages)), [{ type: 'addToDictionary', word: 'Aelthorn' }])
 })
 
 for (const { name, positions, finalTop } of [

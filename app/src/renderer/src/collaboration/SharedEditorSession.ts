@@ -2,10 +2,8 @@ import { CollaborativeScene } from './CollaborativeScene'
 import type { RichEditingSurface } from './richEditingSurface'
 import type { SharedSelection, ParticipantSelection } from './remoteSelections'
 import { mergeUpdates } from 'yjs'
-
-// Every saved update becomes its own encrypted, numbered envelope on the server, which
-// keeps it until the next key rotation. Merging a burst of keystrokes keeps that log small.
-export const SHARED_WRITE_DELAY_MS = 250
+import type { SharedSceneSession } from './SharedSceneSession'
+import { SHARED_WRITE_DELAY_MS } from './sharedWriteDelay'
 
 export interface SharedEditorConnection {
   write(update: Uint8Array): Promise<void>
@@ -32,10 +30,14 @@ export class SharedEditorSession {
 
   constructor(private readonly editor: RichEditingSurface, initialState: Uint8Array,
     private readonly connection: SharedEditorConnection,
-    private readonly changed: (status: SharedEditorStatus) => void) {
+    private readonly changed: (status: SharedEditorStatus) => void,
+    private readonly owner?: SharedSceneSession,
+    private readonly onDetached?: () => void) {
     this.content = { html: editor.getContent(), plainText: editor.getPlainText() }
     this.scene = new CollaborativeScene(editor, {
       initialState,
+      owner,
+      onRendered: () => this.publish(),
       onUpdate: update => {
         this.pending.push(update.slice())
         this.publish()
@@ -43,7 +45,7 @@ export class SharedEditorSession {
       },
       onError: error => { this.error = error; this.publish() }
     })
-    this.unsubscribe = connection.subscribe(update => this.receive(update))
+    this.unsubscribe = owner ? owner.subscribe(() => this.publish()) : connection.subscribe(update => this.receive(update))
   }
 
   capture(): void {
@@ -51,12 +53,13 @@ export class SharedEditorSession {
     this.publish()
   }
 
-  state(): Uint8Array { return this.scene.encodeState() }
+  state(): Uint8Array { return this.owner ? this.owner.state() : this.scene.encodeState() }
   selection(): SharedSelection | null { return this.detached ? null : this.scene.getSelection() }
   showParticipant(participant: ParticipantSelection): void { if (!this.detached) this.scene.showParticipant(participant) }
   removeParticipant(id: string): void { if (!this.detached) this.scene.removeParticipant(id) }
 
   async refresh(): Promise<void> {
+    if (this.owner) { await this.owner.refresh(); return }
     this.receive(await this.connection.read())
   }
 
@@ -94,6 +97,7 @@ export class SharedEditorSession {
   }
 
   async flush(): Promise<void> {
+    if (this.owner) { await this.owner.flush(); return }
     if (!this.detached) this.scene.flushChanges()
     if (this.writing) await this.writing
     this.startWriting()
@@ -107,10 +111,11 @@ export class SharedEditorSession {
     this.content = { html: this.editor.getContent(), plainText: this.editor.getPlainText() }
     this.detached = true
     this.unsubscribe()
+    this.onDetached?.()
   }
 
   private publish(): void {
     if (!this.detached) this.content = { html: this.editor.getContent(), plainText: this.editor.getPlainText() }
-    this.changed({ ...this.content, pending: this.pending.length > 0, error: this.error })
+    this.changed({ ...this.content, pending: this.owner?.dirty ?? this.pending.length > 0, error: this.owner?.error ?? this.error })
   }
 }

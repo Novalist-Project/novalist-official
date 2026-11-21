@@ -99,7 +99,7 @@ public sealed class InlineActionTransportTests : IDisposable
 
         var pending = _client.InvokeAsync<InlineActionResultDto>(
             "extensions/inlineAction/execute", "lookup", "word", "chapter", "scene", "", "");
-        var progress = await _opened.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var progress = await _opened.Task.WaitAsync(TestWait.Deadline);
         Assert.Equal("Define", progress.Title);
         Assert.True(progress.IsIndeterminate);
         Assert.True(progress.ShowProgressBar);
@@ -116,15 +116,15 @@ public sealed class InlineActionTransportTests : IDisposable
             completion.SetResult(new InlineActionResult { Text = "A definition." });
 
         if (outcome == "error")
-            await Assert.ThrowsAsync<RemoteInvocationException>(() => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+            await Assert.ThrowsAsync<RemoteInvocationException>(() => pending.WaitAsync(TestWait.Deadline));
         else
         {
-            var result = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+            var result = await pending.WaitAsync(TestWait.Deadline);
             if (outcome == "empty") Assert.Null(result);
             else if (outcome == "success") Assert.Equal("A definition.", result.Text);
             else Assert.Equal("Cancelled", result.Error);
         }
-        Assert.Equal(progress.Token, await _closed.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Equal(progress.Token, await _closed.Task.WaitAsync(TestWait.Deadline));
     }
 
     [Fact]
@@ -149,10 +149,10 @@ public sealed class InlineActionTransportTests : IDisposable
         var pending = _client.InvokeWithCancellationAsync<InlineActionResultDto>(
             "extensions/inlineAction/execute", ["lookup", "word", "chapter", "scene", "", ""], cancellation.Token);
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitAsync(TestWait.Deadline);
         cancellation.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
-        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelled.Task.WaitAsync(TestWait.Deadline);
     }
 }

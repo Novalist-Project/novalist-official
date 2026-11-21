@@ -2,6 +2,8 @@
 
 The **Planning board** is an infinite surface for ideas that are not yet scenes: loose cards you can drag anywhere, and lines you draw between them with your own labels. Open it from the **Plan** mode, under **Shape** in the mode panel.
 
+To arrange the chapters and scenes already in your book, open [Plan → Structure](10-manuscript.md#structure-mode). Its ordered act, chapter, and scene cards change the manuscript's reading order. The Planning board described here remains available for freely arranging ideas and connections.
+
 The [Relationships graph](14-relationships.md) lays characters out automatically, the [Timeline](12-timeline.md) orders real chapters and scenes, and [Maps](29-maps.md) place pins on geography. On a planning board, you arrange the cards and draw the connections yourself. Cards remain separate from your manuscript until you choose to create them as scenes.
 
 ## Boards

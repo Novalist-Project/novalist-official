@@ -26,8 +26,9 @@ public sealed partial class TcpPeerHost
             ObjectDisposedException.ThrowIf(disposed, this);
             var address = Address(advertisedHost);
             var secret = RandomNumberGenerator.GetBytes(32);
-            var expires = expiresAt ?? DateTimeOffset.UtcNow.AddHours(1);
-            if (expires <= DateTimeOffset.UtcNow) throw new ArgumentException("Choose an invitation expiry in the future.", nameof(expiresAt));
+            var now = clock.GetUtcNow();
+            var expires = expiresAt ?? now.AddHours(1);
+            if (expires <= now) throw new ArgumentException("Choose an invitation expiry in the future.", nameof(expiresAt));
             invitations.Add(Convert.ToHexString(SHA256.HashData(secret)), new(expires));
             return new(address, secret, expires, checkpoint);
         }
@@ -76,7 +77,7 @@ public sealed partial class TcpPeerHost
         if (hello.Invitation is not { Length: 32 }) throw new CryptographicException("A peer invitation is required.");
         var hash = Convert.ToHexString(SHA256.HashData(hello.Invitation));
         if (!invitations.TryGetValue(hash, out var invitation) ||
-            (invitation.ExpiresAt <= DateTimeOffset.UtcNow && invitation.ClaimedBy != hello.DeviceId) ||
+            (invitation.ExpiresAt <= clock.GetUtcNow() && invitation.ClaimedBy != hello.DeviceId) ||
             (invitation.ClaimedBy is { } claimed && claimed != hello.DeviceId))
             throw new CryptographicException("The peer invitation is expired or already used.");
         if (members.TryGetValue(hello.DeviceId, out var existing))
@@ -91,7 +92,7 @@ public sealed partial class TcpPeerHost
             return priorCertificate;
         }
         using var delegation = Key.Create(SignatureAlgorithm.Ed25519);
-        var grant = membership.CreateInvitation(new(Guid.NewGuid(), DateTimeOffset.UtcNow.AddMinutes(-1), invitation.ExpiresAt),
+        var grant = membership.CreateInvitation(new(Guid.NewGuid(), clock.GetUtcNow().AddMinutes(-1), invitation.ExpiresAt),
             delegation.PublicKey, owner.SigningKey);
         var certificate = membership.ClaimInvitation(grant, delegation, hello.DeviceId, signing, receiving);
         invitations[hash] = invitation with { ClaimedBy = hello.DeviceId };

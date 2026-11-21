@@ -190,6 +190,97 @@ public sealed class ExtensionsRpcTests : IDisposable
         ExtensionsRpc.WebviewPosted = null;
     }
 
+    private ExtensionsRpc WithTitledViews(string id, bool registerLocales, params string[] titles)
+    {
+        var folder = Path.Combine(_root, id);
+        var locales = Path.Combine(folder, "Locales");
+        Directory.CreateDirectory(locales);
+        File.WriteAllText(Path.Combine(locales, "en.json"), """{"ai":{"chatTitle":"AI Chat"}}""");
+        File.WriteAllText(Path.Combine(locales, "de.json"), """{"ai":{"chatTitle":"KI-Chat"}}""");
+        if (registerLocales)
+            _workspace.ExtensionsHost.Host.RegisterExtensionLocales(id, locales);
+        _workspace.ExtensionsHost.Extensions.Add(new ExtensionInfo
+        {
+            Manifest = new Novalist.Sdk.ExtensionManifest
+            {
+                Id = id,
+                Name = id,
+                Version = "1.0.0",
+                Contributes = new Novalist.Sdk.WebContributions
+                {
+                    Views = [.. titles.Select((t, i) => new Novalist.Sdk.WebViewContribution
+                    {
+                        Key = "view" + i, Title = t, Entry = "web/index.html"
+                    })]
+                }
+            },
+            FolderPath = folder,
+            IsEnabled = true,
+            IsLoaded = true
+        });
+        return new ExtensionsRpc(_workspace);
+    }
+
+    [Fact]
+    public void Views_ResolveKeyTitlesAndLeaveOtherTitlesAlone()
+    {
+        var rpc = WithTitledViews("com.test.loc", true, "ai.chatTitle", "Literal Title", "ai.unknown");
+
+        var titles = rpc.Views().Select(v => v.Title).ToArray();
+
+        Assert.Equal(["AI Chat", "Literal Title", "ai.unknown"], titles);
+    }
+
+    [Fact]
+    public void Views_TitleFollowsLanguageChange()
+    {
+        var previous = Loc.Instance.CurrentLanguage;
+        Loc.Instance.CurrentLanguage = "en";
+        try
+        {
+            var rpc = WithTitledViews("com.test.lang", true, "ai.chatTitle");
+            Assert.Equal("AI Chat", rpc.Views().Single().Title);
+
+            _workspace.ExtensionsHost.Host.RaiseLanguageChanged("de");
+            Assert.Equal("KI-Chat", rpc.Views().Single().Title);
+
+            _workspace.ExtensionsHost.Host.RaiseLanguageChanged("fr");
+            Assert.Equal("AI Chat", rpc.Views().Single().Title);
+        }
+        finally { Loc.Instance.CurrentLanguage = previous; }
+    }
+
+    [Fact]
+    public void Views_ExtensionWithoutRegisteredLocales_KeepsTitleUnchanged()
+    {
+        var rpc = WithTitledViews("com.test.nolocales", false, "ai.chatTitle");
+
+        Assert.Equal("ai.chatTitle", rpc.Views().Single().Title);
+        Assert.Equal("en", rpc.Views().Single().Language);
+    }
+
+    [Fact]
+    public void Views_LanguageIsTheInterfaceLanguageOnlyWhenTheExtensionShipsIt()
+    {
+        var previous = Loc.Instance.CurrentLanguage;
+        Loc.Instance.CurrentLanguage = "en";
+        try
+        {
+            var rpc = WithTitledViews("com.test.viewlang", true, "ai.chatTitle", "Second");
+            Assert.All(rpc.Views(), view => Assert.Equal("en", view.Language));
+
+            // Shipped (de.json): the panel is told the interface language.
+            _workspace.ExtensionsHost.Host.RaiseLanguageChanged("de");
+            Assert.All(rpc.Views(), view => Assert.Equal("de", view.Language));
+
+            // Not shipped (no ar.json): its text stays English, and so does the
+            // language - and with it the direction - the panel is laid out for.
+            _workspace.ExtensionsHost.Host.RaiseLanguageChanged("ar");
+            Assert.All(rpc.Views(), view => Assert.Equal("en", view.Language));
+        }
+        finally { Loc.Instance.CurrentLanguage = previous; }
+    }
+
     private static string DeploySampleSource(string root)
     {
         var src = Path.Combine(root, "src");

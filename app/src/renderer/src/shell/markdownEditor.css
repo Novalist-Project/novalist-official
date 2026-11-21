@@ -75,6 +75,7 @@
 
 .md-surface .cm-line {
   padding: 0;
+  text-align: start;
 }
 
 .md-surface .cm-cursor {

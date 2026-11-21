@@ -12,7 +12,8 @@ import {
 export function registerUpdateHandlers(
   getMainWindow: () => BrowserWindow | null,
   windowCloses: WindowCloseCoordinator,
-  approvedCloses: Set<number>
+  approvedCloses: Set<number>,
+  closingAll: () => void = () => {}
 ): void {
   const pendingAppUpdates = new Map<
     number,
@@ -45,9 +46,11 @@ export function registerUpdateHandlers(
     // retrying through the dialog obtains a fresh token for the cached download.
     pendingAppUpdates.delete(event.sender.id)
     const owners = BrowserWindow.getAllWindows().filter((win) => !win.isDestroyed()).map((win) => win.webContents.id)
-    await windowCloses.prepare(owners, getMainWindow()?.webContents.id)
+    const prepared = await windowCloses.prepare(owners, getMainWindow()?.webContents.id)
     try { await launchAppUpdate(pending.update) }
-    catch (error) { windowCloses.abort(owners); throw error }
+    catch (error) { await prepared.abort(); throw error }
+    await prepared.commit()
+    closingAll()
     // This authenticated handoff already awaited the renderer's save and backup
     // preflight while editing was locked. Do not start that work a second time.
     for (const target of BrowserWindow.getAllWindows()) approvedCloses.add(target.id)

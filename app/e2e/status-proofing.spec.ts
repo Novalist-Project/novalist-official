@@ -80,7 +80,7 @@ test('desktop proofing lives in the status bar and opens the requested kind of i
   const h = await launchApp('nl-status-proofing-')
   try {
     await installCheckerFixture(h.page)
-    const book = await seedBook(h, { Chapter: ['Proofing scene'] })
+    const book = await seedBook(h, { Chapter: ['Proofing scene'] }, 'Proofing status fixture', false)
     await dismissTour(h.page)
     const chapter = book.chapters[0]
     const scene = chapter.scenes[0]
@@ -88,7 +88,7 @@ test('desktop proofing lives in the status bar and opens the requested kind of i
     await h.rpc('scenes/write', [chapter.guid, scene.id, `<p>${prose}</p>`, prose])
     await h.page.evaluate(chapter => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), chapter)
     const frame = h.page.frameLocator('.editor-frame')
-    const editor = frame.locator('#editor')
+    const editor = frame.locator('[data-writing-scene]')
     await expect(editor).toHaveText(prose)
     await newestRequest(editor)
     const status = h.page.locator('.status-bar .status-proofing')
@@ -155,7 +155,7 @@ test('status proofing follows the focused scene and drops stale scene and unmoun
   const h = await launchApp('nl-status-proofing-panes-')
   try {
     await installCheckerFixture(h.page)
-    const book = await seedBook(h, { Chapter: ['Left scene', 'Right scene', 'New scene'] })
+    const book = await seedBook(h, { Chapter: ['Left scene', 'Right scene', 'New scene'] }, 'Proofing panes fixture', false)
     await dismissTour(h.page)
     await h.page.setViewportSize({ width: 1420, height: 900 })
     const chapter = book.chapters[0]
@@ -166,17 +166,25 @@ test('status proofing follows the focused scene and drops stale scene and unmoun
     const paneIds = await h.page.evaluate(async chapter => {
       const shell = window.novalistStores.shell.getState()
       const left = shell.activePaneId
+      shell.setPaneWritingScope(left, 'scene')
       await window.novalistStores.project.getState().openSceneIn(left, chapter.guid, chapter.scenes[0].id)
       shell.splitActivePane('row')
       const right = window.novalistStores.shell.getState().activePaneId
+      window.novalistStores.shell.getState().setPaneWritingScope(right, 'scene')
       await window.novalistStores.project.getState().openSceneIn(right, chapter.guid, chapter.scenes[1].id)
       return [left, right]
     }, chapter)
-    const editors = [0, 1].map(index => h.page.locator('.pane-leaf').nth(index).frameLocator('.editor-frame').locator('#editor'))
+    const editors = [0, 1].map(index => h.page.locator('.pane-leaf').nth(index).frameLocator('.editor-frame').locator('[data-writing-scene]'))
     await expect(editors[0]).toHaveText(prose[0])
     await expect(editors[1]).toHaveText(prose[1])
+    await editors[0].locator('p').click()
+    await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().openSceneId)).toBe(chapter.scenes[0].id)
+    await requestCheck(editors[0])
     await respond(editors[0], [issue(5, 3, 'grammar', 'Left grammar')])
     const rightIssues = [issue(0, 5, 'spelling', 'Right spelling'), issue(6, 3, 'spelling', 'Second spelling')]
+    await editors[1].locator('p').click()
+    await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().openSceneId)).toBe(chapter.scenes[1].id)
+    await requestCheck(editors[1])
     await respond(editors[1], rightIssues)
     const status = h.page.locator('.status-proofing')
 
@@ -221,7 +229,7 @@ test('status proofing follows the focused scene and drops stale scene and unmoun
     await expect(h.page.locator('.pane-leaf')).toHaveCount(1)
     // Collapsing the split remounts the surviving editor. Its fresh check must
     // publish its own results, rather than retaining the closed pane's badge.
-    const remainingEditor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const remainingEditor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await expect(remainingEditor).toHaveText(prose[0])
     await newestRequest(remainingEditor)
     await expect(status.locator('.status-proofing-checking')).toBeVisible()

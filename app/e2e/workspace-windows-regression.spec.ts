@@ -2,12 +2,13 @@ import { test, expect, type Page } from '@playwright/test'
 import { join } from 'node:path'
 import { writeFileSync } from 'node:fs'
 import { dismissTour, launchApp, seedBook, type Harness } from './harness'
+import { flushWriting, replaceWritingScene } from './writingTestActions'
 
 type Scene = { chapterGuid: string; sceneId: string }
 async function detach(h: Harness, scene: Scene): Promise<Page> {
   const opened = h.app.waitForEvent('window')
   await h.page.evaluate((scene) => window.novalist.openPaneWindow({
-    view: 'write', projectPath: window.novalistStores.project.getState().projectPath, ...scene
+    view: 'write', writingScope: 'scene', projectPath: window.novalistStores.project.getState().projectPath, ...scene
   }), scene)
   const page = await opened
   await expect(page.locator('.app-shell.detached')).toBeVisible({ timeout: 30_000 })
@@ -15,10 +16,9 @@ async function detach(h: Harness, scene: Scene): Promise<Page> {
   return page
 }
 async function writeRich(page: Page, marker: string): Promise<void> {
-  await page.frameLocator('.editor-frame').locator('#editor').evaluate((element, marker) => {
-    element.innerHTML = `<p><strong>${marker}</strong> café</p>`
-    element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }))
-  }, marker)
+  const sceneId = await page.evaluate(() => window.novalistStores.project.getState().openSceneId)
+  if (!sceneId) throw new Error('The test must open its target scene before writing.')
+  await replaceWritingScene(page, sceneId, `<p><strong>${marker}</strong> café</p>`)
 }
 async function waitEditable(pages: Page[]): Promise<void> {
   for (const page of pages) await expect.poll(() => page.evaluate(() => window.novalistStores.project.getState().workspaceBusy)).toBe(false)
@@ -201,7 +201,7 @@ test('backend restart restores the shared scope while keeping pending rich text 
     await waitEditable([h.page, second])
     for (const [page, marker] of [[h.page, 'Main survives restart'], [second, 'Detached survives restart']] as const) {
       await expect(page.frameLocator('.editor-frame').locator('#editor')).toContainText(marker)
-      await page.evaluate(() => window.novalistStores.project.getState().flushPendingSave())
+      await flushWriting(page)
     }
     await expect.poll(async () => (await h.rpc<{ html: string }>('scenes/read', [chapter.guid, chapter.scenes[0].id])).html).toContain('Main survives restart')
     await expect.poll(async () => (await h.rpc<{ html: string }>('scenes/read', [chapter.guid, chapter.scenes[1].id])).html).toContain('Detached survives restart')
@@ -230,7 +230,7 @@ test('unavailable project after restart keeps both windows frozen and retry rest
     await second.getByRole('button', { name: 'Try again', exact: true }).click()
     await waitEditable([h.page, second])
     await expect(second.frameLocator('.editor-frame').locator('#editor')).toContainText('Preserved during unavailable drive')
-    await second.evaluate(() => window.novalistStores.project.getState().flushPendingSave())
+    await flushWriting(second)
     await expect.poll(async () => (await h.rpc<{ html: string }>('scenes/read', [chapter.guid, chapter.scenes[1].id])).html).toContain('Preserved during unavailable drive')
   } finally {
     if (movedPath) renameSync(movedPath, projectPath)
@@ -283,7 +283,7 @@ test('failed resume rejects the initiating call and read-only retry preserves ne
       const original = rpc.request.bind(rpc)
       const probe = window as unknown as { resumeReadHeld: boolean; refuseResumeRead: () => void }
       rpc.request = async (method, params) => {
-        if (method === 'scenes/read') {
+        if (method === 'scenes/read' || method === 'scenes/readPassive') {
           rpc.request = original
           probe.resumeReadHeld = true
           await new Promise((_resolve, reject) => { probe.refuseResumeRead = () => reject(new Error('Simulated resume read failure')) })
@@ -301,7 +301,7 @@ test('failed resume rejects the initiating call and read-only retry preserves ne
     await h.page.getByRole('button', { name: 'Try again', exact: true }).click()
     await waitEditable([h.page, second])
     await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toContainText('Typed before another window failed')
-    await h.page.evaluate(() => window.novalistStores.project.getState().flushPendingSave())
+    await flushWriting(h.page)
     expect((await h.rpc<{ html: string }>('scenes/read', [chapter.guid, chapter.scenes[0].id])).html).toContain('Typed before another window failed')
   } finally { await h.close() }
 })

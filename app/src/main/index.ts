@@ -9,11 +9,23 @@ import {
   type WebContents
 } from 'electron'
 import { join } from 'node:path'
+import { detachedPaneQuery, normalizeDetachedPaneRequest, type DetachedPaneRequest } from '../shared/detachedPane'
+import { contentFromRequest, normalizePaneWindowContent, normalizeSavedPaneWindows, paneWindowLeaves, placePaneWindow, type PaneWindowContent, type PaneWindowPlacement, type SavedPaneWindow } from '../shared/paneWindows'
+import { PaneWindowRegistry } from './pane-windows'
+import { PaneWindowSessions, fileSessionStorage, projectSessionKey } from './pane-window-sessions'
+import { PaneWindowReplace } from './pane-window-replace'
 import { readFileSync } from 'node:fs'
 import { BackendProcess } from './backend-process'
 import { DesktopCollaborationServices } from './collaboration/DesktopCollaborationServices'
 import { WorkspaceWindows } from './workspace-windows'
+import { WritingFocusOwner } from './writing-focus'
+import { WritingSearchCaptureBroker } from './writing-search'
+import { WritingSearchLeaseBroker } from './writing-search-lease'
+import { WritingSearchPublicationStore } from './writing-search-publication'
+import type { WritingSearchCaptureReply, WritingSearchContext, WritingSearchLeaseReply, WritingSearchLeaseRequest, WritingSearchSharedIntent } from '../shared/writingSearchProtocol'
+import type { SceneRef, WritingCommitRequest } from '../renderer/src/views/editor/writingTypes'
 import { WindowCloseCoordinator } from './window-close'
+import { WindowCloseRequests } from './window-close-request'
 import type { WorkspaceEvent } from '../shared/workspaceProtocol'
 import { attachLiquidGlass } from './glass'
 import { clampWindowToDisplay, createAppWindow, initialWindowGeometry, material, resolveIconPath } from './window-appearance'
@@ -27,6 +39,7 @@ import { SCHEME, parseDeepLink, deepLinkFromArgv, type DeepLink } from './deepli
 import { installFocusWindow } from './focus-window'
 import { registerSceneNotesWindow } from './scene-notes-window'
 import { linuxPasswordStoreSwitch, sessionBusNames } from './linux-password-store'
+import { RestartAfterQuit, UI_DIRECTION_SWITCH, asDirection, launchedDirection, readStoredDirection, relaunchOptions, rememberDirection, restartNeeded, uiDirectionSwitch } from './ui-direction'
 
 // Chosen before anything touches safeStorage: Chromium reads the switch once.
 const passwordStore = linuxPasswordStoreSwitch(process.platform, process.env, app.commandLine.hasSwitch('password-store'), sessionBusNames)
@@ -36,17 +49,40 @@ if (passwordStore) app.commandLine.appendSwitch('password-store', passwordStore)
 // UI never shows the default "Electron".
 app.setName('Novalist')
 
+// Menus drawn by Chromium mirror only when its own UI direction is right-to-left,
+// and that is read once at startup. So the direction the writer last used is
+// remembered in a file and forced here, before ready.
+const uiDirectionFile = join(process.env.NOVALIST_SETTINGS_DIR ?? app.getPath('userData'), 'ui-direction')
+const explicitUiDirection = app.commandLine.hasSwitch(UI_DIRECTION_SWITCH)
+const appliedUiDirection = uiDirectionSwitch(process.platform, explicitUiDirection, readStoredDirection(uiDirectionFile))
+if (appliedUiDirection) app.commandLine.appendSwitch(UI_DIRECTION_SWITCH, appliedUiDirection)
+let currentUiDirection = appliedUiDirection
+const uiDirectionRestart = new RestartAfterQuit()
+
 const backend = new BackendProcess()
 const collaboration = new DesktopCollaborationServices(join(process.env.NOVALIST_SETTINGS_DIR ?? app.getPath('userData'), 'collaboration', 'credentials'))
 const workspaceWindows = new WorkspaceWindows(backend.router, 15_000, (error) => backend.requireResync(error))
+const writingFocus = new WritingFocusOwner((method, params) => backend.router.request(method, params),
+  () => BrowserWindow.getFocusedWindow()?.webContents.id)
 const windowCloses = new WindowCloseCoordinator()
+const writingSearch = new WritingSearchCaptureBroker()
+const writingPublications = new WritingSearchPublicationStore(join(process.env.NOVALIST_SETTINGS_DIR ?? app.getPath('userData'), 'writing-search'),
+  (method, params) => backend.router.request(method, params))
+const writingSearchLeases = new WritingSearchLeaseBroker(
+  (request, details) => writingPublications.publish(request, details),
+  () => backend.requireResync('A writing replacement could not finish recovering.'))
+let writingRecoveryPending = false
 backend.onNotification((message) => workspaceWindows.receive(message))
 backend.onRequest((method, params) => collaboration.request(method, params))
 backend.onRestart(async () => {
+  writingRecoveryPending = writingSearchLeases.hasLease
   await collaboration.reset()
   await workspaceWindows.recover()
 })
-backend.onResync(() => workspaceWindows.resync())
+backend.onResync(() => {
+  writingRecoveryPending = writingSearchLeases.hasLease
+  return workspaceWindows.resync()
+})
 
 function attachBackendPort(sender: WebContents): void {
   const { port1, port2 } = new MessageChannelMain()
@@ -64,29 +100,37 @@ registerProtocolSchemes()
 let mainWindow: BrowserWindow | null = null
 let setFocusWindow: ((enabled: boolean) => Promise<void>) | null = null
 const approvedCloses = new Set<number>()
-let closeRequest: Promise<void> | null = null
-let quitRequested = false
+const closeRequests = new WindowCloseRequests(windowCloses, {
+  getMainWindow: () => mainWindow, getWindows: () => BrowserWindow.getAllWindows(), approvedCloses,
+  quit: () => { uiDirectionRestart.quitStarting(); app.quit() },
+  closingAll: () => closingAllWindows()
+})
+
+const paneWindowFile = (): string => join(app.getPath('userData'), 'pane-windows.json')
+const paneSessions = new PaneWindowSessions({
+  read: () => fileSessionStorage(paneWindowFile()).read(),
+  write: (text) => fileSessionStorage(paneWindowFile()).write(text)
+})
+let paneSessionTimer: ReturnType<typeof setTimeout> | undefined
+function recordPaneWindowsNow(): void {
+  clearTimeout(paneSessionTimer)
+  paneSessionTimer = undefined
+  paneSessions.record(paneWindows.list())
+}
+/** Moves and resizes arrive in bursts; one write after they settle. */
+function recordPaneWindows(): void {
+  clearTimeout(paneSessionTimer)
+  paneSessionTimer = setTimeout(recordPaneWindowsNow, 300)
+}
+/** The main window or the app is closing every window: remember them as they are. */
+function closingAllWindows(): void {
+  recordPaneWindowsNow()
+  paneSessions.freeze()
+}
+const paneWindows = new PaneWindowRegistry<BrowserWindow>((bounds) => screen.getDisplayMatching(bounds).workArea, recordPaneWindows)
 
 function prepareWindowClose(win: BrowserWindow, quit: boolean): void {
-  quitRequested ||= quit
-  if (closeRequest) return
-  const all = quit || win === mainWindow
-  const targets = all ? BrowserWindow.getAllWindows() : [win]
-  const owners = targets.map((target) => target.webContents.id)
-  const backupOwner = all ? mainWindow?.webContents.id : undefined
-  const operation = windowCloses.prepare(owners, backupOwner).then(() => {
-    if (quitRequested && !all && mainWindow && !mainWindow.isDestroyed()) {
-      // The current operation only prepared one detached pane. Escalating to
-      // quit needs a fresh global transaction, including the main window.
-      closeRequest = null
-      prepareWindowClose(mainWindow, true)
-      return
-    }
-    for (const target of targets) if (!target.isDestroyed()) approvedCloses.add(target.id)
-    if (quitRequested) app.quit()
-    else for (const target of targets) if (!target.isDestroyed()) target.close()
-  }).catch(() => {}).finally(() => { if (closeRequest === operation) { closeRequest = null; quitRequested = false } })
-  closeRequest = operation
+  void closeRequests.request(win, quit).catch(() => {})
 }
 
 ipcMain.on('novalist:close-handler-ready', (event, ready: boolean) => {
@@ -108,11 +152,38 @@ ipcMain.on('novalist:workspace-ready', (event, ready: boolean) => {
 ipcMain.on('novalist:workspace-ack', (event, token: string, phase: WorkspaceEvent['phase'], saved: boolean, error?: string) => {
   workspaceWindows.acknowledge(event.sender.id, token, phase, saved, error)
 })
-ipcMain.handle('novalist:workspace-snapshot', (event) => workspaceWindows.snapshot(event.sender.id))
+ipcMain.handle('novalist:workspace-snapshot', async (event) => {
+  const snapshot = await workspaceWindows.snapshot(event.sender.id)
+  const workspaceId = snapshot.state.projectPath
+  if (workspaceId && !writingSearchLeases.hasLease) await writingPublications.recover({ workspaceId, workspaceEpoch: snapshot.epoch })
+  if (writingRecoveryPending && writingSearchLeases.hasLease && workspaceId) {
+    writingRecoveryPending = false
+    setTimeout(() => { void writingSearchLeases.recover({ workspaceId, workspaceEpoch: snapshot.epoch })
+      .catch(() => backend.requireResync('A writing replacement is waiting for recovery.')) }, 0)
+  }
+  return snapshot
+})
 ipcMain.handle('novalist:workspace-retry', () => backend.retryRecovery())
+ipcMain.handle('novalist:claim-writing-focus', (event, sourceId: string, epoch: number) =>
+  writingFocus.claim(event.sender.id, sourceId, epoch))
+ipcMain.on('novalist:writing-search-ready', (event) => {
+  writingSearch.register(event.sender.id, request => event.sender.send('novalist:writing-search-capture', request))
+  writingSearchLeases.register(event.sender.id, request => event.sender.send('novalist:writing-search-lease', request))
+})
+ipcMain.on('novalist:writing-search-captured', (event, reply: WritingSearchCaptureReply) => writingSearch.acknowledge(event.sender.id, reply))
+ipcMain.handle('novalist:writing-search-capture', (event, context: WritingSearchContext) => writingSearch.capture(context, event.sender.id))
+ipcMain.on('novalist:writing-search-lease-ack', (event, reply: WritingSearchLeaseReply) => writingSearchLeases.acknowledge(event.sender.id, reply))
+ipcMain.handle('novalist:writing-search-lease', async (event, context: WritingSearchContext, refs: SceneRef[]) => {
+  if (!writingSearchLeases.hasLease) await writingPublications.recover(context)
+  return writingSearchLeases.acquire(event.sender.id, context, refs)
+})
+ipcMain.handle('novalist:writing-search-finish', (event, token: string, changes?: WritingSearchLeaseRequest['changes']) => writingSearchLeases.finish(event.sender.id, token, changes))
+ipcMain.handle('novalist:writing-search-publish', (event, token: string, request: WritingCommitRequest, changes: { ref: SceneRef; afterHtml: string }[], shared?: WritingSearchSharedIntent) =>
+  writingSearchLeases.publish(event.sender.id, token, request, changes, shared))
 
 function attachWindowLifecycle(win: BrowserWindow): void {
   const owner = win.webContents.id
+  win.on('blur', () => { void writingFocus.release(owner).catch((error) => backend.requireResync(error)) })
   win.on('close', (event) => {
     if (approvedCloses.has(win.id)) return
     if (!windowCloses.has(owner) && win !== mainWindow) return
@@ -120,7 +191,10 @@ function attachWindowLifecycle(win: BrowserWindow): void {
     prepareWindowClose(win, false)
   })
   const release = (): void => {
+    void writingFocus.release(owner).catch((error) => backend.requireResync(error))
     windowCloses.remove(owner)
+    writingSearch.remove(owner)
+    writingSearchLeases.remove(owner)
     workspaceWindows.remove(owner)
     backend.detachClient(owner)
   }
@@ -128,7 +202,12 @@ function attachWindowLifecycle(win: BrowserWindow): void {
   win.on('closed', () => {
     release()
     approvedCloses.delete(win.id)
-    if (mainWindow === win) mainWindow = null
+    if (mainWindow === win) {
+      // However the main window went, the undocked windows that outlive it are
+      // what this project had open.
+      closingAllWindows()
+      mainWindow = null
+    }
   })
 }
 
@@ -204,35 +283,99 @@ function showMainWindow(): void {
  * editor produced a window saying "open a project" that had no binder to open
  * one with.
  */
-ipcMain.handle(
-  'novalist:open-pane-window',
-  (
-    _event,
-    request: {
-      view: string
-      projectPath: string | null
-      chapterGuid: string | null
-      sceneId: string | null
-    }
-  ) => {
-    const win = createAppWindow({ width: 720, height: 900, minWidth: 360, minHeight: 400 })
-    win.once('ready-to-show', () => win.show())
-    attachWindowLifecycle(win)
-    attachSpellingMenu(win, () => spellingMenuLabels)
+function createPaneWindow(request: DetachedPaneRequest, content: PaneWindowContent, saved: PaneWindowPlacement | null = null): void {
+  const fallback = screen.getDisplayMatching(mainWindow && !mainWindow.isDestroyed() ? mainWindow.getBounds() : screen.getPrimaryDisplay().bounds).workArea
+  const placed = saved ? placePaneWindow(saved, screen.getAllDisplays().map((display) => display.workArea), fallback) : null
+  const win = createAppWindow({ ...(placed?.bounds ?? { width: 720, height: 900 }), minWidth: 360, minHeight: 400 })
+  const owner = win.webContents.id
+  paneSessions.thaw()
+  paneWindows.add(owner, win, content, request.restore === true)
+  win.once('ready-to-show', () => {
+    if (win.isDestroyed()) return
+    if (placed?.maximized) win.maximize()
+    win.show()
+  })
+  attachWindowLifecycle(win)
+  attachSpellingMenu(win, () => spellingMenuLabels)
+  win.on('move', recordPaneWindows)
+  win.on('resize', recordPaneWindows)
+  win.on('closed', () => {
+    // Torn down after the main window is gone, it was not closed by hand.
+    if (!mainWindow || mainWindow.isDestroyed()) paneSessions.freeze()
+    paneWindows.remove(owner)
+  })
 
-    const query: Record<string, string> = { pane: request.view }
-    if (request.projectPath) query.project = request.projectPath
-    if (request.chapterGuid) query.chapter = request.chapterGuid
-    if (request.sceneId) query.scene = request.sceneId
-
-    if (process.env.ELECTRON_RENDERER_URL) {
-      const search = new URLSearchParams(query).toString()
-      void win.loadURL(`${process.env.ELECTRON_RENDERER_URL}?${search}`)
-    } else {
-      void win.loadFile(join(__dirname, '../renderer/index.html'), { query })
-    }
+  const query = detachedPaneQuery(request)
+  if (process.env.ELECTRON_RENDERER_URL) {
+    const search = new URLSearchParams(query).toString()
+    void win.loadURL(`${process.env.ELECTRON_RENDERER_URL}?${search}`)
+  } else {
+    void win.loadFile(join(__dirname, '../renderer/index.html'), { query })
   }
-)
+}
+
+/** Opens recorded windows. Their content waits in the registry for each to collect. */
+function openSavedPaneWindows(windows: SavedPaneWindow[]): void {
+  for (const saved of windows) {
+    const view = paneWindowLeaves(saved.content.panes)[saved.content.activePane]?.view ?? 'write'
+    createPaneWindow({ view, projectPath: null, chapterGuid: null, sceneId: null, restore: true }, saved.content, saved.placement)
+  }
+}
+
+ipcMain.handle('novalist:open-pane-window', (_event, input: unknown) => {
+  const request = { ...normalizeDetachedPaneRequest(input), restore: false }
+  createPaneWindow(request, contentFromRequest(request))
+})
+ipcMain.on('novalist:pane-window-state', (event, content: unknown) => paneWindows.report(event.sender.id, content))
+ipcMain.handle('novalist:pane-window-content', (event) => paneWindows.take(event.sender.id))
+ipcMain.handle('novalist:list-pane-windows', (event) =>
+  event.sender === mainWindow?.webContents ? paneWindows.list() : [])
+
+/**
+ * A saved layout's windows replace the open ones. The open ones close through
+ * the ordinary save-and-close transaction, so one refusal keeps every window
+ * open and nothing new is opened.
+ */
+const paneWindowReplace = new PaneWindowReplace<BrowserWindow>({
+  open: () => paneWindows.windows(),
+  close: (windows) => closeRequests.requestOwn(windows),
+  closingAll: () => paneSessions.isFrozen,
+  openSaved: openSavedPaneWindows
+})
+ipcMain.handle('novalist:restore-pane-windows', (event, input: unknown) => {
+  const sender = event.sender
+  if (sender !== mainWindow?.webContents) throw new Error('Only the main window applies layouts.')
+  return paneWindowReplace.replace(normalizeSavedPaneWindows(input),
+    () => !!mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents === sender)
+})
+
+/**
+ * The main window's own split, per project. The main window reports it as it
+ * changes (null when it is not split) and asks for it when a project loads.
+ */
+ipcMain.on('novalist:main-panes-state', (event, projectPath: unknown, content: unknown) => {
+  if (event.sender !== mainWindow?.webContents || typeof projectPath !== 'string' || projectPath.length === 0) return
+  paneSessions.recordMain(projectSessionKey(projectPath), content === null ? null : normalizePaneWindowContent(content))
+})
+ipcMain.handle('novalist:main-panes-session', (event, projectPath: unknown) =>
+  event.sender === mainWindow?.webContents && typeof projectPath === 'string' && projectPath.length > 0
+    ? paneSessions.mainFor(projectSessionKey(projectPath)) : null)
+
+/**
+ * The project in the main window has loaded: its remembered undocked windows
+ * come back, unless undocked windows are already open - they followed the
+ * workspace here and now belong to this project instead.
+ */
+ipcMain.handle('novalist:restore-pane-window-session', (event, projectPath: unknown) => {
+  if (event.sender !== mainWindow?.webContents || typeof projectPath !== 'string' || projectPath.length === 0) return 0
+  const remembered = paneSessions.enter(projectSessionKey(projectPath), paneWindows.size > 0)
+  if (paneWindows.size > 0) {
+    recordPaneWindowsNow()
+    return 0
+  }
+  openSavedPaneWindows(remembered)
+  return remembered.length
+})
 
 let spellingMenuLabels = {
   addToDictionary: 'Add to dictionary',
@@ -253,7 +396,7 @@ ipcMain.handle('novalist:set-focus-window', (event, enabled: boolean) => {
   }
 })
 
-registerUpdateHandlers(() => mainWindow, windowCloses, approvedCloses)
+registerUpdateHandlers(() => mainWindow, windowCloses, approvedCloses, closingAllWindows)
 
 // The menu bar's contents come from the renderer's command registry, because
 // that registry is what decides an application-scoped command exists at all. A
@@ -274,6 +417,28 @@ ipcMain.on('novalist:set-menu', (event, nodes: MenuNode[], labels: MenuLabels) =
     // main process down with it, while the writer has a scene open, is worse.
     console.error('[menu] the renderer described a menu Electron refused:', error)
   }
+})
+
+// The interface direction the renderer is showing. Remembered for the next
+// launch; the answer says whether the menus this process drew now disagree with
+// it, which only a restart can fix. The locale is read here, after ready, as
+// the process's natural direction is not reliable earlier.
+ipcMain.handle('novalist:set-ui-direction', (event, requested: unknown): boolean => {
+  const direction = asDirection(requested)
+  if (event.sender !== mainWindow?.webContents || !direction) return false
+  currentUiDirection = direction
+  rememberDirection(uiDirectionFile, direction)
+  return restartNeeded(launchedDirection(process.platform, explicitUiDirection, appliedUiDirection, () => app.getLocale()), direction)
+})
+
+// Restarts through the ordinary quit path, so unsaved work and every close
+// guard still run. The relaunch is armed only once the quit is approved.
+ipcMain.handle('novalist:restart-for-ui-direction', async (event) => {
+  const win = mainWindow
+  if (event.sender !== win?.webContents || win.isDestroyed()) return
+  const launched = launchedDirection(process.platform, explicitUiDirection, appliedUiDirection, () => app.getLocale())
+  if (!currentUiDirection || !restartNeeded(launched, currentUiDirection)) return
+  await uiDirectionRestart.request(() => closeRequests.request(win, true)).catch(() => {})
 })
 
 // The window controls are the system's own again now that Windows and Linux
@@ -442,6 +607,8 @@ app.on('before-quit', (event) => {
 })
 
 app.on('will-quit', () => {
+  if (paneSessionTimer) recordPaneWindowsNow()
+  uiDirectionRestart.willQuit(() => app.relaunch(relaunchOptions(process.env, process.argv)))
   backend.dispose()
   void collaboration.reset()
 })

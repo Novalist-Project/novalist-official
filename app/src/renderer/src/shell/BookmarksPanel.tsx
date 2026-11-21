@@ -140,7 +140,7 @@ export function BookmarksPanel(): React.JSX.Element {
                     <ChevronRight
                       size={13}
                       strokeWidth={2}
-                      className={`binder-chevron${open.has(bookmark.id) ? ' open' : ''}`}
+                      className={`icon-directional binder-chevron${open.has(bookmark.id) ? ' open' : ''}`}
                     />
                   </button>
                   <button className="binder-scene-row" onClick={() => go(bookmark)}>

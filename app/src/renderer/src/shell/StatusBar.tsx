@@ -15,6 +15,8 @@ import { MotionPresence } from './MotionPresence'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useAudiobookStore } from '../stores/audiobookStore'
 import { onPluginContributionsChanged, pluginStatusItems } from './pluginHost'
+import { useWritingSceneHtml } from './usePreparedSceneContext'
+import { writingCountText } from '../views/editor/writingPresentation'
 import './statusbar.css'
 
 // Whole-project figures the status bar surfaces (goal progress + the overview
@@ -86,7 +88,15 @@ function useStatusBar() {
   const setMainView = useShellStore((s) => s.setMainView)
   const isLoaded = useProjectStore((s) => s.isLoaded)
   const chapters = useProjectStore((s) => s.chapters)
-  const plainText = useProjectStore((s) => s.openScenePlainText)
+  const legacyText = useProjectStore((s) => s.openScenePlainText)
+  const writingHtml = useWritingSceneHtml()
+  const plainText = useMemo(() => {
+    if (writingHtml === undefined) return legacyText
+    if (writingHtml === null) return null
+    const template = document.createElement('template')
+    template.innerHTML = writingHtml
+    return writingCountText(template.content).trim()
+  }, [writingHtml, legacyText])
   const language = useSettingsStore((s) => s.view?.effective.autoReplacementLanguage ?? 'en')
   const openScene = useProjectStore((s) =>
     s.chapters
@@ -143,7 +153,7 @@ export function StatusBar(): React.JSX.Element {
                   : undefined
               }
             >
-              {openScene.wordCount.toLocaleString()} {t('shell.words')}
+              {(window.novalist.isMobile ? openScene.wordCount : stats?.wordCount ?? openScene.wordCount).toLocaleString()} {t('shell.words')}
             </span>
             {stats && stats.readingTimeMinutes > 0 && (
               <span className="status-dim">

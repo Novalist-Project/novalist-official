@@ -30,8 +30,8 @@ public static class SharedCodexFields
     private sealed record FolderSchema(string[] Keys, bool Custom);
     private sealed record Value(SharedFieldBinding Binding, string Text);
 
-    public static Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, CancellationToken ct) =>
-        CaptureAsync(Disk(root), paths, ct);
+    public static Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(string root, IReadOnlyList<string> paths, CancellationToken ct,
+        SharedFileReader? read = null) => CaptureAsync(read ?? Disk(root), paths, ct);
 
     public static async Task<IReadOnlyList<SharedFieldBinding>> CaptureAsync(SharedFileReader read, IReadOnlyList<string> paths, CancellationToken ct)
     {
@@ -43,6 +43,9 @@ public static class SharedCodexFields
     public static Task<IReadOnlyDictionary<Guid, string>> ReadAsync(string root, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct, bool verifySource = true) =>
         ReadAsync(Disk(root), bindings, ct, verifySource);
 
+    internal static Task<IReadOnlyDictionary<Guid, string>> ReadAsync(string root, IReadOnlyList<SharedFieldBinding> bindings, CancellationToken ct,
+        bool verifySource, SharedFileReader? read) => ReadAsync(read ?? Disk(root), bindings, ct, verifySource);
+
     /// <param name="verifySource">Require each source file to still hash to the binding's
     /// <see cref="SharedFieldBinding.SourceSha256"/>. Off where the file may have legitimately
     /// changed since the bindings were captured, e.g. after a joiner opened the project.</param>
@@ -50,18 +53,22 @@ public static class SharedCodexFields
     {
         ValidateBindings(bindings);
         if (bindings.Count == 0) return new Dictionary<Guid, string>();
+        var batch = new SharedFieldReadBatch((path, token) => ReadBoundedAsync(read, path, token));
         var paths = bindings.Select(binding => binding.Path).Distinct(StringComparer.Ordinal).ToArray();
-        var basic = await EnumerateAsync(read, paths, ct);
+        var basic = await EnumerateAsync(batch.ReadAsync, paths, ct);
         var values = basic.ToDictionary(value => (value.Binding.Path, value.Binding.Key, value.Binding.Custom));
-        var metadata = await SharedMetadataFields.CaptureAsync(read, paths, basic.Select(value => value.Binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct);
+        var metadata = (await SharedMetadataFields.CaptureAsync(batch.ReadAsync, paths,
+            basic.Select(value => value.Binding.Path).Distinct(StringComparer.Ordinal).ToArray(), ct))
+            .Select(binding => (binding.Path, binding.Key, binding.Metadata)).ToHashSet();
         var result = new Dictionary<Guid, string>();
         foreach (var binding in bindings)
         {
+            ct.ThrowIfCancellationRequested();
             if (binding.Metadata is not null)
             {
-                if (!metadata.Any(candidate => candidate.Path == binding.Path && candidate.Key == binding.Key && candidate.Metadata == binding.Metadata))
+                if (!metadata.Contains((binding.Path, binding.Key, binding.Metadata)))
                     throw new InvalidDataException("A shared metadata binding is outside its editable schema.");
-                result.Add(binding.ItemId, await SharedMetadataFields.ReadAsync(read, binding, verifySource, ct));
+                result.Add(binding.ItemId, await batch.ReadMetadataAsync(binding, verifySource, ct));
                 continue;
             }
             if (!values.TryGetValue((binding.Path, binding.Key, binding.Custom), out var value))
@@ -70,6 +77,7 @@ public static class SharedCodexFields
                 throw new IOException("A Codex entry changed while sharing was starting. Its local changes have been kept.");
             result.Add(binding.ItemId, value.Text);
         }
+        await batch.VerifyAsync(ct);
         return result;
     }
 

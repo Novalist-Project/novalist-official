@@ -53,6 +53,12 @@ resumed and are not reconnected.
 During a session, the panel shows connection status, invitations and the end-session
 action. Owners can expand **Manage shared access** for membership controls.
 
+The top-bar button also shows a connection dot without opening the panel:
+green means connected, amber means connecting, reconnecting or preparing a
+transfer, and red means sharing is paused or needs attention. Hover for details.
+This indicates the session connection, not confirmation that every edit has reached
+every writer.
+
 iPhone and iPad offer **Relay server** and **Direct TCP**, and can collaborate with
 desktop writers using either mode. Steam is available only on desktop. Mobile joins
 create a local copy in **Files → Novalist** by default; change the folder name or
@@ -454,7 +460,7 @@ Everything under **Project** is per-project and only applies while a project is 
 
 ## Appearance
 
-- **Interface Language** — UI language. English, German, and Chinese (Simplified) ship built in, and any language you dropped into your `Locales/` folder is listed too. Changes apply immediately without restart.
+- **Interface Language** — UI language. English, German, Chinese (Simplified), and Arabic ship built in, and any language you dropped into your `Locales/` folder is listed too. Changes apply immediately without restart. Arabic uses a right-to-left interface; switching back restores the other language's layout. On Windows and Linux the menu bar and its dropdowns follow the interface direction after a restart; a **Restart now** notice appears under the dropdown while one is needed (see [Localization](27-localization.md)). This does not change your writing or proofing language.
 - **Theme** — the active color scheme. Built-in themes come first, then your own, then any contributed by extensions:
   - **Default** — Novalist's own identity. A deep "Ink Night" page with parchment-coloured text and gilt accents; panels are the one raised surface, edges are hairlines rather than grey rules, and primary buttons carry a gold foil fill. Headings are set in Fraunces, text and interface labels in Newsreader, and anything the app computed for you — word counts, versions, file sizes, timestamps — in Courier Prime. All three typefaces ship inside the app, so the interface looks the same offline and on a machine that has none of them installed.
   - **Discord**

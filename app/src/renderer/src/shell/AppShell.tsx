@@ -22,6 +22,7 @@ import { MobileShell } from './MobileShell'
 import { MobileWelcome } from './MobileWelcome'
 import { useSceneNotesContext } from './useSceneNotesContext'
 import { useSceneNotesDocking } from './sceneNotesDocking'
+import { usePaneWindowSession } from './paneWindowState'
 
 import { StartScreen } from './ProjectLibrary'
 import { FocusMode } from './FocusMode'
@@ -49,6 +50,7 @@ export function AppShell(): React.JSX.Element {
   useBackupScheduler()
   useSpellCheck()
   usePrepareSceneContext()
+  usePaneWindowSession()
   const binderVisible = useShellStore((s) => s.binderVisible)
   const binderWidth = useShellStore((s) => panelWidthForShell(s.binderWidth, s.shellWidth, BINDER_MIN, BINDER_MAX))
   const modePanelVisible = useShellStore((s) => s.modePanelVisible)

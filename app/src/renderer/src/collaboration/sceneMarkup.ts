@@ -27,6 +27,7 @@ export class SceneMarkup {
   private boundaries: { node: Node; offsets: number[] }[] = []
   private runs: TextRun[] = []
   private offset = 0
+  private rendered = false
 
   constructor(private readonly editor: MarkupEnvironment, private readonly root: HTMLElement) {}
 
@@ -51,7 +52,13 @@ export class SceneMarkup {
       id = crypto.randomUUID()
       this.identities.set(element, id)
     }
-    return { id, tag: element.tagName.toLowerCase(), attributes: Object.fromEntries(Array.from(element.attributes, attribute => [attribute.name, attribute.value])) }
+    const attributes = Object.fromEntries(Array.from(element.attributes, attribute => [attribute.name, attribute.value]))
+    if ('data-nv-auto-direction' in attributes) {
+      if (attributes['data-nv-auto-direction'] === 'auto') attributes.dir = 'auto'
+      else delete attributes.dir
+      delete attributes['data-nv-auto-direction']
+    }
+    return { id, tag: element.tagName.toLowerCase(), attributes }
   }
 
   private container(element: Element, path: Block[]): void {
@@ -139,10 +146,33 @@ export class SceneMarkup {
 
   render(runs: TextRun[]): void {
     const fragment = this.prepare(runs)
-    this.patch(this.root, fragment)
+    if (this.rendered || !this.adoptInitial(fragment)) this.patch(this.root, fragment)
+    this.rendered = true
     this.editor.toDisplayImages(this.root)
     this.editor.refreshLayout?.()
     this.read()
+  }
+
+  private adoptInitial(fragment: DocumentFragment): boolean {
+    const identities: [Node, string][] = []
+    const matches = (existing: Node, desired: Node): boolean => {
+      if (existing.nodeType !== desired.nodeType || existing.nodeName !== desired.nodeName) return false
+      if (existing.nodeType !== 1) return existing.textContent === desired.textContent
+      const before = existing as Element, after = desired as Element
+      if (before.attributes.length !== after.attributes.length ||
+          Array.from(after.attributes).some(attribute => before.getAttribute(attribute.name) !== attribute.value)) return false
+      const identity = this.identities.get(desired), previous = this.identities.get(existing)
+      if (identity && previous && identity !== previous) return false
+      if (identity) identities.push([existing, identity])
+      return matchChildren(existing, desired)
+    }
+    const matchChildren = (existing: Node, desired: Node): boolean => {
+      const before = this.proseChildren(existing), after = this.proseChildren(desired)
+      return before.length === after.length && before.every((node, index) => matches(node, after[index]))
+    }
+    if (!matchChildren(this.root, fragment)) return false
+    for (const [node, identity] of identities) this.identities.set(node, identity)
+    return true
   }
 
   validateAttribute(name: string, value: string): void {
@@ -218,8 +248,14 @@ export class SceneMarkup {
     return safe
   }
 
+  private proseChildren(parent: Node): ChildNode[] {
+    return Array.from(parent.childNodes).flatMap(node =>
+      node.nodeType === 1 && (node as Element).classList.contains('nv-page') ? this.proseChildren(node) : [node])
+  }
+
   private patch(parent: Element, desired: Element | DocumentFragment): void {
-    const previous = Array.from(parent.childNodes)
+    const previous = this.proseChildren(parent)
+    const current = [...previous]
     const used = new Set<Node>()
     let index = 0
     for (const target of Array.from(desired.childNodes)) {
@@ -238,10 +274,16 @@ export class SceneMarkup {
         if (existing.textContent !== target.textContent) existing.textContent = target.textContent
         node = existing
       }
-      if (parent.childNodes[index] !== node) parent.insertBefore(node, parent.childNodes[index] ?? null)
+      const next = current[index] ?? null
+      if (next !== node) {
+        (next?.parentNode ?? current.at(-1)?.parentNode ?? parent).insertBefore(node, next)
+        const from = current.indexOf(node)
+        if (from !== -1) current.splice(from, 1)
+        current.splice(index, 0, node)
+      }
       used.add(node)
       index++
     }
-    while (parent.childNodes.length > index) parent.lastChild?.remove()
+    for (const node of previous) if (!used.has(node)) node.parentNode?.removeChild(node)
   }
 }

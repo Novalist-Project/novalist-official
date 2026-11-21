@@ -126,6 +126,7 @@ public sealed partial class Workspace : IDisposable
         await DetachSharedScenesAsync();
 #endif
         await Settings.LoadAsync();
+        await new WritingOperationJournal(projectDirectory, FileService).RecoverAsync();
         var metadata = await Projects.LoadProjectAsync(projectDirectory, bookId);
         Settings.SetActiveOverrides(Projects.ProjectSettings.Overrides);
         // Record the portrait cover's absolute path so the welcome screen can
@@ -244,6 +245,8 @@ public sealed partial class Workspace : IDisposable
         RaiseSceneSaved(chapter, scene);
     }
 
+    internal void RaiseWritingSceneSaved(ChapterData chapter, SceneData scene) => RaiseSceneSaved(chapter, scene);
+
     // Same regex the Avalonia EditorViewModel uses, so persisted word counts stay identical.
     /// <summary>
     /// A scene's word count, in whatever script it is written in.
@@ -325,6 +328,21 @@ public sealed record SceneDto(
     /// <summary>The same threads by id, so the binder can filter by one.</summary>
     IReadOnlyList<string> PlotlineIds)
 {
+    public IReadOnlyList<string> Cast { get; init; } = [];
+    public string? Pov { get; init; }
+    public string? Goal { get; init; }
+    public string? Outcome { get; init; }
+    public string? Notes { get; init; }
+    public string? LabelKey { get; init; }
+    public IReadOnlyDictionary<string, string>? Properties { get; init; }
+    public string? NarrativeMode { get; init; }
+    public string? Strand { get; init; }
+    public string? FocusEntityId { get; init; }
+    public string DateStart { get; init; } = string.Empty;
+    public string DateEnd { get; init; } = string.Empty;
+    public string DateNote { get; init; } = string.Empty;
+    public int? WordTarget { get; init; }
+    public string? BeatKey { get; init; }
 #if NOVALIST_COLLABORATION
     public SharedEntityFieldsDto? SharedFields { get; init; }
     public SharedEntityFieldsDto? SharedProse { get; init; }

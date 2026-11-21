@@ -66,6 +66,8 @@ export type CommandDef = {
   labelKey: string
   /** Localization key for the settings category its gesture groups under. */
   categoryKey: string
+  /** Explicit shortcuts beside the selection/caret; the persistent home remains required. */
+  transientHomes?: readonly CommandContainer[]
   /**
    * Factory default gesture, in the Avalonia KeyGesture grammar. A hotkey is a
    * property of a command rather than the thing that makes one exist, so most

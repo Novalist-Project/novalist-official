@@ -43,8 +43,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
+        id: dotnet
         with:
           dotnet-version: 10.0.303
+      - name: Select the installed .NET SDK
+        run: |
+          '{"sdk":{"version":"${{ steps.dotnet.outputs.dotnet-version }}","rollForward":"disable"}}' | Set-Content -LiteralPath global.json -Encoding utf8
+          dotnet --version
       - uses: actions/setup-java@v4
         with:
           distribution: microsoft
@@ -71,7 +76,7 @@ jobs:
           dotnet build Novalist.Mobile/Novalist.Mobile.csproj -f net10.0-android
           -c ${{ inputs.alpha && 'Release' || 'Debug' }} -r ${{ matrix.runtime }}
           -t:InstallAndroidDependencies -p:AcceptAndroidSdkLicenses=True
-          -p:EnableImportApi=false -p:UseMonoRuntime=true
+          -p:EnableImportApi=false -p:UseMonoRuntime=true -p:SelfContained=true
           -p:AndroidSdkDirectory="$env:ANDROID_HOME" -p:JavaSdkDirectory="$env:JAVA_HOME"
       - name: Build standalone development APK
         if: ${{ !inputs.alpha }}

@@ -184,7 +184,7 @@ public sealed class JournalTests : IDisposable
     public void Dispose()
     {
         sequences.Dispose();
-        if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        TestFiles.DeleteTree(folder);
     }
 
     [Fact]

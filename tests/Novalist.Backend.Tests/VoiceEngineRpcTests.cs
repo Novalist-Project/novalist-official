@@ -631,7 +631,7 @@ public sealed class VoiceEngineRpcTests : IDisposable
         try
         {
             var rendering = _rpc.RenderAsync(0, 8, streamId: "reading-1");
-            await arrived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await arrived.Task.WaitAsync(TestWait.Deadline);
             Assert.False(rendering.IsCompleted);
             Assert.Equal(before, _cache.Size());
             _engine.ChunkHold.SetResult();
@@ -668,7 +668,7 @@ public sealed class VoiceEngineRpcTests : IDisposable
         try
         {
             var rendering = _rpc.RenderAsync(0, 8, streamId: "stopped");
-            await arrived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await arrived.Task.WaitAsync(TestWait.Deadline);
             _rpc.RenderStop();
             _engine.ChunkHold.SetResult();
             Assert.Empty((await rendering).Clips);

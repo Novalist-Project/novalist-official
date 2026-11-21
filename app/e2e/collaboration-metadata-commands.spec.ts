@@ -52,10 +52,10 @@ for (const command of [
     }
     await chooseStage()
     await expect(h.page.getByRole('status').filter({ hasText: /^Morgan is editing this field\.$/ })).toBeVisible()
-    await expect.poll(() => h.page.evaluate(() => window.metadataCommandTest.calls)).toEqual(['acquire', 'release'])
+    await expect.poll(() => h.page.evaluate(() => window.metadataCommandTest.calls)).toEqual(['acquire'])
     await h.page.evaluate(() => { window.metadataCommandTest.grant = true })
     await chooseStage()
-    await expect.poll(() => h.page.evaluate(() => window.metadataCommandTest.calls)).toEqual(['acquire', 'release', 'acquire', 'write', 'release'])
+    await expect.poll(() => h.page.evaluate(() => window.metadataCommandTest.calls)).toEqual(['acquire', 'acquire', 'write', 'release'])
     expect(await h.page.evaluate(() => window.metadataCommandTest.value)).toBe(JSON.stringify(command.field === 'stage' ? stage.key : command.value))
   } finally { await h.close() }
 })
