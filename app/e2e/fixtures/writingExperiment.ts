@@ -1,0 +1,568 @@
+import * as Y from 'yjs'
+import { SceneMarkup } from '../../src/renderer/src/collaboration/sceneMarkup'
+import { updateRichText } from '../../src/renderer/src/collaboration/richText'
+import type { EditorWindow } from '../../src/renderer/src/views/editor/editorBridge'
+import type { FixtureBook } from './writingBook'
+import type { WritingCommand, WritingPane, WritingPoint } from './writingContract'
+import { applySimpleInsertion } from './writingIncremental'
+import { installScenePagination } from './writingPageLayout'
+import { installSceneCapture, type CaptureTelemetry } from './writingSceneCapture'
+import { authoredClass, clearWritingSpacing, contentRecords, scenePoint, WritingPresentation, writingSpacingAttributes } from './writingPresentation'
+import type { WritingViewport } from './writingViewport'
+import { SceneProjection, type SceneSurface } from './writingSceneSurface'
+import { installFragmentLayout } from './writingFragmentLayout'
+import { installFragmentInput } from './writingFragmentInput'
+import { CommentBookmark, wrapCommentLeaves } from './writingComments'
+
+interface SceneDocument { doc: Y.Doc; text: Y.Text; history: Y.UndoManager; commentIds: Set<string> }
+interface SceneView { root: HTMLElement; markup: SceneMarkup; state: SceneDocument; surface?: SceneSurface }
+interface RelativePoint { scene: number; position: Y.RelativePosition }
+interface LogicalSelection { anchor: RelativePoint; focus: RelativePoint }
+interface ScopeSelection { logical: LogicalSelection; anchor: Node | null; anchorOffset: number; focus: Node | null; focusOffset: number }
+interface ExperimentEditor extends EditorWindow {
+  setCommentsData(data: { id: string; anchorText: string; text: string }[], sceneId?: string): void
+  writingComments?: { active(): string; key(id: string, sceneId: string): string; reserve(id: string, sceneId: string): void; owner(node: Node): string; marks(sceneId: string): Element[]; allMarks(): Element[] }
+  wrapSelectionAsComment(id: string): string | null
+  sanitizePastedHtml(html: string): string
+  NovalistEditorState: { pageViewEnabled: boolean; pageViewMutationObserver: MutationObserver | null; isComposing: boolean; isSettingContent: boolean }
+  schedulePageViewRepaginate(): void
+  getCleanContentHtml(root?: HTMLElement): string
+  buildGrammarPlainTextMap(root?: HTMLElement): { plainText: string; textNodes: unknown[] }
+  reportContentChanged(): void
+  sendMessage(message: object): void
+  writingCaptureTelemetry: CaptureTelemetry
+  writingViewport?: WritingViewport
+}
+
+const writer = {}
+
+function stripWritingFields(attributes: Record<string, string>): void {
+  for (const name of writingSpacingAttributes) delete attributes[name]
+}
+
+class ExperimentMarkup extends SceneMarkup {
+  read() {
+    return super.read().map(run => {
+      if (!run.attributes) return run
+      const attributes = { ...run.attributes }
+      const marks: string[] = attributes.markOrder ? JSON.parse(attributes.markOrder) : []
+      for (const name of marks) {
+        const values: Record<string, string> = JSON.parse(attributes[name])
+        stripWritingFields(values)
+        attributes[name] = JSON.stringify(values)
+      }
+      if (attributes.embed) {
+        const embed: { tag: string; attributes: Record<string, string> } = JSON.parse(attributes.embed)
+        stripWritingFields(embed.attributes)
+        attributes.embed = JSON.stringify(embed)
+      }
+      if (!attributes.block) return { ...run, attributes }
+      const blocks: { attributes: Record<string, string> }[] = JSON.parse(attributes.block)
+      for (const block of blocks) {
+        stripWritingFields(block.attributes)
+        if (!('class' in block.attributes)) continue
+        const value = authoredClass(block.attributes.class)
+        if (value) block.attributes.class = value
+        else delete block.attributes.class
+      }
+      return { ...run, attributes: { ...attributes, block: JSON.stringify(blocks) } }
+    })
+  }
+}
+
+class CompoundHistory {
+  readonly undoGroups: number[][] = []
+  readonly redoGroups: number[][] = []
+  constructor(readonly scenes: SceneDocument[]) {}
+
+  capture(views: SceneView[], indices: number[]): void {
+    const changed: number[] = []
+    for (const index of indices) {
+      const { state, markup } = views[index]
+      state.history.stopCapturing()
+      const size = state.history.undoStack.length
+      state.doc.transact(() => updateRichText(state.text, markup.read()), writer)
+      if (state.history.undoStack.length > size) changed.push(index)
+    }
+    if (changed.length) {
+      this.undoGroups.push(changed)
+      this.redoGroups.length = 0
+    }
+  }
+
+  change(redo: boolean): void {
+    const from = redo ? this.redoGroups : this.undoGroups
+    const to = redo ? this.undoGroups : this.redoGroups
+    const group = from.pop()
+    if (!group) return
+    for (const index of group) {
+      if (redo) this.scenes[index].history.redo()
+      else this.scenes[index].history.undo()
+    }
+    to.push(group)
+  }
+}
+
+class ExperimentPane implements WritingPane {
+  private readonly presentation = new WritingPresentation()
+  private readonly root: HTMLElement
+  private readonly views: SceneView[]
+  private readonly observer: MutationObserver
+  private readonly dirty = new Set<number>()
+  private readonly latencies: number[] = []
+  private applying = false
+  private composing = false
+  private commanding = false
+  private pendingScope: number[] | null = null
+  private savedSelection: LogicalSelection | null = null
+  private scopeSelection: ScopeSelection | null = null
+  private readonly viewIndices = new Map<HTMLElement | SceneSurface, number>()
+  private acceptSceneContent: ((scene: HTMLElement) => () => void) | undefined
+  private readonly projection?: SceneProjection
+  private layout?: { flush(): void; dispose(): void }
+
+  constructor(private readonly editor: ExperimentEditor, private readonly book: FixtureBook, private readonly history: CompoundHistory, optimized: boolean, scoped: boolean, fragments = false) {
+    this.root = editor.document.getElementById('editor')!
+    this.root.replaceChildren()
+    const presentation = this.presentation
+    if (fragments) this.projection = new SceneProjection(this.root, presentation)
+    this.views = book.scenes.map((scene, index) => {
+      const root = editor.document.createElement('section')
+      root.dataset.sceneId = scene.id
+      root.append(editor.sanitizeSceneFragment(scene.html))
+      this.root.append(root)
+      this.viewIndices.set(root, index)
+      const markup = new ExperimentMarkup({ document: editor.document,
+        sanitizeSceneFragment: html => editor.sanitizeSceneFragment(html),
+        toDisplayImages: content => editor.toDisplayImages(content) }, root)
+      const surface = this.projection?.create(scene.id, root)
+      if (surface) {
+        ;(markup as SceneMarkup & { attachSurface(surface: SceneSurface): void }).attachSurface(surface)
+        this.viewIndices.set(surface, index)
+      }
+      const state = history.scenes[index]
+      for (const mark of root.querySelectorAll('[data-comment-id]')) state.commentIds.add(mark.getAttribute('data-comment-id')!)
+      if (!state.text.length) state.doc.transact(() => updateRichText(state.text, markup.read()))
+      else markup.render(state.text.toDelta())
+      const transactionSelections = new WeakMap<Y.Transaction, { logical: LogicalSelection | null; exact: CommentBookmark | null }>()
+      state.doc.on('beforeTransaction', transaction => {
+        if (!this.applying && !this.composing && this.selectionTouches(index)) {
+          const selected = this.editor.getSelection()
+          transactionSelections.set(transaction, { logical: this.selection() ?? this.savedSelection,
+            exact: selected?.anchorNode && selected.focusNode ? new CommentBookmark(selected) : null })
+        }
+      })
+      state.text.observe(event => {
+        if (this.applying || this.composing) return
+        const saved = transactionSelections.get(event.transaction)
+        this.markDirty(contentRecords(this.observer.takeRecords()))
+        const acknowledge = this.acceptSceneContent?.(root)
+        if (!optimized || !applySimpleInsertion(markup, event.delta)) this.render(index)
+        this.markDirty(contentRecords(this.observer.takeRecords()).filter(record => surface ? this.projection!.owner(record.target) !== surface : !root.contains(record.target)))
+        acknowledge?.()
+        if (saved?.logical) { this.savedSelection = saved.logical; this.restore(saved.logical, saved.exact) }
+      })
+      return { root, markup, state, surface }
+    })
+    this.observer = presentation.observe(this.root, records => this.markDirty(records))
+    if (fragments) this.layout = installFragmentLayout(editor, this.projection!, () => !this.composing)
+    else if (optimized) {
+      const style = editor.document.createElement('style')
+      style.textContent = '#editor [data-scene-id] { content-visibility: auto; contain-intrinsic-size: auto 600px; }'
+      editor.document.head.append(style)
+      installScenePagination(editor, presentation)
+    }
+    if (scoped) {
+      const marks = (view: SceneView): Element[] => Array.from(view.surface ? view.surface.atoms() : view.root.childNodes).flatMap(node => {
+        if (node.nodeType !== 1) return []
+        const element = node as Element
+        return [...(element.matches('span.nv-comment[data-comment-id]') ? [element] : []), ...element.querySelectorAll('span.nv-comment[data-comment-id]')]
+      })
+      editor.writingComments = {
+        active: () => this.activeScene() ?? (this.views.length === 1 ? this.book.scenes[0].id : ''),
+        key: (id, sceneId) => JSON.stringify([sceneId, id]),
+        reserve: (id, sceneId) => {
+          const index = this.book.scenes.findIndex(scene => scene.id === sceneId)
+          if (index < 0) throw new Error('Unknown comment scene ownership.')
+          this.views[index].state.commentIds.add(id)
+        },
+        owner: node => {
+          const owner = this.locate(node, 0)?.scene
+          const index = owner ? this.viewIndices.get(owner) : undefined
+          if (index === undefined) throw new Error('Comment outside registered scene ownership.')
+          return this.book.scenes[index].id
+        },
+        marks: sceneId => {
+          const index = this.book.scenes.findIndex(scene => scene.id === sceneId)
+          if (index < 0) throw new Error('Unknown comment scene ownership.')
+          return marks(this.views[index])
+        },
+        allMarks: () => this.views.flatMap(view => this.hidden(view) ? [] : marks(view))
+      }
+      for (const [index, view] of this.views.entries()) editor.setCommentsData(marks(view).map(mark => ({ id: mark.getAttribute('data-comment-id')!, anchorText: mark.textContent ?? '', text: 'Synthetic annotation' })), book.scenes[index].id)
+    } else editor.setCommentsData(Array.from(this.root.querySelectorAll<HTMLElement>('[data-comment-id]'), mark => ({ id: mark.dataset.commentId!, anchorText: mark.textContent ?? '', text: 'Synthetic annotation' })))
+    if (this.projection) {
+      const input = installFragmentInput(this.projection)
+      editor.addEventListener('pagehide', () => {
+        input.dispose()
+        this.layout?.dispose()
+        this.presentation.dispose()
+        this.projection!.dispose()
+      }, { once: true })
+    }
+    if (scoped) this.acceptSceneContent = installSceneCapture(editor, presentation, this.projection)
+    this.installEvents()
+  }
+
+  private installEvents(): void {
+    for (const type of ['pointerdown', 'keydown', 'beforeinput']) this.root.addEventListener(type, () => { this.scopeSelection = null }, true)
+    this.root.addEventListener('input', event => {
+      const start = event.timeStamp
+      this.editor.requestAnimationFrame(() => this.editor.requestAnimationFrame(() => this.latencies.push(this.editor.performance.now() - start)))
+      if (!this.composing) this.capture()
+    })
+    this.root.addEventListener('beforeinput', event => this.beforeInput(event), true)
+    this.root.addEventListener('keydown', event => {
+      if (this.composing || event.isComposing || event.keyCode === 229 || event.altKey || !(event.ctrlKey || event.metaKey)) return
+      const key = event.key.toLowerCase()
+      if (key !== 'z' && key !== 'y') return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      if (key === 'y' || event.shiftKey) this.redo()
+      else this.undo()
+    }, true)
+    this.root.addEventListener('copy', event => this.copy(event))
+    this.root.addEventListener('paste', event => this.paste(event), true)
+    this.root.addEventListener('compositionstart', () => {
+      this.capture()
+      this.composing = true
+      const ranges = this.selectedRanges()
+      if (new Set(ranges.map(item => item.index)).size > 1) this.replaceRanges(ranges)
+    })
+    this.root.addEventListener('compositionend', () => {
+      this.editor.setTimeout(() => {
+        this.composing = false
+        this.capture()
+        if (this.pendingScope) this.scope(this.pendingScope)
+        this.pendingScope = null
+        this.layout?.flush()
+      }, 0)
+    })
+    this.editor.document.addEventListener('selectionchange', () => {
+      const active = this.activeScene()
+      if (active) this.editor.setSceneContext(active)
+    })
+  }
+
+  private markDirty(records: MutationRecord[]): void {
+    for (const record of records) {
+      if (this.projection) {
+        for (const node of [record.target, ...record.addedNodes, ...record.removedNodes]) {
+          const owner = this.projection.owner(node)
+          const index = owner ? this.viewIndices.get(owner) : undefined
+          if (index !== undefined) this.dirty.add(index)
+        }
+        continue
+      }
+      const node = record.target.nodeType === 1 ? record.target as Element : record.target.parentElement
+      const root = node?.closest('[data-scene-id]')
+      const index = this.viewIndices.get(root as HTMLElement)
+      if (index !== undefined) this.dirty.add(index)
+    }
+  }
+
+  capture(): void {
+    if (this.composing || this.applying || this.commanding) return
+    this.projection?.assertTopology()
+    this.markDirty(contentRecords(this.observer.takeRecords()))
+    this.applying = true
+    try { this.history.capture(this.views, [...this.dirty]) }
+    finally { this.applying = false; this.dirty.clear() }
+  }
+
+  private render(index: number): void {
+    const view = this.views[index]
+    view.markup.render(view.state.text.toDelta())
+  }
+
+  private point(node: Node, offset: number): RelativePoint | null {
+    const resolved = this.locate(node, offset)
+    const scene = resolved ? this.viewIndices.get(resolved.scene) : undefined
+    if (scene === undefined || this.hidden(this.views[scene])) return null
+    const view = this.views[scene]
+    view.markup.read()
+    const index = view.markup.position(resolved!.node, resolved!.offset)
+    return index === null ? null : { scene, position: Y.createRelativePositionFromTypeIndex(view.state.text, index) }
+  }
+
+  private locate(node: Node | null, offset: number) {
+    return this.projection ? this.projection.locate(node, offset) : scenePoint(this.root, node, offset)
+  }
+
+  private hidden(view: SceneView): boolean { return view.surface ? !view.surface.visible : !!view.root.hidden }
+
+  private selectionTouches(index: number): boolean {
+    const selected = this.editor.getSelection()
+    const a = this.locate(selected?.anchorNode ?? null, selected?.anchorOffset ?? 0)
+    const f = this.locate(selected?.focusNode ?? null, selected?.focusOffset ?? 0)
+    const anchor = a ? this.viewIndices.get(a.scene) : this.savedSelection?.anchor.scene
+    const focus = f ? this.viewIndices.get(f.scene) : this.savedSelection?.focus.scene
+    return anchor !== undefined && focus !== undefined && index >= Math.min(anchor, focus) && index <= Math.max(anchor, focus)
+  }
+
+  private selection(): LogicalSelection | null {
+    const selection = this.editor.getSelection()
+    if (!selection?.anchorNode || !selection.focusNode) return null
+    const anchor = this.point(selection.anchorNode, selection.anchorOffset)
+    const focus = this.point(selection.focusNode, selection.focusOffset)
+    return anchor && focus ? { anchor, focus } : null
+  }
+
+  private restore(selection: LogicalSelection, exact: CommentBookmark | null = null): void {
+    if (this.hidden(this.views[selection.anchor.scene]) || this.hidden(this.views[selection.focus.scene])) return
+    const resolve = (point: RelativePoint, affinity: 'forward' | 'backward' = 'backward') => {
+      const view = this.views[point.scene]
+      view.markup.read()
+      const position = Y.createAbsolutePositionFromRelativePosition(point.position, view.state.doc)
+      return position ? (view.markup as SceneMarkup & { domPosition(index: number, affinity: 'forward' | 'backward'): { node: Node; offset: number } | null }).domPosition(position.index, affinity) : null
+    }
+    if (exact) { exact.restore((end, affinity) => resolve(selection[end], affinity)); return }
+    const anchor = resolve(selection.anchor)
+    const focus = resolve(selection.focus)
+    if (anchor && focus) this.editor.getSelection()?.setBaseAndExtent(anchor.node, anchor.offset, focus.node, focus.offset)
+  }
+
+  select(anchor: WritingPoint, focus: WritingPoint): void {
+    const position = (point: WritingPoint) => {
+      const view = this.views[point.scene]
+      view.markup.read()
+      const result = view.markup.domPosition(point.offset)
+      if (!result) throw new Error('Selection outside fixture prose.')
+      return result
+    }
+    const a = position(anchor)
+    const f = position(focus)
+    const select = () => {
+      this.root.focus({ preventScroll: true })
+      this.editor.getSelection()!.setBaseAndExtent(a.node, a.offset, f.node, f.offset)
+    }
+    if (this.editor.writingViewport) this.editor.writingViewport.intent(select)
+    else select()
+  }
+
+  private selectedRanges(): { index: number; range: Range }[] {
+    const selected = this.editor.getSelection()
+    if (!selected?.rangeCount) return []
+    const original = selected.getRangeAt(0)
+    if (this.projection) return this.projection.slices(original).flatMap(slice => slice.ranges.map(range => ({ index: this.viewIndices.get(slice.scene)!, range })))
+    return this.views.flatMap((view, index) => {
+      if (view.root.hidden || !original.intersectsNode(view.root)) return []
+      const range = this.editor.document.createRange()
+      range.selectNodeContents(view.root)
+      if (view.root.contains(original.startContainer)) range.setStart(original.startContainer, original.startOffset)
+      if (view.root.contains(original.endContainer)) range.setEnd(original.endContainer, original.endOffset)
+      return [{ index, range }]
+    })
+  }
+
+  command(command: WritingCommand): void {
+    this.capture()
+    const selection = this.selection()
+    const selected = this.editor.getSelection()
+    const exact = selected?.anchorNode && selected.focusNode ? new CommentBookmark(selected) : null
+    const commentIds = new Map<number, string>()
+    this.commanding = true
+    try {
+      for (const { index, range } of this.selectedRanges().reverse()) {
+        if (command === 'wrapSelectionAsComment') {
+          if (!exact) continue
+          let id = commentIds.get(index)
+          if (!id) {
+            const ids = this.views[index].state.commentIds
+            id = `comment-${index}`
+            for (let suffix = 1; ids.has(id); suffix++) id = `comment-${index}-${suffix}`
+            ids.add(id)
+            commentIds.set(index, id)
+          }
+          wrapCommentLeaves(range, id, exact)
+        }
+        else {
+          selected!.removeAllRanges()
+          selected!.addRange(range)
+          this.editor[command]()
+        }
+        this.dirty.add(index)
+      }
+    } finally { this.commanding = false }
+    this.capture()
+    if (selection) this.restore(selection, command === 'wrapSelectionAsComment' ? exact : null)
+    if (command === 'wrapSelectionAsComment') this.editor.reportContentChanged()
+  }
+
+  private beforeInput(event: InputEvent): void {
+    if (this.composing || event.isComposing) return
+    if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      if (event.inputType === 'historyUndo') this.undo()
+      else this.redo()
+      return
+    }
+    const ranges = this.selectedRanges()
+    const sceneCount = new Set(ranges.map(item => item.index)).size
+    if (sceneCount > 1 && ['insertText', 'insertReplacementText', 'insertParagraph', 'insertLineBreak'].includes(event.inputType)) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      this.replaceRanges(ranges, () => {
+        if (event.inputType === 'insertParagraph') this.editor.document.execCommand('insertParagraph')
+        else if (event.inputType === 'insertLineBreak') this.editor.document.execCommand('insertHTML', false, '<br>')
+        else {
+          const text = event.inputType === 'insertReplacementText' ? event.dataTransfer?.getData('text/plain') ?? event.data ?? '' : event.data ?? ''
+          this.editor.document.execCommand('insertText', false, text)
+        }
+      })
+      return
+    }
+    if (!event.inputType.startsWith('delete')) return
+    const selection = this.editor.getSelection()
+    if (selection?.isCollapsed && ranges.length === 1 && selection.anchorNode) {
+      const view = this.views[ranges[0].index]
+      view.markup.read()
+      const offset = view.markup.position(selection.anchorNode, selection.anchorOffset)
+      if ((event.inputType.endsWith('Backward') && offset === 0) ||
+          (event.inputType.endsWith('Forward') && offset === view.state.text.length - 1)) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+      }
+    }
+    if (sceneCount < 2) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    this.replaceRanges(ranges)
+  }
+
+  private copy(event: ClipboardEvent): void {
+    const ranges = this.selectedRanges()
+    if (!ranges.length || !event.clipboardData) return
+    event.preventDefault()
+    event.clipboardData.setData('text/plain', ranges.map(({ index, range }, at) => (at && ranges[at - 1].index !== index ? '\n' : '') + range.toString()).join(''))
+    const container = this.editor.document.createElement('div')
+    for (const { range } of ranges) container.append(range.cloneContents())
+    clearWritingSpacing(container)
+    event.clipboardData.setData('text/html', container.innerHTML)
+  }
+
+  private paste(event: ClipboardEvent): void {
+    const ranges = this.selectedRanges()
+    if (new Set(ranges.map(item => item.index)).size < 2 || !event.clipboardData) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    const transfer = event.clipboardData
+    this.replaceRanges(ranges, () => {
+      const html = transfer.getData('text/html')
+      if (html) this.editor.document.execCommand('insertHTML', false, this.editor.sanitizePastedHtml(html))
+      else this.editor.document.execCommand('insertText', false, transfer.getData('text/plain'))
+    })
+  }
+
+  private replaceRanges(ranges: { index: number; range: Range }[], insert?: () => void): void {
+    this.capture()
+    this.commanding = true
+    try {
+      const start = ranges[0].range.cloneRange()
+      start.collapse(true)
+      for (const { index, range } of [...ranges].reverse()) {
+        range.deleteContents()
+        this.dirty.add(index)
+      }
+      for (const index of new Set(ranges.map(item => item.index))) {
+        const view = this.views[index]
+        const fragments = view.surface?.fragments ?? [view.root]
+        if (fragments.every(fragment => !fragment.textContent && !fragment.querySelector('img'))) view.root.replaceChildren(this.editor.sanitizeSceneFragment('<p><br></p>'))
+      }
+      const first = this.views[ranges[0].index].root
+      const ownsStart = this.projection ? this.projection.owner(start.startContainer) === this.views[ranges[0].index].surface : first.contains(start.startContainer)
+      if (start.startContainer === first || !ownsStart) {
+        start.selectNodeContents(first.firstElementChild ?? first)
+        start.collapse(true)
+      }
+      const selection = this.editor.getSelection()!
+      selection.removeAllRanges()
+      selection.addRange(start)
+      insert?.()
+    } finally { this.commanding = false }
+    this.capture()
+  }
+
+  serialize() {
+    this.capture()
+    return this.views.map((view, index) => {
+      if (!view.root.isConnected || !this.root.contains(view.root) || view.root.dataset.sceneId !== this.book.scenes[index].id) throw new Error('A live scene owner was detached or replaced.')
+      const clone = view.surface ? this.projection!.clone(view.surface) : view.root.cloneNode(true) as HTMLElement
+      clearWritingSpacing(clone)
+      clone.querySelectorAll('.nv-focus-block').forEach(node => node.classList.remove('nv-focus-block'))
+      clone.querySelectorAll('[class=""]').forEach(node => node.removeAttribute('class'))
+      clone.querySelectorAll('img[data-nv-src]').forEach(node => {
+        node.setAttribute('src', node.getAttribute('data-nv-src')!)
+        node.removeAttribute('data-nv-src')
+      })
+      if (!view.surface) clone.querySelectorAll('.nv-page').forEach(page => page.replaceWith(...page.childNodes))
+      return { id: this.book.scenes[index].id, html: clone.innerHTML, text: clone.textContent ?? '' }
+    })
+  }
+
+  scope(indices: number[]): void {
+    if (this.composing) { this.pendingScope = indices; return }
+    this.capture()
+    const selected = this.editor.getSelection()
+    const bookmark = this.scopeSelection
+    const unchanged = bookmark && selected?.anchorNode === bookmark.anchor && selected.anchorOffset === bookmark.anchorOffset && selected.focusNode === bookmark.focus && selected.focusOffset === bookmark.focusOffset
+    this.savedSelection = unchanged ? bookmark.logical : this.selection() ?? this.savedSelection
+    for (const [index, view] of this.views.entries()) {
+      if (view.surface) this.projection!.visible(view.surface, indices.includes(index))
+      else view.root.hidden = !indices.includes(index)
+    }
+    if (this.projection) this.editor.repaginatePageView()
+    this.observer.takeRecords()
+    if (this.savedSelection && indices.includes(this.savedSelection.anchor.scene) && indices.includes(this.savedSelection.focus.scene)) this.restore(this.savedSelection)
+    this.scopeSelection = this.savedSelection && selected ? { logical: this.savedSelection, anchor: selected.anchorNode, anchorOffset: selected.anchorOffset, focus: selected.focusNode, focusOffset: selected.focusOffset } : null
+  }
+
+  undo(): void { this.capture(); this.history.change(false) }
+  redo(): void { this.capture(); this.history.change(true) }
+
+  remoteInsert(scene: number, offset: number, text: string): void {
+    this.capture()
+    const state = this.views[scene].state
+    const remote = new Y.Doc()
+    Y.applyUpdate(remote, Y.encodeStateAsUpdate(state.doc))
+    const before = Y.encodeStateVector(state.doc)
+    remote.getText('prose').insert(offset, text)
+    Y.applyUpdate(state.doc, Y.encodeStateAsUpdate(remote, before), 'remote')
+    remote.destroy()
+  }
+
+  samples(): number[] { return [...this.latencies] }
+  sampleCount(): number { return this.latencies.length }
+  sceneCount(): number { return this.projection?.scenes.length ?? this.root.querySelectorAll('[data-scene-id]').length }
+  activeScene(): string | null {
+    const selection = this.editor.getSelection()
+    const scene = this.locate(selection?.focusNode ?? null, selection?.focusOffset ?? 0)?.scene
+    return scene ? 'sceneId' in scene ? scene.sceneId : scene.dataset.sceneId ?? null : null
+  }
+
+  inspect() {
+    return { deltas: this.views.map(view => view.state.text.toDelta()),
+      undoGroups: this.history.undoGroups.map(group => [...group]), redoGroups: this.history.redoGroups.map(group => [...group]) }
+  }
+}
+
+window.installWriting = (book, optimized, scoped, fragments) => {
+  const states = book.scenes.map(() => {
+    const doc = new Y.Doc()
+    const text = doc.getText('prose')
+    return { doc, text, history: new Y.UndoManager(text, { trackedOrigins: new Set([writer]) }), commentIds: new Set<string>() }
+  })
+  const history = new CompoundHistory(states)
+  window.writingPanes = Array.from(document.querySelectorAll('iframe'), frame => new ExperimentPane(frame.contentWindow as ExperimentEditor, book, history, optimized, scoped, fragments))
+}

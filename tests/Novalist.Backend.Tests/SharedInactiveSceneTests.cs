@@ -44,9 +44,8 @@ public sealed class SharedInactiveSceneTests
 
         const string changed = "Four newly written words.";
         await owner.Rpc.InvokeAsync("collaboration/writeScene", session.SessionId, document.ItemId, Encoding.UTF8.GetBytes("<p>" + changed + "</p>"));
-        for (var attempt = 0; attempt < 100 && !(await File.ReadAllTextAsync(Path.Combine(guestRoot, relative), ct)).Contains(changed, StringComparison.Ordinal); attempt++)
-            await Task.Delay(20, ct);
-        Assert.Contains(changed, await File.ReadAllTextAsync(Path.Combine(guestRoot, relative), ct));
+        var guestScene = await SharedFileReader.WaitForTextAsync(Path.Combine(guestRoot, relative), changed, ct);
+        Assert.Contains(changed, guestScene);
         if (anotherDraft)
         {
             var clone = (await guest.Rpc.InvokeAsync<SceneContentDto>("scenes/read", chapter.Guid, scene.Id)).Shared ?? throw new InvalidOperationException("Missing cloned shared scene.");

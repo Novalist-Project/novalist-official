@@ -68,6 +68,8 @@ Launch Novalist with no project open and you get the app itself — the same win
 - **Scratchpad** is the note icon in the bookshelf header and stays visible as you scroll. Open it to jot down a thought or read saved notes without leaving your place on the shelves.
 - **Settings**, the **user manual** and **Restore backup as new project** are in **More project actions**.
 
+On Android, saved projects appear while the bookshelf loads their books and covers. **Loading library…** stays visible until the list is ready.
+
 On Android, **Import backup** is also visible in the bookshelf toolbar. Select a desktop ZIP or ZIP-based `.novalist` backup through the file selector, enter a new project name, and choose its parent folder. **Restore and open** creates a separate project; opening an existing project with **Open folder** instead keeps editing its original folder. Android remembers the folder grant for reopening; if access is revoked, select the folder again. Wait for the provider to finish synchronizing before switching devices.
 
 On mobile, automatic backups wait until you have been idle for a minute. Returning to typing or navigation interrupts a cloud backup and retries it after another idle period, so downloading the project for a backup does not hold up your work. You can still start a backup manually in Settings.
@@ -90,7 +92,7 @@ Double-click a book on the bookshelf, or use **Open folder** and select your pro
 
 Navigation is five **modes** in the horizontal navigation row, alongside **Library** and **Dashboard**:
 
-- **Write** — the editor and the Manuscript view.
+- **Write** — the editor with Scene, Chapter, and Manuscript scopes. Arrange scenes in **Plan → Structure**.
 - **Plan** — Timeline, Plot Grid, Planning board, Relationships, Calendar, Dialogue.
 - **World** — Codex, Wiki, Maps, Research, Gallery, Languages.
 - **Publish** — Exposé, Style report, Export, Git.

@@ -1,8 +1,12 @@
 import type { WorkspaceEvent, WorkspaceSnapshot, CloseStage } from "../shared/workspaceProtocol";
 import type { SceneNotesContext, SceneNotesWindowState } from '../shared/sceneNotesProtocol'
+import type { WritingSearchCapture, WritingSearchCaptureReply, WritingSearchCaptureRequest, WritingSearchContext, WritingSearchLease, WritingSearchLeaseReply, WritingSearchLeaseRequest, WritingSearchSharedIntent } from '../shared/writingSearchProtocol'
+import type { SceneRef, WritingCommitRequest, WritingCommitResult } from '../renderer/src/views/editor/writingTypes'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { DeepLink } from '../main/deeplink'
 import { selfUpdateDisabled } from '../shared/selfUpdatePolicy'
+import { normalizeDetachedPaneRequest, type DetachedPaneRequest } from '../shared/detachedPane'
+import type { PaneWindowContent, SavedPaneWindow } from '../shared/paneWindows'
 
 const material =
   process.argv.find((a) => a.startsWith('--nl-material='))?.split('=')[1] ?? 'opaque'
@@ -27,6 +31,33 @@ const isMas =
  * picked up by the RPC client from the message event's ports array.
  */
 contextBridge.exposeInMainWorld('novalist', {
+  acquireWritingSearchLease(context: WritingSearchContext, refs: SceneRef[]): Promise<WritingSearchLease> {
+    return ipcRenderer.invoke('novalist:writing-search-lease', context, refs)
+  },
+  finishWritingSearchLease(token: string, changes?: WritingSearchLeaseRequest['changes']): Promise<void> {
+    return ipcRenderer.invoke('novalist:writing-search-finish', token, changes)
+  },
+  publishWritingSearchLease(token: string, request: WritingCommitRequest, changes: { ref: SceneRef; afterHtml: string }[], shared?: WritingSearchSharedIntent): Promise<WritingCommitResult> {
+    return ipcRenderer.invoke('novalist:writing-search-publish', token, request, changes, shared)
+  },
+  onWritingSearchLease(handler: (request: WritingSearchLeaseRequest) => void): () => void {
+    const listener = (_event: Electron.IpcRendererEvent, request: WritingSearchLeaseRequest): void => handler(request)
+    ipcRenderer.on('novalist:writing-search-lease', listener)
+    return () => ipcRenderer.removeListener('novalist:writing-search-lease', listener)
+  },
+  writingSearchLeaseAck(reply: WritingSearchLeaseReply): void { ipcRenderer.send('novalist:writing-search-lease-ack', reply) },
+  captureWritingSearch(context: WritingSearchContext): Promise<WritingSearchCapture[]> {
+    return ipcRenderer.invoke('novalist:writing-search-capture', context)
+  },
+  onWritingSearchCapture(handler: (request: WritingSearchCaptureRequest) => void): () => void {
+    const listener = (_event: Electron.IpcRendererEvent, request: WritingSearchCaptureRequest): void => handler(request)
+    ipcRenderer.on('novalist:writing-search-capture', listener)
+    ipcRenderer.send('novalist:writing-search-ready')
+    return () => ipcRenderer.removeListener('novalist:writing-search-capture', listener)
+  },
+  writingSearchCaptured(reply: WritingSearchCaptureReply): void {
+    ipcRenderer.send('novalist:writing-search-captured', reply)
+  },
   material,
   platform: process.platform,
   // True only in the Mac App Store build. The renderer uses this to hide
@@ -178,13 +209,36 @@ contextBridge.exposeInMainWorld('novalist', {
   },
   /** Opens a second window showing one view, on the project the asking window
    *  has open and - for the editor - the scene it is showing. */
-  openPaneWindow(request: {
-    view: string
-    projectPath: string | null
-    chapterGuid: string | null
-    sceneId: string | null
-  }): Promise<void> {
-    return ipcRenderer.invoke('novalist:open-pane-window', request)
+  openPaneWindow(request: DetachedPaneRequest): Promise<void> {
+    return ipcRenderer.invoke('novalist:open-pane-window', normalizeDetachedPaneRequest(request))
+  },
+  /** An undocked window telling main what it shows now. */
+  reportPaneWindowState(content: PaneWindowContent): void {
+    ipcRenderer.send('novalist:pane-window-state', content)
+  },
+  /** The recorded content a restored undocked window opens with, or null. */
+  paneWindowContent(): Promise<PaneWindowContent | null> {
+    return ipcRenderer.invoke('novalist:pane-window-content')
+  },
+  /** The undocked windows open now, for a workspace layout. Main window only. */
+  listPaneWindows(): Promise<SavedPaneWindow[]> {
+    return ipcRenderer.invoke('novalist:list-pane-windows')
+  },
+  /** Closes the open undocked windows and opens these instead. Main window only. */
+  restorePaneWindows(windows: SavedPaneWindow[]): Promise<void> {
+    return ipcRenderer.invoke('novalist:restore-pane-windows', windows)
+  },
+  /** The main window's split as it is now, for this project; null when unsplit. */
+  reportMainPanes(projectPath: string, content: PaneWindowContent | null): void {
+    ipcRenderer.send('novalist:main-panes-state', projectPath, content)
+  },
+  /** The main window's split this project had last time, or null. */
+  mainPaneSession(projectPath: string): Promise<PaneWindowContent | null> {
+    return ipcRenderer.invoke('novalist:main-panes-session', projectPath)
+  },
+  /** Reopens the undocked windows this project had open last time. Main window only. */
+  restorePaneWindowSession(projectPath: string): Promise<number> {
+    return ipcRenderer.invoke('novalist:restore-pane-window-session', projectPath)
   },
 
   registerExtensionRoots(roots: Record<string, string>): Promise<void> {
@@ -252,6 +306,9 @@ contextBridge.exposeInMainWorld('novalist', {
   },
   forwardMainCommand(command: string): void { ipcRenderer.send('novalist:main-command', command) },
   retryWorkspaceRecovery(): Promise<void> { return ipcRenderer.invoke('novalist:workspace-retry') },
+  claimWritingFocus(sourceId: string, epoch: number): Promise<{ sourceId: string; focusGeneration: number } | null> {
+    return ipcRenderer.invoke('novalist:claim-writing-focus', sourceId, epoch)
+  },
   workspaceSnapshot(): Promise<WorkspaceSnapshot> {
     return ipcRenderer.invoke('novalist:workspace-snapshot')
   },
@@ -284,6 +341,17 @@ contextBridge.exposeInMainWorld('novalist', {
   },
   setMenu(nodes: unknown[], labels: unknown): void {
     ipcRenderer.send('novalist:set-menu', nodes, labels)
+  },
+  /**
+   * Reports the interface direction so main can remember it for the next launch.
+   * Resolves to whether this process's native menus now need a restart to follow it.
+   */
+  setUiDirection(direction: 'ltr' | 'rtl'): Promise<boolean> {
+    return ipcRenderer.invoke('novalist:set-ui-direction', direction)
+  },
+  /** Quits through the normal close guards and starts the app again. */
+  restartForUiDirection(): Promise<void> {
+    return ipcRenderer.invoke('novalist:restart-for-ui-direction')
   },
   /** Applies the persisted whole-interface scale to this renderer window. */
   setUiScale(factor: number): Promise<number> {

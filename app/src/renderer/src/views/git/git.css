@@ -133,7 +133,7 @@
   width: 100%;
   padding: var(--nl-space-sm);
   border-radius: var(--nl-radius-sm);
-  text-align: left;
+  text-align: start;
 }
 
 .git-commit-row:hover {

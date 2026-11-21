@@ -26,6 +26,7 @@ public sealed partial class Workspace
                 // file and nothing the writer can see.
                 _hostServices.EntityRefreshRequested += UiBridge.EntitiesChanged;
                 _hostServices.ProjectStructureChanged += UiBridge.ProjectStructureChanged;
+                _hostServices.SceneAnnotationsChanged += NotifySceneAnnotationsChanged;
                 _hostServices.BusyProgressFactory = UiBridge.CreateProgress;
                 _hostServices.WizardLauncher = UiBridge.RunWizardAsync;
                 _hostServices.Picker = UiBridge.PickAsync;
@@ -40,6 +41,15 @@ public sealed partial class Workspace
     /// <summary>The host-services event raiser, or null when no extension host
     /// has been created yet (no extension has been touched this session).</summary>
     internal Extensions.HostServices? HostServices => _hostServices;
+
+    internal void NotifySceneAnnotationsChanged(string chapterGuid, string sceneId)
+    {
+        var book = Projects.ActiveBook ?? throw new InvalidOperationException("No book is open.");
+        var root = Projects.ProjectRoot ?? throw new InvalidOperationException("No project is open.");
+        var draftId = book.ActiveDraftId ?? throw new InvalidOperationException("No draft is open.");
+        UiBridge.SceneAnnotationsChanged(root, Coordinator?.Epoch ?? 0,
+            new SceneRef(book.Id, draftId, chapterGuid, sceneId));
+    }
 
     /// <summary>The extension manager, or null when no extension host has been
     /// created yet. Lets callers consult contributions without force-creating a

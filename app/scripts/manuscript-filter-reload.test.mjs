@@ -11,7 +11,7 @@ const sections = (html = '<p>Original.</p>', hash = 'original') => [{
   }]
 }]
 
-function fixture() {
+function fixture(isMobile = true) {
   const requests = []
   const timers = new Map()
   let nextTimer = 0
@@ -27,9 +27,9 @@ function fixture() {
     '../collaboration/SharedMetadataField': { metadataBinding: () => null },
     '../collaboration/metadataCommands': { writeSharedMetadata() { throw new Error('Local edits cannot use shared metadata') } },
     '../i18n': { default: { t: key => key } },
-    '../mobile/recovery': { retainMobileSceneRecovery() {} }
+    '../mobile/recovery': { retainMobileSceneRecovery() {}, acknowledgeMobileSceneRecovery() {} }
   }, {
-    window: { novalist: { isMobile: false } },
+    window: { novalist: { isMobile } },
     setTimeout: fn => { timers.set(++nextTimer, fn); return nextTimer },
     clearTimeout: id => timers.delete(id)
   })
@@ -37,12 +37,45 @@ function fixture() {
   store.setState({ sections: sections(), loaded: true })
   return {
     ...source, store, requests, filter, pending,
+    setProject: patch => { project = { ...project, ...patch } },
     scene: () => store.getState().sections[0]?.scenes[0],
     edit: html => store.getState().onSceneContentChanged('scene', html, html.replace(/<[^>]+>/g, ''), 2),
     respond: async (index, value) => { requests[index].resolve(value); await turn() },
     saved: async (index, hash = 'saved') => { requests[index].resolve({ sceneId: 'scene', hash, wordCount: 2, conflicted: false, diskHtml: null }); await turn() }
   }
 }
+
+test('desktop selected runs preserve empty IDs without loading legacy prose', async () => {
+  const f = fixture(false)
+  const composed = f.store.getState().compose([])
+  await turn()
+  assert.equal(f.requests.length, 0)
+  await composed
+  assert.deepEqual(f.store.getState().composed, [])
+  await f.store.getState().compose(['missing'])
+  assert.deepEqual(f.store.getState().composed, ['missing'])
+  assert.equal(f.requests.length, 0)
+})
+
+test('desktop smart list with zero matches stays an empty projection', async () => {
+  const f = fixture(false)
+  const applying = f.store.getState().applyList('empty-list')
+  await turn()
+  assert.equal(f.requests[0].method, 'smartLists/evaluate')
+  await f.respond(0, [])
+  assert.equal(f.requests.length, 1)
+  await applying
+  assert.deepEqual(f.store.getState().composed, [])
+})
+
+test('a smart-list response from the previous project cannot replace the current run', async () => {
+  const f = fixture(false)
+  const applying = f.store.getState().applyList('previous')
+  f.setProject({ projectPath: 'another-project', workspaceEpoch: 2 })
+  await f.respond(0, [{ sceneId: 'foreign' }])
+  await applying
+  assert.equal(f.store.getState().composed, null)
+})
 
 test('filter reload persists the first edit before fetching prose so the next edit cannot erase it', async () => {
   const f = fixture()

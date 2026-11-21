@@ -12,24 +12,26 @@ import { useEditorPersistence, useEditorScene, useEditorControls } from './useEd
 import { useTranslation } from 'react-i18next'
 import { editorPane, useProjectStore, type SceneTabRef } from '../../stores/projectStore'
 import { useContentTransition } from '../../shell/useContentTransition'
+import type { WritingFrameAdapter } from './writingFrameAdapter'
+import { SceneTabDirty } from './SceneTabDirty'
 
-export function EditorFrame({ paneId }: { paneId?: string }): React.JSX.Element {
-  const model = useEditorFrameModel({ paneId })
+export function EditorFrame({ paneId, writing }: { paneId?: string; writing?: WritingFrameAdapter }): React.JSX.Element {
+  const model = useEditorFrameModel({ paneId, writing })
   const suspendMotion = useProjectStore((s) => s.closingProject || s.workspaceSuspended)
   const { editorFontSize, peekScope, t, pane, formatting, speaking, isActiveEditor, showFocusPeekTip, editorRef, completeFocusPeekTip, dismissFocusPeekTip, iframeRef, peek, pendingEntity, createPendingEntity, cancelPendingEntity, pendingAppend, appendSelectionToEntity, setPendingAppend, linkPrompt, setLinkPrompt, pendingImage, setPendingImage, lastReportedHtmlRef, loadingRef, loadAnnotations, applyFootnoteOrder, pushEntityNames, peekRef, i18n, sceneTitleRef, annotationsRef, persistAnnotations, pushAnnotations, paneIds, setPendingEntity, entityIndexRef, setSpeaking, setFormatting } = model
-  useEditorPersistence(model)
-  useEditorScene(model)
-  useContentTransition(model.iframeRef, model.openSceneId ?? '')
+  useEditorPersistence(model, !writing)
+  useEditorScene(model, !writing)
+  useContentTransition(model.iframeRef, writing ? 'writing' : model.openSceneId ?? '')
   useEditorMessages({
-    iframeRef, pane, peekRef, editorRef, i18n, loadingRef, lastReportedHtmlRef, loadAnnotations, applyFootnoteOrder, pushEntityNames, t, setPendingImage, sceneTitleRef, setLinkPrompt, annotationsRef, persistAnnotations, pushAnnotations, paneIds, setPendingAppend, setPendingEntity, entityIndexRef, setSpeaking, setFormatting
+    iframeRef, pane, peekRef, editorRef, i18n, loadingRef, lastReportedHtmlRef, loadAnnotations, applyFootnoteOrder, pushEntityNames, t, setPendingImage, sceneTitleRef, setLinkPrompt, annotationsRef, persistAnnotations, pushAnnotations, paneIds, setPendingAppend, setPendingEntity, entityIndexRef, setSpeaking, setFormatting, writing
   })
   useEditorControls(model)
   return (
     <div
       className="editor-pane"
-      style={{ '--nl-focus-page-scale': editorFontSize / 17 } as CSSProperties}
+      style={{ '--nl-focus-page-scale': writing ? 1 : editorFontSize / 17 } as CSSProperties}
     >
-      {!window.novalist.isMobile && (
+      {!writing && !window.novalist.isMobile && (
         <div className="editor-scene-heading">
           <div>
             <strong>{peekScope.sceneTitle}</strong>
@@ -49,8 +51,8 @@ export function EditorFrame({ paneId }: { paneId?: string }): React.JSX.Element 
           </button>
         </div>
       )}
-      <SceneTabStrip paneId={pane} />
-      <EditorToolbar formatting={formatting} speaking={speaking} active={isActiveEditor} />
+      {!writing && <SceneTabStrip paneId={pane} />}
+      <EditorToolbar formatting={formatting} speaking={speaking} active={isActiveEditor} writing={writing} />
       {isActiveEditor && formatting.entityAtCaret && showFocusPeekTip && (
         <section
           className="editor-onboarding-tip"
@@ -143,7 +145,6 @@ export function SceneTabStrip({ paneId }: { paneId: string }): React.JSX.Element
   const tabs = useProjectStore((s) => editorPane(s, paneId).tabs)
   const activeId = useProjectStore((s) => editorPane(s, paneId).sceneId)
   const chapters = useProjectStore((s) => s.chapters)
-  const dirtyMap = useProjectStore((s) => s.dirtyMap)
   const editorCount = useProjectStore(
     (s) => Object.values(s.editors).filter((e) => e.sceneId !== null).length
   )
@@ -194,7 +195,7 @@ export function SceneTabStrip({ paneId }: { paneId: string }): React.JSX.Element
             setMenu({ x: e.clientX, y: e.clientY, sceneId: ref.sceneId })
           }}
         >
-          {dirtyMap[ref.sceneId] && <span className="editor-tab-dirty" aria-hidden="true" />}
+          <SceneTabDirty reference={ref} />
           <span className="editor-tab-title">{titleFor(ref)}</span>
           <button
             className="editor-tab-close"

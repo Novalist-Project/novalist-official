@@ -135,6 +135,7 @@ function confirmSlashAt(index) {
     range.setStart(node, atOffset);
     range.setEnd(caret.startContainer, caret.startOffset);
     range.deleteContents();
+    if (window.NovalistWritingDocument?.enabled) window.ensureWritingCaret(range);
     sel.removeAllRanges();
     sel.addRange(range);
 

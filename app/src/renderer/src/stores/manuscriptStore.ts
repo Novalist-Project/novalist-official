@@ -5,7 +5,7 @@ import { useFilterStore } from './filterStore'
 import { capturePendingWrites, flushPendingWrites } from './pendingWrites'
 import type { ColourDimension } from '../views/manuscript/sceneColour'
 import i18n from '../i18n'
-import { retainMobileSceneRecovery } from '../mobile/recovery'
+import { acknowledgeMobileSceneRecovery, retainMobileSceneRecovery } from '../mobile/recovery'
 import type { SceneDiskChange } from './externalSceneRefresh'
 import { metadataBinding } from '../collaboration/SharedMetadataField'
 import { writeSharedMetadata } from '../collaboration/metadataCommands'
@@ -63,6 +63,7 @@ const sceneWriteTails = new Map<string, Promise<void>>()
 let loadRevision = 0
 let pendingLoads = 0
 let proseRevision = 0
+let selectionRevision = 0
 
 function writePendingManuscriptSave(save: PendingManuscriptSave): Promise<void> {
   if (save.inFlight) return save.inFlight
@@ -127,7 +128,6 @@ function writePendingManuscriptSave(save: PendingManuscriptSave): Promise<void> 
         result.hash
       )
     if (window.novalist.isMobile) {
-      const { acknowledgeMobileSceneRecovery } = await import('../mobile/recovery')
       const pending = saveTimers.get(save.sceneId)
       acknowledgeMobileSceneRecovery(save.sceneId, save.html, undefined, pending && pending !== save ? undefined : `manuscript:${save.sceneId}`)
     }
@@ -222,17 +222,28 @@ export const useManuscriptStore = create<ManuscriptState>((set, get) => ({
    * else, which is most of the point of saving it.
    */
   applyList: async (filterListId) => {
+    const revision = ++selectionRevision
+    const project = useProjectStore.getState()
     if (!filterListId) {
       set({ filterListId: '', composed: null })
       await get().load()
       return
     }
     const matches = await rpc.request<{ sceneId: string }[]>('smartLists/evaluate', [filterListId])
+    const current = useProjectStore.getState()
+    if (revision !== selectionRevision || project.projectPath !== current.projectPath ||
+        project.activeBookId !== current.activeBookId || project.activeDraftId !== current.activeDraftId ||
+        project.workspaceEpoch !== current.workspaceEpoch) return
+    capturePendingWrites()
     set({ filterListId, composed: matches.map((m) => m.sceneId) })
     await get().load()
   },
 
   load: async () => {
+    if (!window.novalist.isMobile) {
+      capturePendingWrites()
+      return
+    }
     const revision = ++loadRevision
     pendingLoads++
     try {
@@ -249,11 +260,11 @@ export const useManuscriptStore = create<ManuscriptState>((set, get) => ({
         if (hasPendingManuscriptWrites()) continue
 
         const shared = useFilterStore.getState().filter
-        const { composed, filterListId } = get()
+        const { composed } = get()
         const readProseRevision = proseRevision
         // The RPC's empty chosen set means "whole book" for older callers.
         // An active saved query with zero matches must instead stay empty.
-        const sections = filterListId && composed?.length === 0 ? [] :
+        const sections = composed?.length === 0 ? [] :
           await rpc.request<ManuscriptSectionDto[]>('manuscript/get', [
             shared.status || 'All', composed,
             shared.character || null, shared.location || null,
@@ -302,7 +313,9 @@ export const useManuscriptStore = create<ManuscriptState>((set, get) => ({
   // Reading a chosen run as continuous prose - one POV's thread, the scenes a
   // saved list found - is the only way to hear whether it holds together.
   compose: async (composed) => {
-    set({ composed, mode: 'manuscript', filterListId: '' })
+    capturePendingWrites()
+    selectionRevision++
+    set({ composed: composed?.slice() ?? null, mode: 'manuscript', filterListId: '' })
     await get().load()
   },
 
@@ -422,6 +435,7 @@ export function hasPendingManuscriptWrites(): boolean { return saveTimers.size >
 /** Called only after the shared workspace has acknowledged every pending save. */
 export function resetManuscriptWorkspace(): void {
   loadRevision++
+  selectionRevision++
   useManuscriptStore.setState({ sections: [], loaded: false, composed: null, filterListId: '' })
   reportManuscriptClaims()
 }

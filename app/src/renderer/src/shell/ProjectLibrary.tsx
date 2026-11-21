@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type DragEvent,
 import { useTranslation } from 'react-i18next'
 import { ArchiveRestore, ArrowDown, ArrowRight, ArrowUp, BookOpen, CircleHelp, EyeOff, FolderOpen, Globe, Import, LibraryBig, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { runCommand } from './commands'
+import { hydrateWindow } from './bootstrap'
 import { LibraryScratchpad } from './LibraryScratchpad'
 import { GeneratedBookCover } from './GeneratedBookCover'
 import { RemovedLibraryItems } from './RemovedLibraryItems'
@@ -17,8 +18,28 @@ const PROJECT_DRAG = 'application/x-novalist-project'
 interface LibraryBook { id?: string; name: string; cover?: string | null }
 interface Selection { path: string; bookId?: string }
 interface SelectionClick { target: HTMLButtonElement; project: RecentProjectDto; book: LibraryBook; x: number; y: number; time: number }
-interface StartScreenProps { recentProjects: RecentProjectDto[]; onOpenPath(path: string, bookId?: string): Promise<void> }
+interface StartScreenProps {
+  recentProjects: RecentProjectDto[]
+  onOpenPath(path: string, bookId?: string): Promise<void>
+}
+interface ProjectLibraryProps extends StartScreenProps {
+  openingState: ReturnType<typeof useLibraryOpening>
+}
 const projectBooks = (project: RecentProjectDto): LibraryBook[] => project.books?.length ? project.books : [{ name: project.name, cover: project.cover }]
+
+function useLibraryOpening() {
+  const [opening, setOpening] = useState(false)
+  const [openError, setOpenError] = useState<string | null>(null)
+  const runOpening = async (action: () => Promise<void>): Promise<void> => {
+    if (opening) return
+    setOpening(true)
+    setOpenError(null)
+    try { await action() }
+    catch (error) { setOpenError(String(error)) }
+    finally { setOpening(false) }
+  }
+  return { opening, openError, runOpening }
+}
 
 function useLibrarySelection(recentProjects: RecentProjectDto[]){
   const { t } = useTranslation()
@@ -32,8 +53,6 @@ function useLibrarySelection(recentProjects: RecentProjectDto[]){
   const [failedCovers, setFailedCovers] = useState<Set<string>>(new Set())
   const [removedOpen, setRemovedOpen] = useState(false)
   const [lastRemoved, setLastRemoved] = useState<RemovedLibraryItem | null>(null)
-  const [opening, setOpening] = useState(false)
-  const [openError, setOpenError] = useState<string | null>(null)
   const undoButton = useRef<HTMLButtonElement>(null)
   const searchInput = useRef<HTMLInputElement>(null)
   const moreTrigger = useRef<HTMLElement>(null)
@@ -55,11 +74,12 @@ function useLibrarySelection(recentProjects: RecentProjectDto[]){
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [selection])
 
-  return { t, library, search, setSearch, activeShelf, setActiveShelf, newShelf, setNewShelf, renameShelf, setRenameShelf, selection, setSelection, dropShelf, setDropShelf, failedCovers, setFailedCovers, removedOpen, setRemovedOpen, lastRemoved, setLastRemoved, opening, setOpening, openError, setOpenError, undoButton, searchInput, moreTrigger, openButton, selectedTrigger, selectionClick, instructionsId }
+  return { t, library, search, setSearch, activeShelf, setActiveShelf, newShelf, setNewShelf, renameShelf, setRenameShelf, selection, setSelection, dropShelf, setDropShelf, failedCovers, setFailedCovers, removedOpen, setRemovedOpen, lastRemoved, setLastRemoved, undoButton, searchInput, moreTrigger, openButton, selectedTrigger, selectionClick, instructionsId }
 }
 
-function useProjectLibrary({ recentProjects, onOpenPath }: StartScreenProps) {
-  const { t, library, search, setSearch, activeShelf, setActiveShelf, newShelf, setNewShelf, renameShelf, setRenameShelf, selection, setSelection, dropShelf, setDropShelf, failedCovers, setFailedCovers, removedOpen, setRemovedOpen, lastRemoved, setLastRemoved, opening, setOpening, openError, setOpenError, undoButton, searchInput, moreTrigger, openButton, selectedTrigger, selectionClick, instructionsId } = useLibrarySelection(recentProjects)
+function useProjectLibrary({ recentProjects, onOpenPath, openingState }: ProjectLibraryProps) {
+  const { t, library, search, setSearch, activeShelf, setActiveShelf, newShelf, setNewShelf, renameShelf, setRenameShelf, selection, setSelection, dropShelf, setDropShelf, failedCovers, setFailedCovers, removedOpen, setRemovedOpen, lastRemoved, setLastRemoved, undoButton, searchInput, moreTrigger, openButton, selectedTrigger, selectionClick, instructionsId } = useLibrarySelection(recentProjects)
+  const { opening, openError, runOpening } = openingState
   const needle = search.trim().toLocaleLowerCase()
   const assigned = new Set(library.shelves.flatMap(shelf => shelf.projects))
   const rowById = new Map([{ id: '', name: t('bookshelf.unshelved'), projects: library.unshelved }, ...library.shelves].map(shelf => [shelf.id, shelf]))
@@ -73,7 +93,9 @@ function useProjectLibrary({ recentProjects, onOpenPath }: StartScreenProps) {
   })
   const shelfFor = (project: RecentProjectDto): string => rows.find(row => row.id && row.projects.includes(projectKey(project)))?.id ?? ''
   const selectedProject = selection && availableProjects.find(project => project.path === selection.path)
-  const selectedBook = selectedProject && projectBooks(selectedProject).find(book => book.id === selection?.bookId)
+  const selectedBook = selectedProject && (selection.bookId
+    ? selectedProject.books?.find(book => book.id === selection.bookId)
+    : { id: undefined, name: selectedProject.name, cover: selectedProject.cover })
   const selectedShelf = selectedProject ? shelfFor(selectedProject) : ''
   const orderedProjects = (id: string): RecentProjectDto[] => {
     const projects = availableProjects.filter(project => id ? rowById.get(id)?.projects.includes(projectKey(project)) : !assigned.has(projectKey(project)))
@@ -93,13 +115,6 @@ function useProjectLibrary({ recentProjects, onOpenPath }: StartScreenProps) {
     const key = event.dataTransfer.getData(PROJECT_DRAG)
     if (!availableProjects.some(project => projectKey(project) === key)) return
     event.preventDefault(); event.stopPropagation(); library.moveProject(key, shelf, before); setDropShelf(null)
-  }
-  const runOpening = async (action: () => Promise<void>): Promise<void> => {
-    if (opening) return
-    setOpening(true); setOpenError(null)
-    try { await action() }
-    catch (error) { setOpenError(String(error)) }
-    finally { setOpening(false) }
   }
   const openFolder = (): Promise<void> => runOpening(() => useProjectStore.getState().pickAndOpenProject())
   const open = (project: RecentProjectDto, book: LibraryBook, view?: 'codex' | 'series'): Promise<void> => runOpening(async () => {
@@ -133,8 +148,14 @@ function useProjectLibrary({ recentProjects, onOpenPath }: StartScreenProps) {
   return { t, library, search, setSearch, activeShelf, setActiveShelf, newShelf, setNewShelf, renameShelf, setRenameShelf, selection, setSelection, dropShelf, setDropShelf, removedOpen, setRemovedOpen, lastRemoved, setLastRemoved, opening, openError, undoButton, searchInput, moreTrigger, openButton, selectedTrigger, selectionClick, instructionsId, needle, rows, availableProjects, shelfFor, selectedProject, selectedBook, selectedShelf, visibleShelves, selectedNeighbors, selectedIndex, remove, accept, open, openFolder, finishSelectionClick, cover, closeMenu }
 }
 
-export function StartScreen({ recentProjects, onOpenPath }: StartScreenProps): React.JSX.Element {
-  const state = useProjectLibrary({ recentProjects, onOpenPath })
+export function StartScreen({ suspended, ...props }: StartScreenProps & { suspended?: boolean }): React.JSX.Element | null {
+  const openingState = useLibraryOpening()
+  return suspended ? null : <ProjectLibrary {...props} openingState={openingState} />
+}
+
+function ProjectLibrary(props: ProjectLibraryProps): React.JSX.Element {
+  const libraryStatus = useProjectStore(s => window.novalist.platform === 'android' ? s.libraryStatus : 'ready')
+  const state = useProjectLibrary(props)
   const { t, library, search, setSearch, activeShelf, setActiveShelf, newShelf, setNewShelf, renameShelf, setRenameShelf, selection, setSelection, dropShelf, setDropShelf, removedOpen, setRemovedOpen, lastRemoved, setLastRemoved, openError, undoButton, searchInput, moreTrigger, openButton, selectedTrigger, selectionClick, instructionsId, needle, rows, availableProjects, shelfFor, selectedProject, selectedBook, visibleShelves, accept, open, finishSelectionClick, cover, closeMenu } = state
   const shelvesRef = useRef<HTMLElement>(null)
   const shelfNameRef = useRef<HTMLInputElement>(null)
@@ -144,7 +165,10 @@ export function StartScreen({ recentProjects, onOpenPath }: StartScreenProps): R
   return <div className="start-screen project-library" style={{ '--library-cover-scale': library.coverScale } as CSSProperties} onClickCapture={finishSelectionClick}>
     <div className="library-content">
       <header className="library-header">
-        <div className="library-title"><h1>{t('bookshelf.yourBookshelf')}</h1><span className="library-total">{t('bookshelf.projects', { count: availableProjects.length })}</span></div>
+        <div className="library-title"><h1>{t('bookshelf.yourBookshelf')}</h1>
+          {libraryStatus === 'loading' && <output>{t('bookshelf.loading')}</output>}
+          {libraryStatus === 'ready' && <span className="library-total">{t('bookshelf.projects', { count: availableProjects.length })}</span>}
+        </div>
         <div className="library-actions">
           <LibraryScratchpad compact />
           <button className="library-button library-open-folder" disabled={state.opening} aria-busy={state.opening} onClick={() => { void state.openFolder() }} title={t('welcome.browseFolder')}><FolderOpen size={17} /><span>{t(state.opening ? 'splash.loading' : 'bookshelf.openFolder')}</span></button>
@@ -183,10 +207,13 @@ export function StartScreen({ recentProjects, onOpenPath }: StartScreenProps): R
         <button ref={undoButton} onClick={() => { library.restoreItem(lastRemoved); setLastRemoved(null); searchInput.current?.focus() }}>{t('bookshelf.undoRemoval')}</button>
         <button aria-label={t('dialog.close')} onClick={() => { setLastRemoved(null); searchInput.current?.focus() }}><X size={16} /></button></div>}</MotionPresence>
       {openError && <p className="library-open-error" role="alert">{openError}</p>}
+      {libraryStatus === 'failed' && <div className="library-open-error" role="alert">
+        {t('bookshelf.loadFailed')} <button className="library-button" onClick={() => { void hydrateWindow().catch(() => {}) }}>{t('shell.retry')}</button>
+      </div>}
       <p id={instructionsId} className="library-sr-only">{t('bookshelf.selectionHint')}</p>
       <div className="library-workspace">
         <main ref={shelvesRef} className="library-shelves" aria-label={t('bookshelf.title')}>
-          {availableProjects.length === 0 && <div className="library-empty"><LibraryBig size={48} strokeWidth={1} /><h2>{t('bookshelf.firstStory')}</h2><p>{t('bookshelf.empty')}</p><button className="library-button library-primary" onClick={() => runCommand('app.newProject')}><Plus size={17} />{t('welcome.newProject')}</button></div>}
+          {libraryStatus === 'ready' && availableProjects.length === 0 && <div className="library-empty"><LibraryBig size={48} strokeWidth={1} /><h2>{t('bookshelf.firstStory')}</h2><p>{t('bookshelf.empty')}</p><button className="library-button library-primary" onClick={() => runCommand('app.newProject')}><Plus size={17} />{t('welcome.newProject')}</button></div>}
           {availableProjects.length > 0 && needle && visibleShelves.length === 0 && <div className="library-empty"><Search size={32} /><p>{t('bookshelf.noResults')}</p><button className="library-button" onClick={() => setSearch('')}>{t('bookshelf.clearSearch')}</button></div>}
           {availableProjects.length > 0 && visibleShelves.map(shelf => {
             const rowIndex = rows.findIndex(row => row.id === shelf.id)
@@ -231,7 +258,7 @@ export function StartScreen({ recentProjects, onOpenPath }: StartScreenProps): R
           </div>}
         </MotionPresence>
       </div>
-      <RemovedLibraryItems open={removedOpen} onClose={() => { setRemovedOpen(false); moreTrigger.current?.focus() }} recentProjects={recentProjects} />
+      <RemovedLibraryItems open={removedOpen} onClose={() => { setRemovedOpen(false); moreTrigger.current?.focus() }} recentProjects={props.recentProjects} />
     </div>
   </div>
 }
@@ -248,7 +275,7 @@ function LibraryInspector({ state }: { state: ReturnType<typeof useProjectLibrar
           <div className="library-inspector-heading"><span>{t(selectedBook.id ? 'bookshelf.selectedBook' : 'bookshelf.project')}</span><button aria-label={t('bookshelf.closeDetails')} onClick={() => { setSelection(null); selectedTrigger.current?.focus() }}><X size={18} /></button></div>
           <div className="library-detail-cover">{cover(selectedProject, selectedBook)}</div><h2>{selectedBook.name}</h2><p className="library-detail-project">{selectedProject.name}</p>
           <button ref={openButton} className="library-button library-primary library-open-book" disabled={opening} aria-label={selectedBook.id ? t('bookshelf.openBook', { book: selectedBook.name, project: selectedProject.name }) : t('bookshelf.openProject', { name: selectedProject.name })}
-            onClick={() => { void open(selectedProject, selectedBook) }}>{t(selectedBook.id ? 'bookshelf.openSelectedBook' : 'bookshelf.openSelectedProject')}<ArrowRight size={17} /></button>
+            onClick={() => { void open(selectedProject, selectedBook) }}>{t(selectedBook.id ? 'bookshelf.openSelectedBook' : 'bookshelf.openSelectedProject')}<ArrowRight size={17} className="icon-directional" /></button>
           <div className="library-related"><h3>{t('bookshelf.inProject')}</h3><p className="volume-details">{t('bookshelf.books', { count: selectedProject.books?.length ?? 0 })}{selectedProject.hasWorldBible && <> · {t('bookshelf.worldBible')}</>}</p>
             {projectBooks(selectedProject).map(book => <button key={book.id ?? 'project'} aria-current={book.id === selectedBook.id ? 'true' : undefined} onClick={() => setSelection({ path: selectedProject.path, bookId: book.id })}><BookOpen size={16} />{book.name}</button>)}
           </div>

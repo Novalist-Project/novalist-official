@@ -176,7 +176,7 @@
 .map-flyout-item {
   padding: var(--nl-space-tighter) var(--nl-space-sm);
   font-size: var(--nl-font-ui);
-  text-align: left;
+  text-align: start;
   color: var(--nl-text);
   background: transparent;
   border: none;
@@ -200,7 +200,7 @@
   font-size: var(--nl-font-caption);
   color: var(--nl-text-dim);
   min-width: 40px;
-  text-align: right;
+  text-align: end;
 }
 
 /* ── Stage (iframe host) ─────────────────────────────────────────────────── */
@@ -468,7 +468,7 @@
 }
 .map-prop-value {
   min-width: 40px;
-  text-align: right;
+  text-align: end;
 }
 .map-prop-num {
   width: 52px;

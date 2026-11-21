@@ -44,7 +44,13 @@ public sealed partial class Workspace
             try
             {
                 var path = r.Path;
-                var presence = await Projects.ProbeProjectAsync(path);
+                // On Android each existence check resolves the document and queries its grant.
+                // A readable manifest already proves presence and supplies the book details.
+                var library = _storedPaths as IDocumentProjectLibrary;
+                var documentProject = includeLibraryDetails && library?.IsExternalPath(path) == true;
+                var manifest = documentProject
+                    ? await TryReadLibraryManifestAsync(path) : null;
+                var presence = manifest != null ? ProjectPresence.Present : await Projects.ProbeProjectAsync(path);
 
                 if (presence != ProjectPresence.Present && _storedPaths != null)
                 {
@@ -81,9 +87,10 @@ public sealed partial class Workspace
                 // Unknown means the volume/grant is unavailable. Keep its entry,
                 // without opening manifests or covers the presence probe could
                 // not reach. These reads used to incur retry delays per project.
-                var readDetails = includeLibraryDetails && presence == ProjectPresence.Present;
+                var readDetails = includeLibraryDetails && presence == ProjectPresence.Present
+                    && (!documentProject || manifest != null || resolvedAccess != null);
                 var entry = new RecentProjectDto(r.Name, path, null);
-                results.Add(readDetails ? await ReadLibrarySummaryAsync(entry) : entry);
+                results.Add(readDetails ? await ReadLibrarySummaryAsync(entry, manifest, documentProject ? library : null) : entry);
             }
             finally
             {
@@ -110,12 +117,24 @@ public sealed partial class Workspace
         }
     }
 
+    private async Task<string?> TryReadLibraryManifestAsync(string path)
+    {
+        try { return await FileService.ReadTextAsync(Path.Combine(path, ".novalist", "project.json")); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            // The presence probe distinguishes a deleted project from an unavailable grant.
+            return null;
+        }
+    }
+
     /// <summary>Read the manifest and book covers; never open books or load their drafts.</summary>
-    internal async Task<RecentProjectDto> ReadLibrarySummaryAsync(RecentProjectDto entry)
+    internal async Task<RecentProjectDto> ReadLibrarySummaryAsync(
+        RecentProjectDto entry, string? manifest = null, IDocumentProjectLibrary? documentLibrary = null)
     {
         try
         {
-            var json = await FileService.ReadTextAsync(Path.Combine(entry.Path, ".novalist", "project.json"));
+            var json = manifest ?? await TryReadLibraryManifestAsync(entry.Path);
+            if (json == null) return entry;
             var metadata = System.Text.Json.JsonSerializer.Deserialize<ProjectMetadata>(json);
             if (metadata is not { Name.Length: > 0, Books: not null } ||
                 metadata.Books.Any(book => book is not { Id.Length: > 0, Name.Length: > 0, FolderName: not null })) return entry;
@@ -128,7 +147,7 @@ public sealed partial class Workspace
                     ? metadata.CoverImage : book.CoverImage;
                 var path = string.IsNullOrEmpty(cover) ? null
                     : Path.Combine(entry.Path, book.FolderName, cover.Replace('/', Path.DirectorySeparatorChar));
-                books.Add(new LibraryBookDto(book.Id, book.Name, await LoadCoverDataUriAsync(path, FileService)));
+                books.Add(new LibraryBookDto(book.Id, book.Name, await LoadCoverDataUriAsync(path, FileService, documentLibrary)));
             }
             return entry with
             {
@@ -179,12 +198,13 @@ public sealed partial class Workspace
     /// Recent projects are not the active project, so their cover cannot be
     /// served through <c>novalist-project://</c> (which resolves against the
     /// active root) — the bytes are inlined instead.</summary>
-    internal static async Task<string?> LoadCoverDataUriAsync(string? path, IFileService? files = null)
+    internal static async Task<string?> LoadCoverDataUriAsync(string? path, IFileService? files = null, IDocumentProjectLibrary? documentLibrary = null)
     {
         if (string.IsNullOrEmpty(path)) return null;
         files ??= new FileService();
         try
         {
+            if (documentLibrary != null) return await documentLibrary.ReadCoverAsync(path);
             if (!await files.ExistsAsync(path)) return null;
             var bytes = await files.ReadBytesAsync(path);
             return $"data:{MimeForExtension(Path.GetExtension(path))};base64,{Convert.ToBase64String(bytes)}";
@@ -212,4 +232,11 @@ public sealed partial class Workspace
             _ => "application/octet-stream",
         };
     }
+}
+
+/// <summary>Reads shelf artwork directly from a linked document provider.</summary>
+public interface IDocumentProjectLibrary
+{
+    bool IsExternalPath(string path);
+    Task<string?> ReadCoverAsync(string path);
 }

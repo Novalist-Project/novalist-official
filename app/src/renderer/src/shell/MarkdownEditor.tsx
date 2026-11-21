@@ -34,6 +34,8 @@ import { openSharedMarkdown } from '../collaboration/sharedMarkdown'
 import type { SharedMarkdownSession } from '../collaboration/SharedMarkdownSession'
 import { SharedEditorPresence } from '../collaboration/SharedEditorPresence'
 import { registerPendingWrite, retainPendingWrite } from '../stores/pendingWrites'
+import { markdownShortcutKeys } from './markdownShortcuts'
+import { contentDirection } from './contentDirection'
 
 /**
  * The markdown fields in this app (Codex sections and overrides, research
@@ -104,6 +106,7 @@ class BulletWidget extends WidgetType {
 
 const HIDE = Decoration.replace({})
 const BULLET = Decoration.replace({ widget: new BulletWidget() })
+const AUTO_DIRECTION = Decoration.line({ attributes: { dir: 'auto' } })
 
 function concealDecorations(view: EditorView): DecorationSet {
   // Lines the caret or selection touches keep their syntax visible - but only
@@ -120,7 +123,16 @@ function concealDecorations(view: EditorView): DecorationSet {
   }
 
   const found: Range<Decoration>[] = []
+  const directedLines = new Set<number>()
   for (const { from, to } of view.visibleRanges) {
+    for (let line = view.state.doc.lineAt(from); line.from <= to;) {
+      if (!directedLines.has(line.from) && contentDirection(line.text)) {
+        found.push(AUTO_DIRECTION.range(line.from))
+        directedLines.add(line.from)
+      }
+      if (line.number === view.state.doc.lines) break
+      line = view.state.doc.line(line.number + 1)
+    }
     syntaxTree(view.state).iterate({
       from,
       to,
@@ -360,6 +372,7 @@ export function MarkdownEditor({
       }
       extensions.current = [
         collaboration ? collaboration.extension : history(),
+        markdownShortcutKeys,
         keymap.of([
           {
             key: 'Mod-b',
@@ -377,6 +390,8 @@ export function MarkdownEditor({
         syntaxHighlighting(markdownHighlight),
         concealSyntax,
         EditorView.lineWrapping,
+        EditorView.perLineTextDirection.of(true),
+        EditorView.theme({ '.cm-line[dir]': { unicodeBidi: 'plaintext' } }),
         ...(placeholder ? [cmPlaceholder(placeholder)] : []),
         EditorView.updateListener.of((update) => {
           if (!collaboration && update.docChanged) onChangeRef.current(update.state.doc.toString())

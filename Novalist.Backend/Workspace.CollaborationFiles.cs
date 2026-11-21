@@ -8,14 +8,19 @@ public sealed partial class Workspace
     private SharedProjectFiles? sharedProjectFiles;
     private Dictionary<string, byte[]> sharedDiskFiles = new(StringComparer.Ordinal);
     private bool projectingSharedFiles;
+    private long projectingSharedSequence;
 
+    /// <param name="joining">The project was just installed from <paramref name="archive"/> and opened.
+    /// The checkpoint was verified on install, so bound files are not checked against its hashes again;
+    /// anything opening the project rewrote is instead tracked as a local edit and published on the next flush.</param>
     internal async Task AttachSharedProjectAsync(Guid sessionId, CollaborationSession session,
-        SharedProjectState state, Stream archive, CancellationToken ct)
+        SharedProjectState state, Stream archive, CancellationToken ct, bool joining = false)
     {
         archive.Position = 0;
         var baseline = await ProjectCheckpoint.ReadFilesAsync(archive, long.MaxValue, ct);
         (state, baseline) = await ReconcileSharedSourceFormattingAsync(state, baseline, ct);
-        await AttachSharedProjectAsync(sessionId, session, state, ct);
+        var opened = joining ? await ChangedSinceCheckpointAsync(baseline, ct) : [];
+        await AttachSharedProjectAsync(sessionId, session, state, ct, verifySource: !joining);
         var files = new SharedProjectFiles(session, ApplySharedProjectFilesAsync);
         if (DispatchSharedUpdate is { } dispatch) files.DispatchRemote = dispatch;
         try
@@ -24,6 +29,7 @@ public sealed partial class Workspace
             sharedDiskFiles = await ReadSharedFilesAsync(sharedRoot ?? throw new InvalidOperationException("The shared project is closed."), ct);
             await files.StartAsync(baseline, state, ct);
             sharedDiskFiles = await ReadSharedFilesAsync(sharedRoot ?? throw new InvalidOperationException("The shared project is closed."), ct);
+            await TrackOpenedChangesAsync(baseline, opened, ct);
         }
         catch
         {
@@ -31,6 +37,33 @@ public sealed partial class Workspace
             await files.DisposeAsync();
             await DetachSharedScenesAsync();
             throw;
+        }
+    }
+
+    /// <summary>Shared files that differ from the checkpoint they were installed from, because
+    /// opening the project wrote to them (an extension registering its entity type, a migration).</summary>
+    private async Task<IReadOnlyList<string>> ChangedSinceCheckpointAsync(IReadOnlyDictionary<string, byte[]> checkpoint, CancellationToken ct)
+    {
+        var current = await ReadSharedFilesAsync(Projects.ProjectRoot ?? throw new InvalidOperationException("Open a project first."), ct);
+        var changed = new List<string>();
+        foreach (var path in checkpoint.Keys.Concat(current.Keys).Distinct(StringComparer.Ordinal))
+        {
+            var installed = checkpoint.TryGetValue(path, out var content) ? await SharedProjectFiles.FilterContentAsync(path, content, ct) : null;
+            if (!SameSharedFileContent(path, installed, current.GetValueOrDefault(path))) changed.Add(path);
+        }
+        return changed;
+    }
+
+    /// <summary>Records each opened change as an unflushed local write against the installed
+    /// checkpoint, so the next flush publishes it like any other edit instead of keeping it
+    /// on this machine only.</summary>
+    private async Task TrackOpenedChangesAsync(IReadOnlyDictionary<string, byte[]> checkpoint, IReadOnlyList<string> opened, CancellationToken ct)
+    {
+        foreach (var path in opened)
+        {
+            sharedPendingWrites[path] = sharedDiskFiles.GetValueOrDefault(path);
+            if (checkpoint.TryGetValue(path, out var installed)) sharedDiskFiles[path] = await SharedProjectFiles.FilterContentAsync(path, installed, ct);
+            else sharedDiskFiles.Remove(path);
         }
     }
 
@@ -77,8 +110,12 @@ public sealed partial class Workspace
         using var projectionScope = BeginSharedProjection();
         var root = sharedRoot ?? throw new InvalidOperationException("The shared project is closed.");
         projectingSharedFiles = true;
+        projectingSharedSequence = projection.Sequence;
         try
         {
+            if (projection.DocumentUpdates.Count > 0) await RequireSharedScenes(sharedSession).ValidateStructureAsync(projection.DocumentUpdates, ct);
+            if (projection.MetadataUpdates.Count > 0)
+                await (sharedFields ?? throw new InvalidOperationException("The shared fields are closed.")).ValidateStructureAsync(projection.MetadataUpdates, ct);
             foreach (var recovery in projection.Recoveries)
                 await WriteSharedFileRecoveryAsync(root, recovery.Id, recovery.Path, recovery.Content);
             foreach (var change in projection.Changes.OrderBy(change => change.Path == ".novalist/project.json"))
@@ -94,8 +131,10 @@ public sealed partial class Workspace
                     await FileService.WriteBytesAsync(path, current is null ? content : MaskSeparatelySharedContent(change.Path, content, current));
                 else await FileService.DeleteFileAsync(path);
             }
-            await ReloadSharedWorkspaceAsync();
             await AddSharedProjectBindingsAsync(projection.AddedState, ct);
+            if (projection.MetadataUpdates.Count > 0)
+                await (sharedFields ?? throw new InvalidOperationException("The shared fields are closed.")).ApplyStructureAsync(projection.MetadataUpdates, projection.Sequence, ct);
+            if (projection.DocumentUpdates.Count > 0) await RequireSharedScenes(sharedSession).ApplyStructureAsync(projection.DocumentUpdates, ct);
             foreach (var change in projection.Changes)
             {
                 var path = SharedProjectPath.Resolve(root, change.Path);
@@ -103,6 +142,7 @@ public sealed partial class Workspace
                     change.Path, await FileService.ReadBytesAsync(path), ct);
                 else sharedDiskFiles.Remove(change.Path);
             }
+            await ReloadSharedWorkspaceAsync();
             if (Coordinator?.Notify is { } notify)
                 await notify("collaboration/projectUpdated", new { sessionId = sharedSession, state = BuildState() });
         }

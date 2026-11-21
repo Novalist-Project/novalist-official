@@ -1,9 +1,23 @@
 namespace Novalist.Sync.Client;
 
 public sealed record CommittedUpdate(long ServerSeq, byte[] Payload);
+internal sealed record PendingFieldUpdate(FieldLeaseRequest Lease, byte[] Payload);
 
 public sealed partial class CollaborationSession
 {
+    internal IEnumerable<PendingFieldUpdate> PendingFieldUpdates(Guid item)
+        => journal.PendingFieldEdits().Where(edit => UpdateHeader.Parse(edit.Envelope.Header).ItemId == item)
+            .GroupBy(edit => (edit.Lease, UpdatePacket.Parse(edit.Payload).MessageId))
+            .Select(group => new PendingFieldUpdate(group.Key.Lease, UpdatePacket.Assemble(group.Select(edit => UpdatePacket.Parse(edit.Payload)))
+                ?? throw new InvalidDataException("Incomplete pending field update.")));
+
+    internal void RebindPendingField(Guid item, FieldLeaseRequest previous, FieldLeaseRequest next)
+    {
+        ValidateFieldLease(next);
+        if (previous with { LeaseId = next.LeaseId, AcquireBefore = next.AcquireBefore } != next) throw new InvalidOperationException("A retained field update needs the same lease context.");
+        journal.RebindPendingField(item, previous, next);
+    }
+
     private readonly object fieldOperationGate = new();
     private readonly object fieldDraftGate = new();
     private readonly HashSet<CancellationTokenSource> fieldOperations = [];

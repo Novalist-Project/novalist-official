@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
@@ -28,6 +29,14 @@ public sealed class ExtensionLocalizationService : IExtensionLocalization
         _fallback = LoadFile(Path.Combine(localesDir, "en.json"));
         LoadLanguage(language);
     }
+
+    /// <summary>
+    /// The language the extension's strings are actually in: the interface
+    /// language when the extension ships it, otherwise English, which every key
+    /// falls back to. A panel is laid out for this language, not for an
+    /// interface language its text is not written in.
+    /// </summary>
+    internal string Language { get; private set; } = "en";
 
     public string this[string key] => Resolve(key);
 
@@ -60,12 +69,19 @@ public sealed class ExtensionLocalizationService : IExtensionLocalization
         if (string.Equals(language, "en", StringComparison.OrdinalIgnoreCase))
         {
             _strings = _fallback;
+            Language = "en";
             return;
         }
 
         var path = Path.Combine(_localesDir, $"{language}.json");
         _strings = LoadFile(path);
+        Language = _strings.Count > 0 ? language : "en";
     }
+
+    /// <summary>Looks the key up without the missing-key logging of the indexer,
+    /// for callers that accept arbitrary text and only translate real keys.</summary>
+    internal bool TryResolve(string key, [MaybeNullWhen(false)] out string value)
+        => _strings.TryGetValue(key, out value) || _fallback.TryGetValue(key, out value);
 
     private string Resolve(string key)
     {

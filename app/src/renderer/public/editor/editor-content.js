@@ -45,7 +45,7 @@ function setContent(html) {
     window.NovalistEditorState.lastHtml = window.getCleanContentHtml();
     window.NovalistEditorState.isSettingContent = false;
     window.NovalistEditorState.savedScrollTop = changed ? 0 : window.NovalistEditorState.savedScrollTop;
-    window.NovalistEditorState.wrapper.scrollTop = window.NovalistEditorState.savedScrollTop;
+    window.setWritingScroll(window.NovalistEditorState.savedScrollTop);
 
     // A stored path is not a URL this document can load; resolve before paint.
     window.toDisplayImages(window.NovalistEditorState.editor);
@@ -71,7 +71,19 @@ function getContent() {
 }
 
 function getPlainText() {
-    return window.NovalistEditorState.editor.innerText || '';
+    const root = window.getWritingServiceRoot?.() || window.NovalistEditorState.editor;
+    const text = root.innerText || '';
+    if (text || !window.NovalistWritingDocument?.enabled || !root.firstChild) return text;
+    if (root.firstElementChild?.checkVisibility?.({ contentVisibilityAuto: true })) return text;
+    // Skipped scene contents need layout for native whitespace and marker semantics.
+    const style = root.getAttribute('style');
+    try {
+        root.style.contentVisibility = 'visible';
+        return root.innerText || '';
+    } finally {
+        if (style === null) root.removeAttribute('style');
+        else root.setAttribute('style', style);
+    }
 }
 
 /** Marks ornament-only prose blocks so typography never treats them as prose. */

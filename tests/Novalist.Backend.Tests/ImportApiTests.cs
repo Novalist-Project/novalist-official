@@ -368,7 +368,7 @@ public sealed class ImportApiTests : IDisposable
         using var client = Client(await rpc.InvokeAsync<ImportApiStatus>("importApi/start", "Source writing"));
         hold.HoldProjectSave = true;
         var held = rpc.InvokeAsync<ProjectStateDto>("project/createChapter", "Written in editor");
-        await hold.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await hold.Entered.Task.WaitAsync(TestWait.Deadline);
         var pending = PostAsync(client, Batch("note", "research", "\"title\":\"Note\""));
         try
         {
@@ -401,7 +401,7 @@ public sealed class ImportApiTests : IDisposable
             var pending = client.GetAsync("types");
             await Task.Delay(80);
             var stop = disposeAsync ? api.DisposeAsync().AsTask() : api.StopAsync();
-            await stop.WaitAsync(TimeSpan.FromSeconds(10));
+            await stop.WaitAsync(TestWait.Deadline);
             Assert.Equal(HttpStatusCode.Gone, (await pending).StatusCode);
             Assert.False((await api.StatusAsync()).Running);
         }

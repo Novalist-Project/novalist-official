@@ -176,7 +176,7 @@
 }
 
 .dashboard-avg-grid > div:last-child {
-  text-align: right;
+  text-align: end;
 }
 
 .dashboard-avg-value {
@@ -258,7 +258,7 @@
   background: none;
   color: inherit;
   font: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   border-radius: var(--nl-radius-sm);
 }
@@ -306,7 +306,7 @@
   color: inherit;
   cursor: pointer;
   font: inherit;
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 

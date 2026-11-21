@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { loadRendererSource } from './renderer-source-loader.mjs'
 
-function fixture(shared = false) {
+function fixture(shared = false, isMobile = true) {
   let resolveRead, writes = 0
   const requests = []
   let state = { isLoaded: true, workspaceEpoch: 1, projectPath: '/project', activeBookId: 'book', activeDraftId: 'draft',
@@ -13,9 +13,10 @@ function fixture(shared = false) {
     './pendingWrites': { capturePendingWrites() {} },
     './projectStore': { mirror: () => ({}), useProjectStore: { getState: () => state, setState: patch => { writes++; state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) } } } },
     './projectPersistence': { stripHtml: value => value },
-    './manuscriptStore': { useManuscriptStore: { getState: () => ({ sections: [] }) }, applyExternalManuscriptScene() { writes++ } }
-  })
-  return { refreshExternalScenes, requests, writes: () => writes,
+    './manuscriptStore': { useManuscriptStore: { getState: () => ({ sections: [] }) }, applyExternalManuscriptScene() { writes++ } },
+    './writingExternalRefresh': { captureWritingSavedHashes: () => new Map(), getPendingWritingResolution: () => null, refreshWritingOwners: async () => [] }
+  }, { window: { novalist: { isMobile } } })
+  return { refreshExternalScenes, requests, writes: () => writes, state: () => state,
     startSharing: () => { state = { ...state, chapters: [{ scenes: [{ id: 'scene', sharedProse: { sessionId: 'session', fields: {} } }] }] } },
     respond: () => resolveRead({ counts: [{ sceneId: 'scene', wordCount: 1 }], changes: [] }) }
 }
@@ -46,4 +47,13 @@ test('ordinary local projects still adopt external word-count updates', async ()
   f.respond()
   await pending
   assert.equal(f.writes(), 1)
+})
+
+test('desktop counts cannot publish a stale disk count into a newly shared scene', async () => {
+  const f = fixture(false, false)
+  const pending = f.refreshExternalScenes()
+  f.startSharing()
+  f.respond()
+  await pending
+  assert.equal(f.state().chapters[0].scenes[0].wordCount, undefined)
 })

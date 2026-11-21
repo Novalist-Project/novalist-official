@@ -4,7 +4,7 @@ using Novalist.Core.Utilities;
 
 namespace Novalist.Core.Services;
 
-public sealed class FindReplaceService : IFindReplaceService
+public sealed partial class FindReplaceService : IFindReplaceService
 {
     private readonly IProjectService _projectService;
     private readonly IEntityService? _entityService;
@@ -111,6 +111,13 @@ public sealed class FindReplaceService : IFindReplaceService
     }
 
     public async Task<int> ReplaceAllAsync(FindOptions options, ISnapshotService? snapshotService = null, CancellationToken cancellationToken = default)
+        => await ReplaceAsync(options, snapshotService, null, cancellationToken);
+
+    public Task<int> ReplaceNotesAsync(FindOptions options, SceneRef[] targets, ISnapshotService snapshotService, CancellationToken cancellationToken)
+        => ReplaceAsync(options, snapshotService, targets.ToHashSet(), cancellationToken);
+
+    private async Task<int> ReplaceAsync(FindOptions options, ISnapshotService? snapshotService,
+        HashSet<SceneRef>? notesTargets, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(options.Pattern))
             return 0;
@@ -130,10 +137,13 @@ public sealed class FindReplaceService : IFindReplaceService
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                if (notesTargets is not null && !notesTargets.Contains(new SceneRef(_projectService.ActiveBook?.Id ?? string.Empty,
+                    _projectService.ActiveBook?.ActiveDraftId ?? string.Empty, chapter.Guid, scene.Id))) continue;
+
                 var html = await _projectService.ReadSceneContentAsync(chapter, scene).ConfigureAwait(false);
                 // Only prose is searchable: formatting and link/image attributes
                 // must survive a replacement unchanged.
-                var (newHtml, count) = ReplaceHtmlWithCount(regex, html, options.Replacement);
+                var (newHtml, count) = notesTargets is null ? ReplaceHtmlWithCount(regex, html, options.Replacement) : (html, 0);
 
                 // A synopsis and a note are plain text the writer owns, so a
                 // replace can reach them. A comment is a conversation and a

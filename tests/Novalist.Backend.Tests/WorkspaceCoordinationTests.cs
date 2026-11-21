@@ -200,7 +200,7 @@ public sealed class WorkspaceCoordinationTests
         coordinator.Notify = (method, payload) => server.NotifyAsync(method, payload);
         server.StartListening();
         client.StartListening();
-        Assert.Equal(1, await client.InvokeAsync<int>("spec/change").WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Equal(1, await client.InvokeAsync<int>("spec/change").WaitAsync(TestWait.Deadline));
         Assert.Equal(1, target.Writes);
         Assert.Equal(1, coordinator.Epoch);
         Assert.Equal(1, client.Epoch);

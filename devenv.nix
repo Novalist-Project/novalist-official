@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  config,
   ...
 }: let
   novalist = pkgs.callPackage ./nix/package.nix {
@@ -74,11 +73,36 @@ in {
       description = "Build and launch the packaged Novalist client";
       exec = ''
         set -euo pipefail
-        package="$(${config.scripts.build.package}/bin/build)"
+        package="$(build)"
         exec "$package/bin/novalist" "$@"
       '';
     };
+    run-instance = {
+      description = "Launch a named Novalist instance with separate settings and profile";
+      exec = ''
+        set -euo pipefail
+        instance="''${1:-}"
+        case "$instance" in
+          ""|*[!a-zA-Z0-9_-]*)
+            printf 'Usage: run-instance NAME [APP_ARGS...] (letters, digits, underscores, hyphens only)\n' >&2
+            exit 2
+            ;;
+        esac
+        shift
+        data_dir="''${XDG_DATA_HOME:-$HOME/.local/share}/novalist-$instance"
+        export NOVALIST_SETTINGS_DIR="$data_dir/settings"
+        mkdir -p "$NOVALIST_SETTINGS_DIR" "$data_dir/profile"
+        exec run --user-data-dir="$data_dir/profile" "$@"
+      '';
+    };
   };
+
+  processes = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
+    lib.genAttrs ["host" "guest"] (instance: {
+      exec = "exec run-instance ${instance}";
+      restart.on = "never";
+    })
+  );
 
   # Stable SDK path for IDEs such as Rider, including the sdk/ directory.
   enterShell = ''

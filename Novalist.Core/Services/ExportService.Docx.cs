@@ -131,6 +131,13 @@ public partial class ExportService
         var sb = new StringBuilder();
         foreach (var seg in segments)
         {
+            // A line break the writer typed is a Word line break inside the
+            // paragraph, not a space and not a new paragraph.
+            if (seg.LineBreak)
+            {
+                sb.Append(DocxLineBreak);
+                continue;
+            }
             if (seg.FootnoteText != null)
             {
                 if (footnoteDefs == null) continue;
@@ -154,6 +161,16 @@ public partial class ExportService
         }
         return sb.ToString();
     }
+
+    private const string DocxLineBreak = "<w:r><w:br/></w:r>";
+
+    /// <summary>
+    /// Plain text as Word runs, each newline a line break. For text that has
+    /// already lost its run structure, such as the tail of a drop-cap opener.
+    /// </summary>
+    private static string DocxTextWithBreaks(string text) =>
+        string.Join(DocxLineBreak, text.Split('\n')
+            .Select(line => $"<w:r><w:t xml:space=\"preserve\">{EscapeXml(line)}</w:t></w:r>"));
 
     private static int CmToTwips(double cm) => (int)Math.Round(cm / 2.54 * 1440);
 

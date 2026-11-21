@@ -35,11 +35,15 @@ internal static partial class ExportProse
 
         if (matches.Count == 0)
         {
-            // No block markup at all: the whole thing is one paragraph.
-            var stripped = StripHtml(html);
+            // No block markup at all: the whole thing is one paragraph, and
+            // its lines are the lines the writer sees in the editor.
+            var stripped = StripHtml(LineBreakTagRegex().Replace(html, "\n"));
             if (!string.IsNullOrWhiteSpace(stripped))
-                blocks.Add(new ExportBlock(
-                    [new InlineSegment { Text = stripped.Trim() }], null, ListKind.None));
+            {
+                var runs = new List<InlineSegment>();
+                AppendTextLines(stripped.Trim(), false, false, false, runs);
+                blocks.Add(new ExportBlock(runs, null, ListKind.None));
+            }
             return blocks;
         }
 
@@ -75,7 +79,7 @@ internal static partial class ExportProse
                 continue;
             }
 
-            var segments = ParseInlineFormatting(match.Groups["body"].Value, footnotes);
+            var segments = TrimLineBreaks(ParseInlineFormatting(match.Groups["body"].Value, footnotes));
             // A paragraph holding nothing but a footnote anchor is still
             // worth keeping - the note is the content.
             if (segments.Count == 0
@@ -90,6 +94,21 @@ internal static partial class ExportProse
         }
 
         return blocks;
+    }
+
+    /// <summary>
+    /// A paragraph's runs without line breaks at either edge. A break only
+    /// separates two lines; the one the editor leaves at the end of a paragraph
+    /// whose last line was ended with Shift+Enter is a placeholder that keeps
+    /// the empty line visible while typing, not a line of the book.
+    /// </summary>
+    private static List<InlineSegment> TrimLineBreaks(List<InlineSegment> segments)
+    {
+        var start = 0;
+        var end = segments.Count;
+        while (start < end && segments[start].LineBreak) start++;
+        while (end > start && segments[end - 1].LineBreak) end--;
+        return segments[start..end];
     }
 
     /// <summary>
@@ -133,13 +152,7 @@ internal static partial class ExportProse
             // Self-closing tags
             if (tag is "br" or "br/" or "br /")
             {
-                segments.Add(new InlineSegment
-                {
-                    Text = "\n",
-                    Bold = bold,
-                    Italic = italic,
-                    Strike = strike
-                });
+                segments.Add(LineBreakSegment(bold, italic, strike));
                 continue;
             }
 
@@ -241,6 +254,41 @@ internal static partial class ExportProse
     }
 
     /// <summary>
+    /// A matter page's text as paragraph HTML. The page is edited in a plain
+    /// text box, so what the writer typed is text: an ampersand is an
+    /// ampersand, a blank line ends a paragraph and a single line break stays
+    /// a line break. Content that already opens with block markup is kept as
+    /// HTML, so a page written as markup before this conversion existed still
+    /// exports the way it did.
+    /// </summary>
+    internal static string MatterContentToHtml(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return string.Empty;
+        if (LeadingBlockTagRegex().IsMatch(content)) return content;
+
+        var normalized = content.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        var html = new System.Text.StringBuilder();
+        foreach (var paragraph in BlankLineRegex().Split(normalized.Trim()))
+        {
+            // Only the three characters markup reads, so letters such as
+            // umlauts stay letters rather than becoming numeric references.
+            var lines = paragraph.Split('\n').Select(line => line.TrimEnd()
+                .Replace("&", "&amp;", StringComparison.Ordinal)
+                .Replace("<", "&lt;", StringComparison.Ordinal)
+                .Replace(">", "&gt;", StringComparison.Ordinal));
+            html.Append("<p>").AppendJoin("<br/>", lines).Append("</p>");
+        }
+        return html.ToString();
+    }
+
+    /// <summary>One or more empty (or whitespace-only) lines between two lines of text.</summary>
+    [GeneratedRegex(@"\n[ \t]*\n\s*")]
+    private static partial Regex BlankLineRegex();
+
+    [GeneratedRegex(@"^\s*<(?:p|div|figure|blockquote|ul|ol|h[1-6])\b", RegexOptions.IgnoreCase)]
+    private static partial Regex LeadingBlockTagRegex();
+
+    /// <summary>
     /// Strip all HTML tags and decode entities.
     /// </summary>
     internal static string StripHtml(string html)
@@ -274,15 +322,18 @@ internal static partial class ExportProse
         foreach (Match match in matches)
         {
             var styleId = ExtractStyleClass(match.Groups[1].Value);
-            var text = string.Concat(ParseInlineFormatting(match.Groups[2].Value).Select(s => s.Text));
+            var text = string.Concat(TrimLineBreaks(ParseInlineFormatting(match.Groups[2].Value)).Select(s => s.Text));
             if (string.IsNullOrWhiteSpace(text))
             {
                 blocks.Add(NormseitenBlock.Blank());
                 continue;
             }
-            blocks.Add(styleId is "heading" or "subheading"
-                ? NormseitenBlock.Heading(text)
-                : NormseitenBlock.Body(text));
+            // A heading is one heading whatever breaks it holds; body text keeps
+            // each typed line as a grid line of its own, with no blank between.
+            if (styleId is "heading" or "subheading")
+                blocks.Add(NormseitenBlock.Heading(text));
+            else
+                blocks.AddRange(text.Split('\n').Select(NormseitenBlock.Body));
             blocks.Add(NormseitenBlock.Blank());
         }
 
@@ -342,9 +393,30 @@ internal static partial class ExportProse
     }
 
     private static void AppendInlineText(string html, bool bold, bool italic, bool strike, List<InlineSegment> segments)
+        => AppendTextLines(WebUtility.HtmlDecode(html), bold, italic, strike, segments);
+
+    /// <summary>
+    /// Text as runs, one per line, with a line break between them. The editor
+    /// sets prose with <c>white-space: pre-wrap</c>, so a newline inside a
+    /// paragraph is a line the writer sees: it is what Shift+Enter stores there,
+    /// and it is as much a line break as a <c>br</c> from pasted or imported
+    /// text. Read as markup's usual "any whitespace is a space", every such
+    /// line ran into the one before it on the way out.
+    /// </summary>
+    private static void AppendTextLines(string text, bool bold, bool italic, bool strike, List<InlineSegment> segments)
     {
-        var text = WebUtility.HtmlDecode(html);
-        if (!string.IsNullOrEmpty(text))
-            segments.Add(new InlineSegment { Text = text, Bold = bold, Italic = italic, Strike = strike });
+        var lines = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
+        for (var i = 0; i < lines.Length; i++)
+        {
+            if (i > 0) segments.Add(LineBreakSegment(bold, italic, strike));
+            if (lines[i].Length > 0)
+                segments.Add(new InlineSegment { Text = lines[i], Bold = bold, Italic = italic, Strike = strike });
+        }
     }
+
+    private static InlineSegment LineBreakSegment(bool bold, bool italic, bool strike) =>
+        new() { Text = "\n", Bold = bold, Italic = italic, Strike = strike, LineBreak = true };
+
+    [GeneratedRegex(@"<br\s*/?>", RegexOptions.IgnoreCase)]
+    private static partial Regex LineBreakTagRegex();
 }

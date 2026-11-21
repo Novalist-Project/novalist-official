@@ -1,0 +1,476 @@
+{
+  "kind": "bounded-fragment-preliminary-probe",
+  "baseRevision": "38bb741dfad61ad9333697eecb619cd186a39712",
+  "baseSourceManifest": {
+    "summary": "writing-page-flow-inline-purity.json",
+    "sha256": "504ffabc14f026d0b9ba670a8f599586a4f160485672f1cd5a6eeb62233326e9"
+  },
+  "runs": [
+    {
+      "name": "writing-fragments-native-red",
+      "sourceVariant": "initial",
+      "sourceSha256": "9408045678ab7120d05f13039dd2a9c6961f8dba1cbe9ed3231c8706e64dfc75",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-native-red/.last-run.json",
+          "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+          "bytes": 45,
+          "status": "passed",
+          "failedTests": 0
+        },
+        {
+          "file": "test-results/writing-fragments-native-red/writing-fragments-fragment-033b3-e-scene-boundary-ArrowRight/fragment-native.json",
+          "sha256": "9be49986929d9510a122e5217e6fe36b3a636dea39adc8a1695c1da285281aa8",
+          "bytes": 4069
+        },
+        {
+          "file": "test-results/writing-fragments-native-red/writing-fragments-fragment-abc96-me-scene-boundary-Backspace/fragment-native.json",
+          "sha256": "f2ebe04a5d29bc259ad57af55de29b09feec92680964ca0b50058f191f0e117e",
+          "bytes": 4070
+        },
+        {
+          "file": "test-results/writing-fragments-native-red/writing-fragments-fragment-e1be5-me-scene-boundary-ArrowLeft/fragment-native.json",
+          "sha256": "2dd7bbccc20d6090de6b4fa468ea08d637dcca12778ca485bf26ae07467c6d75",
+          "bytes": 4068
+        },
+        {
+          "file": "test-results/writing-fragments-native-red/writing-fragments-fragment-f91dc--scene-boundary-replacement/fragment-native.json",
+          "sha256": "3a094430f460c6e1190983313e5fd69370ebe9b84b22d1800bc1435ceeb13b83",
+          "bytes": 4070
+        },
+        {
+          "file": "test-results/writing-fragments-native-red/writing-fragments-fragment-native-same-scene-boundary-Delete/fragment-native.json",
+          "sha256": "cff547d0f877b030a0a8c7b55ce6c9fcef946f051cd650c9247308b30deb2641",
+          "bytes": 4067
+        },
+        {
+          "file": "test-results/writing-fragments-native-red/writing-fragments-fragment-native-same-scene-boundary-End/fragment-native.json",
+          "sha256": "ab46297e03f39d00df9a3e131708b0b26d970123551657f9cd7820140f693b76",
+          "bytes": 4062
+        },
+        {
+          "file": "test-results/writing-fragments-native-red/writing-fragments-fragment-native-same-scene-boundary-Enter/fragment-native.json",
+          "sha256": "e4b93f19c19a5f9cb1e018c393679242d7acbfab2b1f1c63a0df05dbd6af7551",
+          "bytes": 4068
+        },
+        {
+          "file": "test-results/writing-fragments-native-red/writing-fragments-fragment-native-same-scene-boundary-Home/fragment-native.json",
+          "sha256": "6aabce327401001bfb8235563f743782cf5a6560fffa15552f3bd4d334e93394",
+          "bytes": 4063
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-row-native-red",
+      "sourceVariant": "row-initial",
+      "sourceSha256": "d7f8b0fa2f8adb83fa06bd1534a03a65d783fcf53386c08ea452d1f82f2b8921",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-row-native-red/.last-run.json",
+          "sha256": "d72a1e3cc21180073c1c988a34c201cc5b3e54581a81a3cd934045d3ed12a5d5",
+          "bytes": 194,
+          "status": "failed",
+          "failedTests": 3
+        },
+        {
+          "file": "test-results/writing-fragments-row-native-red/writing-fragments-fragment-02f0e--boundary-row-raw-ArrowLeft/fragment-native.json",
+          "sha256": "50d9124f50ea1481bdf4c2936606285315dcbd712682ba048ccfc8e341bbbec2",
+          "bytes": 4106
+        },
+        {
+          "file": "test-results/writing-fragments-row-native-red/writing-fragments-fragment-17294-ene-boundary-row-raw-Delete/fragment-native.json",
+          "sha256": "fa6f253118d4e210f254a5dc63052e246cd62ec54dd0bdf8370ab3a725a36903",
+          "bytes": 4101
+        },
+        {
+          "file": "test-results/writing-fragments-row-native-red/writing-fragments-fragment-2a2aa-boundary-row-raw-ArrowRight/fragment-native.json",
+          "sha256": "356bb45751c3225d301e4eb5ab80b29ce5adc7906bfd4ba43a96bc0a55fadf27",
+          "bytes": 4107
+        },
+        {
+          "file": "test-results/writing-fragments-row-native-red/writing-fragments-fragment-34d1a-scene-boundary-row-raw-Home/fragment-native.json",
+          "sha256": "b9951308337f91c8462259263a653a79ab27fa3e3deb2dc39865b01dfb5c2523",
+          "bytes": 4105
+        },
+        {
+          "file": "test-results/writing-fragments-row-native-red/writing-fragments-fragment-70bf4--boundary-row-raw-Backspace/fragment-native.json",
+          "sha256": "40eddc1b071d8d449546daa2076c407cdbe49b34af0985f350227c7f47a5edc8",
+          "bytes": 4108
+        },
+        {
+          "file": "test-results/writing-fragments-row-native-red/writing-fragments-fragment-7d83b--scene-boundary-row-raw-End/fragment-native.json",
+          "sha256": "0c1e98ea4125bb94740f53271420863d5c9aa31cd8af1e6da9a34c4c07889835",
+          "bytes": 4096
+        },
+        {
+          "file": "test-results/writing-fragments-row-native-red/writing-fragments-fragment-9f6c1-cene-boundary-row-raw-Enter/fragment-native.json",
+          "sha256": "6d8da10ee74e35717b9bf5a9ba00030d7183afb21b9ffb8e598f22dcfbbb6d19",
+          "bytes": 4102
+        },
+        {
+          "file": "test-results/writing-fragments-row-native-red/writing-fragments-fragment-c0542-oundary-row-raw-replacement/fragment-native.json",
+          "sha256": "2ff6d611ee6c96737c35730200bdbc1699183e2bd0bc4369e9b6bc6c9dba593a",
+          "bytes": 4106
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-native-paper-control",
+      "sourceVariant": "paper",
+      "sourceSha256": "122940bd10021d6df7fede34d143b6626b5895bbf3b70dded9ec4c328e8486d4",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-native-paper-control/.last-run.json",
+          "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+          "bytes": 45,
+          "status": "passed",
+          "failedTests": 0
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-02f0e--boundary-row-raw-ArrowLeft/fragment-native.json",
+          "sha256": "6466c2f403c8afaec5b262eaccdfaab42ea716391698c3393484ba22727ab89f",
+          "bytes": 4106
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-09696-oundary-paragraph-Backspace/fragment-native.json",
+          "sha256": "dcbbe464c19f31d49e2d38a008f3b30064543cd87c1d77307f92b1afeec2f9bf",
+          "bytes": 4098
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-17294-ene-boundary-row-raw-Delete/fragment-native.json",
+          "sha256": "2ebb27ac00c2373f6e82d9ed59c9f0c87690cca51f935fd6c4b426da01710ac9",
+          "bytes": 4101
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-1830c-ne-boundary-paragraph-Enter/fragment-native.json",
+          "sha256": "c0c2d7ddbe21142c23eb3d0b2156ee11cec347840dbeb9e7c6be5354415e851a",
+          "bytes": 4096
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-20431-ndary-paragraph-replacement/fragment-native.json",
+          "sha256": "4ae05e0626f3e3cfb219a7720d910302f8ae21779162357e7f7096f1a6ecc398",
+          "bytes": 4098
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-2a2aa-boundary-row-raw-ArrowRight/fragment-native.json",
+          "sha256": "8bbb29ae1ac4aa1537f71334755a82c8da0d347370ea2ef64424a21d8a9f79d5",
+          "bytes": 4107
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-34d1a-scene-boundary-row-raw-Home/fragment-native.json",
+          "sha256": "5dbbe3f843a855a636e0f3601c7b536a371b68cbe59fa1c7e954645cd73d0283",
+          "bytes": 4105
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-70bf4--boundary-row-raw-Backspace/fragment-native.json",
+          "sha256": "af096ae692054b5f0b8eb083b4fcd647ec42921c861280e88244f49fb9b4224c",
+          "bytes": 4108
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-79fd8-oundary-paragraph-ArrowLeft/fragment-native.json",
+          "sha256": "11302fd2dfac7465d250bceb11238549996662dcc4e2fedce9ce72ae680e9341",
+          "bytes": 4096
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-7d83b--scene-boundary-row-raw-End/fragment-native.json",
+          "sha256": "9a18a3a7e2f5975d42dfb4af2bfab071bdc3727aad6d6cb1f72444e73f2efdc9",
+          "bytes": 4096
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-86c91-e-boundary-paragraph-Delete/fragment-native.json",
+          "sha256": "94ff3a3ff12af37c5af642217e409e235644510b300c1441c4eae47302cacf70",
+          "bytes": 4095
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-8b356-cene-boundary-paragraph-End/fragment-native.json",
+          "sha256": "5d55d55cb0c35abec1fa33de552954be8b1dcad1eb1fbc1ed00891b672306c2a",
+          "bytes": 4090
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-9f6c1-cene-boundary-row-raw-Enter/fragment-native.json",
+          "sha256": "40d3517ff13b472c6141010dce64ba8ffd8ee6811e8538572d15c1286736fed7",
+          "bytes": 4102
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-b4609-ene-boundary-paragraph-Home/fragment-native.json",
+          "sha256": "0dcd90608ed699f90862b3216806069e85f08c7e737847d22ec93fd533f0c470",
+          "bytes": 4091
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-c0542-oundary-row-raw-replacement/fragment-native.json",
+          "sha256": "54ca5932c5ef282ffb5536f1a94683a883a105d773b3650b3efb37bc97c18f73",
+          "bytes": 4106
+        },
+        {
+          "file": "test-results/writing-fragments-native-paper-control/writing-fragments-fragment-f1ea8-undary-paragraph-ArrowRight/fragment-native.json",
+          "sha256": "73bd9097716b2874e7d13a3f9546603be9f3b95f8dde2ed23a2e1e7a9cde16c7",
+          "bytes": 4097
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-raw-enter",
+      "sourceVariant": "enter",
+      "sourceSha256": "e87a059a31f4028c2d959ab0e6da02680945348e40a7a3465a6fbabc66fca40d",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-raw-enter/.last-run.json",
+          "sha256": "b96a7886556895279a400afc6eed92e537d44e398a4eb0724f5853a9dba80dd3",
+          "bytes": 145,
+          "status": "failed",
+          "failedTests": 2
+        },
+        {
+          "file": "test-results/writing-fragments-raw-enter/writing-fragments-fragment-53659-undary-paragraph-EnterStart/fragment-native.json",
+          "sha256": "5a3936b88935c300a5fd8fb1016bb378a57abc077a0351b1ce7006530c07c3fb",
+          "bytes": 4097
+        },
+        {
+          "file": "test-results/writing-fragments-raw-enter/writing-fragments-fragment-6ff33-boundary-row-raw-EnterStart/fragment-native.json",
+          "sha256": "f65813d1134957247b8bdebcb4427a5f157891cfa2f8e2db4a233a3799b031a4",
+          "bytes": 4111
+        },
+        {
+          "file": "test-results/writing-fragments-raw-enter/writing-fragments-fragment-b8432-oundary-row-raw-EnterMiddle/fragment-native.json",
+          "sha256": "8817d883b4650bdac4cf492e45ddd38c0d1043ca100884326a1187fd519fb4ea",
+          "bytes": 4124
+        },
+        {
+          "file": "test-results/writing-fragments-raw-enter/writing-fragments-fragment-c1f19-ndary-paragraph-EnterMiddle/fragment-native.json",
+          "sha256": "7af6761bf059566ce0d0321d641d6c44e6780b9080baf7313ef330b66b9cce1b",
+          "bytes": 4098
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-enter-normalization",
+      "sourceVariant": "enter-normalization-red",
+      "sourceSha256": "db13aad3d3f2a61487cffd6fcd80c26db51a881ace90c0e0819e4382164d10ba",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-enter-normalization/.last-run.json",
+          "sha256": "9c60cf5a37087b478239ab91a8d953d8b3f2b0460cef21299ec03df05190f96d",
+          "bytes": 145,
+          "status": "failed",
+          "failedTests": 2
+        },
+        {
+          "file": "test-results/writing-fragments-enter-normalization/writing-fragments-fragment-04746-s-paragraph-intent-offset-0/fragment-enter.json",
+          "sha256": "783bdbc164f5f331e68705beed707a892114ed2d73891b5e7f20b3bfc5f58484",
+          "bytes": 5925
+        },
+        {
+          "file": "test-results/writing-fragments-enter-normalization/writing-fragments-fragment-dc4b6-s-paragraph-intent-offset-2/fragment-enter.json",
+          "sha256": "57902b386b3062a187a2f863ff2e744178f56403cdc2dba90296b754a23e96cb",
+          "bytes": 5931
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-enter-normalization-ledger",
+      "sourceVariant": "enter-normalization-ledger",
+      "sourceSha256": "35cce9432394bda3af094141b0ee10fb727b89cdca9ed2e847fb96748199c6a7",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-enter-normalization-ledger/.last-run.json",
+          "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+          "bytes": 45,
+          "status": "passed",
+          "failedTests": 0
+        },
+        {
+          "file": "test-results/writing-fragments-enter-normalization-ledger/writing-fragments-fragment-04746-s-paragraph-intent-offset-0/fragment-enter.json",
+          "sha256": "662e864af2f27fa8aea7af96099f7a8c4938badbb2d99c3254d2f3395ee03023",
+          "bytes": 5885
+        },
+        {
+          "file": "test-results/writing-fragments-enter-normalization-ledger/writing-fragments-fragment-dc4b6-s-paragraph-intent-offset-2/fragment-enter.json",
+          "sha256": "530a60d20b5515b968f72b1e928d34b28b029cd2ca96a401ff6e5122d17daf94",
+          "bytes": 5885
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-enter-history",
+      "sourceVariant": "enter-history",
+      "sourceSha256": "159ab46c482b1a4737bfe7b486d1541c0377df3ab5bcafa614854f240f3701b6",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-enter-history/.last-run.json",
+          "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+          "bytes": 45,
+          "status": "passed",
+          "failedTests": 0
+        },
+        {
+          "file": "test-results/writing-fragments-enter-history/writing-fragments-fragment-5c677-d-one-logical-undo-offset-0/fragment-history.json",
+          "sha256": "612da1153a8897ad5b6fa3518100ce88b591450b75d2052bd5becb2c13d037ec",
+          "bytes": 2642
+        },
+        {
+          "file": "test-results/writing-fragments-enter-history/writing-fragments-fragment-869ad-d-one-logical-undo-offset-2/fragment-history.json",
+          "sha256": "932a109b112e7fe97c4e4a6218d1a423cdca9ff9c3c62677fdc94e6680b6f288",
+          "bytes": 2640
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-geometry-mouse",
+      "sourceVariant": "geometry",
+      "sourceSha256": "a0cdc1738a9106100cf79567db860743616e23e157cd9191c9a03c860bd2b1a0",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-geometry-mouse/.last-run.json",
+          "sha256": "2e41706b5bf11728133edc371f35c6b0be5c9ed51af1a4ee772ebcca034be60f",
+          "bytes": 96,
+          "status": "failed",
+          "failedTests": 1
+        },
+        {
+          "file": "test-results/writing-fragments-geometry-mouse/writing-fragments-fragment-657c6-act-endpoints-backward-true/fragment-mouse.json",
+          "sha256": "a8947eeb6d776b5bb2e38c5ad811b07920cf816a33bad5a28ea959e2cb811276",
+          "bytes": 2489
+        },
+        {
+          "file": "test-results/writing-fragments-geometry-mouse/writing-fragments-fragment-b3105-cks-within-actual-48em-flow/fragment-row-geometry.json",
+          "sha256": "ef85d010c1a856b7d531d8d1ecda8637c2ef2243bef40dbc68abeb1ea50b7b38",
+          "bytes": 42664
+        },
+        {
+          "file": "test-results/writing-fragments-geometry-mouse/writing-fragments-fragment-e8e34-er-with-separate-flow-lines/fragment-raw-scenes.json",
+          "sha256": "32ba31a8b2c54426cc397dd208418424d4a359fa29d8340b3076e02e6ce0708d",
+          "bytes": 1643
+        },
+        {
+          "file": "test-results/writing-fragments-geometry-mouse/writing-fragments-fragment-fc58e-ct-endpoints-backward-false/fragment-mouse.json",
+          "sha256": "f522569809a3ffe2f44d6f779a0fa0d08721bd55db7f885d0b24c72a0b71e990",
+          "bytes": 2488
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-mouse-focus",
+      "sourceVariant": "mouse-focus",
+      "sourceSha256": "ce52b0e3345c268a84416eefc707f97dc28c913c260c8437d7e91a284c6f9d89",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-mouse-focus/.last-run.json",
+          "sha256": "2e41706b5bf11728133edc371f35c6b0be5c9ed51af1a4ee772ebcca034be60f",
+          "bytes": 96,
+          "status": "failed",
+          "failedTests": 1
+        },
+        {
+          "file": "test-results/writing-fragments-mouse-focus/writing-fragments-fragment-657c6-act-endpoints-backward-true/fragment-mouse.json",
+          "sha256": "546e9ab1def057d2b60b5f35785e241b26656df377dc86a69ee3bd66f3911357",
+          "bytes": 6001
+        },
+        {
+          "file": "test-results/writing-fragments-mouse-focus/writing-fragments-fragment-fc58e-ct-endpoints-backward-false/fragment-mouse.json",
+          "sha256": "92224e27fa79785f317dfb5b93599948a80cc1890e9f8e04f6e0f82a2fa2918d",
+          "bytes": 5998
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-mouse-isolation",
+      "sourceVariant": "mouse-isolation",
+      "sourceSha256": "90b660ba5d62d946f1a24ca56e17f7af9a412fb1cdeb9b893e9ab3e70fe2a34b",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-mouse-isolation/.last-run.json",
+          "sha256": "4578d22878f402d8131a62d4f4b4ea7b7dcfa060330bdf961c6925d8653cac51",
+          "bytes": 96,
+          "status": "failed",
+          "failedTests": 1
+        },
+        {
+          "file": "test-results/writing-fragments-mouse-isolation/writing-fragments-fragment-5ecce--script-free-paper-geometry/fragment-mouse-isolation.json",
+          "sha256": "cd0fa500d96b24d491b807a07fc2ca54c485655a76163b7e8d5ab40650e1522f",
+          "bytes": 19078
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-mouse-dense",
+      "sourceVariant": "mouse-dense",
+      "sourceSha256": "6959657c1a321b9471b16948713508d6eeb0595bcedba2a66bd1e340b1c55580",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-mouse-dense/.last-run.json",
+          "sha256": "48d6d6d0487572def1eb9b70d4254e6ceef183deb2fb1623df32c4f043df0e21",
+          "bytes": 96,
+          "status": "failed",
+          "failedTests": 1
+        },
+        {
+          "file": "test-results/writing-fragments-mouse-dense/writing-fragments-fragment-80ada-ct-endpoints-backward-false/fragment-mouse.json",
+          "sha256": "55a2f947ccaa5d13646e629b9a8bcd4d728d74d45918a8fcccc70189a59e14d8",
+          "bytes": 317657
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-mouse-minimal",
+      "sourceVariant": "mouse-minimal",
+      "sourceSha256": "a163966dabbfb337e6a52793a831d38fba816f572d7c195e4d23679bad51d9e0",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-mouse-minimal/.last-run.json",
+          "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+          "bytes": 45,
+          "status": "passed",
+          "failedTests": 0
+        },
+        {
+          "file": "test-results/writing-fragments-mouse-minimal/writing-fragments-fragment-e8878-al-unstyled-contenteditable/fragment-mouse-minimal.json",
+          "sha256": "438eeb8ab9fd8b3410114da1c31365b2c781f47257fc98b118ddc10441beaf98",
+          "bytes": 11975
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-zoom-placement",
+      "sourceVariant": "zoom-placement",
+      "sourceSha256": "b0c60eb0ef7d1fd384d1b0f1b41602019c8a79715d953371a7b0976c251aca4b",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-zoom-placement/.last-run.json",
+          "sha256": "f8dea54229cd42a8d28e2e18aa3805c8d31de62ac1dadf28a36b876ab2cdb46d",
+          "bytes": 96,
+          "status": "failed",
+          "failedTests": 1
+        },
+        {
+          "file": "test-results/writing-fragments-zoom-placement/writing-fragment-zoom-frag-a2476-matched-transform-placement/fragment-zoom-placement.json",
+          "sha256": "180db21d42d6808873117385227528f14d1ac269f060562b6ca10a7f0138cae0",
+          "bytes": 327781
+        }
+      ]
+    },
+    {
+      "name": "writing-fragments-zoom-same-line",
+      "sourceVariant": "zoom-same-line",
+      "sourceSha256": "8cf5a092f3062ef7083798c52f9e293f3b59ba353e104644a3a2ebd3989b2ef7",
+      "records": [
+        {
+          "file": "test-results/writing-fragments-zoom-same-line/.last-run.json",
+          "sha256": "279482afc66e7913fe79d5c82faa545cbdafb6537fdfce08ef2e36673533a41c",
+          "bytes": 96,
+          "status": "failed",
+          "failedTests": 1
+        },
+        {
+          "file": "test-results/writing-fragments-zoom-same-line/writing-fragment-zoom-frag-b243e-lone-same-line-forward-drag/fragment-zoom-same-line.json",
+          "sha256": "82d860094281dbf92a50d67881d0ddb69641142747b84fc120c54da972a63c98",
+          "bytes": 14452
+        }
+      ]
+    }
+  ],
+  "archive": {
+    "name": "fragments-probe-evidence.json.gz",
+    "bytes": 182219,
+    "sha256": "9e2aa215cb601dcb22d8279f877bf113aadc2cc1460943ebc384885ce22e1f8e"
+  }
+}

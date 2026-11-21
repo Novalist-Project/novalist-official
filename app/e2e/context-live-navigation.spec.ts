@@ -4,13 +4,17 @@ import { dismissTour, enterWriting, launchApp, seedBook, type Harness } from './
 const NAME = 'Mira Vance'
 
 async function setup(h: Harness, prose = 'The door stood open.') {
-  const book = await seedBook(h, { 'Chapter One': ['Opening', 'Second'] })
+  const book = await seedBook(h, { 'Chapter One': ['Opening', 'Second'] }, 'Spec', false)
   await dismissTour(h.page)
-  await enterWriting(h.page)
+  await h.page.evaluate(() => {
+    const shell = window.novalistStores.shell.getState()
+    shell.setPaneWritingScope(shell.activePaneId, 'scene')
+  })
   const entity = await h.rpc<{ id: string }>('entities/create', ['character', NAME])
   await h.page.evaluate(() => window.novalistStores.codex.getState().refresh())
   const chapter = book.chapters[0]
   await h.rpc('scenes/write', [chapter.guid, chapter.scenes[0].id, `<p>${prose}</p>`, prose])
+  await enterWriting(h.page)
   await h.page.locator('.binder-scene-row').first().click()
   await expect(h.page.frameLocator('.editor-frame').locator('#editor')).toContainText(prose)
   await expect(h.page.locator('.ctx-stats')).toBeVisible()
@@ -23,7 +27,7 @@ async function holdSceneWrites(page: Page) {
     let release!: () => void
     const pending = new Promise<void>((resolve) => { release = resolve })
     window.novalistRpc.request = async <T,>(method: string, params?: unknown): Promise<T> => {
-      if (method === 'scenes/write') await pending
+      if (method === 'writing/commit') await pending
       return original<T>(method, params)
     }
     ;(window as unknown as { releaseContextWrites: () => void }).releaseContextWrites = () => {
@@ -50,12 +54,23 @@ test('Context follows added and removed names before the scene is saved', async 
     await h.page.keyboard.type(` ${NAME} arrived.`)
     await expect(editor).toContainText(NAME)
     await expect(h.page.locator('.ctx-card-name')).toHaveText(NAME, { timeout: 10_000 })
+    await expect(h.page.locator('.status-stats > span').first()).toHaveText('7 words')
     const saved = await h.rpc<{ html: string }>('scenes/read', [chapter.guid, chapter.scenes[0].id])
     expect(saved.html).not.toContain(NAME)
     await h.page.keyboard.press('ControlOrMeta+A')
     await h.page.keyboard.type('The door stood open.')
+    await expect(editor.locator('[data-writing-scene]')).toHaveText('The door stood open.')
+    const readLiveHtml = () => h.page.evaluate(({ guid, id }) => {
+      const state = window.novalistStores.project.getState()
+      return state.getWritingRegistry()!.getSnapshot({ bookId: state.activeBookId!, draftId: state.activeDraftId!, chapterGuid: guid, sceneId: id })!.html
+    }, { guid: chapter.guid, id: chapter.scenes[0].id })
+    await expect.poll(async () => (await readLiveHtml()).replace(/<[^>]+>/g, '')).toBe('The door stood open.')
+    const liveHtml = await readLiveHtml()
+    const analyzed = await h.rpc<{ analysis: { wordCount: number } }>('context/analyze', [chapter.guid, chapter.scenes[0].id, liveHtml])
+    expect(analyzed.analysis.wordCount, liveHtml).toBe(4)
     await expect(h.page.locator('.ctx-card')).toHaveCount(0)
     await expect(h.page.locator('.ctx-stats')).toContainText('4 words')
+    await expect(h.page.locator('.status-stats > span').first()).toHaveText('4 words')
   } finally {
     await releaseSceneWrites(h.page)
     await h.close()
@@ -208,7 +223,7 @@ test('Context follows unsaved manuscript prose rather than the retained scene ed
   try {
     const { chapter } = await setup(h)
     await h.page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
-    const prose = h.page.frameLocator('iframe[src*="manuscript-editor"]').locator('.scene-editor').first()
+    const prose = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${chapter.scenes[0].id}"]`).first()
     await expect(prose).toContainText('The door stood open.')
     await holdSceneWrites(h.page)
     await prose.click()

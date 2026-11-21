@@ -1,5 +1,9 @@
 # Use a packet relay without project storage
 
+The user superseded the relay-only restriction on 2026-11-08 with
+[ADR 0008](0008-persistent-and-relay-collaboration.md). The packet-only guarantees
+below still apply to Relay server mode; Persistent server is a separate choice.
+
 The user's clarification on 2026-10-22 supersedes ADRs 0003 and 0004 wherever
 they require server-persisted projects or owner-offline joining.
 

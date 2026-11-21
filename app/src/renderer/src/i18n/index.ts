@@ -93,14 +93,18 @@ export function registerUserLocales(locales: UserLocale[]): void {
  * under an icon. Screen readers and spell-checking read it too.
  */
 function announceLanguage(language: string): void {
-  if (typeof document !== 'undefined') document.documentElement.lang = language
+  if (typeof document === 'undefined') return
+  document.documentElement.lang = language
+  document.documentElement.dir = i18next.dir(language)
 }
 
 i18next.on('languageChanged', announceLanguage)
 
+const initialLanguages: Record<string, string> = { ar: 'ar', de: 'de', zh: 'zh-CN' }
+
 void i18next.use(initReactI18next).init({
   resources,
-  lng: navigator.language.startsWith('de') ? 'de' : navigator.language.startsWith('zh') ? 'zh-CN' : 'en',
+  lng: initialLanguages[navigator.language.toLowerCase().split('-')[0]] ?? 'en',
   fallbackLng: 'en',
   keySeparator: false,
   nsSeparator: false,

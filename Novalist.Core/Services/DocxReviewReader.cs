@@ -165,10 +165,10 @@ public static class DocxReviewReader
                 if (id != null && open.Remove(id, out var text))
                     anchors[id] = text.ToString().Trim();
             }
-            else if (node.Name == W + "t" && open.Count > 0)
+            else if (open.Count > 0 && node.Name != W + "delText" && RunText(node) is { } text)
             {
                 foreach (var buffer in open.Values)
-                    buffer.Append(node.Value);
+                    buffer.Append(text);
             }
         }
 
@@ -187,10 +187,11 @@ public static class DocxReviewReader
             if (kind == null)
                 continue;
 
-            // Deleted runs carry their text in w:delText, not w:t.
-            var text = kind == "delete"
-                ? string.Concat(element.Descendants(W + "delText").Select(t => t.Value))
-                : string.Concat(element.Descendants(W + "t").Select(t => t.Value));
+            // Deleted runs carry their text in w:delText, not w:t; a line
+            // break inside either is a w:br or w:cr between them.
+            var text = string.Concat(element.Descendants()
+                .Where(d => kind == "delete" ? d.Name != W + "t" : d.Name != W + "delText")
+                .Select(RunText));
 
             if (string.IsNullOrWhiteSpace(text))
                 continue;
@@ -206,6 +207,16 @@ public static class DocxReviewReader
 
         return result;
     }
+
+    /// <summary>
+    /// What one element of a run contributes to the text: its characters for
+    /// text, a newline for a line break (Shift+Enter in Word, and what
+    /// Novalist writes for one), and nothing for anything else.
+    /// </summary>
+    private static string? RunText(XElement node) =>
+        node.Name == W + "t" || node.Name == W + "delText" ? node.Value
+        : node.Name == W + "br" || node.Name == W + "cr" ? "\n"
+        : null;
 
     /// <summary>Flattens a comment body's runs into plain text, one line per
     /// paragraph.</summary>

@@ -1,0 +1,20 @@
+name: .NET setup
+description: Install the .NET SDK and cache NuGet packages keyed on every project and props file, so a package version change always misses the exact key.
+inputs:
+  dotnet-version:
+    description: .NET SDK version to install.
+    default: 10.0.x
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/Directory.Build.props', 'dotnet-tools.json') }}
+        restore-keys: nuget-${{ runner.os }}-

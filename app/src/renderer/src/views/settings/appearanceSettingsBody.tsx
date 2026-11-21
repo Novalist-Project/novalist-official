@@ -1,6 +1,7 @@
 import { FolderOpen } from 'lucide-react'
 import { availableLanguages } from '../../i18n'
 import { DEFAULT_UI_SCALE, UI_SCALE_STEPS } from '../../stores/uiScaleStore'
+import { DirectionRestartNotice } from './DirectionRestartNotice'
 import { type SettingsBodyContext } from './settingsBodyContext'
 
 export function appearanceSettingsBody(context: SettingsBodyContext): React.ReactNode {
@@ -23,6 +24,7 @@ export function appearanceSettingsBody(context: SettingsBodyContext): React.Reac
           </option>
         ))}
       </select>
+      <DirectionRestartNotice t={t} />
       <label className="inspector-label" htmlFor="set-theme">
         {t('settings.theme')}
       </label>

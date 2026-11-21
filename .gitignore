@@ -104,7 +104,12 @@ certs/
 
 # Playwright run artifacts (the last-run marker was tracked by accident)
 app/test-results/
+app/playwright-report/
 test-results/
+app/.out/
+app/.*.log
+.artifacts/
+.coverage/
 
 # Python bytecode from the tools/ scripts.
 __pycache__/

@@ -130,6 +130,18 @@ public sealed partial class HostServices :
         _locServices[extensionId] = svc;
     }
 
+    /// <summary>Returns the extension's translation when <paramref name="text"/> is
+    /// one of its locale keys, otherwise <paramref name="text"/> unchanged.</summary>
+    internal string ResolveText(string extensionId, string text)
+        => _locServices.TryGetValue(extensionId, out var svc) && svc.TryResolve(text, out var resolved)
+            ? resolved
+            : text;
+
+    /// <summary>The language the extension's own strings are in right now; English
+    /// when it ships no translation for the interface language.</summary>
+    internal string ResolvedLanguage(string extensionId)
+        => _locServices.TryGetValue(extensionId, out var svc) ? svc.Language : "en";
+
     public void ShowNotification(string message)
     {
         NotificationRequested?.Invoke(message);

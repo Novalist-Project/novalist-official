@@ -125,7 +125,7 @@ export class FocusedField {
       await rpc.request('collaboration/writeField', [...this.params(focus), focus.value])
       focus.initial = focus.value
     }
-    await rpc.request('collaboration/releaseField', this.params(focus))
+    if (focus.granted) await rpc.request('collaboration/releaseField', this.params(focus))
     if (this.current === focus) {
       this.current = null
       const value = this.storedRevision > focus.storedRevision ? this.storedValue : focus.value

@@ -8,6 +8,7 @@ import type { EditorHandlerContext, EditorMessageHandlers } from './editorMessag
 
 export function createEditorProofingMessages(context: EditorHandlerContext): EditorMessageHandlers {
   const { editorRef } = context
+  let readabilityRequest: AbortController | null = null
   return {
     grammarStatusChanged: () => {
       const editor = editorRef.current
@@ -43,11 +44,21 @@ export function createEditorProofingMessages(context: EditorHandlerContext): Edi
       })
     },
     readabilityRequest: (message) => {
+      const editor = editorRef.current
+      if (!editor) return
+      readabilityRequest?.abort()
+      const request = new AbortController()
+      readabilityRequest = request
+      const requestId = typeof message.requestId === 'number' ? message.requestId : undefined
+      const sceneId = message.sceneId
+      const current = (): boolean => !request.signal.aborted && editorRef.current === editor &&
+        (!sceneId || editor?.getWritingSelection()?.focus.sceneId === sceneId)
       void rpc
         .request<{ level: string }[]>('style/sentenceReadability', [
           String(message.plainText ?? '')
-        ])
+        ], { signal: request.signal })
         .then((sentences) => {
+          if (!current()) return
           // Only the two hard bands are painted. Tinting every sentence
           // turns the page into a heat map you stop reading; what a writer
           // needs is the handful of sentences that fight the reader.
@@ -56,10 +67,10 @@ export function createEditorProofingMessages(context: EditorHandlerContext): Edi
             JSON.stringify({
               sentences: sentences.filter((s) => s.level in colors),
               colors
-            })
+            }), requestId
           )
         })
-        .catch(() => editorRef.current?.setReadability('{"sentences":[]}'))
+        .catch(() => { if (current()) editor.setReadability('{"sentences":[]}', requestId) })
     }
   }
 }

@@ -137,9 +137,8 @@ test('entity peek fades after its data loads and releases interaction when close
   const h = await launchApp('nl-motion-entity-peek-')
   try {
     await h.page.emulateMedia({ reducedMotion: 'no-preference' })
-    const book = await seedBook(h, { Opening: ['Arrival'] })
+    const book = await seedBook(h, { Opening: ['Arrival'] }, 'Peek motion fixture', false)
     await dismissTour(h.page)
-    await enterWriting(h.page)
     await h.page.setViewportSize({ width: 1420, height: 900 })
     await h.rpc('entities/create', ['character', 'Mira Vance'])
     await h.rpc('scenes/write', [book.chapters[0].guid, book.chapters[0].scenes[0].id, '<p>Mira Vance entered.</p>', 'Mira Vance entered.'])

@@ -21,13 +21,16 @@ public sealed partial class ScenesRpc
         {
             foreach (var scene in projects.GetScenesForChapter(chapter.Guid))
             {
+#if NOVALIST_COLLABORATION
+                if (await _workspace.ReadSharedScenePathAsync(projects.GetSceneFilePath(chapter, scene), scene.Id, CancellationToken.None) is not null) continue;
+#endif
                 // A cloud file temporarily absent is not an empty manuscript.
                 if (!await _workspace.FileService.ExistsAsync(projects.GetSceneFilePath(chapter, scene))) continue;
                 var html = await projects.ReadSceneContentAsync(chapter, scene);
                 var wordCount = Workspace.CountWords(TextDiff.StripHtml(html));
-                counts.Add(new(scene.Id, wordCount));
-                if (wordCount != scene.WordCount) updates.Add((scene, wordCount));
                 var hash = ContentHasher.Hash(html);
+                counts.Add(new(scene.Id, wordCount) { Hash = hash });
+                if (wordCount != scene.WordCount) updates.Add((scene, wordCount));
                 if (known[(chapter.Guid, scene.Id)].Any(version => version.Hash != hash))
                     changes.Add(new(chapter.Guid, scene.Id, html, hash, wordCount));
             }
@@ -42,6 +45,9 @@ public sealed partial class ScenesRpc
 }
 
 public sealed record SceneVersionDto(string ChapterGuid, string SceneId, string Hash);
-public sealed record RefreshedSceneCountDto(string SceneId, int WordCount);
+public sealed record RefreshedSceneCountDto(string SceneId, int WordCount)
+{
+    public string Hash { get; init; } = string.Empty;
+}
 public sealed record SceneDiskChangeDto(string ChapterGuid, string SceneId, string Html, string Hash, int WordCount);
 public sealed record SceneRefreshDto(IReadOnlyList<RefreshedSceneCountDto> Counts, IReadOnlyList<SceneDiskChangeDto> Changes);

@@ -22,6 +22,11 @@ export interface ExtensionWebView {
   mode?: string
   entry: string
   folderPath: string
+  /**
+   * The language the extension's strings are in: the interface language when
+   * the extension ships it, otherwise English. The panel is laid out for it.
+   */
+  language: string
 }
 
 export interface ExtensionInfo {

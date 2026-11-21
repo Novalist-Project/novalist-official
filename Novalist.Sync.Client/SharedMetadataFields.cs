@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -54,8 +53,10 @@ public static partial class SharedMetadataFields
     }
 
     public static JsonNode? Read(JsonObject root, SharedFieldBinding binding)
+        => ReadTarget(Target(root, binding), binding);
+
+    internal static JsonNode? ReadTarget(JsonObject? target, SharedFieldBinding binding)
     {
-        var target = Target(root, binding);
         var (container, key) = Property(binding.Key);
         return container is null ? target?[key] : (target?[container] as JsonObject)?[key];
     }
@@ -133,12 +134,4 @@ public static partial class SharedMetadataFields
     private static IEnumerable<JsonObject> Scenes(JsonObject root) => (root["chapters"] as JsonObject)?.SelectMany(chapter =>
         (chapter.Value as JsonArray)?.OfType<JsonObject>() ?? []) ?? [];
 
-    internal static async Task<string> ReadAsync(string root, SharedFieldBinding binding, bool verifySource, CancellationToken ct)
-    {
-        var bytes = await File.ReadAllBytesAsync(SharedProjectPath.Resolve(root, binding.Path), ct);
-        if (verifySource && !string.Equals(binding.SourceSha256, Convert.ToHexStringLower(SHA256.HashData(bytes)), StringComparison.OrdinalIgnoreCase))
-            throw new IOException("Shared metadata changed during capture. Its local edits have been kept.");
-        var entity = JsonNode.Parse(bytes) as JsonObject ?? throw new InvalidDataException("Invalid shared metadata.");
-        return Read(entity, binding)?.ToJsonString() ?? "null";
-    }
 }

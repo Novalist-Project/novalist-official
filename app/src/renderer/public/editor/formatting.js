@@ -105,6 +105,44 @@ function alignJustify() {
     notifyFormattingChanged();
 }
 
+/**
+ * Sets the explicit text direction of the selected paragraphs, or with 'auto'
+ * hands them back to their content. Alignment is left alone: its default
+ * (start) follows the direction by itself.
+ */
+function setParagraphDirection(direction) {
+    if (!['ltr', 'rtl', 'auto'].includes(direction)) return;
+    window.NovalistEditorState.editor.focus({ preventScroll: true });
+    const blocks = selectedBlocks();
+    if (blocks.length === 0) return;
+    for (const block of blocks) {
+        if (direction === 'auto') {
+            block.style.removeProperty('direction');
+            if (block.getAttribute('style') === '') block.removeAttribute('style');
+            if (!block.hasAttribute('data-nv-auto-direction')) block.removeAttribute('dir');
+            else block.setAttribute('dir', 'auto');
+        } else {
+            block.style.direction = direction;
+            if (block.hasAttribute('dir') && !block.hasAttribute('data-nv-auto-direction')) block.setAttribute('dir', direction);
+            releaseInnerDirection(block);
+        }
+        window.applyProseDirection(block);
+    }
+    window.refreshProseDirection();
+    notifyFormattingChanged();
+    window.NovalistEditorState.editor.dispatchEvent(new Event('input'));
+}
+
+// The items of a list each follow their own content until the list is given a
+// direction; from then on they inherit it, as they do once the scene is reopened.
+function releaseInnerDirection(block) {
+    for (const inner of block.querySelectorAll('[data-nv-auto-direction]')) {
+        if (inner.style.direction === 'ltr' || inner.style.direction === 'rtl') continue;
+        inner.removeAttribute('data-nv-auto-direction');
+        inner.removeAttribute('dir');
+    }
+}
+
 /** Block elements (top-level children of the editor) touched by the selection. */
 function selectedBlocks() {
     const selection = window.getSelection();
@@ -133,11 +171,12 @@ function getParagraphStyle() {
         return '';
     };
     const first = styleOf(blocks[0]);
-    return blocks.every((b) => styleOf(b) === first) ? first : '';
+    return blocks.every((b) => styleOf(b) === first) ? first : 'mixed';
 }
 
 /** Applies a named paragraph style to the selection; '' clears it. */
 function setParagraphStyle(style) {
+    if (!['', 'heading', 'subheading', 'blockquote', 'poetry'].includes(style)) return;
     window.NovalistEditorState.editor.focus({ preventScroll: true });
     const blocks = selectedBlocks();
     if (blocks.length === 0) return;
@@ -172,6 +211,35 @@ function toggleNumberList() {
 
 // ── Formatting State ────────────────────────────────────────────
 
+// What the writer sees: start and end resolve against the block's own direction.
+function getAlignment() {
+    const anchor = window.getSelection()?.anchorNode;
+    const block = anchor && window.blockOf(anchor);
+    if (!block) return 'left';
+    const style = getComputedStyle(block);
+    const rtl = style.direction === 'rtl';
+    switch (style.textAlign) {
+        case 'center': return 'center';
+        case 'right': return 'right';
+        case 'justify': return 'justify';
+        case 'end': return rtl ? 'left' : 'right';
+        case 'start': return rtl ? 'right' : 'left';
+        default: return 'left';
+    }
+}
+
+// The direction the caret's paragraph actually reads in, explicit or not. In a
+// list that is the item the caret is in, which can differ from its neighbours.
+function getDirection() {
+    const anchor = window.getSelection()?.anchorNode;
+    const block = anchor && window.blockOf(anchor);
+    if (!block) return 'ltr';
+    const element = anchor.nodeType === Node.ELEMENT_NODE ? anchor : anchor.parentElement;
+    const item = element?.closest('li');
+    const paragraph = item && block.contains(item) ? item : block;
+    return getComputedStyle(paragraph).direction === 'rtl' ? 'rtl' : 'ltr';
+}
+
 function getFormattingState() {
     const selection = window.getSelection();
     const hasSelection = !!selection && !selection.isCollapsed && selection.toString().trim() !== '';
@@ -187,10 +255,7 @@ function getFormattingState() {
     const bold = document.queryCommandState('bold');
     const italic = document.queryCommandState('italic');
     const underline = document.queryCommandState('underline');
-    let alignment = 'left';
-    if (document.queryCommandState('justifyCenter')) alignment = 'center';
-    else if (document.queryCommandState('justifyRight')) alignment = 'right';
-    else if (document.queryCommandState('justifyFull')) alignment = 'justify';
+    const alignment = getAlignment();
     return {
         bold,
         italic,
@@ -201,6 +266,7 @@ function getFormattingState() {
         strikethrough: document.queryCommandState('strikeThrough'),
         highlight: !!highlightAncestor(window.getSelection() && window.getSelection().anchorNode),
         alignment,
+        direction: getDirection(),
         paragraphStyle: getParagraphStyle(),
         bulletList: document.queryCommandState('insertUnorderedList'),
         numberList: document.queryCommandState('insertOrderedList')
@@ -227,6 +293,7 @@ Object.assign(window, {
     selectedBlocks,
     getParagraphStyle,
     setParagraphStyle,
+    setParagraphDirection,
     toggleBulletList,
     toggleNumberList,
     getFormattingState,

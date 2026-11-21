@@ -4,15 +4,45 @@ Novalist is a writing workspace for books and their story worlds.
 
 ## Language
 
+**Manuscript**:
+The written content of a book, arranged in chapters and scenes.
+
+**Act**:
+An optional, ordered group of consecutive chapters within a manuscript. A chapter
+belongs to at most one act, and chapters may remain unassigned.
+
+**Writing scope**:
+The portion of a book shown for writing: one scene, one chapter, or the manuscript.
+Changing scope changes how much of the same writing is visible.
+
+**Scene synopsis**:
+A short summary of what happens in a scene, kept separate from its prose and working notes.
+
+**Scene break**:
+A structural boundary between scenes in a manuscript. It is distinct from a
+decorative separator or a paragraph's visual style.
+
+**Structure board**:
+A planning view that shows acts, chapters, and scene summaries in manuscript
+order. Moving an item changes the manuscript's reading order.
+
+**Filtered writing**:
+A writing view limited to chosen scenes or scenes matching a filter. Hidden
+scenes remain in the manuscript and are outside edits made in this view.
+
 **External project folder**:
 A Novalist project folder chosen by the writer outside the app's private storage. Edits are saved back to that folder, rather than imported into a separate project.
 
 **Linked cloud project**:
 A Novalist project connected to a folder in the writer's cloud account. The writer can work on a downloaded copy while offline, and pending changes are synchronized with that same folder when connected.
 **Hosted project**:
-A shared Novalist project whose connected clients communicate through a packet
-relay. The relay does not persist project data; joining requires an online host.
-See [ADR 0007](docs/adr/0007-relay-only-collaboration.md).
+A shared Novalist project whose collaborators communicate through a server.
+
+**Relay session**:
+A live collaboration session whose server forwards encrypted traffic without retaining project data. Joining requires an online host.
+
+**Persistent hosted project**:
+A shared project whose server retains encrypted project data and changes so invited writers can join and catch up while the owner is offline.
 
 **Steam collaboration session**:
 A shared project editing session joined through Steam that remains available while its hosting writer is online.

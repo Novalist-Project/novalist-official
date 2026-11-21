@@ -14,22 +14,10 @@ public partial class ExportService
             items.AppendLine(
                 $"      <li><a href=\"title.xhtml\">{EscapeXml(Label(options, "titlePage", "Title Page"))}</a></li>");
 
-        // Only matter the writer marked for the contents is listed. A copyright
-        // page in the table of contents is a mistake, not a feature.
         void ListMatter(string placement)
         {
-            for (var i = 0; i < options.Matter.Count; i++)
-            {
-                var matter = options.Matter[i];
-                if (!matter.InTableOfContents
-                    || !string.Equals(matter.Placement, placement, StringComparison.Ordinal))
-                    continue;
-
-                var label = string.IsNullOrEmpty(matter.Title)
-                    ? SpaceCamelCase(matter.Kind)
-                    : matter.Title;
-                items.AppendLine($"      <li><a href=\"matter-{i + 1}.xhtml\">{EscapeXml(label)}</a></li>");
-            }
+            foreach (var (file, label) in ListedMatter(options, placement))
+                items.AppendLine($"      <li><a href=\"{file}.xhtml\">{EscapeXml(label)}</a></li>");
         }
 
         ListMatter("Front");
@@ -77,13 +65,13 @@ public partial class ExportService
         return $"""
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE html>
-            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="{EscapeXml(options.Language)}">
+            {XhtmlRoot(options)}
             <head>
               <meta charset="UTF-8"/>
               <title>{EscapeXml(TocHeading(options))}</title>
             </head>
             <body>
-              <nav epub:type="toc" id="toc">
+              <nav epub:type="toc" role="doc-toc" id="toc">
                 <h1>{EscapeXml(TocHeading(options))}</h1>
                 <ol>
             {items}
@@ -92,6 +80,28 @@ public partial class ExportService
             </body>
             </html>
             """;
+    }
+
+    /// <summary>
+    /// The matter pages of one placement that belong in the contents, as the
+    /// file name (without extension) and the label to show. Only matter the
+    /// writer marked for the contents is listed - a copyright page in the table
+    /// of contents is a mistake, not a feature. Both contents files read from
+    /// here, so the EPUB 3 navigation and the EPUB 2 NCX cannot disagree.
+    /// </summary>
+    private static IEnumerable<(string File, string Label)> ListedMatter(
+        ExportOptions options, string placement)
+    {
+        for (var i = 0; i < options.Matter.Count; i++)
+        {
+            var matter = options.Matter[i];
+            if (!matter.InTableOfContents
+                || !string.Equals(matter.Placement, placement, StringComparison.Ordinal))
+                continue;
+
+            var label = string.IsNullOrEmpty(matter.Title) ? SpaceCamelCase(matter.Kind) : matter.Title;
+            yield return ($"matter-{i + 1}", label);
+        }
     }
 
     /// <summary>Ends a volume's nested list in the contents.</summary>
@@ -147,6 +157,22 @@ public partial class ExportService
             playOrder++;
         }
 
+        void ListMatter(string placement)
+        {
+            foreach (var (file, label) in ListedMatter(options, placement))
+            {
+                navPoints.AppendLine($"""
+                        <navPoint id="{file}" playOrder="{playOrder}">
+                          <navLabel><text>{EscapeXml(label)}</text></navLabel>
+                          <content src="{file}.xhtml"/>
+                        </navPoint>
+                    """);
+                playOrder++;
+            }
+        }
+
+        ListMatter("Front");
+
         var deepest = 1;
         for (var i = 0; i < chapters.Count; i++)
         {
@@ -173,6 +199,8 @@ public partial class ExportService
                 """);
             playOrder++;
         }
+
+        ListMatter("Back");
 
         return $"""
             <?xml version="1.0" encoding="UTF-8"?>

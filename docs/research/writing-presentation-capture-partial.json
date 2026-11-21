@@ -1,0 +1,412 @@
+{
+  "disposition": "diagnostic-oracle-failure; final real input publishes during debounce",
+  "record": {
+    "provenance": {
+      "sourceRevision": "d2ed92073787ff87e4724afba04b43ad0abce6f7",
+      "sourceDirty": false,
+      "sourceSha256": "fa3c60d545c4aaac9d8cab4f711db257d71881e1aa75f0a1101924871b89ba22",
+      "adaptations": {
+        "optimized": true,
+        "scoped": true,
+        "incrementalPeerInsert": true,
+        "contentVisibility": true,
+        "scenePagination": true,
+        "sceneCapture": true,
+        "sceneProofingMap": true
+      },
+      "distribution": "fixed-25000-word-long-scene",
+      "diagnostic": {
+        "layoutTelemetry": false,
+        "trace": false
+      }
+    },
+    "environment": {
+      "os": "win32",
+      "osRelease": "10.0.26300",
+      "arch": "x64",
+      "cpuModel": "AMD Ryzen 9 9950X3D 16-Core Processor          ",
+      "logicalCpus": 32,
+      "totalMemoryBytes": 33976696832,
+      "node": "v26.7.0",
+      "browser": "Chrome/148.0.7778.280",
+      "javascript": "14.8.178.38",
+      "engine": "electron",
+      "viewport": {
+        "width": 1424,
+        "height": 935,
+        "devicePixelRatio": 1
+      }
+    },
+    "acceptance": false,
+    "sceneCount": 1000,
+    "wordCount": 1000000,
+    "longSceneWords": 25000,
+    "workload": {
+      "inputsPerMode": 30,
+      "interInputDelayMs": 0,
+      "modeSettleMs": 0,
+      "tailObservationMs": 1000,
+      "telemetry": false,
+      "trace": false
+    },
+    "modes": [
+      {
+        "name": "normal",
+        "samplesMs": [
+          86.39999999850988,
+          21.600000001490116,
+          16.600000001490116,
+          16.30000000447035,
+          25.30000000447035,
+          14.5,
+          15.700000002980232,
+          17.899999998509884,
+          10.899999998509884,
+          16.200000002980232,
+          15.700000002980232,
+          13.600000001490116,
+          16.299999997019768,
+          21.700000002980232,
+          12,
+          18.19999999552965,
+          17.19999999552965,
+          13.399999998509884,
+          15.199999995529652,
+          19.399999998509884,
+          12.5,
+          16.399999998509884,
+          16.5,
+          14.399999998509884,
+          17.600000001490116,
+          20.799999997019768,
+          10.5,
+          15.399999998509884,
+          16.69999999552965,
+          14
+        ],
+        "firstInputMs": 86.39999999850988,
+        "subsequentInputSamplesMs": [
+          21.600000001490116,
+          16.600000001490116,
+          16.30000000447035,
+          25.30000000447035,
+          14.5,
+          15.700000002980232,
+          17.899999998509884,
+          10.899999998509884,
+          16.200000002980232,
+          15.700000002980232,
+          13.600000001490116,
+          16.299999997019768,
+          21.700000002980232,
+          12,
+          18.19999999552965,
+          17.19999999552965,
+          13.399999998509884,
+          15.199999995529652,
+          19.399999998509884,
+          12.5,
+          16.399999998509884,
+          16.5,
+          14.399999998509884,
+          17.600000001490116,
+          20.799999997019768,
+          10.5,
+          15.399999998509884,
+          16.69999999552965,
+          14
+        ],
+        "inputP95Ms": 25.30000000447035,
+        "capturesStart": [
+          0,
+          0
+        ],
+        "capturesAfterMode": [
+          0,
+          0
+        ],
+        "capturesAfterInputs": [
+          15,
+          14
+        ],
+        "capturesAfterTail": [
+          15,
+          15
+        ],
+        "inputObservations": [
+          {
+            "pane": 0,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              0,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              0,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              1,
+              1
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              0,
+              0
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 0,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          },
+          {
+            "pane": 0,
+            "sceneIndex": 999,
+            "serializedScenes": [
+              0,
+              1
+            ]
+          },
+          {
+            "pane": 1,
+            "sceneIndex": 500,
+            "serializedScenes": [
+              1,
+              0
+            ]
+          }
+        ],
+        "delayedObservation": {
+          "atInputEnd": [
+            {
+              "pages": 0,
+              "top": 922.796875,
+              "bottom": 939.796875,
+              "scrollTop": 737837
+            },
+            {
+              "pages": 0,
+              "top": 39.65625,
+              "bottom": 56.65625,
+              "scrollTop": 421147
+            }
+          ],
+          "atTailEnd": [
+            {
+              "pages": 0,
+              "top": 922.796875,
+              "bottom": 939.796875,
+              "scrollTop": 737837
+            },
+            {
+              "pages": 0,
+              "top": 39.65625,
+              "bottom": 56.65625,
+              "scrollTop": 421147
+            }
+          ],
+          "geometryEqual": true
+        }
+      }
+    ]
+  }
+}

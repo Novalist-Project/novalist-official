@@ -4,7 +4,7 @@ import { PROJECT_COMMANDS } from './projectCommands'
 import type { MainView } from '../stores/shellStore'
 import { useUiScaleStore } from '../stores/uiScaleStore'
 import { shell, project, projectOpen } from './commandContext'
-import { popOut } from './PaneHeader'
+import { popOut } from './UndockButton'
 import { printCurrentView } from './printView'
 
 
@@ -35,6 +35,7 @@ const NAV_VIEWS: MainView[] = [
   'write',
   'dashboard',
   'manuscript',
+  'structure',
   'narration',
   'timeline',
   'plotGrid',

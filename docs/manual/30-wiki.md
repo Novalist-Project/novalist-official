@@ -4,6 +4,8 @@ The Wiki is a read-only, Wikipedia-style reader over everything in your [Codex](
 
 Nothing here is a separate copy of your data. Every article is generated on the fly from the fields, sections, relationships, and images you already authored in the Codex, plus the scenes that mention the entity. Editing still happens in the Codex — the Wiki never changes anything.
 
+Article text, names and field values support right-to-left content alongside English. Paragraphs use their own direction, with quotation and list indentation following the text. Arabic introductory text keeps its letters joined rather than displaying a floating drop cap. Code remains left-to-right; navigation follows your selected interface language.
+
 Open **Wiki** from the **World** mode, under **In this book** in the mode panel, next to the Codex. On the phone app, it lives inside the **Codex** tab: tap the **Codex / Wiki** toggle at the top, and the Wiki opens as a full-width list — tap an entry to read its article, then use the back button to return to the list.
 
 ## The Wiki at a glance

@@ -58,7 +58,30 @@ public partial class ExportService
         return fits < spec.MinLinesTogether || lineCount - fits < spec.MinLinesTogether;
     }
 
+    /// <summary>
+    /// Wraps text to the width, starting a new line at every newline in it - a
+    /// line break the writer typed - and keeping an empty line between two
+    /// breaks in a row.
+    /// </summary>
     private static List<string> WordWrap(
+    string text,
+    PdfSharp.Drawing.XFont font,
+    PdfSharp.Drawing.XGraphics gfx,
+    double maxWidth)
+    {
+        var pieces = text.Split('\n');
+        if (pieces.Length == 1) return WrapLine(text, font, gfx, maxWidth);
+
+        var lines = new List<string>();
+        foreach (var piece in pieces)
+        {
+            var wrapped = WrapLine(piece, font, gfx, maxWidth);
+            lines.AddRange(wrapped.Count > 0 ? wrapped : [string.Empty]);
+        }
+        return lines;
+    }
+
+    private static List<string> WrapLine(
     string text,
     PdfSharp.Drawing.XFont font,
     PdfSharp.Drawing.XGraphics gfx,

@@ -101,18 +101,14 @@ public sealed class SharedCodexRenameTests
         await WriteAsync(owner, session.SessionId, name, "Rowan");
         await WriteAsync(owner, session.SessionId, surname, "Vale");
         await WriteAsync(owner, session.SessionId, surname, "Vale");
-        for (var attempt = 0; attempt < 100; attempt++)
+        await TestWait.UntilAsync(async () =>
         {
             var html = (await guest.Rpc.InvokeAsync<SceneContentDto>("scenes/read", chapter.Guid, scene.Id)).Html;
             var entry = await guest.Rpc.InvokeAsync<JsonElement>("entities/get", "character", id);
-            if (html.Contains("Rowan Vale arrives.", StringComparison.Ordinal) && entry.GetProperty("sections")[0].GetProperty("content").GetString() == "Rowan Vale returns.")
-            {
-                Assert.Equal("42", entry.GetProperty("age").GetString());
-                return;
-            }
-            await Task.Delay(20, ct);
-        }
-        Assert.Fail("The confirmed name did not reach shared prose.");
+            return html.Contains("Rowan Vale arrives.", StringComparison.Ordinal)
+                && entry.GetProperty("sections")[0].GetProperty("content").GetString() == "Rowan Vale returns.";
+        }, "the confirmed name to reach shared prose", ct);
+        Assert.Equal("42", (await guest.Rpc.InvokeAsync<JsonElement>("entities/get", "character", id)).GetProperty("age").GetString());
     }
 
     private static async Task WriteAsync(HostedDesktop desktop, Guid session, Guid item, string value)

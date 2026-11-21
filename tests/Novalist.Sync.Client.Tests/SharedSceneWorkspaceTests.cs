@@ -207,7 +207,7 @@ public sealed class SharedSceneWorkspaceTests : IAsyncDisposable
         sequences.Dispose();
         cipher.Dispose();
         signing.Dispose();
-        Directory.Delete(folder, recursive: true);
+        TestFiles.DeleteTree(folder);
     }
 
     // The desktop protocol is external to this .NET module; Yjs merging is

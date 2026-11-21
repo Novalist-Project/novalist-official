@@ -17,6 +17,15 @@ export interface DocumentRequest {
   sequence: number
   command: SceneCommand | { kind: 'capture'; id: string }
     | { kind: 'rename'; id: string; entityId: string; oldName: string; newName: string }
+    | { kind: 'merge'; id: string; base: Uint8Array; local: string; choices: MergeChoices | null }
+}
+
+export type MergeChoices = Record<string, 'local' | 'server'>
+
+export interface ProseMergeReply {
+  compatible: boolean
+  conflicts: { id: string; local: string; server: string }[]
+  update: Uint8Array | null
 }
 
 export interface SceneApplyResult {
@@ -26,4 +35,4 @@ export interface SceneApplyResult {
 
 export type DocumentReply =
   | { sequence: number; failed: true }
-  | { sequence: number; failed: false; snapshot?: SharedSceneSnapshot; application?: SceneApplyResult; update?: Uint8Array | null }
+  | { sequence: number; failed: false; snapshot?: SharedSceneSnapshot; application?: SceneApplyResult; update?: Uint8Array | null; merge?: ProseMergeReply }

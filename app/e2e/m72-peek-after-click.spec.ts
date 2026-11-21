@@ -29,7 +29,7 @@ type Box = { x: number; y: number; width: number; height: number }
 
 /** Follow the name while pagination and editor layout settle after typing. */
 async function hover(page: Page, target: Locator, measure: () => Promise<Box>): Promise<Box> {
-  await expect(page.frameLocator('.editor-frame').locator('#editor > .nv-page')).toHaveCount(1)
+  await expect(page.frameLocator('.editor-frame').locator('[data-writing-scene] > .nv-page')).toHaveCount(1)
   let box!: Box
   await expect.poll(async () => {
     // A card anchored before reflow can cover the name's new position. Leave
@@ -78,7 +78,7 @@ async function seedNamedScene(h: Harness): Promise<void> {
   await page.evaluate(() => window.novalistStores.codex.getState().refresh())
 
   await page.locator('.binder-scene-row').first().click()
-  await expect(page.frameLocator('.editor-frame').locator('#editor')).toBeVisible({
+  await expect(page.frameLocator('.editor-frame').locator('[data-writing-scene]')).toBeVisible({
     timeout: 30_000
   })
 }
@@ -89,7 +89,7 @@ test('a mention put in with @ still peeks after it has been clicked', async () =
   await seedNamedScene(h)
   const page = h.page
 
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
+  const editor = page.frameLocator('.editor-frame').locator('[data-writing-scene]')
   await editor.click()
   await page.keyboard.type('The door opened and ')
   await page.keyboard.type('@Mira', { delay: 60 })
@@ -122,7 +122,7 @@ test('a plain name in the prose still peeks after it has been clicked', async ()
   await seedNamedScene(h)
   const page = h.page
 
-  const editor = page.frameLocator('.editor-frame').locator('#editor')
+  const editor = page.frameLocator('.editor-frame').locator('[data-writing-scene]')
   await editor.click()
   await page.keyboard.type(`${NAME} stopped in the doorway and waited.`)
   await expect

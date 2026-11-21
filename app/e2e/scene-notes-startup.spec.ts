@@ -11,7 +11,7 @@ test('a missing saved notes position leaves Dashboard and Manuscript accessible 
   writeFileSync(join(profile, 'scene-notes-window.json'), JSON.stringify({ docked: true, dockVisible: true }))
   const h = await launchApp('nl-notes-missing-position-', {}, workDir)
   try {
-    const book = await seedBook(h, { Opening: ['Arrival'] })
+    const book = await seedBook(h, { Opening: ['Arrival'] }, 'Spec', false)
     await dismissTour(h.page)
     await h.page.evaluate(() => window.novalistStores.shell.getState().goHome())
     await expect(h.page.locator('.pane-leaf[data-view="dashboard"]')).toBeVisible()
@@ -21,7 +21,7 @@ test('a missing saved notes position leaves Dashboard and Manuscript accessible 
     const prose = '<p>The arrival begins the story.</p>'
     await h.rpc('scenes/write', [chapter.guid, chapter.scenes[0].id, prose, 'The arrival begins the story.'])
     await h.page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
-    const editor = h.page.frameLocator('iframe[title="manuscript"]').locator('.scene-editor')
+    const editor = h.page.frameLocator('iframe[title="editor"]').locator(`[data-writing-scene="${chapter.scenes[0].id}"]`)
     await expect(editor).toHaveText('The arrival begins the story.')
     await expect(h.page.locator('.notes-dock-targets')).toHaveCount(0)
 

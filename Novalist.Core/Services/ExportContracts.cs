@@ -124,6 +124,13 @@ public class ExportOptions
     public string CoverImagePath { get; set; } = string.Empty;
 
     /// <summary>
+    /// What the cover shows, written by the writer for a reader who cannot see
+    /// it. EPUB uses it as the cover's accessible name; empty means the writer
+    /// has not described it, and the book's accessibility summary says so.
+    /// </summary>
+    public string CoverAltText { get; set; } = string.Empty;
+
+    /// <summary>
     /// Leave out everything marked as not for readers.
     ///
     /// A world page that lists the villain's real name beside everything else
@@ -398,4 +405,12 @@ internal sealed class InlineSegment
     /// anchored to is the segment before it.
     /// </summary>
     public string? FootnoteText { get; set; }
+
+    /// <summary>
+    /// A line break inside the paragraph - what Shift+Enter writes, as against
+    /// Enter, which starts a new paragraph. <see cref="Text"/> is a newline, so
+    /// anything that only wants the words still sees the lines apart; each
+    /// format writes the break in its own form.
+    /// </summary>
+    public bool LineBreak { get; init; }
 }

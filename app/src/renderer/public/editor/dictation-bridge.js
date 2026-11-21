@@ -9,11 +9,17 @@ window.captureDictationAnchor = function (id) {
     const sel = window.getSelection();
     let range = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
     if (!range || !window.NovalistEditorState.editor.contains(range.startContainer)) {
+        if (window.NovalistWritingDocument?.enabled) {
+            dictationAnchor = null;
+            return false;
+        }
         range = document.createRange();
         range.selectNodeContents(window.NovalistEditorState.editor);
     }
     range.collapse(false);
-    dictationAnchor = { id, range };
+    const root = window.NovalistWritingDocument?.enabled ? window.writingSceneOf(range.startContainer) : null;
+    if (window.NovalistWritingDocument?.enabled && !root) return false;
+    dictationAnchor = { id, range, root, node: range.startContainer, offset: range.startOffset };
     return true;
 };
 
@@ -30,6 +36,13 @@ window.focusDictationCaret = function () {
 window.insertDictationText = function (id, text, paragraph, mergeClose, mergeOpen, tag) {
     if (!dictationAnchor || dictationAnchor.id !== id || window.NovalistEditorState.isComposing) return false;
     const range = dictationAnchor.range;
+    if (dictationAnchor.root) {
+        if (!dictationAnchor.root.isConnected || !dictationAnchor.root.contains(dictationAnchor.node)) return false;
+        if (range.startContainer === dictationAnchor.root && dictationAnchor.node !== dictationAnchor.root) {
+            range.setStart(dictationAnchor.node, dictationAnchor.offset);
+            range.collapse(true);
+        }
+    }
     if (!window.NovalistEditorState.editor.contains(range.startContainer)) return false;
     const sel = window.getSelection();
     const saved = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
@@ -76,6 +89,8 @@ window.insertDictationText = function (id, text, paragraph, mergeClose, mergeOpe
     else if (!document.execCommand('insertText', false, text)) return false;
     dictationAnchor.range = sel.getRangeAt(0).cloneRange();
     dictationAnchor.range.collapse(false);
+    dictationAnchor.node = dictationAnchor.range.startContainer;
+    dictationAnchor.offset = dictationAnchor.range.startOffset;
     if (saved && !following && window.NovalistEditorState.editor.contains(saved.startContainer)) {
         sel.removeAllRanges();
         sel.addRange(saved);
@@ -95,7 +110,8 @@ window.applyInlineActionResult = function (json) {
         if (payload.error) { window.NovalistEditorState.pendingInlineAction = null; return; }
 
         const range = window.NovalistEditorState.pendingInlineAction.range;
-        if (!window.NovalistEditorState.editor.contains(range.startContainer) || range.toString() !== pending.originalText) {
+        if (pending.endpoints?.some(({ root, node }) => !root?.isConnected || !root.contains(node)) ||
+            !window.NovalistEditorState.editor.contains(range.startContainer) || range.toString() !== pending.originalText) {
             window.NovalistEditorState.pendingInlineAction = null;
             return;
         }
@@ -105,7 +121,10 @@ window.applyInlineActionResult = function (json) {
             if (payload.asSuggestion || window.NovalistEditorState.suggestionMode) {
                 if (value) window.insertSuggested(value);
                 else window.markSelectionDeleted();
-            } else document.execCommand('insertText', false, value);
+            } else {
+                if (window.NovalistWritingDocument?.enabled) window.deleteWritingSelection();
+                document.execCommand('insertText', false, value);
+            }
         };
         window.NovalistEditorState.editor.focus();
 

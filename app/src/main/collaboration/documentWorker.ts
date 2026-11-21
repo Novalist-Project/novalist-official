@@ -1,5 +1,5 @@
 import { ProseDocumentHost } from './ProseDocumentHost'
-import type { DocumentReply, DocumentRequest } from '../../shared/collaborationDocuments'
+import type { DocumentReply, DocumentRequest, ProseMergeReply } from '../../shared/collaborationDocuments'
 import { InvalidSceneUpdate } from '../../renderer/src/collaboration/validateSceneUpdate'
 import { createHash } from 'node:crypto'
 
@@ -13,6 +13,7 @@ parent.on('message', ({ data }: { data: DocumentRequest }) => {
     const command = data.command
     let application: { accepted: boolean; rejected: string[] } | undefined
     let update: Uint8Array | null | undefined
+    let merge: ProseMergeReply | undefined
     switch (command.kind) {
       case 'seed': documents.seed(command.id, command.html); break
       case 'seedText': documents.seedText(command.id, command.text); break
@@ -30,9 +31,10 @@ parent.on('message', ({ data }: { data: DocumentRequest }) => {
       }
       case 'capture': break
       case 'rename': update = documents.rename(command.id, command.entityId, command.oldName, command.newName); break
+      case 'merge': merge = documents.merge(command.id, command.base, command.local, command.choices); break
       default: throw new Error('Unknown shared document operation.')
     }
-    reply = { sequence: data.sequence, failed: false, application, update }
+    reply = { sequence: data.sequence, failed: false, application, update, merge }
     if (command.kind === 'capture') reply.snapshot = {
       state: documents.state(command.id), deletions: documents.deletions(command.id),
       html: documents.isPlainText(command.id) ? null : documents.project(command.id),

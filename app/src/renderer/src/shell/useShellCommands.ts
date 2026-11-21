@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { buildDefaultHotkeys, installHotkeys, setHotkeysEnabled } from './hotkeys'
 import { buildMenuLabels, buildMenuTemplate, OPEN_RECENT } from './menuLayout'
 import { runCommand } from './commands'
+import { reportUiDirection } from '../stores/uiDirectionStore'
 import { runUpdateCheck } from './appUpdateActions'
 import type { AppUpdateState } from './appUpdateState'
 
@@ -33,6 +34,12 @@ export function useShellCommands(updates: AppUpdateState): void {
   useEffect(() => {
     window.novalist.setMenu?.(buildMenuTemplate(), buildMenuLabels())
   }, [isLoaded, language, hotkeyBindings, mainView, recentProjects])
+
+  // The native menu bar reads its direction once at launch, so main remembers
+  // the interface direction for the next one and reports whether it differs.
+  useEffect(() => {
+    void reportUiDirection(language)
+  }, [language])
 
   useEffect(() => {
     const onMessage = (event: MessageEvent): void => {

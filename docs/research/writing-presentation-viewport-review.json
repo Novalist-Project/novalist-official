@@ -1,0 +1,6237 @@
+{
+  "scope": "presentation review I3; matched checkpoints, no acceptance or complete root-cause claim",
+  "runs": [
+    {
+      "name": "passive-headless",
+      "recordSha256": "4d690ddf8edecbf32d0843fbb29a144d9984f540f87962992213dcbc34916f57",
+      "probeSha256": "353d54c56b5cce0abb080d779ade944a5bd3e638bc83bc9527ee1d76322e9834",
+      "record": {
+        "baselineRevision": "5672bf79",
+        "baselineFixtureSha256": "6fe4ce777205589d242742acbe900aa3a725aab77c353b4e6a364ef89fde25ed",
+        "currentProvenance": {
+          "sourceRevision": "a713f44a2974e1cc2769984b88ae119aa60838a8",
+          "sourceDirty": true,
+          "sourceSha256": "dae5d5f4aa160249fbca976719c34100c789c9baedacf25286b666aca053eacb",
+          "adaptations": {
+            "optimized": true,
+            "scoped": true,
+            "incrementalPeerInsert": true,
+            "contentVisibility": true,
+            "scenePagination": true,
+            "sceneCapture": true,
+            "sceneProofingMap": true
+          },
+          "distribution": "fixed-25000-word-long-scene",
+          "diagnostic": {
+            "layoutTelemetry": false,
+            "trace": false
+          }
+        },
+        "sceneCount": 24,
+        "wordCount": 24000,
+        "longSceneWords": 5000,
+        "setupWaitMs": 1000,
+        "observationMs": [
+          0,
+          200,
+          1000
+        ],
+        "instrumentation": "scrollTop accessor records existing writes; no added geometry scans beyond explicit checkpoints",
+        "environment": {
+          "os": "win32",
+          "osRelease": "10.0.26300",
+          "arch": "x64",
+          "cpuModel": "AMD Ryzen 9 9950X3D 16-Core Processor          ",
+          "logicalCpus": 32,
+          "totalMemoryBytes": 33976696832,
+          "node": "v26.7.0",
+          "browser": "HeadlessChrome/149.0.7827.55",
+          "javascript": "14.9.207.21",
+          "engine": "chromium-headless",
+          "viewport": {
+            "width": 1440,
+            "height": 1000,
+            "devicePixelRatio": 1
+          }
+        },
+        "preparations": [
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1343.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37394,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1342.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1336.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37394,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1335.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1344.3000000044703,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37394,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1344.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 45510.515625,
+                  "bottom": 45527.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1321.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37394,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1321.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 45510.515625,
+                  "bottom": 45527.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "page",
+            "away": false,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1430.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 232.5,
+                  "right": 232.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 76520,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1430.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ]
+          },
+          {
+            "mode": "page",
+            "away": false,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1378,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 232.5,
+                  "right": 232.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 76520,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1377.8000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ]
+          },
+          {
+            "mode": "page",
+            "away": true,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1429.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 232.5,
+                  "right": 232.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 76520,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1429.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103672.6875,
+                  "bottom": 103689.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ]
+          },
+          {
+            "mode": "page",
+            "away": true,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1384,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 232.5,
+                  "right": 232.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 76520,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1383.6000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103672.6875,
+                  "bottom": 103689.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ]
+          }
+        ],
+        "results": [
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1343.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37394,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1342.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1526.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1525.6999999955297,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1739.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1738.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2553.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2553.10000000149,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1336.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37394,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1335.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1504.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1503.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1717.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1717,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2532.60000000149,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2532.0999999940395,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.515625,
+                  "bottom": 506.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45021,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1344.3000000044703,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37394,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1344.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 45510.515625,
+                  "bottom": 45527.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1510.6000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1510.2999999970198,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46261.671875,
+                  "bottom": 46278.671875,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48952,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1726,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1725.7000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46261.671875,
+                  "bottom": 46278.671875,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48952,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2542.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2542.39999999851,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46261.671875,
+                  "bottom": 46278.671875,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48952,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1321.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37394,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1321.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 45510.515625,
+                  "bottom": 45527.515625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48200,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1522.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1522,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46261.671875,
+                  "bottom": 46278.671875,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48952,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1724.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1724.3999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46261.671875,
+                  "bottom": 46278.671875,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48952,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2532.10000000149,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 38145,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2531.7999999970198,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46261.671875,
+                  "bottom": 46278.671875,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 48952,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "page",
+            "away": false,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1430.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 232.5,
+                  "right": 232.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 76520,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1430.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1613.8000000044703,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1613.5999999940395,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1820.2000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1820.0999999940395,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2635.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 2635.2999999970198,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              }
+            ],
+            "writes": [
+              [
+                {
+                  "atMs": 1592.4000000059605,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 529,
+                  "requested": 568.75,
+                  "after": 569
+                }
+              ],
+              []
+            ]
+          },
+          {
+            "mode": "page",
+            "away": false,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1378,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 232.5,
+                  "right": 232.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 76520,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1377.8000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1550.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1550.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1768.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1767.7000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2584.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 2584.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.6875,
+                  "bottom": 506.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 103183,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              }
+            ],
+            "writes": [
+              [
+                {
+                  "atMs": 1535.6000000014901,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 529,
+                  "requested": 568.75,
+                  "after": 569
+                }
+              ],
+              []
+            ]
+          },
+          {
+            "mode": "page",
+            "away": true,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1429.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 232.5,
+                  "right": 232.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 76520,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1429.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103672.6875,
+                  "bottom": 103689.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1613.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1613,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 104965.703125,
+                  "bottom": 104982.703125,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 114445,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1821.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1821.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105542.125,
+                  "bottom": 105559.125,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 115021,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 254
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2637.7999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 2637.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105542.125,
+                  "bottom": 105559.125,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 115021,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 254
+              }
+            ],
+            "writes": [
+              [
+                {
+                  "atMs": 1593.1000000014901,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 529,
+                  "requested": 568.75,
+                  "after": 569
+                }
+              ],
+              []
+            ]
+          },
+          {
+            "mode": "page",
+            "away": true,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1384,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 232.5,
+                  "right": 232.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 76520,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1383.6000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103672.6875,
+                  "bottom": 103689.6875,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 113152,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1556.9000000059605,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1556.2999999970198,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 104965.703125,
+                  "bottom": 104982.703125,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 114445,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1767.6000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1767.2000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105542.125,
+                  "bottom": 105559.125,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 115021,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 254
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2583.60000000149,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 198.28125,
+                  "right": 198.28125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 78389,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 2583.2000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105542.125,
+                  "bottom": 105559.125,
+                  "left": 233.984375,
+                  "right": 233.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 115021,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 254
+              }
+            ],
+            "writes": [
+              [
+                {
+                  "atMs": 1541.6000000014901,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 529,
+                  "requested": 568.75,
+                  "after": 569
+                }
+              ],
+              []
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "passive-native",
+      "recordSha256": "29c9c0fe1c8cea297fae98b2d20192c59de7dfb21183c8d3f12cdad58befbb33",
+      "probeSha256": "353d54c56b5cce0abb080d779ade944a5bd3e638bc83bc9527ee1d76322e9834",
+      "record": {
+        "baselineRevision": "5672bf79",
+        "baselineFixtureSha256": "6fe4ce777205589d242742acbe900aa3a725aab77c353b4e6a364ef89fde25ed",
+        "currentProvenance": {
+          "sourceRevision": "a713f44a2974e1cc2769984b88ae119aa60838a8",
+          "sourceDirty": true,
+          "sourceSha256": "dae5d5f4aa160249fbca976719c34100c789c9baedacf25286b666aca053eacb",
+          "adaptations": {
+            "optimized": true,
+            "scoped": true,
+            "incrementalPeerInsert": true,
+            "contentVisibility": true,
+            "scenePagination": true,
+            "sceneCapture": true,
+            "sceneProofingMap": true
+          },
+          "distribution": "fixed-25000-word-long-scene",
+          "diagnostic": {
+            "layoutTelemetry": false,
+            "trace": false
+          }
+        },
+        "sceneCount": 24,
+        "wordCount": 24000,
+        "longSceneWords": 5000,
+        "setupWaitMs": 1000,
+        "observationMs": [
+          0,
+          200,
+          1000
+        ],
+        "instrumentation": "scrollTop accessor records existing writes; no added geometry scans beyond explicit checkpoints",
+        "environment": {
+          "os": "win32",
+          "osRelease": "10.0.26300",
+          "arch": "x64",
+          "cpuModel": "AMD Ryzen 9 9950X3D 16-Core Processor          ",
+          "logicalCpus": 32,
+          "totalMemoryBytes": 33976696832,
+          "node": "v26.7.0",
+          "browser": "Chrome/148.0.7778.280",
+          "javascript": "14.8.178.38",
+          "engine": "electron",
+          "viewport": {
+            "width": 1424,
+            "height": 935,
+            "devicePixelRatio": 1
+          }
+        },
+        "preparations": [
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1377.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1377.0999999940395,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1379.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1378.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1375.4000000059605,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1375.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46259.859375,
+                  "bottom": 46276.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1367.3000000044703,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1366.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46259.859375,
+                  "bottom": 46276.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "page",
+            "away": false,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1433,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 225,
+                  "right": 225
+                },
+                "scrollTop": 0,
+                "scrollHeight": 74698,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1432.7999999970198,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ]
+          },
+          {
+            "mode": "page",
+            "away": false,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1403.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 225,
+                  "right": 225
+                },
+                "scrollTop": 0,
+                "scrollHeight": 74698,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1403,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ]
+          },
+          {
+            "mode": "page",
+            "away": true,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1448.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 225,
+                  "right": 225
+                },
+                "scrollTop": 0,
+                "scrollHeight": 74698,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1448.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 101850.765625,
+                  "bottom": 101867.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ]
+          },
+          {
+            "mode": "page",
+            "away": true,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1397.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 225,
+                  "right": 225
+                },
+                "scrollTop": 0,
+                "scrollHeight": 74698,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1396.7000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 101850.765625,
+                  "bottom": 101867.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ]
+          }
+        ],
+        "results": [
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1377.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1377.0999999940395,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1553.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1553,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1769.6000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1769.2999999970198,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2586.7999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2586.39999999851,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1379.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1378.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1539.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1539.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1741.6000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1741.3999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2553.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2553.2000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1375.4000000059605,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1375.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46259.859375,
+                  "bottom": 46276.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1543.9000000059605,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1543.6000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1758.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1757.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2562,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2561.60000000149,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1367.3000000044703,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1366.8999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46259.859375,
+                  "bottom": 46276.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1535.8000000044703,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1535.1999999955297,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1743.8000000044703,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1743.1999999955297,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2555.9000000059605,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2555.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "page",
+            "away": false,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1433,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 225,
+                  "right": 225
+                },
+                "scrollTop": 0,
+                "scrollHeight": 74698,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1432.7999999970198,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1611.8999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1611.6000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1825.7999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1825.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2635.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 2635.10000000149,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              }
+            ],
+            "writes": [
+              [
+                {
+                  "atMs": 1596.1999999955297,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 529,
+                  "requested": 568.75,
+                  "after": 569
+                }
+              ],
+              []
+            ]
+          },
+          {
+            "mode": "page",
+            "away": false,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1403.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 225,
+                  "right": 225
+                },
+                "scrollTop": 0,
+                "scrollHeight": 74698,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1403,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1576.6000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1576.2999999970198,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1782.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1782.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2595.1999999955297,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 2595,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.765625,
+                  "bottom": 506.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 101361,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              }
+            ],
+            "writes": [
+              [
+                {
+                  "atMs": 1561.7999999970198,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 529,
+                  "requested": 568.75,
+                  "after": 569
+                }
+              ],
+              []
+            ]
+          },
+          {
+            "mode": "page",
+            "away": true,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1448.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 225,
+                  "right": 225
+                },
+                "scrollTop": 0,
+                "scrollHeight": 74698,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1448.1000000014901,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 101850.765625,
+                  "bottom": 101867.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1625.8999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1625.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103143.78125,
+                  "bottom": 103160.78125,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 112623,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1842.1000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1841.7000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103720.203125,
+                  "bottom": 103737.203125,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 113199,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 254
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2655.10000000149,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 2654.89999999851,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103720.203125,
+                  "bottom": 103737.203125,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 113199,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 254
+              }
+            ],
+            "writes": [
+              [
+                {
+                  "atMs": 1610.2000000029802,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 529,
+                  "requested": 568.75,
+                  "after": 569
+                }
+              ],
+              []
+            ]
+          },
+          {
+            "mode": "page",
+            "away": true,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1397.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 105,
+                  "bottom": 122,
+                  "left": 225,
+                  "right": 225
+                },
+                "scrollTop": 0,
+                "scrollHeight": 74698,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 253
+              },
+              {
+                "atMs": 1396.7000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 101850.765625,
+                  "bottom": 101867.765625,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 111330,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1577.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1576.9000000059605,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103143.78125,
+                  "bottom": 103160.78125,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 112623,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 253
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1792.6000000014901,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 1792,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103720.203125,
+                  "bottom": 103737.203125,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 113199,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 254
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2607.2999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 922.75,
+                  "bottom": 939.75,
+                  "left": 190.78125,
+                  "right": 190.78125
+                },
+                "scrollTop": 569,
+                "scrollHeight": 76567,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 254
+              },
+              {
+                "atMs": 2606.8000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 103720.203125,
+                  "bottom": 103737.203125,
+                  "left": 226.484375,
+                  "right": 226.484375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 113199,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 254
+              }
+            ],
+            "writes": [
+              [
+                {
+                  "atMs": 1558.8999999985099,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 529,
+                  "requested": 568.75,
+                  "after": 569
+                }
+              ],
+              []
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "alternating-native",
+      "recordSha256": "b4618618c470be990507e06ed598d46de5b22cb46ed6bb9eaf31dfb89f197f68",
+      "probeSha256": "1fa56736e06973ea0de10d55a2ca64acd5730134b5c489edaa81322837216a0f",
+      "record": {
+        "baselineRevision": "5672bf79",
+        "baselineFixtureSha256": "6fe4ce777205589d242742acbe900aa3a725aab77c353b4e6a364ef89fde25ed",
+        "currentProvenance": {
+          "sourceRevision": "a713f44a2974e1cc2769984b88ae119aa60838a8",
+          "sourceDirty": true,
+          "sourceSha256": "dae5d5f4aa160249fbca976719c34100c789c9baedacf25286b666aca053eacb",
+          "adaptations": {
+            "optimized": true,
+            "scoped": true,
+            "incrementalPeerInsert": true,
+            "contentVisibility": true,
+            "scenePagination": true,
+            "sceneCapture": true,
+            "sceneProofingMap": true
+          },
+          "distribution": "fixed-25000-word-long-scene",
+          "diagnostic": {
+            "layoutTelemetry": false,
+            "trace": false
+          }
+        },
+        "sceneCount": 24,
+        "wordCount": 24000,
+        "longSceneWords": 5000,
+        "alternate": true,
+        "setupWaitMs": 1000,
+        "observationMs": [
+          0,
+          200,
+          1000
+        ],
+        "instrumentation": "scrollTop accessor records existing writes; no added geometry scans beyond explicit checkpoints",
+        "environment": {
+          "os": "win32",
+          "osRelease": "10.0.26300",
+          "arch": "x64",
+          "cpuModel": "AMD Ryzen 9 9950X3D 16-Core Processor          ",
+          "logicalCpus": 32,
+          "totalMemoryBytes": 33976696832,
+          "node": "v26.7.0",
+          "browser": "Chrome/148.0.7778.280",
+          "javascript": "14.8.178.38",
+          "engine": "electron",
+          "viewport": {
+            "width": 1424,
+            "height": 935,
+            "devicePixelRatio": 1
+          }
+        },
+        "preparations": [
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1378.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1378,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1358.5999999940395,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1358.3000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "baseline",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1381.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1381.4000000059605,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46259.859375,
+                  "bottom": 46276.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "current",
+            "revealAttempts": 1,
+            "before": [
+              {
+                "atMs": 1358.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1358.3000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46259.859375,
+                  "bottom": 46276.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ]
+          }
+        ],
+        "results": [
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1378.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1378,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterEarlierEdit": [
+              {
+                "atMs": 1561.6999999955297,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1561.3000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1584.7999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1584.4000000059605,
+                "anchor": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "focus": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "rect": {
+                  "top": 6961.3125,
+                  "bottom": 6978.3125,
+                  "left": 33.828125,
+                  "right": 33.828125
+                },
+                "scrollTop": 29745,
+                "scrollHeight": 58536,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1793.5999999940395,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1793.2000000029802,
+                "anchor": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "focus": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "rect": {
+                  "top": -9063.6875,
+                  "bottom": -9046.6875,
+                  "left": 33.828125,
+                  "right": 33.828125
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 58536,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2606.6999999955297,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2606.3000000044703,
+                "anchor": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "focus": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "rect": {
+                  "top": -9063.6875,
+                  "bottom": -9046.6875,
+                  "left": 33.828125,
+                  "right": 33.828125
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 58536,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              [
+                {
+                  "atMs": 1564.3000000044703,
+                  "phase": "edit",
+                  "callback": "probe-or-other-script",
+                  "before": 29780,
+                  "requested": 29780,
+                  "after": 29780
+                },
+                {
+                  "atMs": 1569.7000000029802,
+                  "phase": "edit",
+                  "callback": "focus.restore",
+                  "before": 29780,
+                  "requested": 45770,
+                  "after": 45770
+                },
+                {
+                  "atMs": 1569.8000000044703,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 45770,
+                  "requested": 29745.03125,
+                  "after": 29745
+                },
+                {
+                  "atMs": 1664.9000000059605,
+                  "phase": "edit",
+                  "callback": "focus.restore",
+                  "before": 29745,
+                  "requested": 45770,
+                  "after": 45770
+                }
+              ]
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": false,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1358.5999999940395,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1358.3000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterEarlierEdit": [
+              {
+                "atMs": 1525.8999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1525.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 489.859375,
+                  "bottom": 506.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1548.7999999970198,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1548.4000000059605,
+                "anchor": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "focus": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "rect": {
+                  "top": 6961.3125,
+                  "bottom": 6978.3125,
+                  "left": 33.828125,
+                  "right": 33.828125
+                },
+                "scrollTop": 29745,
+                "scrollHeight": 58536,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1753,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1752.9000000059605,
+                "anchor": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "focus": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "rect": {
+                  "top": -9063.6875,
+                  "bottom": -9046.6875,
+                  "left": 33.828125,
+                  "right": 33.828125
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 58536,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2562.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2562.2000000029802,
+                "anchor": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "focus": {
+                  "sceneIndex": 12,
+                  "textOffset": 1
+                },
+                "rect": {
+                  "top": -9063.6875,
+                  "bottom": -9046.6875,
+                  "left": 33.828125,
+                  "right": 33.828125
+                },
+                "scrollTop": 45770,
+                "scrollHeight": 58536,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              [
+                {
+                  "atMs": 1528.5,
+                  "phase": "edit",
+                  "callback": "probe-or-other-script",
+                  "before": 29780,
+                  "requested": 29780,
+                  "after": 29780
+                },
+                {
+                  "atMs": 1533,
+                  "phase": "edit",
+                  "callback": "focus.restore",
+                  "before": 29780,
+                  "requested": 45770,
+                  "after": 45770
+                },
+                {
+                  "atMs": 1533.2000000029802,
+                  "phase": "edit",
+                  "callback": "recenterCaret",
+                  "before": 45770,
+                  "requested": 29745.03125,
+                  "after": 29745
+                },
+                {
+                  "atMs": 1638.8000000044703,
+                  "phase": "edit",
+                  "callback": "focus.restore",
+                  "before": 29745,
+                  "requested": 45770,
+                  "after": 45770
+                }
+              ]
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "baseline",
+            "before": [
+              {
+                "atMs": 1381.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1381.4000000059605,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46259.859375,
+                  "bottom": 46276.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterEarlierEdit": [
+              {
+                "atMs": 1549.8000000044703,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1549.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1551.2000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1550.8000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1761.4000000059605,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1761.2000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2563.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2563.5,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          },
+          {
+            "mode": "normal",
+            "away": true,
+            "version": "current",
+            "before": [
+              {
+                "atMs": 1358.3999999985099,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 13,
+                  "bottom": 30,
+                  "left": 105.5,
+                  "right": 105.5
+                },
+                "scrollTop": 0,
+                "scrollHeight": 36988,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1358.3000000044703,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 46259.859375,
+                  "bottom": 46276.859375,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49239,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterEarlierEdit": [
+              {
+                "atMs": 1518.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1518.3999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterInput": [
+              {
+                "atMs": 1520,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1519.7000000029802,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterPagination": [
+              {
+                "atMs": 1735.5,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 1735.3999999985099,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "afterTail": [
+              {
+                "atMs": 2546.7000000029802,
+                "anchor": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "focus": {
+                  "sceneIndex": 0,
+                  "textOffset": 2168
+                },
+                "rect": {
+                  "top": 764.15625,
+                  "bottom": 781.15625,
+                  "left": 568.28125,
+                  "right": 568.28125
+                },
+                "scrollTop": 0,
+                "scrollHeight": 37739,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": true,
+                "pages": 0
+              },
+              {
+                "atMs": 2546.60000000149,
+                "anchor": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "focus": {
+                  "sceneIndex": 23,
+                  "textOffset": 8
+                },
+                "rect": {
+                  "top": 47011.015625,
+                  "bottom": 47028.015625,
+                  "left": 106.984375,
+                  "right": 106.984375
+                },
+                "scrollTop": 0,
+                "scrollHeight": 49990,
+                "viewport": {
+                  "top": 0,
+                  "bottom": 980,
+                  "height": 980
+                },
+                "visible": false,
+                "pages": 0
+              }
+            ],
+            "writes": [
+              [],
+              []
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

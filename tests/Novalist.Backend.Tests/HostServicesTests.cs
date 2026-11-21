@@ -415,7 +415,7 @@ public class HostServicesTests
         using var done = new System.Threading.ManualResetEventSlim();
         var ran = false;
         h.PostToUI(() => { ran = true; done.Set(); });
-        Assert.True(done.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(done.Wait(TestWait.Deadline));
         Assert.True(ran);
     }
 

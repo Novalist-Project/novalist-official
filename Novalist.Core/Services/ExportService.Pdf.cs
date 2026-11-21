@@ -314,6 +314,8 @@ public partial class ExportService
             // PdfSharp lays text out a line at a time, with no way
             // to reserve the foot of the page mid-paragraph, so notes
             // are marked here and set at the end of the chapter.
+            // A typed line break stays a newline, which the wrapper turns into
+            // a new line of the same paragraph: no paragraph gap, no indent.
             var plainText = string.Concat(para.Select(seg =>
             {
                 if (seg.FootnoteText == null) return seg.Text;

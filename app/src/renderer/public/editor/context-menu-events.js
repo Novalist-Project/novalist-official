@@ -141,7 +141,7 @@ document.addEventListener('keydown', (e) => {
 // the wrapper too, and letting that through closed the menu in the same frame
 // it opened.
 window.NovalistEditorState.wrapper.addEventListener('scroll', () => {
-    if (Date.now() < window.NovalistEditorState.programmaticScrollUntil) return;
+    if (window.consumeWritingScroll()) return;
     window.hideContextMenu();
 });
 

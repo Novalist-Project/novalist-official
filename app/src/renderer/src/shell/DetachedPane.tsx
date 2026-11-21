@@ -16,15 +16,27 @@ import { SceneConflictDialog } from './SceneConflictDialog'
 import { UnsavedLeaveDialog } from './UnsavedLeaveDialog'
 import { useHostBridgeStore } from '../stores/hostBridgeStore'
 import { useSceneNotesContext } from './useSceneNotesContext'
+import type { DetachedPaneRequest } from '../../../shared/detachedPane'
+import type { PaneWindowContent } from '../../../shared/paneWindows'
+import { normalizeWritingDestination } from '../stores/writingLayoutMigration'
+import { useManuscriptStore } from '../stores/manuscriptStore'
+import { openRestoredScenes, restoredPanes, usePaneWindowReport } from './paneWindowState'
 
 /** What the window was torn off to show. */
-export interface DetachedRequest {
+export interface DetachedRequest extends DetachedPaneRequest {
   view: MainView
   /** The project the window it came from has open. */
   projectPath: string | null
   /** The scene it was showing, when the editor is what was torn off. */
   chapterGuid: string | null
   sceneId: string | null
+}
+
+/** Asked once per renderer; a remounted effect reuses the answer. */
+let recorded: Promise<PaneWindowContent | null> | null = null
+function recordedContent(): Promise<PaneWindowContent | null> {
+  recorded ??= window.novalist.paneWindowContent?.() ?? Promise.resolve(null)
+  return recorded
 }
 
 /**
@@ -53,24 +65,51 @@ export function DetachedPane({ request }: { request: DetachedRequest }): React.J
     const reportWidth = (): void => useShellStore.getState().setShellMetrics(window.innerWidth)
     reportWidth()
     window.addEventListener('resize', reportWidth)
-    const leaf = newLeaf(request.view)
-    useShellStore.setState({ panes: leaf, activePaneId: leaf.id, mainView: request.view })
+    const destination = normalizeWritingDestination(request.view, request.writingScope)
+    const view = destination.view === 'sceneNotes' ? 'write' : destination.view
+    const leaf = { ...newLeaf(view), writingScope: destination.writingScope }
+    useShellStore.setState({ panes: leaf, activePaneId: leaf.id, mainView: view, extView: request.extView ?? null })
     let disposed = false
     const stopReconnect = rpc.onReconnected(() => void hydrateWindow().catch(() => {}))
-    void rpc.connect().then(hydrateWindow).then(async () => {
+    // Every undocked window asks: a restored one gets its recorded content, and
+    // any window that reloads gets back what it last showed.
+    void recordedContent().then(async (content) => {
+      if (content) {
+        const { panes, activePaneId } = restoredPanes(content)
+        useShellStore.setState({ panes, activePaneId, extView: content.extView })
+        useShellStore.getState().setActivePane(activePaneId)
+      }
+      await rpc.connect()
+      await hydrateWindow()
+      return content
+    }).then(async (content) => {
       if (disposed) return
+      if (content) {
+        // A recorded window joins whatever project is open now. Its scenes
+        // come back only where this project still has them.
+        await openRestoredScenes(content, useShellStore.getState().panes)
+        return
+      }
       const project = useProjectStore.getState()
+      if (project.projectPath !== request.projectPath ||
+          (request.bookId && request.bookId !== project.activeBookId) ||
+          (request.draftId && request.draftId !== project.activeDraftId)) return
       // A detached view joins the current shared workspace; opening a second
       // project here would replace the workspace behind every other window.
       const chapter = project.chapters.find((item) => item.guid === request.chapterGuid)
       if (request.sceneId && chapter?.scenes.some((scene) => scene.id === request.sceneId)) {
         await project.openSceneIn(leaf.id, chapter.guid, request.sceneId)
       }
+      const current = useProjectStore.getState()
+      if (current.workspaceEpoch !== project.workspaceEpoch || current.projectPath !== project.projectPath) return
+      const present = new Set(current.chapters.flatMap(item => item.scenes.map(scene => scene.id)))
+      useManuscriptStore.setState({ composed: request.selectedSceneIds?.filter(id => present.has(id)) ?? null })
     }).catch((error) => {
       useHostBridgeStore.getState().pushToast(String(error))
     }).finally(() => { if (!disposed) setReady(true) })
     return () => { disposed = true; stopReconnect(); window.removeEventListener('resize', reportWidth) }
   }, [request])
+  usePaneWindowReport(ready)
 
   if (!ready) return <div className="main-placeholder">{t('shell.backendConnecting')}</div>
 

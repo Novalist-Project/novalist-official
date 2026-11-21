@@ -27,7 +27,9 @@ public partial class ExportService
             scenes++;
             var plain = StripHtml(scene.HtmlContent);
             characters += plain.Length;
-            words += CountWordsIn(plain);
+            // Words on either side of a line break or a paragraph end are two
+            // words, not one run together the way removing the tag leaves them.
+            words += CountWordsIn(TextDiff.StripBlockHtml(scene.HtmlContent));
             undescribed += ParseHtmlToBlocks(scene.HtmlContent)
                 .Count(b => b.ImagePath != null && b.ImageAlt.Length == 0);
         }

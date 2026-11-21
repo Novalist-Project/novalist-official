@@ -68,7 +68,7 @@ export type SettingsSection = 'appearance' | 'editor' | 'writing'
 
 export interface SettingsView {
   hasProject: boolean
-  global: Record<string, unknown>
+  global: Record<string, unknown> & { recentProjects?: { path: string; name: string; projectId?: string | null }[] }
   overrides: Record<string, unknown> | null
   /** Which sections the open project has pinned; null with no project open.
    * The source of truth for each section's override switch. */
@@ -100,6 +100,8 @@ async function applySideEffects(view: SettingsView): Promise<void> {
   const revision = ++appearanceRevision
   if (i18next.language !== view.effective.language) {
     await i18next.changeLanguage(view.effective.language)
+    const { useExtensionsStore } = await import('./extensionsStore')
+    if (useExtensionsStore.getState().loaded) await useExtensionsStore.getState().refreshViews()
   }
   if (revision !== appearanceRevision) return
   // Built-in, folder, and extension themes all resolve through the catalog; an

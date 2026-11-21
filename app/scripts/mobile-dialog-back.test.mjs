@@ -54,7 +54,7 @@ function testDependencies(dismiss, busy) {
   const project = { chapters: [], openChapterGuid: null, projectPath: 'project' }
   const wizard = { token: 'wizard', definition: { id: 'wizard', displayName: 'Wizard', steps: [{ id: 'name', title: 'Name', kind: 'text' }] } }
   return {
-    'react-i18next': { useTranslation: () => ({ t: key => key }) },
+    'react-i18next': { useTranslation: () => ({ t: key => key, i18n: { dir: () => 'ltr' } }) },
     './mapViewModel': { useMapViewModel: () => ({ maps: [], imagePicker: [], t: key => key, setImagePicker: dismiss }) },
     projectStore: { useProjectStore: select => select(project) },
     settingsStore: { useSettingsStore: select => select({}) },

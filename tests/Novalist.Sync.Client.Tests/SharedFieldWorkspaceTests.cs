@@ -44,14 +44,14 @@ public sealed class SharedFieldWorkspaceTests
             await Assert.ThrowsAsync<IOException>(() => workspace.CloseAsync(ct));
             Assert.Equal("42", localValue);
             diskFull = false;
-            await workspace.CloseAsync(ct).WaitAsync(TimeSpan.FromSeconds(3), ct);
+            await workspace.CloseAsync(ct).WaitAsync(TestWait.Deadline, ct);
             Assert.Equal("43", localValue);
             dispatch.SetResult();
         }
         finally
         {
             dispatch.TrySetResult();
-            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+            TestFiles.DeleteTree(folder);
         }
     }
 
@@ -97,7 +97,7 @@ public sealed class SharedFieldWorkspaceTests
             Assert.Equal("43", await restored.ReadAsync(first, ct));
             Assert.False(restored.RejectedUpdates);
         }
-        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+        finally { TestFiles.DeleteTree(folder); }
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public sealed class SharedFieldWorkspaceTests
             await reopened.AddAsync(new Dictionary<Guid, string> { [item] = localValue }, ct);
             Assert.Equal("43", localValue);
         }
-        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+        finally { TestFiles.DeleteTree(folder); }
     }
 
     private static async IAsyncEnumerable<SequencedUpdate> EmptyUpdates()

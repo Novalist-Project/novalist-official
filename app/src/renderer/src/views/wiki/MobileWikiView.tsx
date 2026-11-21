@@ -62,7 +62,7 @@ export function MobileWikiView(): React.JSX.Element {
       <div className="wiki-mobile">
         <div className="wiki-mobile-bar">
           <button type="button" className="wiki-mobile-back" onClick={() => clear()}>
-            <ChevronLeft size={18} strokeWidth={2} />
+            <ChevronLeft size={18} strokeWidth={2} className="icon-directional" />
             {t('shell.view.wiki')}
           </button>
         </div>

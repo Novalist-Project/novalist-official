@@ -49,8 +49,8 @@ public sealed class HostedAccountRpcTests
         var peer = new DesktopPeer(issuer) { HoldBrowser = true };
         using var desktop = Connect(desktopStream, peer);
         var signingIn = desktop.InvokeWithParameterObjectAsync<JsonElement>("collaboration/account/signIn", new { server = issuer.Authority }, ct);
-        await peer.BrowserOpened.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
-        Assert.True(await desktop.InvokeAsync<bool>("system/barrier").WaitAsync(TimeSpan.FromSeconds(5), ct));
+        await peer.BrowserOpened.Task.WaitAsync(TestWait.Deadline, ct);
+        Assert.True(await desktop.InvokeAsync<bool>("system/barrier").WaitAsync(TestWait.Deadline, ct));
         await desktop.InvokeAsync("collaboration/account/cancel");
         await Assert.ThrowsAnyAsync<Exception>(() => signingIn);
     }

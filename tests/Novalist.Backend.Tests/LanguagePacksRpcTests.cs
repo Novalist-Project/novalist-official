@@ -56,6 +56,15 @@ public sealed class LanguagePacksRpcTests : IDisposable
     }
 
     [Fact]
+    public void ArabicInterfaceDoesNotClaimAnAnalysisLexicon()
+    {
+        var arabic = Pack("ar");
+
+        Assert.Equal("bundled", arabic.Interface);
+        Assert.Equal("missing", arabic.Lexicon);
+    }
+
+    [Fact]
     public void AWritingLanguageWithNoSupportIsListedRatherThanOmitted()
     {
         // French is on the Quote Style list, so a writer can pick it. Leaving it

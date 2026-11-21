@@ -8,6 +8,17 @@ import type { PingResult } from '../rpc/contract'
 import { loadWorkspaceSnapshot } from './useWorkspaceWindow'
 
 export async function hydrateWindow(): Promise<void> {
+  const android = window.novalist.platform === 'android'
+  if (android && useProjectStore.getState().libraryStatus === 'failed') useProjectStore.setState({ libraryStatus: 'loading' })
+  try {
+    await loadWindowState(android)
+  } catch (error) {
+    if (android && useProjectStore.getState().libraryStatus === 'loading') useProjectStore.setState({ libraryStatus: 'failed' })
+    throw error
+  }
+}
+
+async function loadWindowState(android: boolean): Promise<void> {
   const ping = await rpc.request<PingResult>('system/ping')
   useShellStore.getState().setBackendVersion(ping.version)
   // User themes and locales first: settings may name one of them, and a theme
@@ -20,6 +31,11 @@ export async function hydrateWindow(): Promise<void> {
   // when the Settings view is first opened - so the app isn't stuck on the OS
   // language / default theme until then.
   await useSettingsStore.getState().load()
+  const project = useProjectStore.getState()
+  if (android && project.libraryStatus === 'loading' && !project.recentProjects.length) {
+    const saved = useSettingsStore.getState().view?.global.recentProjects
+    if (saved?.length) useProjectStore.setState({ recentProjects: saved })
+  }
   if (window.novalist.workspaceSnapshot) await loadWorkspaceSnapshot()
   else {
     const state = await rpc.request<ProjectStateDto>('project/getState')

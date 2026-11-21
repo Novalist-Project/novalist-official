@@ -35,7 +35,7 @@ test('a scene field defined in Settings becomes an editable outliner column', as
     await card.getByRole('button', { name: 'Save' }).click()
 
     // ── It becomes a column in the outliner, and typing in it sticks ──
-    await page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
+    await page.evaluate(() => window.novalistStores.shell.getState().setMainView('structure'))
     await page.getByRole('button', { name: 'Outliner', exact: true }).click()
 
     await expect(page.locator('.outliner-head')).toContainText('Tension', { timeout: 20_000 })

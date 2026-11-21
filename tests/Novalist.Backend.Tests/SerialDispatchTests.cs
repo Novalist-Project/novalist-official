@@ -157,18 +157,18 @@ public sealed class SerialDispatchTests : IDisposable
             var export = client.InvokeWithCancellationAsync<int>("export/run", [outcome == "failure"], cancellation.Token);
             try
             {
-                await target.HeldSlowEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                await target.HeldSlowEntered.Task.WaitAsync(TestWait.Deadline);
                 var save = client.InvokeAsync<int>("scenes/write");
-                await client.InvokeAsync<string[]>("export/formats").WaitAsync(TimeSpan.FromSeconds(5));
+                await client.InvokeAsync<string[]>("export/formats").WaitAsync(TestWait.Deadline);
                 Assert.False(save.IsCompleted);
                 if (outcome == "cancel") cancellation.Cancel();
                 else target.ReleaseHeldSlow.TrySetResult();
                 if (outcome == "cancel")
-                    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => export.WaitAsync(TimeSpan.FromSeconds(5)));
+                    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => export.WaitAsync(TestWait.Deadline));
                 else if (outcome == "failure")
-                    await Assert.ThrowsAsync<RemoteInvocationException>(() => export.WaitAsync(TimeSpan.FromSeconds(5)));
-                else await export.WaitAsync(TimeSpan.FromSeconds(5));
-                await save.WaitAsync(TimeSpan.FromSeconds(5));
+                    await Assert.ThrowsAsync<RemoteInvocationException>(() => export.WaitAsync(TestWait.Deadline));
+                else await export.WaitAsync(TestWait.Deadline);
+                await save.WaitAsync(TestWait.Deadline);
                 Assert.Equal(1, target.Peak);
             }
             finally { target.ReleaseHeldSlow.TrySetResult(); }
@@ -208,14 +208,14 @@ public sealed class SerialDispatchTests : IDisposable
                 // Do not ask the scheduler to make two short calls happen to
                 // overlap. Hold the serialized call open after proving it has
                 // entered, then require ping to answer while it is still there.
-                await target.HeldSlowEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-                await client.InvokeAsync<int>("system/ping").WaitAsync(TimeSpan.FromSeconds(5));
+                await target.HeldSlowEntered.Task.WaitAsync(TestWait.Deadline);
+                await client.InvokeAsync<int>("system/ping").WaitAsync(TestWait.Deadline);
             }
             finally
             {
                 target.ReleaseHeldSlow.TrySetResult();
             }
-            await slow.WaitAsync(TimeSpan.FromSeconds(5));
+            await slow.WaitAsync(TestWait.Deadline);
         }
 
         Assert.True(target.Peak > 1, "system/ping should have run alongside the slow call");

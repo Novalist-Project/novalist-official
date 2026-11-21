@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { useNarrationStore } from '../../stores/narrationStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { type NarrationState } from './useNarrationView'
+import { pushEditorLanguage } from '../editor/editorConfiguration'
+import { pushFrameColorScheme } from '../editor/frameColorScheme'
 
 /** The frame's side of the bridge. Same shape as the manuscript frame's. */
 export interface NarrationWindow extends Window {
@@ -24,6 +26,7 @@ export interface NarrationWindow extends Window {
   setFont(family: string, size: number): void
   setReadingComfort(lineHeight: number, letterSpacing: number): void
   setLanguage(lang: string): void
+  setInterfaceLanguage(language: string, direction: 'ltr' | 'rtl'): void
 }
 
 interface NarrationFrameProps extends Pick<NarrationState, 'book' | 'sceneNavigation' | 'speaking' | 'ready' | 'rendering' | 'selected'> {
@@ -40,6 +43,7 @@ interface NarrationFrameContext extends NarrationFrameProps {
 function pushNarrationBook({frameRef, readyRef, book, colours, voiceInfersDelivery, t}: NarrationFrameContext): void {
     const frame = frameRef.current?.contentWindow as NarrationWindow | null
     if (!frame || !readyRef.current) return
+    pushEditorLanguage(frame)
 
     const style = getComputedStyle(document.documentElement)
     const token = (name: string): string => style.getPropertyValue(name).trim()
@@ -54,6 +58,7 @@ function pushNarrationBook({frameRef, readyRef, book, colours, voiceInfersDelive
       token('--nl-scrollbar-thumb-hover'),
       token('--nl-scrollbar-thumb-active')
     )
+    pushFrameColorScheme(frame, token)
     const effective = useSettingsStore.getState().view?.effective
     if (effective) {
       frame.setFont(effective.editorFontFamily, effective.editorFontSize)
@@ -100,6 +105,13 @@ export function useNarrationFrame(props: NarrationFrameProps) {
   const {book, colours, sceneNavigation, speaking, ready, rendering, selected} = props
   const frameRef = useRef<HTMLIFrameElement>(null)
   const readyRef = useRef(false)
+  const { i18n } = useTranslation()
+  const proofingLanguage = useSettingsStore(state => state.view?.effective.grammarCheckLanguage)
+
+  useEffect(() => {
+    const frame = frameRef.current?.contentWindow as NarrationWindow | null
+    if (frame && readyRef.current) pushEditorLanguage(frame)
+  }, [i18n.language, proofingLanguage])
 
   const pushBook = (): void => pushNarrationBook({...props, frameRef, readyRef})
   // The listener is installed once, but the book and cast can finish loading

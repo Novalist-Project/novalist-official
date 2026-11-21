@@ -1,8 +1,9 @@
+using Novalist.Backend.Extensions;
 using Novalist.Core.Services;
 
 namespace Novalist.Backend;
 
-internal sealed class ExportAssetStaging(IFileService files) : IDisposable
+internal sealed class ExportAssetStaging(IFileService files, int cleanupAttempts = 10, int cleanupDelayMilliseconds = 100) : IDisposable
 {
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "novalist-export-" + Guid.NewGuid().ToString("N"));
     private readonly Dictionary<string, string> _paths = new(StringComparer.Ordinal);
@@ -23,8 +24,29 @@ internal sealed class ExportAssetStaging(IFileService files) : IDisposable
         return destination;
     }
 
+    /// <summary>
+    /// Removes the staging folder. The export has already been written by now,
+    /// so a file that something outside the export still holds (a virus scanner
+    /// or indexer, typically) is retried briefly and then left for the
+    /// operating system's temp cleanup instead of failing the export.
+    /// </summary>
     public void Dispose()
     {
-        if (Directory.Exists(_directory)) Directory.Delete(_directory, true);
+        for (var attempt = 1; Directory.Exists(_directory); attempt++)
+        {
+            try
+            {
+                Directory.Delete(_directory, true);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                if (attempt >= cleanupAttempts)
+                {
+                    Log.Warn($"Export staging folder left for temp cleanup: {exception.GetType().Name}");
+                    return;
+                }
+                Thread.Sleep(cleanupDelayMilliseconds);
+            }
+        }
     }
 }

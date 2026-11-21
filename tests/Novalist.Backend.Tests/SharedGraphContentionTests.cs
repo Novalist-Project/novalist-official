@@ -48,7 +48,7 @@ public sealed class SharedGraphContentionTests
         var rename = owner.Rpc.InvokeAsync("collaboration/writeField", shared.SessionId, firstName, firstFocus, "Miriam");
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
+            await entered.Task.WaitAsync(TestWait.Deadline, ct);
             var error = await Assert.ThrowsAsync<RemoteInvocationException>(() => guest.Rpc.InvokeAsync("collaboration/writeField", joined.SessionId, secondName, secondFocus, "Leo"));
             Assert.Contains("names or relationships", error.Message);
         }

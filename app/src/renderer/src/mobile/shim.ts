@@ -100,6 +100,11 @@ function requestBackendPort(): void {
 
 
 const hostCalls = new HostCallChannel(sendRaw)
+function syncHostVisibility(): void {
+  hostCalls.setVisible(document.visibilityState === 'visible')
+}
+window.addEventListener('visibilitychange', syncHostVisibility, true)
+syncHostVisibility()
 const closeCollaboration = installCollaborationHost(window, (id, ok, result) =>
   hostCall<void>('collaborationCompleted', [id, ok, result]))
 const backgroundSaves = new Set<() => Promise<void>>()
@@ -123,9 +128,7 @@ window.__novalistHostResult = (base64: string) => {
 }
 
 function hostCall<T>(method: string, args: unknown[]): Promise<T> {
-  const timeout = method.startsWith('pick') || method === 'shareExport'
-    ? 600_000 : method === 'readProjectAsset' ? 120_000 : 30_000
-  return hostCalls.request<T>(method, args, timeout)
+  return hostCalls.request<T>(method, args)
 }
 
 function notifyHost(method: string, args: unknown[]): void {
@@ -273,6 +276,14 @@ const novalist: Window['novalist'] = {
     notifyHost('endProjectAccess', [path])
   },
   openPaneWindow: () => Promise.resolve(),
+  // No undocked windows on mobile: nothing to report, list or restore.
+  reportPaneWindowState: () => {},
+  paneWindowContent: async () => null,
+  listPaneWindows: async () => [],
+  restorePaneWindows: () => Promise.resolve(),
+  restorePaneWindowSession: async () => 0,
+  reportMainPanes: () => {},
+  mainPaneSession: async () => null,
   registerExtensionRoots: () => Promise.resolve(),
   // Store-delivered updates: no self-update on mobile.
   checkAppUpdate: async () => null,

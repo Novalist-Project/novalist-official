@@ -94,6 +94,6 @@ public sealed class CertifiedSessionTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        TestFiles.DeleteTree(folder);
     }
 }

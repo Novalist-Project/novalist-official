@@ -19,10 +19,16 @@ function restoreDictationPosition(saved, textNodesChanged = false) {
     // A block-relative text offset also distinguishes empty paragraphs.
     const point = textNodesChanged && window.NovalistEditorState.editor.contains(saved.block)
         ? window.textPointInElement(saved.block, saved.textOffset) : saved;
-    if (!window.NovalistEditorState.editor.contains(point.node)) { window.NovalistEditorState.dictationAnchor = null; return; }
+    if (!window.NovalistEditorState.editor.contains(point.node) ||
+        (saved.anchor.root && (!saved.anchor.root.isConnected || !saved.anchor.root.contains(point.node)))) {
+        window.NovalistEditorState.dictationAnchor = null;
+        return;
+    }
     try {
         window.NovalistEditorState.dictationAnchor.range.setStart(point.node, point.offset);
         window.NovalistEditorState.dictationAnchor.range.collapse(true);
+        window.NovalistEditorState.dictationAnchor.node = point.node;
+        window.NovalistEditorState.dictationAnchor.offset = point.offset;
     } catch { window.NovalistEditorState.dictationAnchor = null; }
 }
 

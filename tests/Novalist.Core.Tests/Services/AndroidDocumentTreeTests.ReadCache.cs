@@ -168,7 +168,7 @@ public sealed partial class AndroidDocumentTreeTests
         });
         try
         {
-            await warmed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await warmed.Task.WaitAsync(TestWait.Deadline);
             fixture.Tree.ReadOverride = _ => throw new IOException("Provider failed");
             await Assert.ThrowsAsync<IOException>(() => fixture.Files.ReadTextAsync(path));
         }

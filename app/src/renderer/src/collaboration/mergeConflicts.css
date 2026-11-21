@@ -1,0 +1,23 @@
+.merge-conflict-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nl-space-tightest);
+  padding-bottom: var(--nl-space-sm);
+}
+
+.merge-conflict-label {
+  align-items: baseline;
+  display: flex;
+  font-size: var(--nl-font-ui);
+  gap: var(--nl-space-sm);
+}
+
+.merge-conflict-kind,
+.merge-conflict-missing {
+  color: var(--nl-text-subtle);
+  font-size: var(--nl-font-caption);
+}
+
+.merge-conflict-missing {
+  font-style: italic;
+}

@@ -41,6 +41,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   drafts: [],
   chapters: [],
   recentProjects: [],
+  libraryStatus: 'loading',
   openChapterGuid: null,
   openSceneId: null,
   setContextScene: (chapterGuid, sceneId) => {
@@ -204,6 +205,8 @@ useShellStore.subscribe((state, previous) => {
 })
 
 useProjectStore.subscribe(() => reportEditingScenes())
+window.addEventListener('focus', () => reportEditingScenes())
+window.addEventListener('blur', () => reportEditingScenes())
 
 export type { SceneDto, ChapterDto, ProjectStateDto, RecentProjectDto, SceneTabRef, EditorPaneState, SceneStructureMethod, EditingSceneClaim } from './projectTypes'
 export { prepareProjectLibrary } from './projectLibraryActions'

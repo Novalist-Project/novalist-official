@@ -50,7 +50,7 @@ export function clampWindowToDisplay(win: BrowserWindow): void {
 }
 
 export function createAppWindow(
-  geometry: Pick<BrowserWindowConstructorOptions, 'width' | 'height' | 'minWidth' | 'minHeight'>,
+  geometry: Pick<BrowserWindowConstructorOptions, 'x' | 'y' | 'width' | 'height' | 'minWidth' | 'minHeight'>,
   chrome: Pick<BrowserWindowConstructorOptions, 'parent' | 'frame' | 'titleBarStyle' | 'minimizable' | 'maximizable' | 'fullscreenable' | 'skipTaskbar'> = {}
 ): BrowserWindow {
   const iconPath = resolveIconPath()

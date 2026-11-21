@@ -6,20 +6,30 @@ interface ClosingWindow {
   focus(): void
 }
 
+export interface PreparedWindowClose {
+  commit(): Promise<void>
+  abort(): Promise<void>
+}
+
 /** A close is a transaction: every participant stays locked until all saves
  * and the main window's close backup succeed, or all participants resume. */
 export class WindowCloseCoordinator {
   private readonly windows = new Map<number, ClosingWindow>()
-  private readonly pending = new Map<number, { token: string; resolve(): void; reject(error: Error): void }>()
+  private readonly pending = new Map<number, { token: string; stage: CloseStage; resolve(): void; reject(error: Error): void }>()
   private active: Promise<void> | null = null
+  private readonly committedOwners = new Set<number>()
 
-  constructor(private readonly timeout = 15_000) {}
+  constructor(private readonly timeout = 15_000,
+    private readonly reportCompletionFailure = () => console.error('A closing window did not acknowledge completion.')) {}
 
   register(owner: number, window: ClosingWindow): void { this.windows.set(owner, window) }
   has(owner: number): boolean { return this.windows.has(owner) }
   remove(owner: number): void {
     this.windows.delete(owner)
-    this.pending.get(owner)?.resolve()
+    this.committedOwners.delete(owner)
+    const pending = this.pending.get(owner)
+    if (pending?.stage === 'commit') pending.reject(new Error('The closing window disconnected during committed cleanup.'))
+    else pending?.resolve()
     this.pending.delete(owner)
   }
   acknowledge(owner: number, token: string, saved: boolean): void {
@@ -32,30 +42,43 @@ export class WindowCloseCoordinator {
     }
   }
 
-  prepare(owners: number[], backupOwner?: number): Promise<void> {
-    // A detached close can be followed by a global quit/install. The latter
-    // must earn acknowledgements from its own complete participant set.
-    if (this.active) return this.active.catch(() => {}).then(() => this.prepare(owners, backupOwner))
+  prepare(owners: number[], backupOwner?: number): Promise<PreparedWindowClose> {
+    if (this.active) return this.active.then(() => this.prepare(owners, backupOwner))
+    const participants = [...new Set(owners)].filter(owner => !this.committedOwners.has(owner))
+    if (backupOwner !== undefined && !participants.includes(backupOwner)) backupOwner = undefined
     const token = randomUUID()
-    const run = async (): Promise<void> => {
-      try {
-        const results = await Promise.allSettled(owners.map((owner) => this.ask(owner, token, 'flush')))
-        const failure = results.find((result) => result.status === 'rejected')
-        if (failure?.status === 'rejected') throw failure.reason
-        if (backupOwner !== undefined) await this.ask(backupOwner, token, 'backup')
-      } catch (error) {
-        for (const owner of owners) this.windows.get(owner)?.send(token, 'abort')
-        throw error
-      }
+    let unlock!: () => void
+    const lock = new Promise<void>(resolve => { unlock = resolve })
+    this.active = lock
+    const finish = (): void => { if (this.active === lock) this.active = null; unlock() }
+    let decision: 'commit' | 'abort' | null = null
+    let completion: Promise<void> | null = null
+    const decide = (stage: 'commit' | 'abort'): Promise<void> => {
+      if (decision === 'abort' && stage === 'commit') return Promise.reject(new Error('The close preparation was cancelled.'))
+      if (completion) return completion
+      decision = stage
+      if (stage === 'commit') for (const owner of participants) this.committedOwners.add(owner)
+      completion = this.complete(participants, token, stage).finally(finish)
+      return completion
     }
-    const operation = run()
-    this.active = operation
-    void operation.finally(() => { if (this.active === operation) this.active = null }).catch(() => {})
-    return operation
+    return this.preflight(participants, token, backupOwner)
+      .then(() => ({ commit: () => decide('commit'), abort: () => decide('abort') }))
+      .catch(async error => { await decide('abort'); throw error })
   }
 
-  abort(owners: number[]): void {
-    for (const owner of owners) this.windows.get(owner)?.send('', 'abort')
+  private async preflight(owners: number[], token: string, backupOwner?: number): Promise<void> {
+    const flushed = await Promise.allSettled(owners.map(owner => this.ask(owner, token, 'flush')))
+    const failed = flushed.find(result => result.status === 'rejected')
+    if (failed?.status === 'rejected') throw failed.reason
+    if (backupOwner !== undefined) await this.ask(backupOwner, token, 'backup')
+    const released = await Promise.allSettled(owners.map(owner => this.ask(owner, token, 'release')))
+    const refused = released.find(result => result.status === 'rejected')
+    if (refused?.status === 'rejected') throw refused.reason
+  }
+
+  private async complete(owners: number[], token: string, stage: 'abort' | 'commit'): Promise<void> {
+    const results = await Promise.allSettled(owners.map(owner => this.ask(owner, token, stage)))
+    if (results.some(result => result.status === 'rejected')) this.reportCompletionFailure()
   }
 
   private ask(owner: number, token: string, stage: CloseStage): Promise<void> {
@@ -69,7 +92,7 @@ export class WindowCloseCoordinator {
         if (error) reject(error)
         else resolve()
       }
-      this.pending.set(owner, { token, resolve: () => finish(), reject: finish })
+      this.pending.set(owner, { token, stage, resolve: () => finish(), reject: finish })
       try { window.send(token, stage) }
       catch (error) { finish(error instanceof Error ? error : new Error(String(error))) }
     })
