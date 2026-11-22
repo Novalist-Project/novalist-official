@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Read and stamp CHANGELOG.md.
 
-Commands used by .github/workflows/release.yml:
+Commands used by the source checks and the desktop release workflow:
+
+  check  reject duplicate release headings before the notes are published.
 
   extract  print one release section's body - the release workflow feeds this to
            the GitHub release as its notes.
@@ -45,7 +47,24 @@ EMPTY_UNRELEASED = "## [Unreleased]\n\nNothing yet.\n\n---\n\n"
 def read(path: Path) -> list[str]:
     if not path.is_file():
         sys.exit(f"changelog: {path} not found")
-    return path.read_text(encoding="utf-8").splitlines(keepends=True)
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    headings: dict[str, int] = {}
+    for number, line in enumerate(lines, 1):
+        match = HEADING.match(line)
+        if not match:
+            continue
+        name = match["name"].lstrip("vV")
+        if name in headings:
+            sys.exit(
+                f"changelog: duplicate section '{name}' in {path} on lines {headings[name]} and {number}"
+            )
+        headings[name] = number
+    return lines
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    read(args.file)
+    return 0
 
 
 def find_section(lines: list[str], name: str) -> tuple[int, int]:
@@ -201,6 +220,11 @@ def main(argv: list[str] | None = None) -> int:
         "--file", type=Path, default=DEFAULT_FILE, help="path to CHANGELOG.md"
     )
     sub = parser.add_subparsers(dest="command", required=True)
+
+    check = sub.add_parser(
+        "check", help="check changelog headings for duplicate versions"
+    )
+    check.set_defaults(func=cmd_check)
 
     ex = sub.add_parser("extract", help="print a release section's body")
     group = ex.add_mutually_exclusive_group(required=True)

@@ -76,6 +76,18 @@ class ChangelogTests(unittest.TestCase):
         self.assert_success(result)
         self.assertEqual(result.stdout.strip(), "v3.5.1")
 
+    def test_duplicate_release_headings_stop_validation_extraction_and_stamping(self):
+        damaged = CHANGELOG.replace("## [3.5.1]", "## [v3.5.1]\n\n- Misplaced notes.\n\n## [3.5.1]")
+        self.path.write_text(damaged, encoding="utf-8")
+        for args in (("check",), ("extract", "--version", "3.5.1"),
+                     ("previous-tag", "--version", "3.5.3")):
+            with self.subTest(args=args):
+                result = self.run_cli(*args)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("duplicate section '3.5.1'", result.stderr)
+        self.assertNotEqual(self.stamp().returncode, 0)
+        self.assertEqual(self.path.read_text(encoding="utf-8"), damaged)
+
     def test_stamp_uses_published_baseline_and_preserves_previous_notes(self):
         self.assert_success(self.stamp())
         stamped = self.path.read_text(encoding="utf-8")

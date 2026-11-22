@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKS = [
+    ("Changelog headings", ["tools/changelog.py", "check"]),
     (
         "Locale doctor",
         ["tools/locale-doctor.py", "--target", "react", "--no-fail-on-dead"],
