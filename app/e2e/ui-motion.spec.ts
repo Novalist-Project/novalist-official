@@ -106,14 +106,14 @@ test('panel transitions preserve the editor document and caret across desktop si
   const h = await launchApp('nl-motion-panels-')
   try {
     await h.page.emulateMedia({ reducedMotion: 'no-preference' })
-    const book = await seedBook(h, { Opening: ['Arrival'] })
+    const book = await seedBook(h, { Opening: ['Arrival'] }, 'Panel motion fixture', false)
     await dismissTour(h.page)
     await h.page.setViewportSize({ width: 1420, height: 900 })
     const chapter = book.chapters[0]
     const scene = chapter.scenes[0]
     await h.rpc('scenes/write', [chapter.guid, scene.id, '<p>The lantern lights the room.</p>', 'The lantern lights the room.'])
     await h.page.evaluate(({ chapterGuid, sceneId }) => window.novalistStores.project.getState().openScene(chapterGuid, sceneId), { chapterGuid: chapter.guid, sceneId: scene.id })
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator('[data-writing-scene]')
     await expect(editor).toHaveText('The lantern lights the room.')
     const caret = await editor.evaluateHandle(element => {
       const text = element.querySelector('p')?.firstChild
@@ -123,7 +123,7 @@ test('panel transitions preserve the editor document and caret across desktop si
       const range = element.ownerDocument.createRange()
       range.setStart(text, 4)
       range.collapse(true)
-      element.focus()
+      element.ownerDocument.getElementById('editor')!.focus()
       selection.removeAllRanges()
       selection.addRange(range)
       return { element, text }
@@ -156,7 +156,7 @@ test('panel transitions preserve the editor document and caret across desktop si
     await h.page.setViewportSize({ width: 1420, height: 900 })
     await h.page.locator('.inspector').getByRole('button', { name: 'Properties', exact: true }).click()
     await h.page.locator('#inspector-synopsis').fill('Synopsis saved while the Inspector closes.')
-    await h.page.locator('.editor-scene-heading').getByRole('button', { name: 'Scene details', exact: true }).click()
+    await h.page.keyboard.press('Control+Alt+i')
     await expect(h.page.locator('.inspector')).toBeHidden()
     await expect.poll(() => h.rpc('scenes/getMeta', [chapter.guid, scene.id])).toMatchObject({ synopsis: 'Synopsis saved while the Inspector closes.' })
     await h.page.screenshot({ path: '../artifacts/ui-motion-tests/writing-settled.png', animations: 'disabled' })

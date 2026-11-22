@@ -156,7 +156,7 @@ export function FocusMode(): React.JSX.Element {
         if (panel === side && transient) useShellStore.setState({ focusPanelTransient: false })
         else runCommand(side === 'binder' ? 'app.toggleBinder' : 'app.toggleInspector')
       }}>
-      {side === 'binder' ? <PanelLeft size={16} /> : <PanelRight size={16} />}
+      {side === 'binder' ? <PanelLeft size={16} className="icon-directional" /> : <PanelRight size={16} className="icon-directional" />}
     </button>)}
     <div ref={bar} className="focus-bar" onMouseEnter={() => {
       if (timer.current) clearTimeout(timer.current)
@@ -171,11 +171,11 @@ export function FocusMode(): React.JSX.Element {
         <span className="focus-scene-title">{scene?.title ?? t('shell.view.write')}</span>
         {scene && <span className="focus-word-count">{t('focus.words', { count: scene.wordCount })}</span>}
         <button title={t('shell.toggleBinder')} aria-label={t('shell.toggleBinder')}
-          onClick={() => runCommand('app.toggleBinder')}><PanelLeft size={17} /></button>
+          onClick={() => runCommand('app.toggleBinder')}><PanelLeft size={17} className="icon-directional" /></button>
         <button title={t('shell.toggleSceneNotes')} aria-label={t('shell.toggleSceneNotes')}
           onClick={() => runCommand('app.toggleSceneNotes')}><PenLine size={17} /></button>
         <button title={t('shell.toggleInspector')} aria-label={t('shell.toggleInspector')}
-          onClick={() => runCommand('app.toggleInspector')}><PanelRight size={17} /></button>
+          onClick={() => runCommand('app.toggleInspector')}><PanelRight size={17} className="icon-directional" /></button>
         <button className="focus-exit" onClick={() => {
           useShellStore.getState().toggleFocusMode()
           focusManuscript()

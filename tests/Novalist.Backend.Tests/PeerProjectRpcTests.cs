@@ -107,6 +107,9 @@ public sealed class PeerProjectRpcTests
         coordinator.Validate(new("host-window", 0, null), "scenes/read");
         coordinator.Notify = (method, payload) =>
         {
+            // Only the two transition notifications carry a token; the host also
+            // pushes projectUpdated / progress while peers sync, whenever they land.
+            if (method is not ("workspace/prepare" or "workspace/changed")) return Task.CompletedTask;
             var token = JsonSerializer.SerializeToElement(payload).GetProperty("token").GetString()!;
             if (method == "workspace/prepare") coordinator.Prepared(token, true, null);
             else coordinator.Applied(token);
@@ -143,6 +146,7 @@ public sealed class PeerProjectRpcTests
             coordinator.Validate(new("host-window", 0, null), "scenes/read");
             coordinator.Notify = (method, payload) =>
             {
+                if (method is not ("workspace/prepare" or "workspace/changed")) return Task.CompletedTask;
                 var json = JsonSerializer.SerializeToElement(payload);
                 var token = json.GetProperty("token").GetString()!;
                 if (method == "workspace/prepare")
@@ -243,12 +247,8 @@ public sealed class PeerProjectRpcTests
         Assert.Equal("tcp", (await guest.Rpc.JoinPeerAsync(link, temporary.Combine("Guest"), "Guest", ct)).Mode);
     }
 
-    private static async Task EventuallyAsync(Func<bool> condition, CancellationToken ct)
-    {
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromSeconds(5));
-        while (!condition()) await Task.Delay(10, timeout.Token);
-    }
+    private static Task EventuallyAsync(Func<bool> condition, CancellationToken ct)
+        => TestWait.UntilAsync(condition, "the peer to report the expected participants", ct);
 
     private sealed class Desktop : IAsyncDisposable
     {

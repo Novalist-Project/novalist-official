@@ -1,5 +1,16 @@
 'use strict';
 
+const focusedProseBlocks = new Set();
+
+function setFocusBlocks(blocks) {
+    for (const block of focusedProseBlocks) block.classList.remove('nv-focus-block');
+    focusedProseBlocks.clear();
+    for (const block of blocks) {
+        block.classList.add('nv-focus-block');
+        focusedProseBlocks.add(block);
+    }
+}
+
 function setComposeDimming(enabled) {
     window.NovalistEditorState.dimOthers = !!enabled;
     document.body.classList.toggle('dim-others', window.NovalistEditorState.dimOthers);
@@ -7,9 +18,7 @@ function setComposeDimming(enabled) {
 }
 
 function updateFocusBlock() {
-    for (const block of window.proseBlocks()) block.classList.remove('nv-focus-block');
-    if (!window.NovalistEditorState.dimOthers) return;
-    for (const block of window.selectedBlocks()) block.classList.add('nv-focus-block');
+    setFocusBlocks(window.NovalistEditorState.dimOthers ? window.selectedBlocks() : []);
 }
 
 function setTypewriterScroll(enabled, anchor) {
@@ -64,8 +73,7 @@ function recenterCaret() {
         const caretRelative = top - wrapperRect.top;
         const delta = caretRelative - targetY;
         if (Math.abs(delta) < 2) return;
-        window.NovalistEditorState.programmaticScrollUntil = Date.now() + 150;
-        window.NovalistEditorState.wrapper.scrollTop = window.NovalistEditorState.wrapper.scrollTop + delta;
+        window.setWritingScroll(window.NovalistEditorState.wrapper.scrollTop + delta);
     } else {
         // Typewriter is disabled: just keep caret in view (standard scroll-into-view)
         const caretRelativeTop = top - wrapperRect.top;
@@ -80,13 +88,13 @@ function recenterCaret() {
         }
 
         if (Math.abs(delta) > 1) {
-            window.NovalistEditorState.programmaticScrollUntil = Date.now() + 150;
-            window.NovalistEditorState.wrapper.scrollTop = window.NovalistEditorState.wrapper.scrollTop + delta;
+            window.setWritingScroll(window.NovalistEditorState.wrapper.scrollTop + delta);
         }
     }
 }
 
 Object.assign(window, {
+    setFocusBlocks,
     setComposeDimming,
     updateFocusBlock,
     setTypewriterScroll,

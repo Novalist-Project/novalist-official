@@ -6,6 +6,7 @@
   copyDesktopItems,
   dotnetCorePackages,
   electron_44,
+  importNpmLock,
   makeDesktopItem,
   makeWrapper,
   nodejs_24,
@@ -22,9 +23,11 @@ buildNpmPackage (finalAttrs: {
   __structuredAttrs = true;
   sourceRoot = "${finalAttrs.src.name}/app";
   nodejs = nodejs_24;
-  npmDepsHash = "sha256-Pl1RI3sKWnx4vsu/93Rhf+SP/D/oZNfYxAjWrHBJ5OU=";
+  # Each npm package is fetched with the integrity hash recorded in
+  # package-lock.json, so lockfile edits need no separate Nix hash.
+  npmDeps = importNpmLock { npmRoot = "${src}/app"; };
+  npmConfigHook = importNpmLock.npmConfigHook;
   npmFlags = [ "--ignore-scripts" ];
-  makeCacheWritable = true;
   env.ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
   nativeBuildInputs = [ copyDesktopItems makeWrapper ];
 
@@ -35,8 +38,11 @@ buildNpmPackage (finalAttrs: {
 
   installPhase = ''
     runHook preInstall
+    # electron-vite leaves package.json dependencies external; the shared
+    # document worker requires them at runtime, as electron-builder ships them
+    npm prune --omit=dev --no-save ''${npmFlags[@]}
     mkdir -p $out/share/novalist
-    cp -r out package.json resources $out/share/novalist/
+    cp -r out package.json resources node_modules $out/share/novalist/
     makeWrapper ${lib.getExe electron} $out/bin/novalist \
       --add-flags $out/share/novalist \
       --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \

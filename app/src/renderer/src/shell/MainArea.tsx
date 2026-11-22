@@ -9,13 +9,18 @@ import {
 } from '../stores/shellStore'
 import { editorPane, useProjectStore } from '../stores/projectStore'
 import { PaneHeader } from './PaneHeader'
+import { UndockSlot } from './UndockButton'
 import { ViewIntro } from './ViewIntro'
 import { DesktopViewFrame } from './DesktopViewFrame'
 import { EditorFrame } from '../views/editor/EditorFrame'
+import { UnifiedWritingEditor } from '../views/editor/UnifiedWritingEditor'
+import { WritingStructureHost } from '../views/editor/WritingStructureHost'
 import { CodexView } from '../views/codex/CodexView'
 import { WikiView } from '../views/wiki/WikiView'
 import { DashboardView } from '../views/dashboard/DashboardView'
 import { ManuscriptView } from '../views/manuscript/ManuscriptView'
+import { PlanningView } from '../views/manuscript/PlanningView'
+import { executeWritingStructure } from '../stores/writingStructure'
 import { PlotGridView } from '../views/plotgrid/PlotGridView'
 import { DraftsView } from '../views/drafts/DraftsView'
 import { TimelineView } from '../views/timeline/TimelineView'
@@ -62,6 +67,7 @@ export function MainArea({ headers = 'auto' }: { headers?: 'auto' | 'always' }):
     <>
       {!suspended && <PaneTree node={panes} headers={headers} />}
       <HostBridgeOverlays />
+      {!window.novalist.isMobile && <WritingStructureHost />}
     </>
   )
 }
@@ -136,6 +142,7 @@ function PaneTree({
   }
 
   if (node.view === 'sceneNotes') return <div className="pane-leaf" data-view="sceneNotes">{showNotes && <SceneNotesPanel />}</div>
+  const headerShown = headers === 'always' || !only
 
   return (
     <div
@@ -147,14 +154,17 @@ function PaneTree({
       onPointerDownCapture={() => setActivePane(node.id)}
       onFocusCapture={() => setActivePane(node.id)}
     >
-      {(headers === 'always' || !only) && <PaneHeader paneId={node.id} view={node.view} />}
+      {headerShown && <PaneHeader paneId={node.id} view={node.view} />}
       {/* What this view is for, the first time it is opened. Above the content
           rather than over it: a screen you are being told about is a screen you
           should be able to see. */}
       <ViewIntro view={node.view} />
-      <DesktopViewFrame view={node.view}>
-        <MainAreaContent view={node.view} paneId={node.id} />
-      </DesktopViewFrame>
+      {/* Without a pane header, the view's own heading carries the undock button. */}
+      <UndockSlot.Provider value={headerShown || window.novalist.isMobile ? null : { paneId: node.id, view: node.view }}>
+        <DesktopViewFrame view={node.view}>
+          <MainAreaContent view={node.view} paneId={node.id} />
+        </DesktopViewFrame>
+      </UndockSlot.Provider>
       <NotesDockTargets paneId={node.id} />
     </div>
   )
@@ -227,12 +237,13 @@ function MainAreaContent({ view, paneId }: { view: MainView; paneId: string }): 
   const keepEditor = useShellStore((s) => s.focusMode && s.focusPaneId === paneId)
   const openSceneId = useProjectStore((s) => editorPane(s, paneId).sceneId)
   const isLoaded = useProjectStore((s) => s.isLoaded)
-  const writing = view === 'write' && !extView
+  const writingContext = useProjectStore(s => JSON.stringify([s.projectPath, s.activeBookId, s.activeDraftId, s.workspaceEpoch]))
+  const writing = (view === 'write' || (!window.novalist.isMobile && view === 'manuscript')) && !extView
   return (
     <>
       {(writing || keepEditor) && (
         <main className="main-area" style={writing ? undefined : { display: 'none' }}>
-          {openSceneId ? (
+          {!window.novalist.isMobile && isLoaded ? <UnifiedWritingEditor key={writingContext} paneId={paneId} /> : openSceneId ? (
             <EditorFrame paneId={paneId} />
           ) : (
             <div className="main-placeholder">
@@ -252,6 +263,7 @@ const CONTENT_VIEWS: Partial<Record<MainView, React.ComponentType>> = {
   wiki: WikiView,
   dashboard: DashboardView,
   manuscript: ManuscriptView,
+  structure: StructureContent,
   drafts: DraftsView,
   plotGrid: PlotGridView,
   timeline: TimelineView,
@@ -272,6 +284,10 @@ const CONTENT_VIEWS: Partial<Record<MainView, React.ComponentType>> = {
   maps: MapsView,
   about: AboutView,
   extensions: AvailableExtensions
+}
+
+function StructureContent(): React.JSX.Element {
+  return <PlanningView onCommand={executeWritingStructure} />
 }
 
 function AvailableExtensions(): React.JSX.Element {

@@ -43,6 +43,9 @@ for (const platform of ['darwin', 'android'] as const) {
         const main = page.locator('.tablet-main .main-area:visible')
         await expect(main).toBeVisible()
         await expect(main.locator(selector).first()).toBeVisible()
+        if (destination === 'write' || destination === 'manuscript') {
+          await expect(main.locator('[data-writing-pane]')).toHaveCount(0)
+        }
         const geometry = await page.evaluate(() => {
           const binder = document.querySelector('.tablet-binder')!.getBoundingClientRect()
           const main = document.querySelector('.tablet-main')!.getBoundingClientRect()

@@ -37,7 +37,8 @@ function clearCommentMark(span) {
 }
 
 function removeCommentSpan(commentId) {
-    window.NovalistEditorState.editor.querySelectorAll('span.nv-comment[data-comment-id]').forEach(span => {
+    const root = window.NovalistWritingDocument?.enabled ? window.getWritingSceneRoot() : window.NovalistEditorState.editor;
+    root.querySelectorAll('span.nv-comment[data-comment-id]').forEach(span => {
         if (span.getAttribute('data-comment-id') === commentId) clearCommentMark(span);
     });
     window.NovalistEditorState.commentsState.delete(commentId);
@@ -54,10 +55,14 @@ function scrollToComment(commentId, doScroll) {
             c.classList.toggle('active', c.dataset.commentId === commentId);
         });
     }
-    var node = document.querySelector('span.nv-comment[data-comment-id="' + commentId + '"]');
+    var root = window.NovalistWritingDocument?.enabled ? window.getWritingSceneRoot() : document;
+    var node = Array.from(root.querySelectorAll('span.nv-comment[data-comment-id]')).find(span => span.dataset.commentId === commentId);
     if (!node) return;
     node.classList.add('nv-comment-active');
-    if (doScroll !== false) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (doScroll !== false) {
+        window.cancelWritingReveal?.();
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 }
 
 // ── Footnotes ──────────────────────────────────────────────────
@@ -68,7 +73,8 @@ function scrollToComment(commentId, doScroll) {
 // changes that one's number too. Reporting only the new note's number is what
 // put two footnotes on "1".
 function renumberFootnotes() {
-    var sups = window.NovalistEditorState.editor.querySelectorAll('sup.nv-fn[data-fn-id]');
+    var root = window.NovalistWritingDocument?.enabled ? window.getWritingSceneRoot() : window.NovalistEditorState.editor;
+    var sups = root.querySelectorAll('sup.nv-fn[data-fn-id]');
     var i = 1;
     sups.forEach(function (sup) { sup.textContent = i; i++; });
     return Array.from(sups).map(function (s) { return s.getAttribute('data-fn-id'); });

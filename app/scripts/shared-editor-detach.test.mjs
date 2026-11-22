@@ -96,3 +96,41 @@ test('presence renders live selections but stops resolving DOM ranges after the 
   assert.equal(f.window.document.querySelector('.nv-collaboration-caret'), null)
   assert.equal(f.window.document.querySelector('style'), null)
 })
+
+test('one thousand passive shared scenes allocate no highlight styles or empty highlights', t => {
+  const f = fixture(t)
+  const presences = Array.from({ length: 1000 }, () => new RemoteSelections(f.window, () => {
+    assert.fail('a passive scene cannot measure a collaborator range')
+  }))
+  t.after(() => presences.forEach(presence => presence.destroy()))
+  for (const presence of presences) presence.render()
+  assert.equal(f.window.document.querySelectorAll('style').length, 0)
+  assert.equal(f.highlights.size, 0)
+})
+
+test('the last collaborator leaving releases presence rendering and a later arrival restores it', t => {
+  const f = fixture(t)
+  const range = f.window.document.createRange()
+  range.selectNodeContents(f.root.querySelector('p'))
+  range.getBoundingClientRect = () => ({ left: 12, top: 34, height: 18 })
+  let reads = 0
+  const presence = new RemoteSelections(f.window, () => { reads++; return range })
+  t.after(() => presence.destroy())
+  const participant = { id: 'writer', name: 'Other writer', selection: { anchor: [], focus: [] } }
+  for (let visit = 0; visit < 3; visit++) {
+    presence.show(participant)
+    presence.show({ ...participant, id: 'second' })
+    assert.equal(f.window.document.querySelectorAll('style').length, 1)
+    assert.equal(f.window.document.querySelectorAll('.nv-collaboration-caret').length, 2)
+    presence.remove(participant.id)
+    assert.equal(f.highlights.size, 1)
+    presence.remove('second')
+    assert.equal(f.window.document.querySelectorAll('style').length, 0)
+    assert.equal(f.window.document.querySelectorAll('.nv-collaboration-caret').length, 0)
+    assert.equal(f.highlights.size, 0)
+    const previousReads = reads
+    f.window.dispatchEvent(new f.window.Event('resize'))
+    f.window.document.dispatchEvent(new f.window.Event('scroll'))
+    assert.equal(reads, previousReads)
+  }
+})

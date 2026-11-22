@@ -27,7 +27,7 @@ export function useAppUpdateState() {
   const [updateError, setUpdateError] = useState<{ keys: string[] } | { message: string } | null>(null)
   const updateErrorMessage = updateError && ('keys' in updateError
     ? updateError.keys.map((key) => t(key)).join(' ')
-    : updateError.message)
+    : t(updateError.message, { defaultValue: updateError.message }))
 
   useEffect(() => {
     installingRef.current = installing

@@ -1,9 +1,10 @@
 import type { PaneNode, PaneView } from '../stores/shellTypes'
 import { paneLeaves, reidentify } from '../stores/shellPanes'
+import { normalizeWritingLayout } from '../stores/writingLayoutMigration'
 
 const STORAGE_KEY = 'nl.shell.sceneNotesPlacement'
 const views: Record<PaneView, true> = {
-  write: true, dashboard: true, manuscript: true, drafts: true, narration: true,
+  write: true, dashboard: true, manuscript: true, structure: true, drafts: true, narration: true,
   timeline: true, plotGrid: true, calendar: true, relationships: true, dialogue: true,
   style: true, canvas: true, codex: true, wiki: true, maps: true, languages: true,
   series: true, research: true, gallery: true, expose: true, export: true, git: true,
@@ -40,7 +41,7 @@ export function readNotesPlacement(): { panes: PaneNode; activePaneId: string } 
     if (!stored || !validTree(stored.root)) return null
     const leaves = paneLeaves(stored.root)
     if (leaves.filter((pane) => pane.view === 'sceneNotes').length !== 1 || leaves.length < 2) return null
-    const panes = reidentify(stored.root)
+    const panes = reidentify(normalizeWritingLayout(stored.root, !window.novalist.isMobile))
     const restored = paneLeaves(panes)
     const selected = Number.isInteger(stored.activePane) ? restored[stored.activePane] : undefined
     const active = selected && selected.view !== 'sceneNotes' ? selected : restored.find((pane) => pane.view !== 'sceneNotes')!

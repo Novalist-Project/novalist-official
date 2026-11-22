@@ -33,6 +33,12 @@
   grid-template-columns: 1fr 1fr;
 }
 
+.scene-conflict-pending {
+  max-height: 52vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
 .scene-conflict-cell {
   background: none;
   border: 1px solid transparent;
@@ -41,7 +47,7 @@
   font-family: inherit;
   font-size: var(--nl-font-ui);
   padding: var(--nl-space-tightest) var(--nl-space-tighter);
-  text-align: left;
+  text-align: start;
   white-space: pre-wrap;
 }
 

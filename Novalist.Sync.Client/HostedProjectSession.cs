@@ -1,5 +1,7 @@
 namespace Novalist.Sync.Client;
 
+public sealed record PendingSessionUpdate(Guid ItemId, byte[] Update);
+
 public sealed class HostedProjectSession : IAsyncDisposable
 {
     private readonly DeviceSequence sequence;
@@ -16,7 +18,9 @@ public sealed class HostedProjectSession : IAsyncDisposable
     private bool accessEnded;
     private bool epochChanged;
     public SessionConnectionStatus Status => accessEnded ? new(SessionConnectionState.AccessEnded) :
-        epochChanged ? new(SessionConnectionState.KeyRefreshRequired) : synchronizer.Status;
+        epochChanged ? new(SessionConnectionState.KeyRefreshRequired) :
+        synchronizer.Status is { State: SessionConnectionState.Failed } failed && HostedProtocol.IsHistoryReplaced(failed.Error)
+            ? new(SessionConnectionState.CheckpointRefreshRequired, failed.Error) : synchronizer.Status;
     public SessionPresence Presence { get; }
     public bool IsClosed => journal.IsClosed;
 
@@ -35,6 +39,13 @@ public sealed class HostedProjectSession : IAsyncDisposable
         synchronizer = new(updates);
         transport.AccessEnded += OnAccessEnded;
         transport.EpochChanged += OnEpochChanged;
+        transport.HistoryCompacted += OnHistoryCompacted;
+    }
+
+    // The checkpoint and its pointer join the log without live delivery, so fetch them now.
+    private void OnHistoryCompacted(Guid project, long historyStartsAt)
+    {
+        if (project == Updates.Context.ProjectId) synchronizer.RequestPass();
     }
 
     private void OnAccessEnded(Guid project)
@@ -92,6 +103,21 @@ public sealed class HostedProjectSession : IAsyncDisposable
         return journal.PendingCompoundEdits();
     }
 
+    // Where a saved journal starts and how far it has caught up.
+    public static (long First, long Last) ReadJournalPosition(string storage, Guid sessionId, Guid projectId, Guid deviceId)
+    {
+        using var sequence = new DeviceSequence(Path.Combine(storage, "devices", deviceId.ToString("N") + ".sqlite"), deviceId);
+        using var journal = new SessionJournal(Path.Combine(storage, "sessions", sessionId.ToString("N"), "journal.sqlite"), sessionId, projectId, sequence);
+        return (journal.FirstServerSequence, journal.LastServerSequence);
+    }
+
+    public static IReadOnlyList<PendingSessionUpdate> ReadPendingUpdates(string storage, Guid sessionId, Guid projectId, Guid deviceId)
+    {
+        using var sequence = new DeviceSequence(Path.Combine(storage, "devices", deviceId.ToString("N") + ".sqlite"), deviceId);
+        using var journal = new SessionJournal(Path.Combine(storage, "sessions", sessionId.ToString("N"), "journal.sqlite"), sessionId, projectId, sequence);
+        return journal.PendingUpdates();
+    }
+
     public Task StartAsync(bool createProject, CancellationToken ct) => RunAsync(async token =>
     {
         await synchronizer.StartAsync(createProject, token);
@@ -138,6 +164,7 @@ public sealed class HostedProjectSession : IAsyncDisposable
             await Updates.DisposeAsync();
             transport.AccessEnded -= OnAccessEnded;
             transport.EpochChanged -= OnEpochChanged;
+            transport.HistoryCompacted -= OnHistoryCompacted;
             await transport.DisposeAsync();
             cipher.Dispose();
             journal.Dispose();

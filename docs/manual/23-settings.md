@@ -35,10 +35,29 @@ Settings. Select **Share** for the open project or **Join** for an invitation.
 With no project open, only joining is available. Connection choices follow the
 runtime: **Direct connection (TCP)** is selected by default in the regular app
 and on mobile; Steam-enabled builds select **Steam** when its runtime is available.
-**Relay server** remains an option in both editions. Active sessions keep their
-connection type, and a retained relay project opens its reconnect controls.
+**Relay server** remains an option in both editions. Desktop also offers
+**Persistent server** for encrypted server storage and owner-offline access.
+Active sessions keep their connection type, and retained projects open the
+reconnect controls for their saved mode. Each project remembers the connection
+type and server you last picked for it on this device; a project you have not
+set up yet starts from the last connection type and server you picked anywhere.
+
+Projects with a saved **Persistent server** or **Relay server** connection
+reconnect on their own when you open them. Turn this off for one project by
+clearing **Reconnect automatically when this project opens**, shown next to
+**Reconnect** and during the session. The setting is per project and per device,
+and it is on by default. Novalist tries once each time the project opens: ending
+the session yourself does not trigger another attempt, and a relay reconnect
+still needs the host to be online. Direct (TCP) and Steam sessions cannot be
+resumed and are not reconnected.
 During a session, the panel shows connection status, invitations and the end-session
 action. Owners can expand **Manage shared access** for membership controls.
+
+The top-bar button also shows a connection dot without opening the panel:
+green means connected, amber means connecting, reconnecting or preparing a
+transfer, and red means sharing is paused or needs attention. Hover for details.
+This indicates the session connection, not confirmation that every edit has reached
+every writer.
 
 iPhone and iPad offer **Relay server** and **Direct TCP**, and can collaborate with
 desktop writers using either mode. Steam is available only on desktop. Mobile joins
@@ -48,6 +67,121 @@ Keep Novalist in the foreground during collaboration: iOS can suspend network ac
 when you switch apps or lock the device. Pending edits are saved before suspension,
 and the connection retries when the app runs again. A mobile host must remain open
 and active for other writers to join or synchronize.
+
+### Persistent server
+
+Choose **Persistent server** when your administrator runs the community server
+in persistent mode (`Relay__Enabled=false`), with PostgreSQL, HTTPS, OIDC and its
+native-client configuration. See the server's
+[self-hosting guide](https://github.com/QF0xB/novalist-sync-server/blob/main/docs/self-hosting.md).
+A relay-only deployment cannot store persistent projects.
+
+Enter its base URL and sign in. The first sign-in on a device asks for fresh
+multi-factor authentication in the browser and registers the device in the same
+step. Novalist then shows your **Recovery token**. Choose **Save recovery token to
+file…** to write it to a location you choose. Cancelling the dialog or a failed
+write keeps the token visible. If you save it in a password manager instead,
+choose **I have saved the token — continue**. **Account** also offers file saving
+later, using the token kept in the app's secure credential store.
+The token proves your recovery identity; it is not a backup of project files or
+project encryption keys. Later
+sign-ins on that device do not force multi-factor authentication again. If
+registration did not complete (for example, the server is older, or this device
+already had keys for the account), Novalist offers
+**Register this device**, which opens the browser for fresh multi-factor
+authentication once more. Keep your app's secure credential store: it holds
+device keys, project keys and the recovery identity. Signing in on another computer does not transfer those project keys.
+
+To authorize a replacement device, sign in to the same server and choose **Use a
+recovery token** below **Register this device**. Paste the saved token and choose
+**Register with recovery token**. The server verifies the recovery identity and
+links new device keys to your existing account. Novalist stores the token and
+replacement keys in its secure credential store, retains previous local keys,
+and leaves other servers' identities unchanged. An invalid or rejected token
+does not register the device or replace saved recovery credentials. This avoids
+an identity reset; it does not restore project encryption keys. Obtain those
+from a new invitation or a backup.
+
+If you still have a registered device, use device pairing instead of sharing
+your recovery token. Sign in to the same account and server on the new device,
+open **Get approval from another device**, give it a name, and choose **Generate
+device request**. Copy the request to the registered device. Under **Account →
+Approve another device**, paste it and choose **Review device request**. Compare
+the name and fingerprint shown on both devices, then choose **Approve this
+device**. Return to the new device and choose **Check approval** to finish.
+
+Requests expire after 15 minutes and are signed for the exact server, account,
+and new device keys. Private keys stay on their device. Pending requests survive
+an app restart; generating with the same name restores a still-valid request.
+Expired requests require a new request and approval. A registered device can
+approve requests while its persistent project session is open. Pairing keeps
+old local keys and the server identity intact. It does not copy project files
+or recovery secrets; keep the original recovery-token backup. A paired device
+without that token does not offer recovery-token export.
+
+If every authorized device and the recovery credentials are lost, supporting
+servers offer **Reset lost-device identity** under **Lost access to all your devices?** when the
+device is unregistered. Read the warning and tick the confirmation that you are
+giving up all previous project access and ownership, then choose **Reset identity
+with fresh MFA**. Complete fresh multi-factor authentication in your browser.
+The server archives your old identity, revokes its devices and creates a fresh
+one for the same sign-in; it preserves shared history and your local files.
+This does not recover encryption keys or transfer ownership. A project whose
+only owner was the old identity may no longer have an accessible owner.
+
+After the reset, device registration starts automatically. Complete its
+browser-MFA steps and save the new recovery token. If registration is interrupted,
+use **Register this device** to retry. Ask project owners for new invitations. Old local
+credentials are retained separately, and signing into other servers is
+unaffected. End any active collaboration session before resetting. Servers that
+do not advertise this capability do not show the reset action.
+
+Choose **Share** to upload an encrypted checkpoint of the open project, then
+**Create invitation**. The private, single-use link contains project keys and
+must only be sent to the intended writer. The invited writer selects the same
+mode and server, registers their device, pastes the link and chooses a **new**
+folder. Existing-copy joining remains available in relay and direct modes.
+Project controls appear after sign-in and device registration are complete.
+When joining, paste the invitation first to reveal the local folder controls.
+Server setup help and account details remain collapsed until you need them.
+
+The server stores only encrypted project content and update history. Invited
+writers can join and catch up while the owner is offline. Ending your local
+session disconnects that device; it does not delete the hosted project or end
+other writers' sessions. Reopen the retained project and use **Reconnect** to
+download missed changes. Writing you did on this device in the meantime is
+merged with the other writers' changes rather than replaced: edits to different
+paragraphs, fields or files simply combine. Where you and another writer changed
+the same paragraph, Codex field, entry value or file differently, the
+**Changes made while disconnected** dialog shows both versions side by side.
+Choose **This device** or **Shared version** for each place, or keep all from one
+side, then select **Apply choices**. Until you choose, your side of those places
+is held back; **Decide later** closes the dialog, **Resolve conflicts** next to
+**End this session** reopens it, and ending the session keeps the choice open
+for the next reconnect. Novalist also keeps the local project as it was before
+reconnecting in a recovery archive; **Show retained copy** reveals it. Pending
+synchronized prose remains in the local journal for reconnection.
+
+Owners manage membership through **Manage shared access**. Removing a writer
+rotates project keys and publishes a fresh encrypted checkpoint. Remaining
+writers use **Refresh keys** to reconnect. Deleting the shared project removes
+its server copy; participants keep their local copies.
+
+Novalist keeps the server's update history small on its own. Your edits are
+grouped for a quarter of a second before they are saved. When the history since
+the last checkpoint grows to more than four times the checkpoint's size (and at
+least 1 MB), the app of any connected writer with nothing left to send uploads a
+fresh encrypted checkpoint, at most once a day; the server then discards the
+replaced history after its grace period. Keys and invitations stay valid, and
+nobody is interrupted. A writer who was offline while this happened reconnects
+from the newest checkpoint automatically when nothing of theirs is waiting to be
+sent; otherwise **Refresh keys** appears and unshared writing goes into a
+recovery copy. Older servers without this feature keep their full history.
+
+The following relay instructions describe live-host sessions, not persistent
+hosting.
+
+### Relay server
 
 **Getting a relay server:** the community implementation is
 [QF0xB/novalist-sync-server](https://github.com/QF0xB/novalist-sync-server).
@@ -97,6 +231,17 @@ use HTTPS; HTTP is accepted for local loopback testing. Credentials are saved
 using the operating system's encryption service, outside project files. If that
 service is unavailable, Novalist reports the error instead of saving credentials
 without encryption.
+
+On Linux, desktops such as GNOME, KDE Plasma, Cinnamon and Xfce provide this
+service through their own keyring. On other desktops and window managers, such as
+Hyprland, Sway, niri, COSMIC or LXQt, Novalist looks for a keyring running in your
+session at startup: a Secret Service provider (GNOME Keyring, KeePassXC with Secret
+Service integration enabled, or KWallet) is used first, then KWallet directly. If
+none is running or it is locked, saving credentials fails with a message that names
+these keyrings: start one, unlock it, then restart Novalist. To
+choose a keyring yourself, launch Novalist with
+`--password-store=gnome-libsecret`, `--password-store=kwallet5` or
+`--password-store=kwallet6`; an explicit choice is always kept.
 
 On iPhone and iPad, sign-in uses the system authentication browser and credentials
 are kept in Keychain. The provider's native client must register
@@ -315,7 +460,7 @@ Everything under **Project** is per-project and only applies while a project is 
 
 ## Appearance
 
-- **Interface Language** — UI language. English, German, and Chinese (Simplified) ship built in, and any language you dropped into your `Locales/` folder is listed too. Changes apply immediately without restart.
+- **Interface Language** — UI language. English, German, Chinese (Simplified), and Arabic ship built in, and any language you dropped into your `Locales/` folder is listed too. Changes apply immediately without restart. Arabic uses a right-to-left interface; switching back restores the other language's layout. On Windows and Linux the menu bar and its dropdowns follow the interface direction after a restart; a **Restart now** notice appears under the dropdown while one is needed (see [Localization](27-localization.md)). This does not change your writing or proofing language.
 - **Theme** — the active color scheme. Built-in themes come first, then your own, then any contributed by extensions:
   - **Default** — Novalist's own identity. A deep "Ink Night" page with parchment-coloured text and gilt accents; panels are the one raised surface, edges are hairlines rather than grey rules, and primary buttons carry a gold foil fill. Headings are set in Fraunces, text and interface labels in Newsreader, and anything the app computed for you — word counts, versions, file sizes, timestamps — in Courier Prime. All three typefaces ship inside the app, so the interface looks the same offline and on a machine that has none of them installed.
   - **Discord**

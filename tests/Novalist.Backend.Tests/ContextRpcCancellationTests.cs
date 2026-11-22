@@ -9,6 +9,36 @@ namespace Novalist.Backend.Tests;
 public sealed class ContextRpcCancellationTests
 {
     [Theory]
+    [InlineData(null, 4)]
+    [InlineData("<p>The door opened.</p>", 3)]
+    [InlineData("", 0)]
+    public async Task AnalysisWithoutMatchingCharactersReadsOnlyTheCurrentScene(string? currentSceneHtml, int words)
+    {
+        using var temp = new TempDir();
+        var files = new BatchReads();
+        using var workspace = new Workspace(temp.Combine("settings"), fileService: files);
+        await workspace.Projects.CreateProjectAsync(temp.Path, "Novel", "Book");
+        var first = await workspace.Projects.CreateChapterAsync("First");
+        var current = await workspace.Projects.CreateSceneAsync(first.Guid, "Current");
+        await workspace.Projects.CreateSceneAsync(first.Guid, "Sibling");
+        var second = await workspace.Projects.CreateChapterAsync("Second");
+        await workspace.Projects.CreateSceneAsync(second.Guid, "Other");
+        await workspace.Projects.WriteSceneContentAsync(first, current, "The door stood open.");
+        await new EntityService(workspace.Projects).SaveCharacterAsync(new CharacterData { Id = "mira", Name = "Mira" });
+        files.Batches.Clear();
+        files.DirectSceneReads = 0;
+
+        var context = await new ContextRpc(workspace).AnalyzeAsync(first.Guid, current.Id, currentSceneHtml);
+
+        Assert.Equal(words, context.Analysis.WordCount);
+        Assert.Empty(context.Characters);
+        Assert.Empty(context.MentionRows);
+        var expected = currentSceneHtml is null ? new[] { workspace.Projects.GetSceneFilePath(first, current) } : [];
+        Assert.Equal(expected, files.Batches.SelectMany(batch => batch));
+        Assert.Equal(0, files.DirectSceneReads);
+    }
+
+    [Theory]
     [InlineData("before", null)]
     [InlineData("entities", null)]
     [InlineData("scenes", null)]
@@ -31,6 +61,8 @@ public sealed class ContextRpcCancellationTests
             await entities.SaveCharacterAsync(new CharacterData { Id = "one", Name = "One" });
             await entities.SaveCharacterAsync(new CharacterData { Id = "two", Name = "Two" });
         }
+        if (during == "scenes" && currentSceneHtml is not null)
+            await new EntityService(workspace.Projects).SaveCharacterAsync(new CharacterData { Id = "unsaved", Name = "Unsaved" });
         files.AfterRead = path =>
         {
             if (during == "entities" || path.EndsWith(".novalist", StringComparison.Ordinal)) cancellation.Cancel();
@@ -40,7 +72,7 @@ public sealed class ContextRpcCancellationTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             new ContextRpc(workspace).AnalyzeAsync(chapter.Guid, scene.Id, currentSceneHtml, cancellationToken: cancellation.Token));
 
-        Assert.Equal(during == "before" ? 0 : 1, files.Reads.Count);
+        Assert.Equal(during == "before" ? 0 : during == "scenes" && currentSceneHtml is not null ? 2 : 1, files.Reads.Count);
         if (during == "entities") Assert.DoesNotContain(files.Reads, path => path.EndsWith(".novalist"));
     }
 
@@ -48,7 +80,7 @@ public sealed class ContextRpcCancellationTests
     [InlineData(null, 4)]
     [InlineData("<p>Mira arrived.</p>", 2)]
     [InlineData("", 0)]
-    public async Task LiveHtmlSubstitutionPreservesBatchedChapterReads(string? currentSceneHtml, int wordCount)
+    public async Task LiveHtmlSubstitutionBatchesOnlyScenesNeededForMentionRows(string? currentSceneHtml, int wordCount)
     {
         using var temp = new TempDir();
         var files = new BatchReads();
@@ -71,11 +103,16 @@ public sealed class ContextRpcCancellationTests
             currentSceneHtml, cancellationToken: cancellation.Token);
 
         Assert.Equal(wordCount, context.Analysis.WordCount);
-        Assert.Equal(2, files.Batches.Count);
-        Assert.Equal(2, files.Batches[0].Length);
-        Assert.Single(files.Batches[1]);
+        var expected = currentSceneHtml switch
+        {
+            null => new[] { workspace.Projects.GetSceneFilePath(first, scene) },
+            "" => [],
+            _ => [workspace.Projects.GetSceneFilePath(first, sibling), workspace.Projects.GetSceneFilePath(second, other)]
+        };
+        Assert.Equal(expected, files.Batches.SelectMany(batch => batch));
+        Assert.All(files.Batches, batch => Assert.Single(batch));
         Assert.Equal(0, files.DirectSceneReads);
-        Assert.Equal(cancellation.Token, files.LastToken);
+        if (expected.Length > 0) Assert.Equal(cancellation.Token, files.LastToken);
         if (currentSceneHtml == "<p>Mira arrived.</p>")
         {
             Assert.Equal("mira", Assert.Single(context.Characters).Id);
@@ -93,16 +130,18 @@ public sealed class ContextRpcCancellationTests
         await workspace.Projects.CreateProjectAsync(temp.Path, "Novel", "Book");
         var chapter = await workspace.Projects.CreateChapterAsync("First");
         var scene = await workspace.Projects.CreateSceneAsync(chapter.Guid, "Scene");
+        var sibling = await workspace.Projects.CreateSceneAsync(chapter.Guid, "Sibling");
         var other = await workspace.Projects.CreateChapterAsync("Second");
         await workspace.Projects.CreateSceneAsync(other.Guid, "Other scene");
+        await new EntityService(workspace.Projects).SaveCharacterAsync(new CharacterData { Id = "mira", Name = "Mira" });
         files.Batches.Clear();
         using var cancellation = new CancellationTokenSource();
         files.AfterBatch = cancellation.Cancel;
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new ContextRpc(workspace).AnalyzeAsync(
-            chapter.Guid, scene.Id, "<p>Live draft</p>", cancellationToken: cancellation.Token));
+            chapter.Guid, scene.Id, "<p>Mira arrived.</p>", cancellationToken: cancellation.Token));
 
-        Assert.Single(files.Batches);
+        Assert.Equal([workspace.Projects.GetSceneFilePath(chapter, sibling)], Assert.Single(files.Batches));
         Assert.Equal(cancellation.Token, files.LastToken);
     }
 

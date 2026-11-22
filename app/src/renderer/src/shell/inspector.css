@@ -22,7 +22,7 @@
   align-items: center;
   gap: var(--nl-space-tighter);
   width: 100%;
-  text-align: left;
+  text-align: start;
   color: var(--nl-text-subtle);
   padding: var(--nl-space-tighter) var(--nl-space-sm) var(--nl-space-tightest);
 }
@@ -265,7 +265,7 @@
   flex-direction: column;
   gap: var(--nl-space-tightest);
   padding: var(--nl-space-sm);
-  text-align: left;
+  text-align: start;
   background: transparent;
   border: 1px solid var(--nl-border);
   border-left: 3px solid var(--nl-border);
@@ -379,7 +379,7 @@
   min-width: 0;
   flex: 1;
   align-items: flex-start;
-  text-align: left;
+  text-align: start;
   padding: 0;
   background: transparent;
   border: none;
@@ -422,7 +422,7 @@
   gap: var(--nl-space-tightest);
   align-items: flex-start;
   padding: var(--nl-space-sm);
-  text-align: left;
+  text-align: start;
   background: transparent;
   border: 1px solid var(--nl-border);
   border-left: 3px solid var(--nl-accent);
@@ -469,7 +469,7 @@
   min-width: 0;
   overflow: hidden;
   padding: 0;
-  text-align: left;
+  text-align: start;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -697,7 +697,7 @@
   background: none;
   color: var(--nl-text);
   font-size: var(--nl-font-body);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 

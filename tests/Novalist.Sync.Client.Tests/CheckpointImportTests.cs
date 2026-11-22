@@ -150,5 +150,5 @@ public sealed class CheckpointImportTests : IDisposable
         return stream;
     }
 
-    public void Dispose() { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+    public void Dispose() { TestFiles.DeleteTree(root); }
 }

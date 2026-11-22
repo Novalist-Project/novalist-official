@@ -85,8 +85,16 @@ public sealed class SearchRpc
         string? anchorChapterGuid,
         string? anchorSceneId,
         bool includeSceneNotes,
-        CancellationToken cancellationToken)
+        FindMatchDto[]? confirmed = null,
+        CancellationToken cancellationToken = default)
     {
+        if (confirmed is not null)
+        {
+            var current = await FindAsync(pattern, matchCase, wholeWord, useRegex, scope, anchorChapterGuid,
+                anchorSceneId, includeSceneNotes, false, cancellationToken);
+            if (!current.Where(match => match.Field is "prose" or "notes" or "synopsis").SequenceEqual(confirmed))
+                throw new InvalidOperationException("The search results changed. Search again before replacing.");
+        }
         var snapshots = new SnapshotService(_workspace.Projects, _workspace.FileService);
         return await Service.ReplaceAllAsync(new FindOptions
         {

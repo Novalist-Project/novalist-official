@@ -38,6 +38,9 @@ public partial class ProjectService
         }
 
         var folderName = $"{nextOrder:D2} - {SanitizeFileName(title)}";
+        var storageRoot = ActiveDraftRoot ?? ActiveBookRoot;
+        if (await _fileService.DirectoryExistsAsync(_fileService.CombinePath(storageRoot, ActiveBook.ChapterFolder, folderName)))
+            folderName += "-" + Guid.NewGuid().ToString("N");
         var chapter = new ChapterData
         {
             Title = title,

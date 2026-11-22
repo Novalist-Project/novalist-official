@@ -1,0 +1,2371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="A disposable Novalist concept: one editor, three writing scopes, and a shared planning board.">
+<title>Novalist · One manuscript, one editor</title>
+<style>
+:root {
+  color-scheme: dark;
+  --ground: #0f1219;
+  --panel: #171c2b;
+  --surface: #131823;
+  --paper: #1b202c;
+  --text: #ece5d2;
+  --muted: #a8a193;
+  --gold: #d2a74f;
+  --gold-light: #ecc97c;
+  --line: rgb(237 230 211 / 10%);
+  --selection: rgb(210 167 79 / 12%);
+  --green: #91b5a1;
+  --blue: #97b6cf;
+  font:
+    13px / 1.5 "Segoe UI",
+    system-ui,
+    sans-serif;
+  background: var(--ground);
+  color: var(--text);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button,
+select {
+  color: var(--muted);
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+}
+button:hover,
+select:hover {
+  color: var(--text);
+  background: rgb(237 230 211 / 5%);
+}
+button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[contenteditable]:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+input,
+textarea {
+  color: var(--text);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 11px;
+}
+textarea {
+  resize: vertical;
+  width: 100%;
+  line-height: 1.7;
+}
+a {
+  color: var(--gold-light);
+}
+svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+.app {
+  height: 100dvh;
+  min-height: 540px;
+  display: grid;
+  grid-template-rows: 65px 1fr 31px;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 23px;
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font:
+    23px Georgia,
+    serif;
+  letter-spacing: -0.7px;
+}
+.brand-mark {
+  color: var(--gold);
+  width: 28px;
+  height: 28px;
+}
+.divider {
+  width: 1px;
+  height: 24px;
+  background: var(--line);
+}
+.book-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.eyebrow {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+.book-label strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.top-tabs {
+  display: flex;
+  align-self: stretch;
+  gap: 6px;
+  margin: 0 auto;
+}
+.top-tabs button {
+  padding: 0 23px;
+  border-radius: 0;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+}
+.top-tabs button[aria-selected="true"] {
+  color: var(--gold-light);
+  border-bottom-color: var(--gold);
+}
+.concept {
+  font-size: 9px;
+  letter-spacing: 1.3px;
+  color: var(--gold);
+  border: 1px solid var(--line);
+  padding: 4px 7px;
+  border-radius: 4px;
+}
+.icon-button {
+  width: 31px;
+  height: 31px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+}
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 10px;
+}
+.primary {
+  background: var(--gold);
+  color: #171206;
+  border: 1px solid var(--gold);
+  font-weight: 600;
+}
+.primary:hover {
+  background: var(--gold-light);
+  color: #171206;
+}
+.bordered {
+  border-color: var(--line);
+}
+.workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 237px minmax(0, 1fr) 263px;
+}
+.outline-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+.panel-head {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 19px;
+}
+.panel-head strong {
+  font-size: 12px;
+  font-weight: 550;
+}
+.search {
+  position: relative;
+  padding: 0 14px 16px;
+}
+.search svg {
+  position: absolute;
+  left: 24px;
+  top: 10px;
+  width: 15px;
+  color: var(--muted);
+}
+.search input {
+  width: 100%;
+  padding-left: 32px;
+  font-size: 11px;
+  background: transparent;
+}
+.outline {
+  overflow: auto;
+  padding: 0 10px;
+  flex: 1;
+}
+.outline details {
+  margin-bottom: 13px;
+}
+.outline summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 9px 7px;
+}
+.outline summary::-webkit-details-marker {
+  display: none;
+}
+.outline summary svg {
+  width: 12px;
+  height: 12px;
+}
+.outline details:not([open]) summary svg {
+  transform: rotate(-90deg);
+}
+.chapter-number {
+  font:
+    10px "Courier New",
+    monospace;
+  opacity: 0.65;
+}
+.outline-scene {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 9px 10px 23px;
+  margin: 2px 0;
+  font-size: 11px;
+}
+.scene-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.outline-scene[aria-current="true"] {
+  background: var(--selection);
+  color: var(--gold-light);
+  box-shadow: inset 2px 0 var(--gold);
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex: none;
+}
+.dot[data-stage="Revised"] {
+  background: var(--green);
+}
+.dot[data-stage="Planned"] {
+  background: var(--blue);
+}
+.outline-count {
+  color: var(--muted);
+  font:
+    10px "Courier New",
+    monospace;
+}
+.outline-footer {
+  padding: 18px;
+  border-top: 1px solid var(--line);
+}
+.outline-footer .text-button {
+  width: 100%;
+  justify-content: flex-start;
+  padding-left: 0;
+  font-size: 11px;
+}
+.progress-line {
+  height: 3px;
+  background: var(--line);
+  margin: 9px 0;
+  border-radius: 3px;
+}
+.progress-line span {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  width: 0;
+}
+.small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.main {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.scopebar {
+  min-height: 61px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 11px 24px;
+}
+.segmented {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--ground);
+}
+.segmented button {
+  font-size: 11px;
+  padding: 6px 13px;
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--panel);
+  color: var(--gold-light);
+  box-shadow: 0 1px 4px #0004;
+}
+.scope-description {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.formatbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--line);
+  min-height: 46px;
+}
+.formatbar select {
+  max-width: 155px;
+  padding: 5px;
+  font-size: 11px;
+}
+.formatbar .divider {
+  margin: 0 7px;
+  height: 17px;
+}
+.formatbar .text-button {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.right {
+  margin-left: auto;
+}
+.editor-scroll,
+.plan-scroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
+  padding: 30px clamp(20px, 4vw, 64px) 90px;
+}
+.document {
+  max-width: 850px;
+  margin: 0 auto;
+}
+.document-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: 0 0 30px;
+  gap: 15px;
+}
+.document-intro h1 {
+  font:
+    28px / 1.25 Georgia,
+    serif;
+  margin: 9px 0 6px;
+  letter-spacing: -0.6px;
+}
+.book-number {
+  color: var(--gold);
+  font:
+    11px "Courier New",
+    monospace;
+  border: 1px solid var(--line);
+  padding: 10px 13px;
+  margin-top: 8px;
+}
+.chapter-heading {
+  padding: 24px 0 21px;
+  border-top: 1px solid var(--line);
+}
+.chapter-heading .eyebrow {
+  color: var(--gold);
+}
+.chapter-heading h2 {
+  font:
+    25px / 1.3 Georgia,
+    serif;
+  margin: 8px 0;
+}
+.chapter-heading p {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0;
+}
+[contenteditable="plaintext-only"] {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.chapter-heading h2:focus,
+.scene-title:focus {
+  outline: none;
+  box-shadow: 0 1px var(--gold);
+}
+.scene-block {
+  position: relative;
+  display: grid;
+  grid-template-columns: 107px minmax(0, 1fr);
+  gap: 22px;
+  padding: 19px 0 25px;
+  scroll-margin-top: 20px;
+}
+.scene-meta {
+  padding-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.scene-index {
+  display: block;
+  font:
+    10px "Courier New",
+    monospace;
+  letter-spacing: 1.4px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.scene-block.active .scene-index {
+  color: var(--gold);
+}
+.word-label {
+  display: block;
+  margin-top: 8px;
+}
+.stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+.scene-meta button {
+  margin-top: 15px;
+  padding: 4px 0;
+  font-size: 10px;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.scene-meta button svg {
+  width: 13px;
+  height: 13px;
+}
+.scene-prose {
+  border-left: 2px solid var(--line);
+  padding-left: 24px;
+}
+.scene-block.active .scene-prose {
+  border-left-color: var(--gold);
+}
+.scene-title {
+  font:
+    18px / 1.4 Georgia,
+    serif;
+  margin: 0 0 15px;
+}
+.prose {
+  font:
+    16px / 1.95 Georgia,
+    serif;
+  color: #d2cbbb;
+  min-height: 90px;
+  caret-color: var(--gold-light);
+}
+.prose p {
+  margin: 0 0 15px;
+  min-height: 1.95em;
+}
+.prose p:last-child {
+  margin-bottom: 0;
+}
+.prose p:focus-visible {
+  outline: none;
+}
+.prose p:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  opacity: 0.65;
+  pointer-events: none;
+}
+.insert-line {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 5px 0 14px 129px;
+}
+.insert-line::before,
+.insert-line::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.insert-line button {
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.insert-line svg {
+  width: 12px;
+  height: 12px;
+}
+.end-mark {
+  text-align: center;
+  color: var(--gold);
+  font:
+    22px Georgia,
+    serif;
+  letter-spacing: 8px;
+  margin-top: 30px;
+}
+.inspector {
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  overflow: auto;
+}
+.inspector .panel-head {
+  border-bottom: 1px solid var(--line);
+}
+.inspector-content {
+  padding: 23px 19px;
+}
+.inspector h2 {
+  font:
+    21px / 1.4 Georgia,
+    serif;
+  margin: 8px 0 22px;
+}
+.field {
+  display: block;
+  margin-bottom: 20px;
+}
+.field > span {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+.field select {
+  width: 100%;
+  border-color: var(--line);
+  padding: 8px;
+  background: var(--ground);
+  font-size: 12px;
+}
+.field textarea {
+  font-size: 12px;
+  background: transparent;
+}
+.fact {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  color: var(--muted);
+  font-size: 11px;
+  margin: 13px 0;
+}
+.fact strong {
+  font-weight: 400;
+  color: var(--text);
+}
+.inspector-rule {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 24px 0;
+}
+.hint {
+  border-left: 2px solid var(--gold);
+  padding-left: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.hint strong {
+  color: var(--text);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 5px;
+}
+.key {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font:
+    10px "Courier New",
+    monospace;
+  color: var(--gold-light);
+}
+.statusbar {
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 21px;
+  padding: 0 18px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.status-indicator .dot {
+  background: var(--green);
+  width: 5px;
+  height: 5px;
+}
+.plan-scroll {
+  padding: 28px 26px 70px;
+}
+.plan-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 25px;
+}
+.plan-heading h1 {
+  font:
+    29px Georgia,
+    serif;
+  margin: 8px 0;
+}
+.plan-heading p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+.chapter-card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 9px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.chapter-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 19px 8px;
+}
+.chapter-card-header h2 {
+  flex: 1;
+  font:
+    20px Georgia,
+    serif;
+  margin: 0;
+}
+.chapter-card-summary {
+  display: block;
+  width: calc(100% - 38px);
+  margin: 0 19px 15px;
+  background: transparent;
+  border-color: transparent;
+  padding: 0;
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 43px;
+}
+.chapter-card-summary:focus {
+  background: var(--ground);
+}
+.plan-scenes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 17px 17px;
+  min-height: 60px;
+}
+.scene-card {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  cursor: grab;
+}
+.scene-card.active {
+  border-color: #d2a74f75;
+}
+.scene-card:hover {
+  border-color: var(--gold);
+}
+.scene-card-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.scene-card-top svg {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+.scene-card-top strong {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+}
+.scene-card p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 12px 0;
+}
+.scene-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+.scene-card-bottom button {
+  font-size: 10px;
+  color: var(--gold-light);
+  padding: 2px 0;
+}
+.card-actions {
+  display: flex;
+  gap: 2px;
+}
+.card-actions .icon-button {
+  width: 24px;
+  height: 24px;
+}
+.card-actions svg {
+  width: 13px;
+  height: 13px;
+}
+.dragging {
+  opacity: 0.4;
+}
+.drop-target {
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+.plan-add {
+  border: 1px dashed var(--line);
+  padding: 18px;
+  width: 100%;
+  font-size: 12px;
+}
+.empty {
+  padding: 20px 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+dialog {
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 27px;
+  max-width: 510px;
+  width: calc(100% - 32px);
+  box-shadow: 0 30px 100px #0009;
+}
+dialog::backdrop {
+  background: #080b12b8;
+}
+dialog h2 {
+  font:
+    27px Georgia,
+    serif;
+  margin: 9px 0 16px;
+}
+dialog p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.85;
+}
+dialog .close {
+  position: absolute;
+  right: 15px;
+  top: 14px;
+}
+dialog label {
+  display: block;
+  margin: 18px 0;
+}
+dialog label span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 7px;
+}
+dialog input {
+  width: 100%;
+}
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 23px;
+}
+.help-tabs {
+  margin: 20px 0;
+}
+.help-example {
+  padding: 16px;
+  background: var(--ground);
+  border-radius: 6px;
+  color: var(--text);
+  font:
+    13px / 2 "Courier New",
+    monospace;
+  margin: 16px 0;
+}
+.help-note {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+.toast {
+  position: fixed;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(540px, 90vw);
+  padding: 12px 20px;
+  border: 1px solid var(--gold);
+  background: var(--panel);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px #0006;
+  color: var(--text);
+  font-size: 12px;
+  z-index: 5;
+}
+[hidden] {
+  display: none !important;
+}
+@media (min-width: 1650px) {
+  .workspace {
+    grid-template-columns: 263px minmax(0, 1fr) 290px;
+  }
+  .editor-scroll {
+    padding-top: 40px;
+  }
+  .prose {
+    font-size: 18px;
+  }
+}
+@media (max-width: 1180px) {
+  .workspace {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+  .inspector {
+    display: none;
+  }
+  .workspace.show-inspector {
+    grid-template-columns: 210px minmax(0, 1fr) 250px;
+  }
+  .workspace.show-inspector .inspector {
+    display: block;
+  }
+  .scope-description {
+    display: none;
+  }
+  .inspector-toggle {
+    margin-left: auto;
+  }
+  .scene-block {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .insert-line {
+    margin-left: 96px;
+  }
+}
+@media (max-width: 760px) {
+  .topbar {
+    gap: 12px;
+    padding: 0 13px;
+  }
+  .book-label,
+  .topbar > .divider,
+  .concept {
+    display: none;
+  }
+  .brand {
+    font-size: 20px;
+  }
+  .top-tabs {
+    margin-left: auto;
+    margin-right: 0;
+  }
+  .top-tabs button {
+    padding: 0 12px;
+  }
+  .workspace,
+  .workspace.show-inspector {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+  .workspace.show-inspector .inspector {
+    display: block;
+    position: fixed;
+    top: 65px;
+    bottom: 31px;
+    right: 0;
+    width: 260px;
+    z-index: 3;
+    box-shadow: -12px 0 30px #0005;
+  }
+  .scopebar {
+    padding: 10px 14px;
+    gap: 6px;
+  }
+  .scopebar > .eyebrow {
+    display: none;
+  }
+  .segmented button {
+    padding: 6px 9px;
+  }
+  .formatbar {
+    padding: 7px 12px;
+  }
+  .secondary {
+    display: none;
+  }
+  .editor-scroll {
+    padding: 25px 20px 60px;
+  }
+  .scene-block {
+    display: block;
+  }
+  .scene-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 0 13px;
+  }
+  .scene-index {
+    margin: 0;
+  }
+  .scene-meta .word-label,
+  .scene-meta button {
+    display: none;
+  }
+  .scene-prose {
+    padding-left: 14px;
+  }
+  .prose {
+    font-size: 15px;
+  }
+  .insert-line {
+    margin-left: 14px;
+  }
+  .document-intro h1 {
+    font-size: 24px;
+  }
+  .book-number {
+    display: none;
+  }
+  .plan-scenes {
+    grid-template-columns: 1fr;
+  }
+  .plan-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .statusbar {
+    gap: 10px;
+    font-size: 9px;
+  }
+  .scope-status {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .workspace,
+  .workspace.show-inspector {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .outline-panel {
+    display: none;
+  }
+  .workspace.show-outline .outline-panel {
+    display: flex;
+    position: fixed;
+    top: 65px;
+    bottom: 31px;
+    width: 235px;
+    z-index: 4;
+    box-shadow: 12px 0 30px #0005;
+  }
+  .topbar {
+    gap: 6px;
+  }
+  .brand-mark {
+    display: none;
+  }
+  .top-tabs button {
+    padding: 0 10px;
+  }
+  .statusbar .right {
+    display: none;
+  }
+  .document-intro {
+    margin-bottom: 15px;
+  }
+}
+@media (min-width: 521px) {
+  #outline-toggle {
+    display: none;
+  }
+}
+@media (min-width: 1181px) {
+  .workspace.hide-inspector {
+    grid-template-columns: 237px minmax(0, 1fr);
+  }
+  .workspace.hide-inspector .inspector {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand"><svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 23V5l18 18V5M9 5H3m22 18h-6M9 23H3M25 5h-6"/></svg>novalist</div><span class="divider"></span>
+  <div class="book-label"><span class="eyebrow">Your workspace</span><strong>The Cartographer’s Silence</strong></div>
+  <nav class="top-tabs" aria-label="Workspace" role="tablist"><button id="write-tab" role="tab" aria-selected="true" aria-controls="write-view" data-view="write"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5L8 21H3v-5ZM14 5l5 5"/></svg>Write</button><button id="plan-tab" role="tab" aria-selected="false" aria-controls="plan-view" data-view="plan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="10" rx="1"/></svg>Plan</button></nav>
+  <span class="concept">INTERACTIVE CONCEPT</span><button id="help-button" class="icon-button" title="How this concept works" aria-label="How this concept works"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4m0 3h.01"/></svg></button>
+</header>
+<div class="workspace" id="workspace">
+  <aside class="outline-panel" aria-label="Manuscript outline"><div class="panel-head"><strong>Manuscript outline</strong><button class="icon-button" data-insert="scene" title="Add scene" aria-label="Add scene">+</button></div><div class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input id="outline-search" type="search" placeholder="Find a scene…" aria-label="Find a scene"></div><nav class="outline" id="outline" aria-label="Chapters and scenes"></nav><div class="outline-footer"><div class="small" id="book-totals"></div><div class="progress-line"><span id="book-progress"></span></div><div class="small" id="revision-progress"></div><button class="text-button" data-insert="chapter">+ Add chapter</button></div></aside>
+  <main class="main" id="write-view" role="tabpanel" aria-labelledby="write-tab">
+    <div class="scopebar"><button class="icon-button" id="outline-toggle" title="Toggle outline" aria-label="Toggle outline"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button><span class="eyebrow">Write</span><div class="segmented" aria-label="Writing scope" id="scopes"><button data-scope="scene" aria-pressed="false">Scene</button><button data-scope="chapter" aria-pressed="false">Chapter</button><button data-scope="manuscript" aria-pressed="true">Manuscript</button></div><span class="scope-description" id="scope-description"></span><button class="icon-button inspector-toggle" id="inspector-toggle" title="Scene details" aria-label="Toggle scene details"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg></button></div>
+    <div class="formatbar"><select id="block-style" aria-label="Paragraph or structural heading"><option value="paragraph">Paragraph</option><option value="scene">Scene heading</option><option value="chapter">Chapter heading</option></select><span class="divider"></span><button class="text-button" data-insert="scene">+ Scene</button><button class="text-button" data-insert="chapter">+ Chapter</button><span class="right small secondary">Structure as you write <span class="key">#</span> <span class="key">##</span></span></div>
+    <div class="editor-scroll" id="editor-scroll"><div class="document" id="document"></div></div>
+  </main>
+  <main class="main" id="plan-view" role="tabpanel" aria-labelledby="plan-tab" hidden><div class="scopebar"><span class="eyebrow">Plan</span><span class="small">Chapters &amp; scene summaries</span><button class="text-button bordered right" id="return-to-writing">Return to writing →</button></div><div class="plan-scroll" id="plan-scroll"></div></main>
+  <aside class="inspector" aria-label="Active scene details"><div class="panel-head"><strong>Scene details</strong><button id="inspector-close" class="icon-button" aria-label="Close scene details" title="Close scene details">×</button></div><div id="inspector-content" class="inspector-content"></div></aside>
+</div>
+<footer class="statusbar"><span class="status-indicator"><span class="dot"></span>Prototype · edits stay in this tab only</span><span class="scope-status" id="status-scope"></span><span class="right" id="status-words"></span><button id="reset-button">Reset demo</button></footer>
+</div>
+<dialog id="insert-dialog" aria-labelledby="insert-title"><form id="insert-form"><span class="eyebrow">Build your manuscript</span><h2 id="insert-title">New scene</h2><p id="insert-description"></p><label><span id="insert-label">Scene title</span><input id="insert-name" required autocomplete="off" maxlength="120" placeholder="Give this moment a name"></label><p id="insert-location" class="small"></p><div class="dialog-footer"><button type="button" class="text-button" id="insert-cancel">Cancel</button><button type="submit" class="text-button primary" id="insert-submit">Create scene</button></div></form></dialog>
+<dialog id="help-dialog" aria-labelledby="help-title"><button class="icon-button close" id="help-close" aria-label="Close explanation">×</button><span class="eyebrow">One manuscript. Different distances.</span><h2 id="help-title">A place to write.<br>A place to see the story.</h2><p>This throwaway mockup explores one editor for focused scenes and the whole manuscript, with a shared planning view.</p><div class="segmented help-tabs" id="help-tabs" aria-label="Explore the concept"><button data-help="scope" aria-pressed="true">1. Change scope</button><button data-help="structure" aria-pressed="false">2. Add structure</button><button data-help="arrange" aria-pressed="false">3. Arrange</button></div><div id="help-content"></div><p class="help-note">Based on <a href="https://github.com/Novalist-Project/novalist-official/pull/64" target="_blank" rel="noreferrer">PR #64’s stacked scene editor</a>. Sample content only. Reloading clears edits. Rich formatting, comments, proofing, footnotes, and saving would use the same production editor in every scope; those systems are not implemented here.</p></dialog>
+<dialog id="reset-dialog" aria-labelledby="reset-title"><h2 id="reset-title">Reset this demo?</h2><p>This replaces your sample text and arrangement with the original demo. Changes in this tab will be lost.</p><div class="dialog-footer"><button class="text-button" id="reset-cancel">Keep exploring</button><button class="text-button primary" id="reset-confirm">Reset demo</button></div></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script>
+"use strict";
+// Disposable interaction prototype. All edits belong to this tab's sample book.
+const initialChapters = [
+  {
+    id: "c1",
+    title: "The city that forgot",
+    summary:
+      "A missing street. An impossible map. The first sign that the city is keeping a secret.",
+    scenes: [
+      {
+        id: "s1",
+        title: "The last mapmaker",
+        stage: "Revised",
+        pov: "Elara",
+        location: "The map shop",
+        summary:
+          "Elara discovers a street on her father’s map that no longer exists. A stranger arrives with a letter addressed to a dead man.",
+        notes:
+          "Let the shop feel familiar before the impossible detail. The letter arrives just as she notices the missing street.",
+        paragraphs: [
+          "By the time the bells rang thirteen, Elara had already erased the street twice.",
+          "It was a small street. An unremarkable street. The sort of narrow, rain-dark passage that a person could walk down every morning for forty years without ever thinking to learn its name. But it had been there yesterday, between the apothecary and the house with the blue door. She was certain of that.",
+          "Her father’s map said otherwise.",
+          "She leaned closer to the desk, letting the amber light of the lamp settle over the paper. His ink had faded to the colour of old tea, but the lines were as precise as ever. Every alley. Every courtyard. Every place the city allowed itself to remember.",
+          "“You can’t erase a place,” she said to the empty shop. “Not without leaving something behind.”",
+          "The bell above the door answered her.",
+          "A man stood on the threshold with rain on his shoulders and a letter in his hand. He looked at the maps on the walls, then at Elara, with the careful expression of someone arriving twenty years too late.",
+        ],
+      },
+      {
+        id: "s2",
+        title: "A letter for the dead",
+        stage: "Draft",
+        pov: "Elara",
+        location: "The map shop",
+        summary:
+          "The stranger’s letter contains a warning in her father’s handwriting: do not trust the places you remember.",
+        notes:
+          "Keep the stranger’s motive ambiguous. He knows the shop, but not Elara.",
+        paragraphs: [
+          "“I’m looking for the cartographer,” the stranger said.",
+          "“You’ve found her.”",
+          "He glanced at the name painted above the counter. Elara had meant to change it for three years. Some days she told herself she liked the lettering.",
+          "The envelope was dry. Everything else about him was soaked through, but the paper was crisp, and the ink on it shone as if it had just been written. She knew the handwriting before she saw the name.",
+          "Her father had been dead for eleven years.",
+        ],
+      },
+      {
+        id: "s3",
+        title: "Where Wren Street was",
+        stage: "Draft",
+        pov: "Elara",
+        location: "The old quarter",
+        summary:
+          "Following the map, Elara finds a blank wall where Wren Street should be. Someone has left a key in the mortar.",
+        notes: "",
+        paragraphs: [
+          "The blue door was still there. So was the apothecary, with its jars of things nobody bought and its window that nobody cleaned. Between them stood a wall.",
+          "Elara pressed her palm against the bricks. They were warm, although the day was cold.",
+          "At eye level, caught in a seam of fresh mortar, a small brass key waited for someone who remembered how to look.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "c2",
+    title: "Beneath the ink",
+    summary:
+      "Elara follows the key into the hidden city, where memories have become a dangerous currency.",
+    scenes: [
+      {
+        id: "s4",
+        title: "The other side of the wall",
+        stage: "Draft",
+        pov: "Elara",
+        location: "Wren Street",
+        summary:
+          "The wall opens onto a street preserved in another time. Elara recognises a voice from her childhood.",
+        notes: "",
+        paragraphs: [
+          "The lock was not in the wall. It was in its shadow.",
+          "She turned the key and the city took a breath. Beyond the bricks, a street she had not seen since childhood unfolded beneath a sky full of stars.",
+          "Somewhere at its far end, her mother was singing.",
+        ],
+      },
+      {
+        id: "s5",
+        title: "The memory market",
+        stage: "Planned",
+        pov: "Elara",
+        location: "The hidden city",
+        summary:
+          "A merchant offers Elara a memory of her father, but asks for one of her own in exchange.",
+        notes: "What would Elara willingly forget?",
+        paragraphs: [
+          "Every stall had a price, but none of them wanted money.",
+          "An old woman held up a glass vial. Inside it, a summer afternoon turned slowly in the light. Elara recognised the orchard before she recognised the small girl running between the trees.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "c3",
+    title: "A place to remember",
+    summary:
+      "The truth behind her father’s disappearance forces Elara to decide what a city is allowed to forget.",
+    scenes: [
+      {
+        id: "s6",
+        title: "The unfinished atlas",
+        stage: "Planned",
+        pov: "Elara",
+        location: "The archive",
+        summary:
+          "In the archive, Elara finds the atlas her father never completed, and the page he removed to protect her.",
+        notes: "",
+        paragraphs: [
+          "The atlas lay open at a page that was not there.",
+          "Around the gap, her father had written the same sentence in a dozen different inks. She read it once. Then she sat down.",
+        ],
+      },
+      {
+        id: "s7",
+        title: "What we keep",
+        stage: "Planned",
+        pov: "Elara",
+        location: "The map shop",
+        summary:
+          "Elara returns to the shop with a new map and a choice: restore the lost streets, or let the city begin again.",
+        notes: "Echo the opening bell, but only twelve chimes this time.",
+        paragraphs: [
+          "This time, when the bells rang, she counted them.",
+          "Twelve. And then the quiet, familiar sound of someone opening the door.",
+        ],
+      },
+    ],
+  },
+];
+const state = {
+  chapters: structuredClone(initialChapters),
+  sceneId: "s1",
+  scope: "manuscript",
+  view: "write",
+  query: "",
+};
+const allScenes = () => state.chapters.flatMap((chapter) => chapter.scenes);
+const activeScene = () =>
+  allScenes().find((scene) => scene.id === state.sceneId);
+const chapterOf = (id) =>
+  state.chapters.find((chapter) =>
+    chapter.scenes.some((scene) => scene.id === id),
+  );
+const wordCount = (scene) =>
+  scene.paragraphs.join(" ").trim().split(/\s+/).filter(Boolean).length;
+const totalWords = () =>
+  allScenes().reduce((sum, scene) => sum + wordCount(scene), 0);
+const number = (value) => value.toLocaleString("en-US");
+const $ = (id) => document.getElementById(id);
+const icons = {
+  chevron: "m6 9 6 6 6-6",
+  plus: "M12 5v14M5 12h14",
+  focus: "M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5",
+  up: "m6 14 6-6 6 6",
+  down: "m6 10 6 6 6-6",
+  grip: "M8 5h.01M16 5h.01M8 12h.01M16 12h.01M8 19h.01M16 19h.01",
+};
+let toastTimer;
+let pendingInsert = null;
+let selectedParagraph = null;
+let savedCaret = null;
+let dragged = null;
+let programmaticScroll = false;
+
+function element(tag, attributes = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(attributes)) {
+    if (key === "class") node.className = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else if (value !== false && value !== null)
+      node.setAttribute(key, value === true ? "" : value);
+  }
+  node.append(...children.filter((child) => child !== null));
+  return node;
+}
+
+function icon(name) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(svg.namespaceURI, "path");
+  path.setAttribute("d", icons[name]);
+  svg.append(path);
+  return svg;
+}
+
+function button(label, action, className = "text-button", iconName = null) {
+  return element(
+    "button",
+    { type: "button", class: className, onclick: action },
+    iconName ? icon(iconName) : null,
+    label,
+  );
+}
+
+function iconButton(label, iconName, action, disabled = false) {
+  return element(
+    "button",
+    {
+      type: "button",
+      class: "icon-button",
+      title: label,
+      "aria-label": label,
+      onclick: action,
+      disabled,
+    },
+    icon(iconName),
+  );
+}
+
+function stageChip(scene) {
+  return element(
+    "span",
+    { class: "stage-chip" },
+    element("span", { class: "dot", "data-stage": scene.stage }),
+    scene.stage,
+  );
+}
+
+function toast(message) {
+  clearTimeout(toastTimer);
+  $("toast").textContent = message;
+  $("toast").hidden = false;
+  toastTimer = setTimeout(() => {
+    $("toast").hidden = true;
+  }, 4500);
+}
+
+function renderOutline() {
+  const closed = new Set(
+    [...$("outline").querySelectorAll("details:not([open])")].map(
+      (node) => node.dataset.chapter,
+    ),
+  );
+  const groups = state.chapters
+    .map((chapter, index) => {
+      const scenes = chapter.scenes.filter((scene) =>
+        `${scene.title} ${chapter.title}`.toLowerCase().includes(state.query),
+      );
+      if (!scenes.length && state.query) return null;
+      return element(
+        "details",
+        {
+          open: !closed.has(chapter.id) || Boolean(state.query),
+          "data-chapter": chapter.id,
+        },
+        element(
+          "summary",
+          {},
+          icon("chevron"),
+          element(
+            "span",
+            { class: "chapter-number" },
+            String(index + 1).padStart(2, "0"),
+          ),
+          chapter.title,
+        ),
+        ...scenes.map((scene) =>
+          element(
+            "button",
+            {
+              class: "outline-scene",
+              "data-scene": scene.id,
+              "aria-current": String(scene.id === state.sceneId),
+              onclick: () => navigate(scene.id),
+            },
+            element("span", { class: "dot", "data-stage": scene.stage }),
+            element("span", { class: "scene-name" }, scene.title),
+            element(
+              "span",
+              { class: "outline-count", "data-count": scene.id },
+              number(wordCount(scene)),
+            ),
+          ),
+        ),
+      );
+    })
+    .filter(Boolean);
+  $("outline").replaceChildren(
+    ...(groups.length
+      ? groups
+      : [
+          element(
+            "p",
+            { class: "empty" },
+            "No matching scenes. Try another title.",
+          ),
+        ]),
+  );
+}
+
+function updateCounts() {
+  const scenes = allScenes();
+  const revised = scenes.filter((scene) => scene.stage === "Revised").length;
+  $("book-totals").textContent =
+    `${state.chapters.length} chapters · ${scenes.length} scenes`;
+  $("revision-progress").textContent =
+    `${revised} of ${scenes.length} scenes revised`;
+  $("book-progress").style.width = `${(revised / scenes.length) * 100}%`;
+  $("status-words").textContent =
+    `${number(wordCount(activeScene()))} scene words / ${number(totalWords())} manuscript words`;
+  $("status-scope").textContent =
+    state.view === "plan"
+      ? "Plan · shared manuscript order"
+      : `${state.scope[0].toUpperCase()}${state.scope.slice(1)} · ${activeScene().title}`;
+  document.querySelectorAll("[data-count]").forEach((node) => {
+    const scene = scenes.find((item) => item.id === node.dataset.count);
+    node.textContent = number(wordCount(scene));
+  });
+}
+
+function activate(id) {
+  if (state.sceneId === id) return;
+  state.sceneId = id;
+  selectedParagraph = null;
+  document
+    .querySelectorAll(".outline-scene")
+    .forEach((node) =>
+      node.setAttribute("aria-current", String(node.dataset.scene === id)),
+    );
+  document
+    .querySelectorAll(".scene-block,.scene-card")
+    .forEach((node) =>
+      node.classList.toggle("active", node.dataset.scene === id),
+    );
+  updateCounts();
+  renderInspector();
+}
+
+function navigate(id) {
+  const previousChapter = chapterOf(state.sceneId).id;
+  activate(id);
+  if (state.view === "plan")
+    document
+      .querySelector(`.scene-card[data-scene="${id}"]`)
+      ?.scrollIntoView({ block: "center" });
+  else {
+    if (
+      state.scope === "scene" ||
+      (state.scope === "chapter" && chapterOf(id).id !== previousChapter)
+    )
+      renderEditor();
+    revealScene();
+    renderScope();
+  }
+  $("workspace").classList.remove("show-outline");
+}
+
+function revealScene() {
+  programmaticScroll = true;
+  const row = document.querySelector(
+    `.scene-block[data-scene="${state.sceneId}"]`,
+  );
+  if (row)
+    $("editor-scroll").scrollTop +=
+      row.getBoundingClientRect().top -
+      $("editor-scroll").getBoundingClientRect().top -
+      20;
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      programmaticScroll = false;
+    }),
+  );
+}
+
+function captureCaret() {
+  const selection = window.getSelection();
+  const paragraph =
+    selection?.anchorNode?.parentElement?.closest("[data-paragraph]");
+  if (!paragraph || !selection.rangeCount) return;
+  const range = selection.getRangeAt(0).cloneRange();
+  range.selectNodeContents(paragraph);
+  range.setEnd(selection.anchorNode, selection.anchorOffset);
+  savedCaret = {
+    sceneId: paragraph.dataset.scene,
+    index: Number(paragraph.dataset.paragraph),
+    offset: range.toString().length,
+  };
+}
+
+function restoreCaret() {
+  if (!savedCaret || savedCaret.sceneId !== state.sceneId) return;
+  const paragraph = document.querySelector(
+    `p[data-scene="${savedCaret.sceneId}"][data-paragraph="${savedCaret.index}"]`,
+  );
+  if (!paragraph) return;
+  paragraph.focus({ preventScroll: true });
+  const range = document.createRange();
+  range.selectNodeContents(paragraph);
+  if (paragraph.firstChild)
+    range.setStart(
+      paragraph.firstChild,
+      Math.min(savedCaret.offset, paragraph.firstChild.textContent.length),
+    );
+  range.collapse(true);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+}
+
+function setScope(scope) {
+  captureCaret();
+  state.scope = scope;
+  renderEditor();
+  renderScope();
+  revealScene();
+  restoreCaret();
+  toast(
+    scope === "scene"
+      ? `Focused on “${activeScene().title}”. The rest of your manuscript is still there.`
+      : `Showing ${scope === "chapter" ? "this chapter" : "the full manuscript"}. Same scenes, same text.`,
+  );
+}
+
+function renderScope() {
+  document
+    .querySelectorAll("[data-scope]")
+    .forEach((node) =>
+      node.setAttribute(
+        "aria-pressed",
+        String(node.dataset.scope === state.scope),
+      ),
+    );
+  const count =
+    state.scope === "manuscript"
+      ? allScenes().length
+      : chapterOf(state.sceneId).scenes.length;
+  $("scope-description").textContent =
+    state.scope === "scene"
+      ? "One scene. Room to focus."
+      : `${count} scenes · one continuous workspace`;
+  updateCounts();
+}
+
+function setView(view) {
+  captureCaret();
+  state.view = view;
+  $("write-view").hidden = view !== "write";
+  $("plan-view").hidden = view !== "plan";
+  document
+    .querySelectorAll("[data-view]")
+    .forEach((node) =>
+      node.setAttribute("aria-selected", String(node.dataset.view === view)),
+    );
+  if (view === "plan") renderPlan();
+  else {
+    renderEditor();
+    revealScene();
+    restoreCaret();
+  }
+  renderScope();
+}
+function sceneParagraph(scene, text, index) {
+  const paragraph = element(
+    "p",
+    {
+      contenteditable: "plaintext-only",
+      role: "textbox",
+      "aria-multiline": "true",
+      "aria-label": `${scene.title}, paragraph ${index + 1}`,
+      "data-scene": scene.id,
+      "data-paragraph": index,
+      "data-placeholder": "Write the next moment…",
+      spellcheck: true,
+    },
+    text,
+  );
+  paragraph.addEventListener("focus", () => {
+    activate(scene.id);
+    selectedParagraph = { sceneId: scene.id, index };
+  });
+  paragraph.addEventListener("input", () => {
+    scene.paragraphs[index] = paragraph.textContent;
+    updateCounts();
+  });
+  paragraph.addEventListener("keydown", (event) =>
+    paragraphKey(event, scene, index, paragraph),
+  );
+  return paragraph;
+}
+
+function editableTitle(tag, text, label, onChange, className = "") {
+  const title = element(
+    tag,
+    {
+      class: className,
+      contenteditable: "plaintext-only",
+      "aria-label": label,
+      spellcheck: false,
+    },
+    text,
+  );
+  title.addEventListener("blur", () => {
+    onChange(
+      title.textContent.trim() ||
+        `Untitled ${label.toLowerCase().split(" ")[0]}`,
+    );
+    renderOutline();
+    renderInspector();
+    updateCounts();
+  });
+  title.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      title.blur();
+    }
+  });
+  return title;
+}
+
+function sceneBlock(scene, index) {
+  const title = editableTitle(
+    "h3",
+    scene.title,
+    "Scene title",
+    (text) => {
+      scene.title = text;
+      title.textContent = text;
+    },
+    "scene-title",
+  );
+  title.addEventListener("focus", () => activate(scene.id));
+  return element(
+    "section",
+    {
+      class: `scene-block${scene.id === state.sceneId ? " active" : ""}`,
+      "data-scene": scene.id,
+      "aria-label": scene.title,
+    },
+    element(
+      "div",
+      { class: "scene-meta" },
+      element(
+        "span",
+        { class: "scene-index" },
+        `SCENE ${String(index + 1).padStart(2, "0")}`,
+      ),
+      stageChip(scene),
+      element(
+        "span",
+        { class: "word-label" },
+        element("span", { "data-count": scene.id }, number(wordCount(scene))),
+        " words",
+      ),
+      button(
+        state.scope === "scene" ? "Expand" : "Focus scene",
+        () => {
+          activate(scene.id);
+          setScope(state.scope === "scene" ? "manuscript" : "scene");
+        },
+        "",
+        "focus",
+      ),
+    ),
+    element(
+      "div",
+      { class: "scene-prose" },
+      title,
+      element(
+        "div",
+        { class: "prose" },
+        ...scene.paragraphs.map((text, i) => sceneParagraph(scene, text, i)),
+      ),
+    ),
+  );
+}
+
+function chapterHeading(chapter, index) {
+  const title = editableTitle("h2", chapter.title, "Chapter title", (text) => {
+    chapter.title = text;
+    title.textContent = text;
+  });
+  return element(
+    "header",
+    { class: "chapter-heading" },
+    element(
+      "span",
+      { class: "eyebrow" },
+      `Chapter ${String(index + 1).padStart(2, "0")}`,
+    ),
+    title,
+    element("p", {}, chapter.summary),
+  );
+}
+
+function renderEditor() {
+  const nodes = [
+    element(
+      "header",
+      { class: "document-intro" },
+      element(
+        "div",
+        {},
+        element(
+          "span",
+          { class: "eyebrow" },
+          state.scope === "scene"
+            ? "A little room to focus"
+            : "Your story, from beginning to end",
+        ),
+        element("h1", {}, "The Cartographer’s Silence"),
+        element("span", { class: "small" }, "A novel · First draft"),
+      ),
+      element("span", { class: "book-number" }, "VOL. I"),
+    ),
+  ];
+  state.chapters.forEach((chapter, index) => {
+    if (
+      state.scope !== "manuscript" &&
+      chapter.id !== chapterOf(state.sceneId).id
+    )
+      return;
+    nodes.push(chapterHeading(chapter, index));
+    chapter.scenes.forEach((scene, sceneIndex) => {
+      if (state.scope === "scene" && scene.id !== state.sceneId) return;
+      nodes.push(sceneBlock(scene, sceneIndex));
+      nodes.push(
+        element(
+          "div",
+          { class: "insert-line" },
+          button(
+            "New scene here",
+            () => {
+              activate(scene.id);
+              openInsert("scene", scene.id);
+            },
+            "",
+            "plus",
+          ),
+        ),
+      );
+    });
+  });
+  nodes.push(
+    element("div", { class: "end-mark", "aria-hidden": "true" }, "· · ·"),
+  );
+  $("document").replaceChildren(...nodes);
+}
+
+function paragraphKey(event, scene, index, paragraph) {
+  if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+  const heading = paragraph.textContent.match(/^(#{1,2})\s+(.+)$/);
+  if (heading) {
+    event.preventDefault();
+    createStructure(
+      heading[1].length === 1 ? "chapter" : "scene",
+      heading[2].trim(),
+      scene.id,
+      index,
+    );
+    return;
+  }
+  event.preventDefault();
+  const range = window.getSelection().getRangeAt(0);
+  range.deleteContents();
+  const before = range.cloneRange();
+  before.selectNodeContents(paragraph);
+  before.setEnd(range.startContainer, range.startOffset);
+  const offset = before.toString().length;
+  const text = paragraph.textContent;
+  scene.paragraphs.splice(index, 1, text.slice(0, offset), text.slice(offset));
+  const scroll = $("editor-scroll").scrollTop;
+  renderEditor();
+  $("editor-scroll").scrollTop = scroll;
+  savedCaret = { sceneId: scene.id, index: index + 1, offset: 0 };
+  restoreCaret();
+  updateCounts();
+}
+
+function field(label, control) {
+  return element(
+    "label",
+    { class: "field" },
+    element("span", {}, label),
+    control,
+  );
+}
+
+function renderInspector() {
+  const scene = activeScene();
+  const stage = element(
+    "select",
+    { "aria-label": "Scene stage" },
+    ...["Planned", "Draft", "Revised"].map((value) =>
+      element("option", { value, selected: scene.stage === value }, value),
+    ),
+  );
+  stage.addEventListener("change", () => {
+    scene.stage = stage.value;
+    refresh();
+  });
+  const summary = element(
+    "textarea",
+    {
+      rows: 5,
+      "aria-label": "Scene summary",
+      placeholder: "What changes in this scene?",
+    },
+    scene.summary,
+  );
+  summary.addEventListener("input", () => {
+    scene.summary = summary.value;
+    if (state.view === "plan") renderPlan();
+  });
+  const notes = element(
+    "textarea",
+    {
+      rows: 4,
+      "aria-label": "Scene notes",
+      placeholder: "Leave yourself a thought…",
+    },
+    scene.notes,
+  );
+  notes.addEventListener("input", () => {
+    scene.notes = notes.value;
+  });
+  $("inspector-content").replaceChildren(
+    element("span", { class: "eyebrow" }, "Active scene"),
+    element("h2", {}, scene.title),
+    field("Stage", stage),
+    field("Synopsis", summary),
+    element(
+      "div",
+      { class: "fact" },
+      "Point of view",
+      element("strong", {}, scene.pov),
+    ),
+    element(
+      "div",
+      { class: "fact" },
+      "Location",
+      element("strong", {}, scene.location),
+    ),
+    element("hr", { class: "inspector-rule" }),
+    field("Scene notes", notes),
+    element("hr", { class: "inspector-rule" }),
+    element(
+      "div",
+      { class: "hint" },
+      element("strong", {}, "Structure without leaving the page"),
+      "On a new paragraph, type ",
+      element("span", { class: "key" }, "## Scene title"),
+      " or ",
+      element("span", { class: "key" }, "# Chapter title"),
+      ", then press Enter. Your outline updates with it.",
+    ),
+  );
+}
+
+function openInsert(kind, afterId = state.sceneId, paragraphIndex = null) {
+  pendingInsert = { kind, afterId, paragraphIndex };
+  $("insert-name").setCustomValidity("");
+  $("insert-title").textContent = `New ${kind}`;
+  $("insert-label").textContent =
+    `${kind[0].toUpperCase()}${kind.slice(1)} title`;
+  $("insert-submit").textContent = `Create ${kind}`;
+  $("insert-name").value =
+    paragraphIndex === null
+      ? ""
+      : activeScene().paragraphs[paragraphIndex].replace(/^#{1,2}\s+/, "");
+  $("insert-description").textContent =
+    kind === "scene"
+      ? "A scene heading creates a real scene in your outline, ready to write."
+      : "A chapter heading starts a chapter with its first scene, ready to write.";
+  $("insert-location").textContent =
+    paragraphIndex === null
+      ? `Inserted after “${kind === "scene" ? allScenes().find((scene) => scene.id === afterId).title : chapterOf(afterId).title}”.`
+      : "This paragraph becomes the heading. The text after it moves into the new section.";
+  $("insert-dialog").showModal();
+  $("insert-name").focus();
+}
+
+function newScene(title, paragraphs) {
+  return {
+    id: `s-${crypto.randomUUID()}`,
+    title,
+    stage: "Draft",
+    pov: "Elara",
+    location: "Not set",
+    summary: "",
+    notes: "",
+    paragraphs: paragraphs.length ? paragraphs : [""],
+  };
+}
+
+function createStructure(kind, title, afterId, paragraphIndex = null) {
+  const chapter = chapterOf(afterId);
+  const index = chapter.scenes.findIndex((scene) => scene.id === afterId);
+  const source = chapter.scenes[index];
+  const trailing =
+    paragraphIndex === null ? [] : source.paragraphs.splice(paragraphIndex);
+  if (paragraphIndex !== null) trailing.shift();
+  if (!source.paragraphs.length) source.paragraphs.push("");
+  const scene = newScene(kind === "scene" ? title : "Opening scene", trailing);
+  if (kind === "scene") chapter.scenes.splice(index + 1, 0, scene);
+  else {
+    const following =
+      paragraphIndex === null ? [] : chapter.scenes.splice(index + 1);
+    state.chapters.splice(state.chapters.indexOf(chapter) + 1, 0, {
+      id: `c-${crypto.randomUUID()}`,
+      title,
+      summary: "",
+      scenes: [scene, ...following],
+    });
+  }
+  state.sceneId = scene.id;
+  selectedParagraph = null;
+  savedCaret = { sceneId: scene.id, index: 0, offset: 0 };
+  refresh();
+  if (state.view === "write") {
+    revealScene();
+    restoreCaret();
+  } else
+    document
+      .querySelector(`.scene-card[data-scene="${scene.id}"]`)
+      .scrollIntoView({ block: "center" });
+  toast(
+    `${kind === "scene" ? "Scene" : "Chapter"} created. The outline, editor, and plan share the new structure.`,
+  );
+}
+
+function moveChapter(id, direction) {
+  const index = state.chapters.findIndex((chapter) => chapter.id === id);
+  const chapter = state.chapters.splice(index, 1)[0];
+  state.chapters.splice(index + direction, 0, chapter);
+  refresh();
+  toast("Chapter moved. Its scenes moved with it in the manuscript.");
+}
+
+function moveScene(id, targetChapterId, beforeId = null) {
+  if (id === beforeId) return;
+  const source = chapterOf(id);
+  const target = state.chapters.find(
+    (chapter) => chapter.id === targetChapterId,
+  );
+  const scene = source.scenes.splice(
+    source.scenes.findIndex((item) => item.id === id),
+    1,
+  )[0];
+  const index = beforeId
+    ? target.scenes.findIndex((item) => item.id === beforeId)
+    : target.scenes.length;
+  target.scenes.splice(index, 0, scene);
+  refresh();
+  toast(`“${scene.title}” moved. The writing order is updated too.`);
+}
+
+function shiftScene(id, direction) {
+  const scenes = allScenes();
+  const neighbor =
+    scenes[scenes.findIndex((scene) => scene.id === id) + direction];
+  const target = chapterOf(neighbor.id);
+  const nextId =
+    direction < 0
+      ? neighbor.id
+      : target.scenes[target.scenes.indexOf(neighbor) + 1]?.id;
+  moveScene(id, target.id, nextId);
+}
+
+function dragSource(node, kind, id) {
+  node.draggable = true;
+  node.addEventListener("dragstart", (event) => {
+    if (event.target.closest("[contenteditable],textarea,input,button")) {
+      event.preventDefault();
+      return;
+    }
+    event.stopPropagation();
+    dragged = { kind, id };
+    event.dataTransfer.setData("text/plain", id);
+    event.dataTransfer.effectAllowed = "move";
+    node.classList.add("dragging");
+  });
+  node.addEventListener("dragend", () => {
+    dragged = null;
+    document
+      .querySelectorAll(".dragging,.drop-target")
+      .forEach((item) => item.classList.remove("dragging", "drop-target"));
+  });
+}
+
+function dropTarget(node, kind, action) {
+  node.addEventListener("dragover", (event) => {
+    if (dragged?.kind !== kind) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = "move";
+    node.classList.add("drop-target");
+  });
+  node.addEventListener("dragleave", (event) => {
+    if (!node.contains(event.relatedTarget))
+      node.classList.remove("drop-target");
+  });
+  node.addEventListener("drop", (event) => {
+    if (dragged?.kind !== kind) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const id = dragged.id;
+    dragged = null;
+    node.classList.remove("drop-target");
+    action(id);
+  });
+}
+
+function planScene(scene, chapter) {
+  const index = allScenes().indexOf(scene);
+  const card = element(
+    "article",
+    {
+      class: `scene-card${scene.id === state.sceneId ? " active" : ""}`,
+      "data-scene": scene.id,
+    },
+    element(
+      "div",
+      { class: "scene-card-top" },
+      icon("grip"),
+      element("strong", {}, scene.title),
+      element(
+        "div",
+        { class: "card-actions" },
+        iconButton(
+          `Move ${scene.title} earlier`,
+          "up",
+          () => shiftScene(scene.id, -1),
+          index === 0,
+        ),
+        iconButton(
+          `Move ${scene.title} later`,
+          "down",
+          () => shiftScene(scene.id, 1),
+          index === allScenes().length - 1,
+        ),
+      ),
+    ),
+    element(
+      "p",
+      {},
+      scene.summary || "No synopsis yet. Select this scene to add one.",
+    ),
+    element(
+      "div",
+      { class: "scene-card-bottom" },
+      stageChip(scene),
+      button(
+        "Write scene →",
+        () => {
+          activate(scene.id);
+          setView("write");
+        },
+        "",
+      ),
+    ),
+  );
+  card.tabIndex = 0;
+  card.setAttribute(
+    "aria-label",
+    `${scene.title}. Select to edit details, or use the move buttons to reorder.`,
+  );
+  card.addEventListener("click", (event) => {
+    if (!event.target.closest("button")) {
+      activate(scene.id);
+      openInspector();
+    }
+  });
+  card.addEventListener("keydown", (event) => {
+    if (event.target === card && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      activate(scene.id);
+      openInspector();
+    }
+  });
+  dragSource(card, "scene", scene.id);
+  dropTarget(card, "scene", (id) => moveScene(id, chapter.id, scene.id));
+  return card;
+}
+
+function planChapter(chapter, index) {
+  const summary = element(
+    "textarea",
+    {
+      class: "chapter-card-summary",
+      rows: 2,
+      "aria-label": `Summary for ${chapter.title}`,
+      placeholder: "What happens in this chapter?",
+    },
+    chapter.summary,
+  );
+  summary.addEventListener("input", () => {
+    chapter.summary = summary.value;
+  });
+  const sceneList = element(
+    "div",
+    { class: "plan-scenes" },
+    ...chapter.scenes.map((scene) => planScene(scene, chapter)),
+  );
+  if (!chapter.scenes.length)
+    sceneList.append(
+      element(
+        "p",
+        { class: "small" },
+        "Drop a scene here to fill this chapter.",
+      ),
+    );
+  dropTarget(sceneList, "scene", (id) => moveScene(id, chapter.id));
+  const card = element(
+    "section",
+    { class: "chapter-card", "data-chapter": chapter.id },
+    element(
+      "header",
+      { class: "chapter-card-header" },
+      icon("grip"),
+      element("span", { class: "eyebrow" }, String(index + 1).padStart(2, "0")),
+      element("h2", {}, chapter.title),
+      element(
+        "div",
+        { class: "card-actions" },
+        iconButton(
+          `Move chapter ${chapter.title} earlier`,
+          "up",
+          () => moveChapter(chapter.id, -1),
+          index === 0,
+        ),
+        iconButton(
+          `Move chapter ${chapter.title} later`,
+          "down",
+          () => moveChapter(chapter.id, 1),
+          index === state.chapters.length - 1,
+        ),
+      ),
+    ),
+    summary,
+    sceneList,
+  );
+  dragSource(card, "chapter", chapter.id);
+  dropTarget(card, "chapter", (id) => {
+    if (id === chapter.id) return;
+    const source = state.chapters.findIndex((item) => item.id === id);
+    const moving = state.chapters.splice(source, 1)[0];
+    state.chapters.splice(state.chapters.indexOf(chapter), 0, moving);
+    refresh();
+    toast("Chapter moved. Its scenes moved with it in the manuscript.");
+  });
+  return card;
+}
+
+function renderPlan() {
+  const heading = element(
+    "header",
+    { class: "plan-heading" },
+    element(
+      "div",
+      {},
+      element("span", { class: "eyebrow" }, "The shape of your story"),
+      element("h1", {}, "Every scene has a place."),
+      element(
+        "p",
+        {},
+        "Drag chapters and scenes to rearrange. Arrow buttons work too.",
+      ),
+    ),
+    button("+ Chapter", () => openInsert("chapter"), "text-button bordered"),
+  );
+  $("plan-scroll").replaceChildren(
+    heading,
+    ...state.chapters.map(planChapter),
+    button("+ Add a chapter", () => openInsert("chapter"), "plan-add"),
+  );
+}
+
+function refresh() {
+  const scroll = $("editor-scroll").scrollTop;
+  renderOutline();
+  renderEditor();
+  renderInspector();
+  renderScope();
+  if (state.view === "plan") renderPlan();
+  $("editor-scroll").scrollTop = scroll;
+}
+
+function openInspector() {
+  $("workspace").classList.remove("hide-inspector");
+  $("workspace").classList.add("show-inspector");
+}
+function showHelp(topic) {
+  document
+    .querySelectorAll("[data-help]")
+    .forEach((node) =>
+      node.setAttribute("aria-pressed", String(node.dataset.help === topic)),
+    );
+  const descriptions = {
+    scope: [
+      "Zoom in without changing editors.",
+      "Edit a paragraph, switch to Scene, then back to Manuscript. The text, active scene, synopsis, and notes stay together. Clicking the outline jumps to a scene at your chosen scope.",
+    ],
+    structure: [
+      "A heading becomes part of the book.",
+      "Use the heading selector on a paragraph, or type a heading on its own line and press Enter. A scene heading splits the current scene; a chapter heading moves the following scenes into a new chapter. Ordinary prose remains prose.",
+    ],
+    arrange: [
+      "Plan the story. Keep the writing.",
+      "Chapter summaries give you the big picture; scene cards show each beat. Drag a scene before another card, or into a chapter. Move a chapter with all its scenes. Return to Write to see the same order.",
+    ],
+  };
+  const [title, description] = descriptions[topic];
+  const action = () => {
+    $("help-dialog").close();
+    if (topic === "arrange") setView("plan");
+    else {
+      setView("write");
+      if (topic === "scope")
+        setScope(state.scope === "scene" ? "manuscript" : "scene");
+      else openInsert("scene");
+    }
+  };
+  $("help-content").replaceChildren(
+    element("h3", {}, title),
+    element("p", {}, description),
+    topic === "structure"
+      ? element(
+          "div",
+          { class: "help-example" },
+          "# The next chapter",
+          element("br"),
+          "## A new scene",
+        )
+      : null,
+    button(
+      topic === "arrange"
+        ? "Try the planning board →"
+        : topic === "scope"
+          ? "Try switching scope →"
+          : "Create a scene →",
+      action,
+      "text-button primary",
+    ),
+  );
+}
+
+document.querySelectorAll("[data-scope]").forEach((node) => {
+  node.addEventListener("pointerdown", captureCaret);
+  node.addEventListener("click", () => setScope(node.dataset.scope));
+});
+document
+  .querySelectorAll("[data-view]")
+  .forEach((node) =>
+    node.addEventListener("click", () => setView(node.dataset.view)),
+  );
+document
+  .querySelectorAll("[data-insert]")
+  .forEach((node) =>
+    node.addEventListener("click", () => openInsert(node.dataset.insert)),
+  );
+document
+  .querySelectorAll("[data-help]")
+  .forEach((node) =>
+    node.addEventListener("click", () => showHelp(node.dataset.help)),
+  );
+$("outline-search").addEventListener("input", (event) => {
+  state.query = event.target.value.toLowerCase().trim();
+  renderOutline();
+});
+$("block-style").addEventListener("change", (event) => {
+  if (event.target.value === "paragraph") return;
+  const index =
+    selectedParagraph?.sceneId === state.sceneId
+      ? selectedParagraph.index
+      : null;
+  openInsert(event.target.value, state.sceneId, index);
+  event.target.value = "paragraph";
+});
+$("insert-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const title = $("insert-name").value.trim();
+  if (!title) {
+    $("insert-name").setCustomValidity("Enter a title.");
+    $("insert-name").reportValidity();
+    return;
+  }
+  $("insert-dialog").close();
+  createStructure(
+    pendingInsert.kind,
+    title,
+    pendingInsert.afterId,
+    pendingInsert.paragraphIndex,
+  );
+  pendingInsert = null;
+});
+$("insert-name").addEventListener("input", () =>
+  $("insert-name").setCustomValidity(""),
+);
+$("insert-cancel").addEventListener("click", () => $("insert-dialog").close());
+$("return-to-writing").addEventListener("click", () => setView("write"));
+$("outline-toggle").addEventListener("click", () =>
+  $("workspace").classList.toggle("show-outline"),
+);
+$("inspector-toggle").addEventListener("click", () =>
+  $("workspace").classList.toggle(
+    window.innerWidth > 1180 ? "hide-inspector" : "show-inspector",
+  ),
+);
+$("inspector-close").addEventListener("click", () => {
+  $("workspace").classList.remove("show-inspector");
+  $("workspace").classList.add("hide-inspector");
+});
+$("help-button").addEventListener("click", () => {
+  showHelp("scope");
+  $("help-dialog").showModal();
+});
+$("help-close").addEventListener("click", () => $("help-dialog").close());
+$("reset-button").addEventListener("click", () =>
+  $("reset-dialog").showModal(),
+);
+$("reset-cancel").addEventListener("click", () => $("reset-dialog").close());
+$("reset-confirm").addEventListener("click", () => {
+  $("reset-dialog").close();
+  Object.assign(state, {
+    chapters: structuredClone(initialChapters),
+    sceneId: "s1",
+    scope: "manuscript",
+    view: "write",
+    query: "",
+  });
+  selectedParagraph = null;
+  savedCaret = null;
+  $("outline-search").value = "";
+  refresh();
+  setView("write");
+  $("editor-scroll").scrollTop = 0;
+  toast("Original sample restored.");
+});
+$("editor-scroll").addEventListener(
+  "scroll",
+  () => {
+    if (
+      programmaticScroll ||
+      state.view !== "write" ||
+      state.scope === "scene" ||
+      document.activeElement.closest("[contenteditable]")
+    )
+      return;
+    const top = $("editor-scroll").getBoundingClientRect().top + 110;
+    const visible = [...document.querySelectorAll(".scene-block")].find(
+      (node) => node.getBoundingClientRect().bottom > top,
+    );
+    if (visible) activate(visible.dataset.scene);
+  },
+  { passive: true },
+);
+refresh();
+</script>
+</body>
+</body>
+</html>

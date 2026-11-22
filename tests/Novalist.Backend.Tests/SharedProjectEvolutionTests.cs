@@ -90,19 +90,8 @@ public sealed class SharedProjectEvolutionTests
     }
 
     private static bool ContainsRecovery(string root, string text)
-    {
-        var path = Path.Combine(root, "Recovered edits");
-        return Directory.Exists(path) && Directory.GetFiles(path, "*", SearchOption.AllDirectories)
-            .Any(file => File.ReadAllText(file).Contains(text, StringComparison.Ordinal));
-    }
+        => SharedFileReader.FilesContaining(Path.Combine(root, "Recovered edits"), text).Length > 0;
 
-    private static async Task WaitAsync(Func<Task<bool>> condition)
-    {
-        for (var attempt = 0; attempt < 100; attempt++)
-        {
-            if (await condition()) return;
-            await Task.Delay(20, TestContext.Current.CancellationToken);
-        }
-        Assert.Fail("The committed shared change did not arrive.");
-    }
+    private static Task WaitAsync(Func<Task<bool>> condition)
+        => TestWait.UntilAsync(condition, "the committed shared change to arrive", TestContext.Current.CancellationToken);
 }

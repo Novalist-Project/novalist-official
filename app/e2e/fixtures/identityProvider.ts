@@ -1,11 +1,35 @@
 import { createHash, generateKeyPairSync, randomBytes, randomUUID, sign } from 'node:crypto'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { createServer as createHttpsServer, type ServerOptions } from 'node:https'
-import { once } from 'node:events'
+import type { Server as NetServer } from 'node:net'
 
 export const introspectionClient = { id: 'novalist-local-relay', secret: randomBytes(32).toString('hex') }
 
-export async function identityProvider(subject: () => string = () => 'writer', displayName: (subject: string) => string = () => 'Test Writer', port = 0, advertiseClientConfiguration = true, tls?: ServerOptions): Promise<{ address: string; disable(subject: string): void; close(): Promise<void> }> {
+/**
+ * Listens on the port, which a restarted provider must take back. Once the
+ * first instance has closed, an ephemeral port is free for any other socket on
+ * the machine - the app's own outbound connections draw from the same range -
+ * so the port can be held for a moment by something unrelated that lets go
+ * again. Waiting that out is what a returning server does; the test is about
+ * the writer's sign-in, not about which process holds the port for 100ms.
+ */
+async function listen(server: NetServer, port: number): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        server.once('error', reject)
+        server.listen(port, '127.0.0.1', () => { server.off('error', reject); resolve() })
+      })
+      return
+    } catch (error) {
+      if (port === 0 || (error as NodeJS.ErrnoException).code !== 'EADDRINUSE' || attempt >= 100) throw error
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+    }
+  }
+}
+
+export async function identityProvider(subject: () => string = () => 'writer', displayName: (subject: string) => string = () => 'Test Writer', port = 0, advertiseClientConfiguration = true, tls?: ServerOptions,
+  options: { accounts?: Record<string, string>; simulateMfa?: boolean } = {}): Promise<{ address: string; disable(subject: string): void; close(): Promise<void> }> {
   const keys = generateKeyPairSync('rsa', { modulusLength: 2048 })
   const publicKey = { ...keys.publicKey.export({ format: 'jwk' }), kid: 'test', alg: 'RS256', use: 'sig' }
   const codes = new Map<string, { challenge: string; redirect: string; nonce: string; subject: string }>()
@@ -42,7 +66,8 @@ export async function identityProvider(subject: () => string = () => 'writer', d
     const now = Math.floor(Date.now() / 1000)
     const encoded = (value: unknown): string => Buffer.from(JSON.stringify(value)).toString('base64url')
     const unsigned = encoded({ alg: 'RS256', kid: 'test', typ: 'JWT' }) + '.' +
-      encoded({ iss: address, aud: 'novalist', sub: identity.subject, name: displayName(identity.subject), nonce: identity.nonce, iat: now, exp: now + 300 })
+      encoded({ iss: address, aud: 'novalist', sub: identity.subject, name: displayName(identity.subject), nonce: identity.nonce, iat: now, exp: now + 300,
+        ...(options.simulateMfa ? { amr: ['mfa'], auth_time: now } : {}) })
     const signature = sign('RSA-SHA256', Buffer.from(unsigned), keys.privateKey).toString('base64url')
     const refresh = randomUUID()
     refreshTokens.set(refresh, identity.subject)
@@ -75,12 +100,27 @@ export async function identityProvider(subject: () => string = () => 'writer', d
           id_token_signing_alg_values_supported: ['RS256'], code_challenge_methods_supported: ['S256'] }); break
       case '/keys': send(response, { keys: [publicKey] }); break
       case '/authorize': {
+        const selected = url.searchParams.get('account')
+        if (options.accounts && selected === null) {
+          const escape = (text: string): string => text.replace(/[&<>"']/g, value => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[value]!)
+          const links = Object.entries(options.accounts).map(([id, name]) => {
+            const choice = new URL(url)
+            choice.searchParams.set('account', id)
+            return `<li><a href="${escape(choice.pathname + choice.search)}">Continue as ${escape(name)}</a></li>`
+          }).join('')
+          response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
+          response.end(`<!doctype html><html lang="en"><title>Novalist local test sign-in</title><h1>Choose a test writer</h1><p>Local testing only. This provider simulates multi-factor authentication.</p><p>Choose the same writer when registering their device.</p><ul>${links}</ul></html>`)
+          break
+        }
+        if (options.accounts && (selected === null || !Object.hasOwn(options.accounts, selected))) {
+          response.writeHead(400); response.end('Choose one of the local test writers.'); break
+        }
         const redirect = new URL(url.searchParams.get('redirect_uri') ?? 'about:blank')
         if (!(redirect.protocol === 'http:' && redirect.hostname === '127.0.0.1' || redirect.href === 'com.novalist.app:/oauth/callback') || url.searchParams.get('code_challenge_method') !== 'S256') {
           response.writeHead(400); response.end(); break
         }
         const code = randomUUID()
-        codes.set(code, { challenge: url.searchParams.get('code_challenge') ?? '', redirect: redirect.href, nonce: url.searchParams.get('nonce') ?? '', subject: subject() })
+        codes.set(code, { challenge: url.searchParams.get('code_challenge') ?? '', redirect: redirect.href, nonce: url.searchParams.get('nonce') ?? '', subject: options.accounts ? selected! : subject() })
         redirect.searchParams.set('code', code)
         redirect.searchParams.set('state', url.searchParams.get('state') ?? '')
         response.writeHead(302, { Location: redirect.href }); response.end(); break
@@ -93,8 +133,7 @@ export async function identityProvider(subject: () => string = () => 'writer', d
     }
   }
   const server = tls ? createHttpsServer(tls, handle) : createServer(handle)
-  server.listen(port, '127.0.0.1')
-  await once(server, 'listening')
+  await listen(server, port)
   const endpoint = server.address()
   if (!endpoint || typeof endpoint === 'string') throw new Error('The test identity provider has no port.')
   address = `${tls ? 'https' : 'http'}://127.0.0.1:${endpoint.port}`

@@ -66,7 +66,7 @@ public sealed class TcpPeerSessionTests : IDisposable
         ownerSession.Updates.UpdateReceived += (_, value) => arrived.TrySetResult(value);
         writerSession.Updates.Save(item, "A writer's edit"u8.ToArray());
         await writerSession.Updates.SynchronizeAsync(false, ct);
-        Assert.Equal("A writer's edit"u8.ToArray(), await arrived.Task.WaitAsync(TimeSpan.FromSeconds(5), ct));
+        Assert.Equal("A writer's edit"u8.ToArray(), await arrived.Task.WaitAsync(TestWait.Deadline, ct));
         Assert.Equal(2, ownerSession.Updates.ReadItem(item).Count);
     }
 
@@ -77,13 +77,17 @@ public sealed class TcpPeerSessionTests : IDisposable
         using var owner = await DeviceAsync("owner", ct);
         using var writer = await DeviceAsync("writer", ct);
         using var stranger = await DeviceAsync("stranger", ct);
+        // The host's own clock, so expiry is crossed by moving it rather than by sleeping.
+        var clock = new AdjustableClock();
         await using var host = await TcpPeerHost.StartAsync(new(IPAddress.Loopback, 0), folder,
-            new(Guid.NewGuid(), 0, RandomNumberGenerator.GetBytes(32), owner), ct);
-        var expires = DateTimeOffset.UtcNow.AddSeconds(3);
+            new(Guid.NewGuid(), 0, RandomNumberGenerator.GetBytes(32), owner, clock), ct);
+        var expires = clock.GetUtcNow().AddMinutes(10);
         var invitation = host.CreateInvitation("127.0.0.1", expiresAt: expires);
         await using (var joined = await TcpPeerTransport.JoinInvitationAsync(invitation, writer, ct))
             Assert.True(joined.IsConnected);
-        await Task.Delay(expires - DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(50), ct);
+        await Assert.ThrowsAsync<CryptographicException>(() => TcpPeerTransport.JoinInvitationAsync(invitation, stranger, ct));
+        clock.Advance(expires - clock.GetUtcNow() + TimeSpan.FromSeconds(1));
+        await Assert.ThrowsAsync<CryptographicException>(() => TcpPeerTransport.JoinInvitationAsync(invitation, stranger, ct));
         await using var resumed = await TcpPeerTransport.JoinInvitationAsync(invitation, writer, ct);
         Assert.True(resumed.IsConnected);
         var extended = invitation with { ExpiresAt = DateTimeOffset.UtcNow.AddHours(1) };
@@ -223,7 +227,7 @@ public sealed class TcpPeerSessionTests : IDisposable
         var item = Guid.NewGuid();
         var view = Guid.NewGuid();
         await writerPresence.PublishAsync(new(item, view, "Writer", new([1, 2], [3]), true), ct);
-        await arrived.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
+        await arrived.Task.WaitAsync(TestWait.Deadline, ct);
         var participant = Assert.Single(ownerPresence.Snapshot());
         Assert.Equal(writer.Id, participant.DeviceId);
         Assert.Equal(item, participant.ItemId);
@@ -374,6 +378,15 @@ public sealed class TcpPeerSessionTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        TestFiles.DeleteTree(folder);
+    }
+
+    private sealed class AdjustableClock : TimeProvider
+    {
+        private TimeSpan offset;
+
+        public override DateTimeOffset GetUtcNow() => base.GetUtcNow() + offset;
+
+        public void Advance(TimeSpan by) => offset += by;
     }
 }

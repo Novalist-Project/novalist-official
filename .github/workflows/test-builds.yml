@@ -1,0 +1,48 @@
+name: Test builds comment
+
+# Lists the installable builds of a pull request's head commit in one comment
+# that is edited in place, so testers do not have to search the Actions runs.
+# The builds come from other workflows (BUILDS in tools/pr_builds_comment.py);
+# this one waits for them and links what they left. See docs/ci.md.
+
+on:
+  pull_request:
+
+# A new push makes the list for the previous commit obsolete.
+concurrency:
+  group: test-builds-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    name: List test builds
+    # A fork's token is read-only and cannot write the comment.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    # The script gives up after an hour of waiting for the builds.
+    timeout-minutes: 65
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools
+          persist-credentials: false
+
+      - name: Keep the builds comment current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILDS_REPOSITORY: ${{ github.repository }}
+          BUILDS_SHA: ${{ github.event.pull_request.head.sha }}
+          BUILDS_PULL_REQUEST: ${{ github.event.pull_request.number }}
+        run: >-
+          python3 tools/pr_builds_comment.py
+          --repository "$BUILDS_REPOSITORY"
+          --sha "$BUILDS_SHA"
+          --pull-request "$BUILDS_PULL_REQUEST"

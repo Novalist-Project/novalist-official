@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { rpc } from '../rpc/client'
 import { useHostBridgeStore } from '../stores/hostBridgeStore'
+import { useProjectStore } from '../stores/projectStore'
 
 export interface SteamJoinRequest { id: string; link: string | null; friendName: string | null; error: string | null }
 interface SteamInvitationState {
@@ -11,14 +12,27 @@ interface SteamInvitationState {
   dismiss(id: string): Promise<void>
 }
 
+function pollingWorkspace() {
+  const state = useProjectStore.getState()
+  return state.workspaceBusy || state.workspaceSuspended || state.workspaceRecovering || state.workspaceTransitionToken
+    ? null : { epoch: state.workspaceEpoch, projectPath: state.projectPath }
+}
+
 export const useSteamInvitations = create<SteamInvitationState>((set, get) => ({
   pending: null,
   pollError: '',
   async refresh() {
+    const workspace = pollingWorkspace()
+    if (!workspace) return
+    const isCurrent = (): boolean => {
+      const current = pollingWorkspace()
+      return current?.epoch === workspace.epoch && current?.projectPath === workspace.projectPath
+    }
     try {
       const pending = await rpc.request<SteamJoinRequest | null>('collaboration/steam/pendingInvitation')
-      set({ pending, pollError: '' })
+      if (isCurrent()) set({ pending, pollError: '' })
     } catch (error) {
+      if (!isCurrent()) return
       const message = String(error)
       if (message !== get().pollError) useHostBridgeStore.getState().pushToast(message)
       set({ pollError: message })

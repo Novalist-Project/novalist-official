@@ -57,7 +57,7 @@ A cross-chapter grid: one row per tracked character showing, chapter by chapter,
 
 Each value is auto-computed but fully editable, and every field carries a **reset-to-auto** button that drops your override and restores the detected value.
 
-**A note on language:** emotion, intensity, conflict, and the auto tags are detected from keyword lists, and Novalist ships one list per language — currently **English, German, and Simplified Chinese**, matching the bundled interface languages. Your writing language (Settings → Writing assistance) selects the list; a regional variant falls back to its base language, so `de-AT` uses the German list.
+**A note on language:** emotion, intensity, conflict, and the auto tags are detected from keyword lists. Novalist bundles lists for **English, German, and Simplified Chinese**; Arabic interface support does not include an Arabic analysis list. Your writing language (Settings → Writing assistance) selects the list; a regional variant falls back to its base language, so `de-AT` uses the German list.
 
 If you write in a language that has no list yet, Novalist does **not** guess — it leaves those fields blank and says so at the top of the section, rather than scoring your prose against another language's words. You can still set every field yourself, and the language-independent parts (POV from character names, word count, dialogue percentage, sentence length) work in every language.
 

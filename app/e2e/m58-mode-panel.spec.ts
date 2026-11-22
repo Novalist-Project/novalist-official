@@ -68,7 +68,8 @@ test('a mode lists every view it holds, at any window size', async () => {
         placement: 'main' as const,
         mode: 'world',
         entry: 'index.html',
-        folderPath: ''
+        folderPath: '',
+        language: 'en'
       }))
     })
   })

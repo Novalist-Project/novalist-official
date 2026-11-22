@@ -359,7 +359,7 @@ export function MobileShell(): React.JSX.Element {
       {tab === 'export' && (
         <div className="mobile-editor-bar">
           <button type="button" className="mobile-back" onClick={() => setTab('manuscript')}>
-            <ChevronLeft size={20} strokeWidth={2} />
+            <ChevronLeft size={20} strokeWidth={2} className="icon-directional" />
             <span>{t('shell.chapters')}</span>
           </button>
         </div>
@@ -376,7 +376,7 @@ export function MobileShell(): React.JSX.Element {
                 if (pane && openChapterGuid && openSceneId) void closeTab(pane, openSceneId)
               }}
             >
-              <ChevronLeft size={20} strokeWidth={2} />
+              <ChevronLeft size={20} strokeWidth={2} className="icon-directional" />
               <span>{t('shell.chapters')}</span>
             </button>
           )}

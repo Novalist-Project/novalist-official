@@ -65,7 +65,7 @@ test('scene titles share one left edge whether or not a scene has a stage', asyn
   expect(rows).toHaveLength(4)
   // One left edge for all of them, and text that starts at it.
   expect(new Set(rows.map((r) => r.left)).size).toBe(1)
-  expect(rows.every((r) => r.align === 'left')).toBe(true)
+  expect(rows.every((r) => r.align === 'start')).toBe(true)
 
   await app.close()
 })

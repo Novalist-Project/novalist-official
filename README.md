@@ -44,12 +44,16 @@ For extension authors, the [Extension Guide](docs/extension-guide.md) walks thro
   and its [setup guide](https://github.com/QF0xB/novalist-sync-server/blob/main/docs/relay.md);
   use the HTTPS address of an instance run by you or your server administrator.
   The relay forwards encrypted packets without storing projects or edit history; the host stays online.
+  Desktop **Persistent server** mode stores encrypted checkpoints and updates instead, so invited writers can join and catch up while the owner is offline.
+  It requires account sign-in; the first sign-in on a device registers it with fresh MFA. Project keys stay on clients.
+  If all devices and recovery credentials are lost, supporting servers offer a fresh-MFA identity reset that forfeits old project access while preserving shared history.
   Sign-in renews without replacing the session or invitations, with a bounded grace period for provider outages.
   Connection and traffic limits protect hosts from repeated join requests.
   Joining reuses matching files in an existing local copy by relative path and SHA-256, with progress and cancellation.
   Shared Codex renames update scene mentions, section links, relationships, parent references and scene POV, and finish interrupted reference updates when retried or reopened.
   Shared prose stays writable during connection interruptions;
-  structure and metadata edits require reconnecting. Open **Collaborate** in the top bar. See [Collaboration](docs/manual/23-settings.md#collaboration)
+  structure and metadata edits require reconnecting. Projects with a saved relay or persistent connection reconnect when opened,
+  and each project remembers its connection type and server. Open **Collaborate** in the top bar. See [Collaboration](docs/manual/23-settings.md#collaboration)
   for the current capabilities and remaining work, or [Steam build requirements](docs/development/steam-collaboration.md)
   for the optional native integration.
   iPhone and iPad support relay-server and direct TCP sessions with desktop writers;
@@ -60,7 +64,7 @@ For extension authors, the [Extension Guide](docs/extension-guide.md) walks thro
 - **Desktop workspace layout** — horizontal navigation with the mode panel above the scene list even in narrow windows, system sans-serif controls and flat surfaces; a bookshelf library and dashboard artwork; consistent view headings and actions, tabbed Codex and Research, a cast-and-reading layout for Narration, and complete scene context beside the editor.
 
 - **Five workspaces** — Write, Plan, World, Publish and Series, each with the views it holds listed beside it, plus a Dashboard to come back to. Picking a workspace decides what the window looks like: the binder and inspector belong to Write. The floating Scene Notes checklist stays available across workspaces.
-- **One command, one place** — where a command lives follows from what it acts on. Selected text, the thing under the pointer, the paragraph, the project, the application: each has one home, everywhere in the app, and the build refuses a change that gives a command two.
+- **One persistent home per command** — where a command lives follows from what it acts on. Explicitly declared transient access, such as Quick edit beside the caret, keeps frequently used controls nearby. The build checks these placement rules.
 - **A menu bar that is an index of the application** — File, Edit, Go, View, Window and Help, generated from Novalist's own list of commands so it cannot drift out of step with the palette, and always visible on Windows and Linux.
 - **Scene context & analysis inspector** — the right sidebar's **Context** tab shows the entities present in the current scene, a cross-chapter mention matrix, and an auto-computed scene analysis (POV, emotion, intensity, conflict, tags) with manual overrides; the **Footnotes** tab lists footnotes and comments. The **Inbox** tab gathers suggestions, tasks and saved fragments; **Properties** provides synopsis, goal/outcome, timing, cast and custom fields.
 - **Dockable scene checklist** — dock notes above, below or beside any content pane using the existing resizable layouts, with docking placement and visibility remembered across restarts, or keep scene goals visible beside your writing or on another monitor in a compact panel that floats only above Novalist, with native Liquid Glass on supported macOS versions. Bullet lists automatically become checkboxes with expandable prose and nested subitems. Follow the active scene or hold one scene, pin the panel or auto-hide it, and edit the full notes text without losing its wording. Wide panels arrange goals left to right with the text editor below. Shared projects synchronize checklist ticks and note text with collaborators.
@@ -74,12 +78,13 @@ For extension authors, the [Extension Guide](docs/extension-guide.md) walks thro
 
 ### Writing
 
-- WYSIWYG editor that fits the first opened scene to the available width and preserves your subsequent zoom, with inline formatting, paragraph styles (heading, subheading, block quote, verse), bulleted and numbered lists, inline comments, and numbered footnotes — every style carried through to DOCX, EPUB, Markdown and LaTeX.
+- WYSIWYG editor that fits the first opened scene to the available width and preserves your subsequent zoom, with inline formatting, paragraph styles (heading, subheading, block quote, verse) in the fixed toolbar and Quick edit beside the caret, bulleted and numbered lists, inline comments, and numbered footnotes — every style carried through to DOCX, EPUB, Markdown and LaTeX.
+- **Arabic and RTL content** — write mixed Arabic/English paragraphs, Markdown sections and Codex fields, and read them in the Wiki independently of your interface language. Shortcuts work with non-Latin keyboards, and text zoom keeps prose within the writing pane.
 - Auto-save with per-scene **snapshot history** and a side-by-side compare view — revert a single scene without touching the rest of the project.
 - **Focus Mode** (`F11`) fills the screen with a centered page that widens as you zoom and hides the title and menu bars. Hover areas grow with the space beside the page; prepared binder and context panels slide in gently. Panels overlay the page and Scene Notes has its own floating window; your caret, split layout and previous window state survive the round trip. Choose page and surround colours or a background image in Settings → Focus.
 - **Project bookshelf** fills the workspace with covers on open shelves, shelf filters, search, adjustable cover size and sorting. Select a cover for its details, related books, World Bible and Series actions; double-click or choose **Open book** to open it. A project's books stay together when arranging shelves. Generated title covers and uploaded artwork share book shading, gently open at the spine on hover or keyboard focus, and stay open while selected. Remove individual books or whole projects without deleting files, and restore them from the library menu.
 - **Scratchpad** stays within reach in the bookshelf header, even while scrolling. Jot down ideas without opening a project and file saved notes into a project's Research inbox later.
-- **Split panes** — divide the main area as many times as you like, each pane showing any view, and tear one off into its own window. Windows share the active project, book and draft, and save pending edits together before switching context or quitting.
+- **Split panes** — divide the main area as many times as you like, each pane showing any view, and open one in its own window from its header or the View menu. Windows share the active project, book and draft, save pending edits together before switching context or quitting, reopen with their project along with the main window's split, and can be saved with a workspace layout.
 - **Auto-replacements** for smart quotes, em-dashes, and ellipses with language presets (English, German, French, Spanish, Italian, Portuguese, Russian, Polish, Czech, Slovak) — or switched off entirely, so every character you type is the character that lands. The list is yours to edit: add your own rules, plain text or regular expressions with capture groups, and run them over prose you already wrote.
 - **Dialogue punctuation correction** as you type.
 - **Offline spell check** using the operating system's own checker — no server, no account, no network — with a personal dictionary that travels with your settings.
@@ -123,7 +128,8 @@ English and German **dictation** writes directly at the editor caret. Built-in s
 - **Dialogue** — every line one character speaks, gathered across the book and grouped by story time, so voice drift is readable end to end. Speakers are detected offline from entity mentions, speech verbs, same-paragraph continuation, pronoun tags the narration can only mean one way, and back-and-forth alternation; each line is labelled with how it was worked out, and anything less than certain offers its likely speakers with percentage shares you can click to assign. Lines can be rewritten in place and land straight in the scene file.
 - **Narration** — your book as it will be read aloud, cast and directed before a word is spoken. The prose appears as you wrote it, with every spoken line tinted in its speaker's colour and the narrator keeping everything between the quotes, dialogue tags included, so "she said" is never read in the character's voice. Each line carries a direction — angry, peaceful, sorrowful — taken from the speech verb you already wrote or from the scene's own emotion, and clicking any line opens its controls to overrule either. Speaker corrections are the same ones the Dialogue view stores. Where the sixteen emotions are not the delivery you want, eight sliders set it exactly, applied to one line or to a whole argument at once, and a character can carry a standing register for being always more clipped than the prose bothers to say. A character can be given a different voice over one act, chapter or scene — for ageing, for injury, for being remembered as a child — without losing the one they use everywhere else. Uses the voices already on your machine, or a speech engine you installed, and sends nothing anywhere; an engine that is already installed gets itself ready when the app opens. The Qwen Speech extension uses MLX on native Apple Silicon Macs, with lower-memory generation and buffering based on generation speed for normal-speed playback, and PyTorch on other platforms.
 - **Audiobook** — the whole book rendered to speech in the voices you cast, as an M4B with chapter marks and your cover, one MP3 per chapter, or unencoded WAV. Compiled from the same chapter selection, matter and replacements as every other export. It says how long it will take on your machine before it starts, keeps every chapter it finishes, and picks up where it left off.
-- **Manuscript view** — read the whole book end-to-end, switch to Corkboard for index-card planning, or Outliner for a sortable scene table.
+- **Unified writing** — write across scenes in one continuous surface, with Scene, Chapter, and Manuscript scopes remembered independently for each pane and saved layout. Switching scope keeps your place; outline navigation stays in the same editor. Edit scene, chapter, and act names in place; scene information follows the prose while scrolling, with expandable synopses and a stage selector. Inline controls add scenes and chapters. Document text zooms within the pane, with optional book width and pages using saved book typography and page settings. Selected scenes and Smart Lists form labelled limited runs with a Show whole manuscript action.
+- **Structure** — arrange ordered acts, chapters, and scenes in Plan, alongside Corkboard, Outliner, and Board. Scene breaks and chapter headings can also be inserted at the writing caret.
 - **Maps** — interactive layered map view: recursive layer tree with drag-and-drop nesting, per-layer opacity / lock / zoom-range / floor-stack mode; per-image rotate, resize, polygon clip mask; entity-linked colour pins; text labels; road & river spline tool with typed profiles (casing, fill, lane markings) and per-point width; terrain shapes (grass, forest, sand, …) with feathered, blendable edges and z-ordering; typed buildings (homes, schools, stations, …) with procedurally-generated footprints that snap to roads and optional multi-floor interior plans (walls, doors, windows, stairs); a freeform clip border that frames the whole map; **PNG export** at 1x/2x/4x for e-book or print, and a one-click **3D view** — a GPU-rendered, free-fly walkthrough of the whole map with extruded buildings, sloped roofs, interiors, terrain and roads.
 - **Planning board** — an infinite canvas of loose cards and author-drawn labelled connectors, for ideas that are not scenes yet. Promoting a card creates a scene with the card's text as its synopsis and keeps their titles in sync when renamed from either place. Many boards per project, stored as plain JSON beside the maps.
 - **Style report** — deterministic, offline craft checks over a scene, a chapter, or the whole book: adverbs, filter words, weak verbs, passive voice, stock phrases, sticky sentences, repeated sentence openers, and sentence-length variation. Word lists come from the same per-language analysis file as scene analysis, and a language without a list is reported as unsupported rather than shown as a clean zero. No AI, no network.
@@ -155,14 +161,14 @@ English and German **dictation** writes directly at the editor caret. Built-in s
 ### Find & Replace
 
 - Plain-text, whole-word, case-sensitive, or .NET regex search.
-- Scope to the current scene, the selection, the active book, or every book in the project.
-- Replace one or all matches; snapshots cover the replacements.
+- Start with the current writing view, including selected or filtered scenes; widen to a scene, chapter, book, or the whole project. Search includes unsaved and offscreen prose.
+- Navigate to exact matches or replace the current match. Bulk replacement shows how many matches and scenes will change, labels an empty replacement as deletion, and lets you undo the whole prose edit in one step. Replacement text is literal, including in regex searches. Notes and synopses have a separate replacement action. Comments and Codex entries are search-only.
 
 ### Customization
 
 - **Hotkeys** — every action is rebindable; defaults documented in [`docs/manual/26-hotkeys.md`](docs/manual/26-hotkeys.md).
 - **Command Palette** (`Ctrl+Shift+P`) — every action by name.
-- **Localization** — English, German, and Simplified Chinese ship in the box. Drop a JSON locale file into your `Locales/` folder to add a language or patch a bundled one; anything a partial translation omits falls back to English.
+- **Localization** — English, German, Simplified Chinese, and Arabic ship in the box. Choosing Arabic enables a right-to-left interface while prose follows its own language and direction. Drop a JSON locale file into your `Locales/` folder to add a language or patch a bundled one; anything a partial translation omits falls back to English.
 - **Theme** — the default palette is Novalist's own: deep "Ink Night" paper, parchment text, and gilt accents, set in Fraunces, Newsreader, and Courier Prime (all three ship with the app, so it looks the same offline and on every machine). Bundled Discord, High Contrast and Catppuccin Mocha palettes and a custom accent color are also available; on macOS 26+ the window uses native Liquid Glass, with a vibrancy fallback on older macOS.
 - **Custom themes** — write your own palette as a JSON design-token map or a CSS stylesheet, drop it into your `Themes/` folder, and it joins the theme picker. Extensions can contribute themes the same way. See [`docs/manual/34-custom-themes-and-languages.md`](docs/manual/34-custom-themes-and-languages.md).
 - **Global or per-project settings** — appearance, editor, and writing-assistance settings default to global but can be overridden per project (e.g. an English book and a German book each with their own language, quotes, and theme); project overrides live in `.novalist/` and sync via git.
@@ -255,6 +261,38 @@ packaging stages as the nixpkgs-style recipe: Node.js 24, Electron 44, a release
 depend on `app/node_modules` or a manually built debug backend. The source includes
 current local edits but excludes build output and development caches.
 
+To test collaboration against your hosted servers, start two isolated clients:
+
+```bash
+devenv up
+# Or start only one of the named processes:
+devenv up guest
+```
+
+The `host` and `guest` processes run the current packaged checkout. Each keeps its
+own settings, collaboration credentials and Electron profile across restarts.
+Closing a client does not automatically restart it. Stop the process manager with
+`devenv down`.
+
+For additional clients, run a named instance from another terminal:
+
+```bash
+devenv shell run-instance guest-2
+# Extra app arguments are forwarded, including an explicit keyring choice:
+devenv shell run-instance guest --password-store=gnome-libsecret
+```
+
+Instance names accept letters, digits, underscores and hyphens. Data lives in
+`${XDG_DATA_HOME:-$HOME/.local/share}/novalist-NAME/settings` and
+`${XDG_DATA_HOME:-$HOME/.local/share}/novalist-NAME/profile`. With the default data
+directory, `guest` reuses an existing `~/.local/share/novalist-guest` setup.
+Use a different name for each concurrent client; reopening the same name targets
+the same instance. Keep `--user-data-dir` managed by `run-instance` to preserve
+isolation. These commands use the app's normal keyring selection and leave the
+regular `run` profile separate. Configure your hosted server inside each client;
+no local server is started. For collaboration tests, use a separate local project
+folder per client.
+
 ROCm libraries and MIOpen GPU databases are excluded by default. The package's
 `withRocm` argument enables them explicitly when testing AMD speech acceleration.
 The normal client and context-selection tests do not need those downloads.
@@ -282,10 +320,12 @@ For optional hot-reload development, run `npm --prefix app run dev` inside
 This is a separate development-server path; use `devenv shell run` to test the
 packaged application and its runtime environment.
 
-The package's npm dependency hash lives in `nix/package.nix`; its NuGet dependency
-manifest is `nix/deps.json`. Update these when the corresponding dependencies
-change. The backend's `fetch-deps` helper is exposed as
-`outputs.novalist.backend.fetch-deps` for regenerating the NuGet manifest.
+The package reads npm dependencies straight from `app/package-lock.json`, so
+lockfile changes need no extra Nix step. Its NuGet dependency manifest is
+`nix/deps.json`; regenerate it when NuGet packages change with the backend's
+`fetch-deps` helper, exposed as `outputs.novalist.backend.fetch-deps`. The
+*Nix package build* check builds the package on every pull request into `dev`
+or `main`, so a forgotten manifest update fails before merging.
 
 For Rider, select `.devenv/state/dotnet` as the .NET CLI directory after entering
 the shell once. Keep `devenv.lock` committed so contributors resolve the same
@@ -302,6 +342,30 @@ cd app
 npm install
 npm run dev
 ```
+
+### Desktop E2E checks
+
+The default Playwright suite includes the 100-scene local and shared writing checks.
+The exhaustive 500/1,000-scene traversals and 20-repeat flake checks are local PC
+stress tests; GitHub Actions does not run them.
+
+After building the debug backend and running `npm run build` in `app`, use:
+
+```bash
+cd app
+npm run test:e2e:stress -- --list
+npm run test:e2e:stress -- --project=writing-benchmarks
+npm run test:e2e:stress -- --project=flake-stress
+```
+
+Listing tests opens no windows. Executing Electron tests requires a dedicated
+desktop session or explicit permission to use the interactive desktop, with
+`NOVALIST_E2E_ALLOW_DESKTOP=1` set for that run. The stress command does not set it.
+
+How CI shards and retries the suite, and how to stress a flaky spec on CI with a
+`ci-stress/*` branch, is described in [docs/ci.md](docs/ci.md).
+
+### Packaging
 
 To produce distributable installers for the current platform:
 

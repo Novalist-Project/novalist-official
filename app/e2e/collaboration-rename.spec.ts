@@ -17,7 +17,7 @@ test('a shared Codex rename updates open scene mentions and section links in bot
   try {
     const owner = await launchApp('novalist-rename-owner-')
     participants.push(owner)
-    const book = await seedBook(owner, { Opening: ['Arrival'] })
+    const book = await seedBook(owner, { Opening: ['Arrival'] }, 'Spec', false)
     const chapter = book.chapters[0]
     const scene = chapter.scenes[0]
     const person = await owner.rpc<Entity>('entities/create', ['character', 'Mira Vance'])
@@ -38,7 +38,7 @@ test('a shared Codex rename updates open scene mentions and section links in bot
     for (const participant of participants) {
       await participant.page.evaluate(({ chapter, scene }) => window.novalistStores.project.getState().openScene(chapter, scene),
         { chapter: chapter.guid, scene: scene.id })
-      await expect(participant.page.frameLocator('.editor-frame').locator('#editor')).toHaveText('Mira Vance arrives.')
+      await expect(participant.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${scene.id}"]`)).toHaveText('Mira Vance arrives.')
     }
     const current = await owner.rpc<Entity>('entities/get', ['character', person.id])
     const { sessionId, fields } = current.sharedFields
@@ -53,7 +53,7 @@ test('a shared Codex rename updates open scene mentions and section links in bot
     await owner.rpc('collaboration/writeField', [sessionId, fields.name, focus, 'Mira Calder'])
     await owner.rpc('collaboration/releaseField', [sessionId, fields.name, focus])
     for (const participant of participants) {
-      await expect(participant.page.frameLocator('.editor-frame').locator('#editor')).toHaveText('Mira Calder arrives.')
+      await expect(participant.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${scene.id}"]`)).toHaveText('Mira Calder arrives.')
       await expect.poll(async () => (await participant.rpc<Entity>('entities/get', ['lore', notes.id])).sections[0].content)
         .toBe('[[Mira Calder]] and [[Mira Calder|Mira]], with bare Mira Vance.')
       await expect.poll(async () => (await participant.rpc<Entity>('entities/get', ['location', place.id])).parent).toBe('Mira Calder')

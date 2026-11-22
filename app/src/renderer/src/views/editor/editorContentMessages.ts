@@ -48,6 +48,7 @@ export function createEditorContentMessages(context: EditorHandlerContext): Edit
         strikethrough: Boolean(message.strikethrough),
         highlight: Boolean(message.highlight),
         alignment: (message.alignment as FormattingState['alignment']) ?? 'left',
+        direction: message.direction === 'rtl' ? 'rtl' : 'ltr',
         paragraphStyle: String(message.paragraphStyle ?? ''),
         bulletList: Boolean(message.bulletList),
         numberList: Boolean(message.numberList),

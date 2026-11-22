@@ -1,5 +1,7 @@
 import { encodeRpcFrame, RpcFrameDecoder, type RpcId, type RpcMessage } from '../shared/rpcFraming'
 import { desktopRequestId } from '../shared/workspaceProtocol'
+import { isPlanningMetadataMutation, planningMetadataNotification } from '../shared/planningMetadata'
+import { DesktopOperationError } from './desktop-operation-error'
 
 export interface BackendClient {
   postMessage(message: unknown): void
@@ -15,6 +17,8 @@ interface ClientConnection {
 
 interface PendingRequest {
   owner: number
+  method: string
+  epoch: number
   port: BackendClient | null
   originalId?: RpcId
   resolve?: (result: unknown) => void
@@ -113,7 +117,7 @@ export class BackendRouter {
           continue
         }
         const id = desktopRequestId(owner, client.epoch, ++this.sequence, client.flushToken)
-        this.pending.set(id, { owner, port, originalId: message.id })
+        this.pending.set(id, { owner, port, originalId: message.id, method: message.method, epoch: client.epoch })
         this.write(encodeRpcFrame({ ...message, id }))
       }
     } catch {
@@ -126,7 +130,7 @@ export class BackendRouter {
   request<T>(method: string, params?: unknown, token?: string): Promise<T> {
     const id = desktopRequestId(0, this.epoch, ++this.sequence, token)
     return new Promise<T>((resolve, reject) => {
-      this.pending.set(id, { owner: 0, port: null, resolve: resolve as (result: unknown) => void, reject })
+      this.pending.set(id, { owner: 0, port: null, method, epoch: this.epoch, resolve: resolve as (result: unknown) => void, reject })
       try {
         this.write(encodeRpcFrame({ jsonrpc: '2.0', id, method, params }))
       } catch (error) {
@@ -164,8 +168,9 @@ export class BackendRouter {
     try {
       if (!this.desktopRequest) reply.error = { code: -32601, message: 'This desktop operation is unavailable.' }
       else reply.result = await this.desktopRequest(method, params) ?? null
-    } catch {
-      reply = { ...reply, error: { code: -32000, message: 'The desktop operation could not be completed.' } }
+    } catch (error) {
+      const message = error instanceof DesktopOperationError ? error.message : 'The desktop operation could not be completed.'
+      reply = { ...reply, error: { code: -32000, message } }
     }
     if (generation !== this.backendGeneration) return
     try { this.write(encodeRpcFrame(reply)) }
@@ -177,6 +182,12 @@ export class BackendRouter {
       const pending = this.pending.get(message.id)
       if (!pending) return
       this.pending.delete(message.id)
+      if (!message.error && pending.epoch === this.epoch && isPlanningMetadataMutation(pending.method)) {
+        const notification = encodeRpcFrame({ jsonrpc: '2.0', method: planningMetadataNotification, params: { method: pending.method } })
+        for (const [owner, client] of this.clients) {
+          if (owner !== pending.owner && client.epoch === pending.epoch) client.port.postMessage(notification)
+        }
+      }
       if (pending.port) {
         if (pending.originalId !== undefined && this.clients.get(pending.owner)?.port === pending.port) {
           pending.port.postMessage(encodeRpcFrame({ ...message, id: pending.originalId }))

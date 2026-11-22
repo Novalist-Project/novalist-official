@@ -125,7 +125,7 @@ A few rules:
 Novalist is light, but very large projects (50+ chapters, hundreds of scenes, big image gallery) can slow down some views.
 
 - **Corkboard and Outliner** build a chapter's cards and rows when you scroll near it, not all at once, so opening a fifty-chapter book is about as fast as opening a three-chapter one. The space below is already reserved, so the scrollbar is the right length and scrolling lands where you expect.
-- **Manuscript mode** still renders every scene at once, because it is one continuous text. On very large books, use Corkboard or Outliner while planning and Manuscript for read-throughs.
+- **Writing scope** can narrow a large book to the active chapter or scene without losing pending prose or undo history. Use **Plan → Structure**, Corkboard, or Outliner for planning passes.
 - **Image gallery** decodes thumbnails lazily. The first scroll through is slower; subsequent ones reuse the cache.
 - **Grammar check** calls a remote API per scene; disable it in Settings if it lags.
 

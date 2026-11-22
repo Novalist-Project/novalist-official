@@ -16,7 +16,7 @@ test('Codex and Manuscript cursor labels match the scene editor', async () => {
   try {
     const host = await launchApp('nl-marker-host-')
     writers.push(host)
-    const project = await seedBook(host, { Opening: ['Arrival'] })
+    const project = await seedBook(host, { Opening: ['Arrival'] }, 'Spec', false)
     const chapter = project.chapters.find(chapter => chapter.title === 'Opening')!
     const scene = chapter.scenes[0]
     const entity = await host.rpc<{ id: string }>('entities/create', ['character', 'Mira'])
@@ -36,7 +36,7 @@ test('Codex and Manuscript cursor labels match the scene editor', async () => {
     await host.page.frameLocator('iframe[title="editor"]').locator('#editor').click()
     const style = await markerStyle(guest.page.frameLocator('iframe[title="editor"]').locator('.nv-collaboration-label'))
     await guest.page.evaluate(() => window.novalistStores.shell.getState().setMainView('manuscript'))
-    expect(await markerStyle(guest.page.frameLocator('iframe[title="manuscript"]').locator('.nv-collaboration-label'))).toEqual(style)
+    expect(await markerStyle(guest.page.frameLocator('iframe[title="editor"]').locator('.nv-collaboration-label'))).toEqual(style)
     for (const writer of writers) {
       await writer.page.evaluate(async id => {
         window.novalistStores.shell.getState().setMainView('codex')

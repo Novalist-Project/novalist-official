@@ -168,7 +168,7 @@ function SettingsDesktop(props: SettingsLayoutProps): React.JSX.Element {
         <div className="settings-heading-copy">
           {destination.origin && (
             <button className="settings-origin" onClick={returnToOrigin}>
-              <ArrowLeft size={16} aria-hidden="true" />
+              <ArrowLeft size={16} aria-hidden="true" className="icon-directional" />
               {t('settings.backTo', { context: t(destination.origin.labelKey) })}
             </button>
           )}

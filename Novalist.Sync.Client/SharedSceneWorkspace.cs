@@ -65,6 +65,23 @@ public sealed class SharedSceneWorkspace : IAsyncDisposable
         finally { gate.Release(); }
     }
 
+    /// <summary>Merges prose written without a session; when <paramref name="apply"/> is set the merged
+    /// result is saved as this device's edit, with unchosen conflicts left as the server has them.</summary>
+    public async Task<SceneMergeResult> MergeAsync(Guid item, byte[] baseState, string local, IReadOnlyDictionary<string, string>? choices,
+        bool apply, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        try
+        {
+            EnsureItem(item);
+            await ReplayFailureAsync(item, ct);
+            var result = await documents.MergeAsync(item, baseState, local, apply ? choices ?? new Dictionary<string, string>() : null, ct);
+            if (apply && result.Update is { } update) await SaveEditAsync(item, update, ct);
+            return result;
+        }
+        finally { gate.Release(); }
+    }
+
     public async Task AddAsync(IReadOnlyList<SharedDocumentState> added, CancellationToken ct)
     {
         await gate.WaitAsync(ct);
@@ -109,6 +126,36 @@ public sealed class SharedSceneWorkspace : IAsyncDisposable
             EnsureItem(item);
             await ReplayFailureAsync(item, ct);
             await SaveEditAsync(item, stable, ct);
+        }
+        finally { gate.Release(); }
+    }
+
+    public async Task ValidateStructureAsync(IReadOnlyList<SharedDocumentUpdate> updates, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        try
+        {
+            foreach (var update in updates)
+            {
+                EnsureItem(update.ItemId);
+                await documents.ValidateAsync(update.ItemId, update.Update, ct);
+            }
+        }
+        finally { gate.Release(); }
+    }
+
+    public async Task ApplyStructureAsync(IReadOnlyList<SharedDocumentUpdate> updates, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        try
+        {
+            foreach (var update in updates)
+            {
+                EnsureItem(update.ItemId);
+                failures.Add(update.ItemId);
+                if (!await ApplyAsync(update.ItemId, update.Update, ct)) throw new InvalidDataException("The structural document update was rejected.");
+                await ProjectAsync(update.ItemId, ct);
+            }
         }
         finally { gate.Release(); }
     }

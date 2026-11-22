@@ -119,7 +119,7 @@ public sealed class FieldFocusSessionTests
             sequence.Dispose();
             cipher.Dispose();
             signing.Dispose();
-            Directory.Delete(folder, recursive: true);
+            TestFiles.DeleteTree(folder);
         }
     }
 }

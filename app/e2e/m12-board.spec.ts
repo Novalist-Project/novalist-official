@@ -37,10 +37,10 @@ test('the board groups scenes by stage and a drop rewrites the stage', async () 
   }, workDir)
 
   await page.evaluate(() => {
-    window.novalistStores.shell.getState().setMainView('manuscript')
+    window.novalistStores.shell.getState().setMainView('structure')
   })
   // The book in this fixture is also called "Board"; the mode button is the
-  // one in the manuscript toolbar.
+  // one in the Structure toolbar.
   await page.locator('.manuscript-modes .codex-tab').getByText('Board', { exact: true }).click()
 
   // Every stage gets a column, plus the untriaged pile - a board that hides

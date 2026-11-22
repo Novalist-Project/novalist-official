@@ -73,11 +73,11 @@ function CalendarToolbar({ model, dates, anchor, headerLabel }: ToolbarProps): R
       </button>
       <div className="calendar-nav">
         <button className="toolbar-button" onClick={() => pan(-1)} title={t('timeline.prev')}>
-          <ChevronLeft size={15} strokeWidth={2} />
+          <ChevronLeft size={15} strokeWidth={2} className="icon-directional" />
         </button>
         <span className="calendar-header-label">{headerLabel}</span>
         <button className="toolbar-button" onClick={() => pan(1)} title={t('timeline.next')}>
-          <ChevronRight size={15} strokeWidth={2} />
+          <ChevronRight size={15} strokeWidth={2} className="icon-directional" />
         </button>
       </div>
       <button className={`dashboard-range${configOpen ? ' active' : ''}`}

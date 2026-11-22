@@ -1,6 +1,7 @@
 import { app, ipcMain, net, protocol, session } from 'electron'
 import { pathToFileURL } from 'node:url'
 import { join, normalize, sep } from 'node:path'
+import { THEME_SHIM, isThemeShim } from './extension-shim'
 
 let projectRoot: string | null = null
 const extensionRoots = new Map<string, string>()
@@ -21,47 +22,6 @@ function narrationCacheRoot(): string {
 function isClipName(name: string): boolean {
   return /^[0-9a-f]+\.[a-z0-9]+$/i.test(name)
 }
-
-/** Where the theme shim is served from, under every extension's own host. */
-const THEME_SHIM_PATH = '/__novalist/theme.js'
-
-/** Whether a request is for the theme shim, wherever the page asking sits. */
-function isThemeShim(pathname: string): boolean {
-  return pathname === THEME_SHIM_PATH || pathname.endsWith(THEME_SHIM_PATH)
-}
-
-/**
- * The script an extension panel includes to be themed.
- *
- * A panel is an iframe and CSS custom properties do not cross a document
- * boundary, so the shell posts the resolved `--nl-*` set in and this stamps it
- * onto the panel's own root element. After that `var(--nl-surface-card)` means
- * inside the panel what it means everywhere else, and a theme change repaints
- * it with the rest of the app.
- *
- * Synthesised here rather than shipped as a file: it then has no packaging
- * story, works identically in dev and in a packaged build, and cannot go
- * missing from an extension folder.
- *
- * The ready ping matters. The shell cannot know when this has run, and a theme
- * posted before the listener existed would be lost - leaving the panel
- * unstyled until the writer happened to change theme.
- */
-const THEME_SHIM = `(function () {
-  var root = document.documentElement;
-  window.addEventListener('message', function (event) {
-    var tokens = event.data && event.data.novalistTheme;
-    if (!tokens) return;
-    for (var name in tokens) {
-      if (Object.prototype.hasOwnProperty.call(tokens, name)) {
-        root.style.setProperty(name, tokens[name]);
-      }
-    }
-    root.setAttribute('data-novalist-theme', 'ready');
-  });
-  parent.postMessage({ novalistThemeReady: true }, '*');
-})();
-`
 
 /** CORS headers for module requests from the renderer. The request filter below
  * also checks the requesting frame: custom-scheme fetches can arrive without

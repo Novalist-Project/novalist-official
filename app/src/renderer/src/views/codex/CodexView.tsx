@@ -339,7 +339,7 @@ function CodexDetail({ detailTab, isMobile, selectedId, t, record, selected, set
           className="mobile-back codex-detail-back"
           onClick={clearSelectedEntity}
         >
-          <ChevronLeft size={20} strokeWidth={2} />
+          <ChevronLeft size={20} strokeWidth={2} className="icon-directional" />
           <span>{t('shell.view.codex')}</span>
         </button>
       )}

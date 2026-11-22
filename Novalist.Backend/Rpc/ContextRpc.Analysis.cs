@@ -252,14 +252,14 @@ public sealed partial class ContextRpc
     private static int CountWords(string content)
         => WordRegex.Matches(content).Count;
 
-    private static string NormalizeSceneContent(string content)
+    private static string NormalizeSceneContent(string content, bool html = false)
     {
         if (string.IsNullOrEmpty(content))
         {
             return string.Empty;
         }
 
-        if (!content.TrimStart().StartsWith('<'))
+        if (!html && !content.TrimStart().StartsWith('<'))
         {
             return content;
         }

@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { cp, readFile, readdir, realpath, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative } from 'node:path'
-import { dismissTour, launchApp, type Harness } from './harness'
+import { dismissTour, enterWriting, launchApp, type Harness } from './harness'
 import { collaborationServer } from './fixtures/collaborationServer'
 import { identityProvider } from './fixtures/identityProvider'
 import type { ProjectStateDto } from '../src/renderer/src/stores/projectTypes'
@@ -142,11 +142,13 @@ test('an existing populated project shares, joins a new folder, edits, opens Man
 
     for (const writer of writers) {
       await dismissTour(writer.page)
+      await enterWriting(writer.page)
       await writer.page.evaluate(({ chapter, scene }) => window.novalistStores.project.getState().openScene(chapter, scene),
         { chapter: chapter.guid, scene: scene.id })
+      await writer.page.locator('.writing-scope-segments').getByRole('button', { name: 'Scene', exact: true }).click()
     }
-    const ownerEditor = owner.page.frameLocator('iframe[title="editor"]').locator('#editor')
-    const guestEditor = guest.page.frameLocator('iframe[title="editor"]').locator('#editor')
+    const ownerEditor = owner.page.frameLocator('iframe[title="editor"]').locator(`[data-writing-scene="${scene.id}"]`)
+    const guestEditor = guest.page.frameLocator('iframe[title="editor"]').locator(`[data-writing-scene="${scene.id}"]`)
     await watchLayout(ownerEditor)
     await watchLayout(guestEditor)
     await test.step('Type from both windows without losing the page layout', async () => {
@@ -155,7 +157,14 @@ test('an existing populated project shares, joins a new folder, edits, opens Man
         [guest, guestEditor, ownerEditor, ' Relay guest verification.']
       ] as const) {
         await editor.click()
-        await writer.page.keyboard.press('Control+End')
+        await editor.evaluate(element => {
+          const range = element.ownerDocument.createRange()
+          range.selectNodeContents(element)
+          range.collapse(false)
+          const selection = element.ownerDocument.getSelection()!
+          selection.removeAllRanges()
+          selection.addRange(range)
+        })
         await writer.page.keyboard.type(text, { delay: 60 })
         await expect(remote).toContainText(text.trim(), { timeout: 15_000 })
       }
@@ -168,12 +177,12 @@ test('an existing populated project shares, joins a new folder, edits, opens Man
 
     await test.step(`Open all ${sceneCount} active scenes in Manuscript`, async () => {
       await owner.page.evaluate(() => {
-        window.novalistStores.manuscript.getState().setMode('manuscript')
         window.novalistStores.shell.getState().setMainView('manuscript')
       })
-      const manuscript = owner.page.frameLocator('iframe[title="manuscript"]')
-      await expect(manuscript.locator('.scene-editor')).toHaveCount(sceneCount, { timeout: 30_000 })
-      await expect(manuscript.locator(`.scene-editor[data-scene-id="${scene.id}"]`)).toContainText('Relay guest verification.')
+      await owner.page.locator('.writing-scope-segments').getByRole('button', { name: 'Manuscript', exact: true }).click()
+      const manuscript = owner.page.frameLocator('iframe[title="editor"]')
+      await expect(manuscript.locator('[data-writing-scene]')).toHaveCount(sceneCount, { timeout: 30_000 })
+      await expect(manuscript.locator(`[data-writing-scene="${scene.id}"]`)).toContainText('Relay guest verification.')
     })
 
     const savedScenes = await Promise.all(writers.map(writer => writer.rpc<{ html: string }>('scenes/read', [chapter.guid, scene.id])))

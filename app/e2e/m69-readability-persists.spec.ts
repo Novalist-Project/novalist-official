@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { launchApp, seedBook, dismissTour } from './harness'
+import { launchApp, seedBook, dismissTour, enterWriting } from './harness'
 
 /**
  * Marking hard-to-read sentences, and having the marks stay.
@@ -34,16 +34,12 @@ const markedLength = (page: import('@playwright/test').Page): Promise<number> =>
 test('hard-to-read marks survive the prose being re-laid-out', async () => {
   test.setTimeout(180_000)
   const h = await launchApp('nl-readability-')
-  await dismissTour(h.page)
   await seedBook(h, { 'Chapter One': ['Scene One'] })
-
-  // Page view is what re-wraps the paragraphs, and it is the default; asked for
-  // explicitly so the spec does not rest on that staying true.
-  await h.page.evaluate(async () => {
-    await window.novalistStores.settings.getState().update('global', { pageViewEnabled: true })
-  })
+  await dismissTour(h.page)
+  await enterWriting(h.page)
 
   await h.page.locator('.binder-scene-row').first().click()
+  await h.page.getByRole('button', { name: 'Page view', exact: true }).click()
   const editor = h.page.frameLocator('.editor-frame').locator('#editor')
   await expect(editor).toBeVisible({ timeout: 30_000 })
 

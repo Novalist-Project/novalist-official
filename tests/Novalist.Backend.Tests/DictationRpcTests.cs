@@ -23,7 +23,7 @@ public sealed class DictationRpcTests : IDisposable
     public void Dispose()
     {
         _workspace.Dispose();
-        if (Directory.Exists(_root)) Directory.Delete(_root, true);
+        TestFiles.DeleteTree(_root);
     }
     [Fact]
     public async Task DisabledProviderNeverReceivesAudio()

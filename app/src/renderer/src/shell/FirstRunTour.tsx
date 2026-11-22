@@ -131,7 +131,10 @@ const TOUR_STEPS: TourStep[] = [
 
 /** The tasks this shell can actually reach. Phone-only builds expose five tabs. */
 export function buildTourSteps(isMobile: boolean): TourStep[] {
-  return isMobile ? TOUR_STEPS.filter((step) => step.tab !== undefined) : TOUR_STEPS
+  if (isMobile) return TOUR_STEPS.filter((step) => step.tab !== undefined)
+  return TOUR_STEPS.map(step => step.id === 'manuscript'
+    ? { ...step, bodyKey: 'tour.desktopManuscriptBody', taskKey: 'tour.desktopManuscriptTask' }
+    : step)
 }
 
 /**

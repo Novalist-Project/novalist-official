@@ -229,8 +229,8 @@ public partial class ExportService
                 Kind = m.Kind.ToString(),
                 Placement = m.Placement.ToString(),
                 Title = ExportTokens.Resolve(ResolveMatterTitle(m), tokens),
-                HtmlContent = Models.ExportReplacements.Apply(
-                    ExportTokens.Resolve(m.Content, tokens), options.Replacements),
+                HtmlContent = ExportProse.MatterContentToHtml(Models.ExportReplacements.Apply(
+                    ExportTokens.Resolve(m.Content, tokens), options.Replacements)),
                 Order = m.Order,
                 InTableOfContents = m.InTableOfContents
             })

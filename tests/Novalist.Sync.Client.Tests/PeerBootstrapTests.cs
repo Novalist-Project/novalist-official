@@ -412,16 +412,14 @@ public sealed class PeerBootstrapTests : IDisposable
         {
             guestSession.Updates.Save(item, "Written during snapshot"u8.ToArray());
             await guestSession.Updates.SynchronizeAsync(false, token);
-            await received.Task.WaitAsync(TimeSpan.FromSeconds(5), token);
+            await received.Task.WaitAsync(TestWait.Deadline, token);
             Assert.Empty(ownerSession.Updates.ReadItem(item));
             if (failCapture) throw new IOException("Snapshot disk is full.");
             return sequence;
         }, ct);
         if (failCapture) await Assert.ThrowsAsync<IOException>(() => capture);
         else Assert.Equal(0, await capture);
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromSeconds(3));
-        while (ownerSession.Updates.ReadItem(item).Count == 0) await Task.Delay(20, timeout.Token);
+        await TestWait.UntilAsync(() => ownerSession.Updates.ReadItem(item).Count > 0, "the write made during the snapshot to reach the owner", ct);
         Assert.Equal("Written during snapshot"u8.ToArray(), Assert.Single(ownerSession.Updates.ReadItem(item)));
     }
 
@@ -475,6 +473,6 @@ public sealed class PeerBootstrapTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        TestFiles.DeleteTree(root);
     }
 }

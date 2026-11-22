@@ -4,7 +4,7 @@ import { dismissTour, launchApp, seedBook } from './harness'
 test('clicking editor iframe prose after the Dashboard restores the focused pane without losing the caret', async () => {
   const h = await launchApp('nl-pane-iframe-focus-')
   try {
-    const book = await seedBook(h, { Chapter: ['Opening'] })
+    const book = await seedBook(h, { Chapter: ['Opening'] }, 'Pane focus fixture', false)
     const chapter = book.chapters[0]
     const scene = chapter.scenes[0]
     const prose = 'The lantern lights the room.'
@@ -16,10 +16,11 @@ test('clicking editor iframe prose after the Dashboard restores the focused pane
       shell.goHome()
       shell.splitActivePane('row')
       const paneId = window.novalistStores.shell.getState().activePaneId
+      window.novalistStores.shell.getState().setPaneWritingScope(paneId, 'scene')
       await window.novalistStores.project.getState().openSceneIn(paneId, chapterGuid, sceneId)
       return paneId
     }, { chapterGuid: chapter.guid, sceneId: scene.id })
-    const editor = h.page.frameLocator('.editor-frame').locator('#editor')
+    const editor = h.page.frameLocator('.editor-frame').locator(`[data-writing-scene="${scene.id}"]`)
     await expect(editor).toHaveText(prose)
 
     // Clicking the actual Dashboard makes its pane active and removes Write's
@@ -61,7 +62,8 @@ test('clicking editor iframe prose after the Dashboard restores the focused pane
     await h.page.keyboard.type(' More light.')
     const edited = `${caret.text.slice(0, caret.offset)} More light.${caret.text.slice(caret.offset)}`
     await expect(editor).toHaveText(edited)
-    await expect.poll(() => h.page.evaluate(() => window.novalistStores.project.getState().openScenePlainText)).toContain('More light.')
+    await expect.poll(() => h.page.evaluate(id => window.novalistStores.project.getState().getWritingRegistry()?.capture()
+      .find(scene => scene.sceneId === id)?.html, scene.id)).toContain('More light.')
     await expect(h.page.locator('.pane-leaf[data-view="dashboard"]')).toHaveCount(1)
 
     // Background settings reach an iframe that still remembers its last focused
@@ -69,12 +71,12 @@ test('clicking editor iframe prose after the Dashboard restores the focused pane
     await h.page.locator('.pane-leaf[data-view="dashboard"] .dashboard-title').click()
     await expect(h.page.locator('.pane-leaf.active')).toHaveAttribute('data-view', 'dashboard')
     await h.page.evaluate(() => window.novalistStores.settings.getState().update('global', { spellCheckEnabled: false }))
-    await expect.poll(() => editor.evaluate((element) => (element as HTMLElement).spellcheck)).toBe(false)
+    await expect.poll(() => editor.evaluate(element => (element.ownerDocument.getElementById('editor') as HTMLElement).spellcheck)).toBe(false)
     await expect(h.page.locator('.pane-leaf.active')).toHaveAttribute('data-view', 'dashboard')
     await expect(h.page.locator('.binder')).toHaveCount(0)
 
     // Keyboard/accessibility entry produces focus without a pointer event.
-    await editor.evaluate((element) => (element as HTMLElement).focus())
+    await editor.evaluate(element => element.ownerDocument.getElementById('editor')!.focus())
     await expect(h.page.locator('.pane-leaf.active')).toHaveAttribute('data-view', 'write')
     await expect(h.page.locator('.binder-scene-row.active .binder-scene-title')).toHaveText('Opening')
     expect(await h.page.evaluate(() => window.novalistStores.shell.getState().activePaneId)).toBe(editorPaneId)
@@ -88,7 +90,7 @@ test('clicking editor iframe prose after the Dashboard restores the focused pane
 test('clicking between editor iframes follows each scene and routes typing to that pane', async () => {
   const h = await launchApp('nl-two-iframe-focus-')
   try {
-    const book = await seedBook(h, { Chapter: ['Left scene', 'Right scene'] })
+    const book = await seedBook(h, { Chapter: ['Left scene', 'Right scene'] }, 'Two pane focus fixture', false)
     const chapter = book.chapters[0]
     await dismissTour(h.page)
     await h.page.setViewportSize({ width: 1420, height: 900 })
@@ -99,13 +101,16 @@ test('clicking between editor iframes follows each scene and routes typing to th
       const shell = window.novalistStores.shell.getState()
       shell.setMainView('write')
       const left = window.novalistStores.shell.getState().activePaneId
+      shell.setPaneWritingScope(left, 'scene')
       await window.novalistStores.project.getState().openSceneIn(left, chapterGuid, sceneIds[0])
       shell.splitActivePane('row')
       const right = window.novalistStores.shell.getState().activePaneId
+      window.novalistStores.shell.getState().setPaneWritingScope(right, 'scene')
       await window.novalistStores.project.getState().openSceneIn(right, chapterGuid, sceneIds[1])
       return [left, right]
     }, { chapterGuid: chapter.guid, sceneIds: chapter.scenes.map((scene) => scene.id) })
-    const editors = [0, 1].map((index) => h.page.locator('.pane-leaf').nth(index).frameLocator('.editor-frame').locator('#editor'))
+    const editors = [0, 1].map((index) => h.page.locator('.pane-leaf').nth(index).frameLocator('.editor-frame')
+      .locator(`[data-writing-scene="${chapter.scenes[index].id}"]`))
     await expect(editors[0]).toHaveText('Left scene prose.')
     await expect(editors[1]).toHaveText('Right scene prose.')
 

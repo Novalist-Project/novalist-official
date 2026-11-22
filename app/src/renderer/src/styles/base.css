@@ -13,10 +13,11 @@ body,
 
 /* The browser paints scrollbars, form widgets and the select popup itself, and
    defaults them to the light OS look regardless of our surfaces. color-scheme
-   flips those native parts dark; accent-color tints checkbox / radio / range /
+   paints those native parts in the theme's own palette (--nl-color-scheme,
+   light or dark per theme); accent-color tints checkbox / radio / range /
    progress with the theme accent instead of the OS highlight colour. */
 :root {
-  color-scheme: dark;
+  color-scheme: var(--nl-color-scheme);
   accent-color: var(--nl-accent);
 }
 
@@ -167,6 +168,26 @@ button:focus-visible,
 :where(option, optgroup) {
   color: var(--nl-text);
   background: var(--nl-surface-card);
+}
+
+:where(input:not([type]), input[type='text'], input[type='search'], textarea):not([dir='ltr'], [dir='rtl']) {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+:where(option):not([dir='ltr'], [dir='rtl']) {
+  unicode-bidi: plaintext;
+}
+
+/* A closed select paints its selected option's bidi and alignment. The bidi
+   isolates around translated labels hide their letters from unicode-bidi:
+   plaintext, so the option's start edge is taken from the select instead. */
+:where(select:dir(rtl) option) {
+  text-align: right;
+}
+
+:where(select:dir(ltr) option) {
+  text-align: left;
 }
 
 :where(input, select, textarea):focus-visible {

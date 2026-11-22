@@ -27,10 +27,12 @@ import './mobile.css'
  */
 export function MobileWelcome({
   recentProjects,
-  onOpenPath
+  onOpenPath,
+  suspended
 }: {
   recentProjects: RecentProjectDto[]
   onOpenPath: (path: string, bookId?: string) => Promise<void>
+  suspended: boolean
 }): React.JSX.Element {
   const mainView = useShellStore((s) => s.mainView)
   // The views that do not need a project. Everything else here would have
@@ -42,9 +44,9 @@ export function MobileWelcome({
     <div className="mobile-shell">
       <div className="mobile-content">
         {appScopedView ? (
-          <MainArea />
+          suspended ? null : <MainArea />
         ) : (
-          <StartScreen recentProjects={recentProjects} onOpenPath={onOpenPath} />
+          <StartScreen recentProjects={recentProjects} onOpenPath={onOpenPath} suspended={suspended} />
         )}
       </div>
     </div>

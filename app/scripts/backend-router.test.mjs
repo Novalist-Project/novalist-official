@@ -7,13 +7,13 @@ import { encodeRpcFrame, RpcFrameDecoder } from '../src/shared/rpcFraming.ts'
 // Compile the same source the desktop build uses; no Electron runtime is
 // needed to exercise stream routing and connection ownership.
 const compiled = buildSync({
-  stdin: { contents: "export * from './src/main/backend-router'; export * from './src/main/workspace-windows'", resolveDir: fileURLToPath(new URL('..', import.meta.url)) },
+  stdin: { contents: "export * from './src/main/backend-router'; export * from './src/main/workspace-windows'; export * from './src/main/desktop-operation-error'", resolveDir: fileURLToPath(new URL('..', import.meta.url)) },
   bundle: true,
   platform: 'node',
   format: 'esm',
   write: false
 }).outputFiles[0].text
-const { BackendRouter, WorkspaceWindows } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`)
+const { BackendRouter, WorkspaceWindows, DesktopOperationError } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`)
 
 function port() {
   return {
@@ -47,6 +47,22 @@ test('backend requests are answered by the desktop without entering renderer por
   assert.deepEqual(frames, [{ jsonrpc: '2.0', id: 1,
     result: { method: 'collaboration/documents/capture', params: { id: 'scene-a' } } }])
   assert.deepEqual(renderer.messages(), [])
+  router.dispose()
+})
+
+test('desktop failures reach the backend only when written for the writer', async () => {
+  const frames = [], decoder = new RpcFrameDecoder()
+  const router = new BackendRouter(frame => frames.push(...decoder.push(frame)), undefined, async method => {
+    if (method === 'collaboration/credentials') throw new DesktopOperationError('Start a keyring, then restart Novalist.')
+    throw new Error('/home/writer/Secret Novel/draft.md could not be read')
+  })
+  router.receiveBackend(encodeRpcFrame({ jsonrpc: '2.0', id: 1, method: 'collaboration/credentials', params: {} }))
+  router.receiveBackend(encodeRpcFrame({ jsonrpc: '2.0', id: 2, method: 'collaboration/documents', params: {} }))
+  await new Promise(resolve => setImmediate(resolve))
+  assert.deepEqual(frames, [
+    { jsonrpc: '2.0', id: 1, error: { code: -32000, message: 'Start a keyring, then restart Novalist.' } },
+    { jsonrpc: '2.0', id: 2, error: { code: -32000, message: 'The desktop operation could not be completed.' } }
+  ])
   router.dispose()
 })
 
@@ -107,6 +123,32 @@ test('data notifications broadcast while interactive UI has one owner', () => {
   router.setDialogOwner(2)
   router.receiveBackend(encodeRpcFrame({ jsonrpc: '2.0', method: 'ui/wizard/open' }))
   assert.equal(detached.messages().at(-1).method, 'ui/wizard/open')
+})
+
+test('successful metadata changes notify peer windows without duplicating the origin response', () => {
+  const { router, requests } = harness()
+  const main = port(), detached = port()
+  router.attach(1, main)
+  router.attach(2, detached)
+  router.receive(2, detached, encodeRpcFrame({ jsonrpc: '2.0', id: 1, method: 'project/renameChapter', params: ['chapter', 'Private title'] }))
+  router.receiveBackend(encodeRpcFrame({ jsonrpc: '2.0', id: requests[0].id, result: { title: 'Private title' } }))
+  assert.deepEqual(main.messages(), [{ jsonrpc: '2.0', method: 'planning/metadataChanged', params: { method: 'project/renameChapter' } }])
+  assert.deepEqual(detached.messages(), [{ jsonrpc: '2.0', id: 1, result: { title: 'Private title' } }])
+})
+
+test('failed metadata, prose commits and old-epoch metadata replies produce no peer invalidation', () => {
+  for (const scenario of ['failure', 'prose', 'old-epoch']) {
+    const { router, requests } = harness()
+    const main = port(), detached = port()
+    router.attach(1, main)
+    router.attach(2, detached)
+    router.receive(2, detached, encodeRpcFrame({ jsonrpc: '2.0', id: 1,
+      method: scenario === 'prose' ? 'writing/commit' : 'project/renameChapter' }))
+    if (scenario === 'old-epoch') { router.setEpoch(1); router.settle(1, 1) }
+    router.receiveBackend(encodeRpcFrame({ jsonrpc: '2.0', id: requests[0].id,
+      ...(scenario === 'failure' ? { error: { code: -1, message: 'Not saved' } } : { result: true }) }))
+    assert.deepEqual(main.messages(), [], scenario)
+  }
 })
 
 test('epochs change only after client acknowledgement and drain tokens are scoped', () => {

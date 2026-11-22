@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { dismissTour, launchApp, seedBook, type Harness } from './harness'
+import { dismissTour, launchApp, quitNovalist, seedBook, type Harness } from './harness'
 import type { PaneNode } from '../src/renderer/src/stores/shellTypes'
 
 async function recordMainErrors(h: Harness): Promise<string> {
@@ -144,7 +144,7 @@ test('docked notes remember their nested position, resized proportions and visib
     const projectPath = await h.page.evaluate(() => window.novalistStores.project.getState().projectPath)
     const workDir = h.workDir
     const restart = async (): Promise<void> => {
-      await h.close()
+      await quitNovalist(h)
       h = await launchApp('nl-notes-dock-restart-', {}, workDir)
       await h.rpc('project/open', [projectPath])
       await h.page.evaluate((chapter) => window.novalistStores.project.getState().openScene(chapter.guid, chapter.scenes[0].id), chapter)

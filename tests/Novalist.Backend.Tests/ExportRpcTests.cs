@@ -446,7 +446,7 @@ public sealed class ExportRpcTests : IDisposable
         // EPUB 3 popup notes: a noteref pointing at an aside, both in the file.
         Assert.Contains("epub:type=\"noteref\"", xhtml);
         Assert.Contains("href=\"#fn1\"", xhtml);
-        Assert.Contains("epub:type=\"footnote\" id=\"fn1\"", xhtml);
+        Assert.Contains("epub:type=\"footnote\" role=\"doc-footnote\" id=\"fn1\"", xhtml);
         Assert.Contains("The bell tower was rebuilt in 1911.", xhtml);
     }
 
@@ -618,6 +618,28 @@ public sealed class ExportRpcTests : IDisposable
 
         Assert.Contains("<h1>Inhalt</h1>", nav);
         Assert.Contains("#scene-1", nav);
+    }
+
+    [Fact]
+    public async Task Run_CoverDescriptionSavedWithTheBookNamesTheEpubCover()
+    {
+        var picked = Path.Combine(_root, "described-cover.png");
+        await File.WriteAllBytesAsync(picked, Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="));
+        var dashboard = new DashboardRpc(_workspace);
+        await dashboard.SetCoverAsync(picked);
+        await dashboard.SetCoverAltTextAsync("A lighthouse in a storm");
+
+        var outPath = Path.Combine(_root, "described.epub");
+        await _rpc.RunAsync("Epub", outPath, "Titel", "Autor", true, AllChapterGuids());
+
+        using var zip = System.IO.Compression.ZipFile.OpenRead(outPath);
+        using var cover = new StreamReader(zip.GetEntry("OEBPS/cover.xhtml")!.Open());
+        Assert.Contains(
+            "<title id=\"cover-description\">A lighthouse in a storm</title>",
+            await cover.ReadToEndAsync());
+        using var opf = new StreamReader(zip.GetEntry("OEBPS/content.opf")!.Open());
+        Assert.Contains("The cover image has a text description.", await opf.ReadToEndAsync());
     }
 
     [Fact]

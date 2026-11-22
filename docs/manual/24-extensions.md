@@ -39,7 +39,7 @@ The **Installed** tab lists every installed extension with its name, version, au
 
 When an installed and enabled extension contributes views, where each view appears depends on its declared **placement** in the manifest:
 
-- **`main`** — the view is a full content view, and it joins one of the five [modes](02-interface-overview.md#the-mode-rail). It is listed in that mode's panel like Codex or Timeline, using the icon and title from the manifest.
+- **`main`** — the view is a full content view, and it joins one of the five [modes](02-interface-overview.md#the-mode-rail). It is listed in that mode's panel like Codex or Timeline, using the icon and title from the manifest. If the extension ships translations, the title is shown in the interface language.
 - **`inspector`** — the view appears in the right-hand **inspector** (context sidebar), alongside the built-in Context and Footnotes tabs.
 
 ### Which mode a view joins
@@ -147,6 +147,7 @@ Extensions can register **multiple** hooks — a single extension might add a pa
 - **Themes** contributed by an extension are listed in **Settings, Appearance, Theme** together with the built-in themes and any you dropped into your own Themes folder; the Extensions view names the ones your extensions provide and points there. A contributed theme carries a table of design tokens, a stylesheet shipped in the extension folder, or simply an accent colour — the same formats described in [Custom themes & language packs](34-custom-themes-and-languages.md).
 - **Status-bar items** render at the left of the status bar and refresh about once a second; clicking one runs the extension's command.
 - **An extension's own panels follow the theme you picked**, provided the extension asks for it. A panel is a separate document, so it does not inherit Novalist's colours and sizes automatically; an extension that opts in is handed the whole set and repaints when you change theme, and one that has not been updated keeps whatever colours its author hardcoded. If a panel looks out of place beside the rest of the app, that is what has happened — it is worth telling its author, because the fix on their side is one line.
+- **An extension's own panels follow the interface direction**, when the extension is translated into your interface language. In the Arabic interface a panel of an extension that ships an Arabic translation is laid out right to left with the rest of the app. An extension without that translation keeps showing English and keeps its left-to-right layout, rather than mirroring text that still reads left to right. As with the theme, this reaches panels that have opted in to Novalist's styling.
 
 ## Host UI an extension can drive
 

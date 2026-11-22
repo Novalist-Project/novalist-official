@@ -42,7 +42,7 @@ The menu bar is always visible on Windows and Linux, and sits in the system bar 
 
 - **File** — New Project, Browse for Project Folder, Import from Obsidian Plugin, Import a manuscript, Quick capture, Print, **Recent Projects** (a submenu of the last ten), and Exit (Close, on macOS).
 - **Edit** — Undo, Redo, Cut, Copy, Paste, Select All. These are the system's own, so they behave exactly as they do in every other application.
-- **Go** — every view in the app by name, grouped exactly as the modes group them: Dashboard; then Editor and Manuscript; then Timeline, Plot Grid, Planning board, Relationships, Calendar and Dialogue; then Codex, Wiki, Maps, Research, Gallery and Languages; then Exposé, Export, Git and Style report; then Series; then Extensions and Settings — with Quick Open and the Command Palette at the end.
+- **Go** — every view by name, including Write, its Manuscript scope, and Plan's Structure view, with Quick Open and the Command Palette at the end.
 - **View** — Show the mode panel, the binder, the inspector; Focus Mode; the pane commands (split right, split down, close, default layout, open in its own window); **Pane layouts** and **Workspace layouts**; interface size; and the developer items your platform provides.
 - **Window** — brings the main window back after you have closed it, minimise, zoom, and the window list.
 - **Help** — the **User manual**, **Take the tour**, **[Support Novalist](01-getting-started.md#supporting-novalist)**, **[About](#about)**, **Check for Updates** (absent in the Mac App Store build, which updates itself), and **Novalist on GitHub**.
@@ -56,8 +56,8 @@ Menu items are greyed out rather than hidden when they cannot do anything — wi
 The horizontal labelled navigation row below the project toolbar. Each entry has an icon **and its name**, so nothing has to be hovered to be identified:
 
 - **Dashboard** — home. Not part of any mode: it is where you are before you have decided what to do today, and where a project lands when you open it.
-- **Write** — the Editor and the Manuscript view.
-- **Plan** — Timeline, Plot Grid, Planning board, Relationships, Calendar, Dialogue.
+- **Write** — one Editor with Scene, Chapter, and Manuscript scopes, plus Drafts and Narration. Each pane remembers its scope; new panes start in Manuscript.
+- **Plan** — Structure (including Corkboard, Outliner, and Board), Timeline, Plot Grid, Planning board, Relationships, Calendar, Dialogue.
 - **World** — Codex, Wiki, Maps, Research, Gallery, Languages.
 - **Publish** — Exposé, Style report, Export, Git.
 - **Series** — the Series view, which is the one that sits above a single book.
@@ -74,7 +74,7 @@ Below the navigation row, the mode panel lists the views of the mode you are in.
 
 - The head names the mode and shows **how many views** it holds.
 - Views are listed in **labelled groups** — Write has "Drafting"; Plan has "Shape" and "Cast and time"; World has "In this book" and "Reference"; Publish has "Prepare" and "Produce"; Series has "Across books". A mode with a single group shows no label, because a heading over the whole list says nothing the panel's title has not.
-- Some rows carry a **count** on the right: the number of scenes beside Manuscript, the number of entries beside Codex.
+- Some rows carry a **count** on the right, such as the number of entries beside Codex.
 - Views contributed by extensions sit in their own group, **From extensions**, always last — so installing something never reorders a view you already knew where to find.
 - Past **ten** views, the panel grows a **filter** box. It is an accelerator, never the way something becomes reachable: every view is in the list whether or not you are filtering. While you filter, the group labels go, because they describe an order the filtered list no longer has.
 
@@ -168,7 +168,9 @@ Drag the binder's right edge to resize it. It opens at a width proportional to y
 
 Novalist always opened in the same shape, so planning, drafting and revising meant dragging the same panels back and forth several times a day. **View → Workspace layouts** (`Ctrl+Alt+L`) saves the shape you are in under a name and brings it back with one click.
 
-A layout stores which view you are on, which binder and inspector tabs are open, whether the binder, inspector and Scene Notes window are visible, both panel widths, and whether focus mode is on. Saving under a name you have already used updates that layout rather than adding a second one.
+A layout stores which view you are on, which binder and inspector tabs are open, whether the binder, inspector and Scene Notes window are visible, both panel widths, and whether focus mode is on. It also stores the panes you have [opened in their own windows](#opening-a-pane-in-its-own-window): what each window shows, how it is split, the scene in each writing pane, and where the window sits on your screens. Saving under a name you have already used updates that layout rather than adding a second one.
+
+Applying a layout replaces the separate windows that are open with the ones it stores. The open ones save their edits and close first, then the layout's windows open and the main window takes the layout's shape. If one of them cannot close (for example, a scene with a save conflict), the layout is not applied at all: every window stays open, the main window stays as it was, and a message says the layout was not applied — resolve it and apply the layout again. A scene comes back only if the open project still has it; otherwise its window opens on the same view without it. A window saved on a monitor that is no longer connected opens on one that is. Layouts saved before Novalist recorded separate windows leave your open windows as they are.
 
 Layouts are stored per machine, alongside your panel widths — they follow the computer you work on, not the project.
 
@@ -186,7 +188,7 @@ The main area can be split into as many **panes** as you have room for, each sho
 - **Close** a pane from **View → Close pane** or `Ctrl+Alt+W`, or with the `×` in its header. The last pane always stays.
 - The **active pane** is outlined. Everything that changes a view — the mode panel, the **Go** menu, the command palette, a link in a panel — lands there, and clicking anywhere inside a pane makes it the active one. The left navigation and scene list follow the focused pane; the scene list appears for writing views.
 
-A pane split off the editor starts empty and waits for a scene: click one in the binder and it opens there. Two editor panes are two independent scenes, each with its own [tab strip](05-editor.md#scene-tabs) and its own auto-save.
+A pane split off the editor starts in Manuscript scope. Click a scene in the binder to navigate the active pane. Each writing pane keeps its own [scope and position](05-editor.md#moving-through-the-manuscript) and saves independently.
 
 ### Pane layouts
 
@@ -194,13 +196,19 @@ A pane split off the editor starts empty and waits for a scene: click one in the
 
 The dialog marks the layout you are currently in. Split a pane, close one or drag a divider and that mark clears by itself — the arrangement is no longer the one that was saved. Type a name and **Save this layout** to store the current one; the bin icon beside a layout forgets it.
 
-**Default** at the top of the list is always there and cannot be deleted: it collapses the window back to a single pane, whatever you have split it into. It is the arrangement Novalist starts in, so it is the way back when a layout is not what you want. The view you are on comes with you — going back to one pane changes how the window is arranged, not where you are in the book.
+**Default** at the top of the list is always there and cannot be deleted: it collapses the window back to a single pane, whatever you have split it into. It is the way back when a layout is not what you want. The view you are on comes with you — going back to one pane changes how the window is arranged, not where you are in the book.
 
 ### Opening a pane in its own window
 
-**View → Open in its own window**, and the same button in every pane header, tears the pane out into a second window: the Codex on another monitor while the manuscript stays where it is.
+**View → Open in its own window** (also in the command palette) opens the active pane in a second window: the Codex on another monitor while the manuscript stays where it is. The pane you opened it from stays as it was.
 
-The new window runs the real view against the same project, so edits made in it land in the book like any other. It opens on the project the pane came from, and on the same scene when the editor is what you tore out. It has no mode rail and no binder — a torn-off pane is one thing on purpose — but it keeps its pane header, so you can point it at a different view or split it further.
+The same **Open in its own window** button appears on the pane itself. In a split window it is in each pane header. In a window with a single pane it is at the right of the view's heading, or of the scope bar above the editor in the Write view. The Dashboard, Settings, About and views added by extensions have no heading, so when one of them is the only pane in the window, use the View menu or the command palette.
+
+The new window runs the real view against the same project, so edits made in it land in the book like any other. It opens on the project the pane came from, on the same scene when the editor is what you opened, and on the same extension view when an extension's view is what the pane was showing. It has no mode rail and no binder — a separate window is one thing on purpose — but it keeps its pane header, so you can point it at a different view or split it further.
+
+**Your separate windows come back.** When you close Novalist, or close the main window, the separate windows that are open are remembered for the project, with their views, splits, scenes and positions. The next time you open that project they open again by themselves; you do not need to save a layout. A window you close yourself is forgotten, so closing all of them before you quit means none come back. Windows stay open when you close or switch the project in the main window, and follow it; reopening a project while they are open does not open them a second time. A [workspace layout](#workspace-layouts) can store a set of separate windows under a name as well.
+
+**The main window's split comes back too.** When the main window is split into two or more panes, that arrangement is remembered for the project as you change it: the panes, their sizes and direction, the view in each, each editor pane's scope and scene, the selected scenes, an extension view on screen, and which pane was active. The next time you open the project — after quitting, or after switching to another project and back — the main window opens in that arrangement instead of on the Dashboard. A scene or extension view that no longer exists leaves its pane on the view without it; the rest of the split still comes back. A main window with a single pane opens as before, and Scene Notes docked in the window stay where they are docked. Arrangements are remembered on this computer only, alongside the separate windows.
 
 All windows share the active project, book and draft. Switching any of these saves pending edits across the windows before they follow the change. Closing a detached window saves its edits; closing the main window or quitting saves all windows and waits for the configured close-backup attempt. A closing message appears while this runs, and the affected windows stop accepting clicks and typing. A failed save keeps the windows open and restores interaction so you can resolve it.
 

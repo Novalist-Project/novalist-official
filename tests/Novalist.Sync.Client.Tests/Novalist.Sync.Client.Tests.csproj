@@ -3,4 +3,7 @@
     <ProjectReference Include="../../Novalist.Sync.Client/Novalist.Sync.Client.csproj" />
     <ProjectReference Include="../../Novalist.Core/Novalist.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="Novalist.Tests.Support" />
+  </ItemGroup>
 </Project>

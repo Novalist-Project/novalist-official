@@ -22,7 +22,7 @@ window.setCommentsData = function (data) {
         // Older margin deletions saved the shortened annotation list but left
         // its yellow spans in the prose. Repair those orphaned marks as well.
         let changed = false;
-        window.NovalistEditorState.editor.querySelectorAll('span.nv-comment[data-comment-id]').forEach(span => {
+        window.getWritingServiceRoot().querySelectorAll('span.nv-comment[data-comment-id]').forEach(span => {
             if (!commentsState.has(span.getAttribute('data-comment-id'))) {
                 window.clearCommentMark(span);
                 changed = true;

@@ -10,31 +10,64 @@ public partial class ExportService
     /// <summary>
     /// What a reading system and a retailer need to know about how accessible
     /// this book is. Declared from what the file actually contains rather than
-    /// asserted: a book with an undescribed picture says so, because claiming
-    /// alt text that is not there is worse than claiming nothing.
+    /// asserted, because claiming alt text that is not there is worse than
+    /// claiming nothing.
     /// </summary>
-    private static string AccessibilityMetadataXml(IReadOnlyDictionary<string, string>? images)
+    /// <remarks>
+    /// Every picture placed in the file is counted - each prose image a
+    /// chapter writes, and the cover - and one is described when its text is
+    /// not blank. A book with any picture is visual; it claims alternative
+    /// text only when every picture has a description, and its summary says
+    /// whether all, some or none of the prose images are described.
+    /// </remarks>
+    private static string AccessibilityMetadataXml(
+        List<ChapterExportContent> chapters, IReadOnlyDictionary<string, string>? images, ExportOptions options)
     {
-        var hasImages = images is { Count: > 0 };
+        var (described, undescribed) = ProseImageDescriptions(chapters, images);
+        var hasImages = described + undescribed > 0;
+        var hasCover = CoverMediaType(options.CoverImagePath) != null;
+        var coverDescribed = hasCover && !string.IsNullOrWhiteSpace(options.CoverAltText);
         var features = new List<string> { "structuralNavigation", "tableOfContents" };
-        if (hasImages) features.Add("alternativeText");
+        if ((hasImages || hasCover) && undescribed == 0 && (!hasCover || coverDescribed))
+            features.Add("alternativeText");
 
         var lines = new List<string>
         {
             "    <meta property=\"schema:accessMode\">textual</meta>"
         };
-        if (hasImages) lines.Add("    <meta property=\"schema:accessMode\">visual</meta>");
+        if (hasImages || hasCover) lines.Add("    <meta property=\"schema:accessMode\">visual</meta>");
         lines.Add("    <meta property=\"schema:accessModeSufficient\">textual</meta>");
         foreach (var feature in features)
             lines.Add($"    <meta property=\"schema:accessibilityFeature\">{feature}</meta>");
         lines.Add("    <meta property=\"schema:accessibilityHazard\">none</meta>");
-        lines.Add(
-            "    <meta property=\"schema:accessibilitySummary\">"
-            + (hasImages
-                ? "Reflowable text with a table of contents. Images carry the descriptions the author wrote."
-                : "Reflowable text with a table of contents, and no images to describe.")
-            + "</meta>");
+
+        var language = EpubLanguage(options);
+        var (summary, written) = EpubAccessibilitySummary.For(
+            language, described, undescribed, hasCover, coverDescribed);
+        // Marked only when it differs from the package's own language, which
+        // is the English fallback for a book in a language without a translation.
+        var lang = string.Equals(written, NormalizeLanguageTag(language), StringComparison.Ordinal)
+            ? string.Empty
+            : $" xml:lang=\"{written}\"";
+        lines.Add($"    <meta property=\"schema:accessibilitySummary\"{lang}>{EscapeXml(summary)}</meta>");
         return string.Join("\n", lines);
+    }
+
+    /// <summary>
+    /// The prose images the chapters will write, split by whether they carry a
+    /// description. Counted per placement, and only for images whose file made
+    /// it into the package - the chapter writer drops the rest.
+    /// </summary>
+    private static (int Described, int Undescribed) ProseImageDescriptions(
+        List<ChapterExportContent> chapters, IReadOnlyDictionary<string, string>? images)
+    {
+        var placed = chapters
+            .SelectMany(c => c.Scenes)
+            .SelectMany(s => ParseHtmlToBlocks(s.HtmlContent))
+            .Where(b => b.ImagePath != null && images != null && images.ContainsKey(b.ImagePath))
+            .ToList();
+        var described = placed.Count(b => !string.IsNullOrWhiteSpace(b.ImageAlt));
+        return (described, placed.Count - described);
     }
 
     private static string GenerateContentOpf(
@@ -65,7 +98,7 @@ public partial class ExportService
             coverMetaXml = "<meta name=\"cover\" content=\"cover-image\"/>";
         }
 
-        var language = string.IsNullOrWhiteSpace(options.Language) ? "en" : options.Language.Trim();
+        var language = EpubLanguage(options);
 
         // An ISBN is the identifier a retailer keys on, so when there is one it
         // becomes the package's unique identifier rather than sitting beside a
@@ -78,7 +111,7 @@ public partial class ExportService
 
         return $"""
             <?xml version="1.0" encoding="UTF-8"?>
-            <package version="3.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId">
+            <package version="3.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" xml:lang="{EscapeXml(language)}">
               <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:schema="http://schema.org/">
                 {identifierXml}
                 <dc:title>{EscapeXml(options.Title)}</dc:title>
@@ -87,7 +120,7 @@ public partial class ExportService
             {PublishingMetadataXml(publishing)}
                 {coverMetaXml}
                 <meta property="dcterms:modified">{modifiedDate}</meta>
-            {AccessibilityMetadataXml(images)}
+            {AccessibilityMetadataXml(chapters, images, options)}
               </metadata>
               <manifest>
             {manifestItems}

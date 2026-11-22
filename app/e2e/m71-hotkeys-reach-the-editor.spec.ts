@@ -129,6 +129,9 @@ test('every bound gesture still reaches the app from inside the prose', async ()
 test('Ctrl+Alt+Right splits the pane while the caret is in the prose', async () => {
   test.setTimeout(180_000)
   const app = await launchApp('nl-split-')
+  const rendererErrors: string[] = []
+  app.page.on('pageerror', error => rendererErrors.push([error.name, ...(error.stack ?? '').split('\n').slice(1, 5)
+    .map(line => line.trim().replace(/(?:file:\/\/\/|[A-Za-z]:[\\/])[^\s)]*?([^/\\:\s]+:\d+:\d+)/g, '$1'))].join('\n')))
   await seedBook(app, { One: ['A'] })
   const page = app.page
 
@@ -144,7 +147,10 @@ test('Ctrl+Alt+Right splits the pane while the caret is in the prose', async () 
   // the placeholder rather than an editor.
   await expect(page.locator('.pane-leaf')).toHaveCount(1)
   await page.keyboard.press('Control+Alt+ArrowRight')
-  await expect(page.locator('.pane-leaf')).toHaveCount(2, { timeout: 15_000 })
+  await expect.poll(async () => {
+    expect(rendererErrors, 'renderer errors while splitting the writing pane').toEqual([])
+    return page.locator('.pane-leaf').count()
+  }, { timeout: 15_000 }).toBe(2)
 
   // And closing it again, from the same place.
   await page.keyboard.press('Control+Alt+w')

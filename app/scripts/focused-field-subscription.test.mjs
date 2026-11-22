@@ -43,7 +43,7 @@ const bundle = await build({
 
 const grant = { value: '2031-04-06', lease: { acquired: true, deviceId: 'owner', remainingMilliseconds: 30_000 } }
 
-async function fixture(t, acquisition) {
+async function fixture(t, acquisition, release = () => Promise.resolve()) {
   const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost/', runScripts: 'outside-only', pretendToBeVisual: true })
   const calls = []
   let mounted
@@ -52,7 +52,8 @@ async function fixture(t, acquisition) {
   dom.window.fieldRpc = {
     request(method, params) {
       calls.push({ method, params })
-      return method === 'collaboration/acquireField' ? acquisition : Promise.resolve()
+      if (method === 'collaboration/acquireField') return acquisition
+      return method === 'collaboration/releaseField' ? release() : Promise.resolve()
     }
   }
   dom.window.eval(bundle.outputFiles[0].text)
@@ -104,4 +105,17 @@ test('a lease arriving after subscription keeps the input read-only until grante
   await f.editable()
   assert.equal(f.input.readOnly, false)
   assert.equal(f.input.value, grant.value)
+})
+
+for (const acquired of ['failed', 'denied']) test(`saving and unmounting remain possible offline after a ${acquired} lock request`, async t => {
+  let resolve, reject
+  const acquisition = new Promise((done, fail) => { resolve = done; reject = fail })
+  const offline = new Error('Editing shared fields requires an active connection.')
+  const f = await fixture(t, acquisition, () => Promise.reject(offline))
+  if (acquired === 'failed') reject(offline)
+  else resolve({ ...grant, lease: { ...grant.lease, acquired: false } })
+  await f.app.flush()
+  assert.equal(f.app.snapshot().phase, 'idle')
+  assert.equal(f.input.readOnly, true)
+  assert.deepEqual(f.calls.map(call => call.method), ['collaboration/acquireField'])
 })

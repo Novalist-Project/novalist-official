@@ -12,6 +12,7 @@ import { useEditorEntityRequests } from './useEditorEntityRequests'
 import { useEditorPeek } from './useEditorPeek'
 import { writingFontSize } from './writingTypography'
 import { useWritingZoomStore } from '../../stores/writingZoomStore'
+import type { WritingFrameAdapter } from './writingFrameAdapter'
 
 const DEFAULT_FORMATTING: FormattingState = {
   bold: false,
@@ -20,6 +21,7 @@ const DEFAULT_FORMATTING: FormattingState = {
   strikethrough: false,
   highlight: false,
   alignment: 'left',
+  direction: 'ltr',
   paragraphStyle: '',
   bulletList: false,
   numberList: false,
@@ -28,7 +30,7 @@ const DEFAULT_FORMATTING: FormattingState = {
   entityAtCaret: false
 }
 
-export function useEditorFrameModel({ paneId }: { paneId?: string }) {
+export function useEditorFrameModel({ paneId, writing }: { paneId?: string; writing?: WritingFrameAdapter }) {
   const { t, i18n } = useTranslation()
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const editorRef = useRef<EditorWindow | null>(null)
@@ -85,7 +87,7 @@ export function useEditorFrameModel({ paneId }: { paneId?: string }) {
   useEffect(() => setPendingImage(null), [openSceneId])
   const { entityIndexRef, peekScope, peek, peekRef, sceneTitleRef, pushEntityNames } = useEditorPeek(pane, openSceneId)
   const { pendingEntity, setPendingEntity, pendingAppend, setPendingAppend, createPendingEntity, cancelPendingEntity, appendSelectionToEntity } = useEditorEntityRequests(editorRef, pushEntityNames)
-  const annotations = useEditorAnnotations(pane, editorRef)
+  const annotations = useEditorAnnotations(pane, editorRef, writing)
   const { annotationsRef, ownAnnotationsRef, paneIds, pushAnnotations,
     loadAnnotations, persistAnnotations, applyFootnoteOrder } = annotations
 

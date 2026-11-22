@@ -41,6 +41,7 @@ interface Window {
     onboarding: typeof import('./stores/onboardingStore').useOnboardingStore
     narration: typeof import('./stores/narrationStore').useNarrationStore
     manuscript: typeof import('./stores/manuscriptStore').useManuscriptStore
+    hostedSession: typeof import('./collaboration/hostedSessionStore').useHostedSessionStore
   }
   novalistRpc: import('./rpc/client').RpcClient
   novalistExtensionTheme: {
@@ -150,12 +151,14 @@ interface Window {
     /** Mobile-only identity-checked relocation for durable recovery records. */
     resolveStoredProjectPath?(path: string): Promise<string | null>
     endProjectAccess(path: string): void
-    openPaneWindow(request: {
-      view: string
-      projectPath: string | null
-      chapterGuid: string | null
-      sceneId: string | null
-    }): Promise<void>
+    openPaneWindow(request: import('../../shared/detachedPane').DetachedPaneRequest): Promise<void>
+    reportPaneWindowState?(content: import('../../shared/paneWindows').PaneWindowContent): void
+    paneWindowContent?(): Promise<import('../../shared/paneWindows').PaneWindowContent | null>
+    listPaneWindows?(): Promise<import('../../shared/paneWindows').SavedPaneWindow[]>
+    restorePaneWindows?(windows: import('../../shared/paneWindows').SavedPaneWindow[]): Promise<void>
+    restorePaneWindowSession?(projectPath: string): Promise<number>
+    reportMainPanes?(projectPath: string, content: import('../../shared/paneWindows').PaneWindowContent | null): void
+    mainPaneSession?(projectPath: string): Promise<import('../../shared/paneWindows').PaneWindowContent | null>
     registerExtensionRoots(roots: Record<string, string>): Promise<void>
     publishSceneNotesContext?(context: import('../../shared/sceneNotesProtocol').SceneNotesContext | null): void
     sceneNotesWindowState?(): Promise<import('../../shared/sceneNotesProtocol').SceneNotesWindowState>
@@ -177,6 +180,15 @@ interface Window {
     onBackgroundSave?(handler: () => Promise<void>): () => void
     forwardMainCommand?(command: string): void
     retryWorkspaceRecovery?(): Promise<void>
+    claimWritingFocus?(sourceId: string, epoch: number): Promise<{ sourceId: string; focusGeneration: number } | null>
+    captureWritingSearch?(context: import('../../shared/writingSearchProtocol').WritingSearchContext): Promise<import('../../shared/writingSearchProtocol').WritingSearchCapture[]>
+    onWritingSearchCapture?(handler: (request: import('../../shared/writingSearchProtocol').WritingSearchCaptureRequest) => void): () => void
+    writingSearchCaptured?(reply: import('../../shared/writingSearchProtocol').WritingSearchCaptureReply): void
+    acquireWritingSearchLease?(context: import('../../shared/writingSearchProtocol').WritingSearchContext, refs: import('./views/editor/writingTypes').SceneRef[]): Promise<import('../../shared/writingSearchProtocol').WritingSearchLease>
+    finishWritingSearchLease?(token: string, changes?: import('../../shared/writingSearchProtocol').WritingSearchLeaseRequest['changes']): Promise<void>
+    onWritingSearchLease?(handler: (request: import('../../shared/writingSearchProtocol').WritingSearchLeaseRequest) => void): () => void
+    writingSearchLeaseAck?(reply: import('../../shared/writingSearchProtocol').WritingSearchLeaseReply): void
+    publishWritingSearchLease?(token: string, request: import('./views/editor/writingTypes').WritingCommitRequest, changes: { ref: import('./views/editor/writingTypes').SceneRef; afterHtml: string }[], shared?: import('../../shared/writingSearchProtocol').WritingSearchSharedIntent): Promise<import('./views/editor/writingTypes').WritingCommitResult>
     workspaceSnapshot?(): Promise<import('../../shared/workspaceProtocol').WorkspaceSnapshot>
     onWorkspaceEvent?(handler: (event: import('../../shared/workspaceProtocol').WorkspaceEvent) => Promise<void> | void): () => void
     updatesChecked(): void
@@ -187,6 +199,11 @@ interface Window {
       nodes: import('./shell/menuLayout').MenuNode[],
       labels: import('./shell/menuLayout').MenuLabels
     ): void
+    /** Remembers the interface direction for the next launch. Resolves to whether
+     *  the native menus need a restart to follow it. Desktop only. */
+    setUiDirection?(direction: 'ltr' | 'rtl'): Promise<boolean>
+    /** Quits through the close guards and relaunches. Desktop only. */
+    restartForUiDirection?(): Promise<void>
     /** Whole-interface scale, independent from the manuscript font size. */
     setUiScale?(factor: number): Promise<number>
     /** The installed application version. Desktop only; the mobile shell has

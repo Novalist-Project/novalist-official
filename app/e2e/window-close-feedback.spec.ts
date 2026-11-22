@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { dismissTour, launchApp, seedBook, type Harness } from './harness'
+import { replaceWritingScene } from './writingTestActions'
 
 type CloseProbe = {
   flushHeld: boolean
@@ -68,11 +69,8 @@ test('close immediately blocks every window, explains save and backup waits, and
     const second = await opened
     await expect(second.locator('.app-shell.detached')).toBeVisible()
     const path = (await h.page.evaluate(() => window.novalistStores.project.getState().projectPath))!
-    for (const [page, marker] of [[h.page, 'Main closing prose'], [second, 'Detached closing prose']] as const) {
-      await page.frameLocator('.editor-frame').locator('#editor').evaluate((element, marker) => {
-        element.innerHTML = `<p><strong>${marker}</strong></p>`
-        element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }))
-      }, marker)
+    for (const [page, scene, marker] of [[h.page, chapter.scenes[0], 'Main closing prose'], [second, chapter.scenes[1], 'Detached closing prose']] as const) {
+      await replaceWritingScene(page, scene.id, `<p><strong>${marker}</strong></p>`)
     }
     const settingsButton = await h.page.locator('.mode-rail-settings').boundingBox()
     expect(settingsButton).not.toBeNull()

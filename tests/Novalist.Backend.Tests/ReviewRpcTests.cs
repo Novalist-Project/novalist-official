@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text;
+using System.Text.Json;
 using Novalist.Backend;
 using Novalist.Backend.Rpc;
 using Xunit;
@@ -140,5 +141,41 @@ public sealed class ReviewRpcTests : IDisposable
         var saved = _workspace.Projects.GetScenesForChapter(chapter.Guid).First(s => s.Id == scene.Id);
         Assert.Equal(2, saved.Comments!.Count);
         Assert.Contains("Mine", saved.Comments.Select(c => c.Text));
+    }
+
+    [Fact]
+    public async Task ImportAndSdkCommentMutationsNotifyTheRetainedSceneWithCompleteIdentity()
+    {
+        var chapter = await _workspace.Projects.CreateChapterAsync("C");
+        var scene = await _workspace.Projects.CreateSceneAsync(chapter.Guid, "S");
+        var sent = new List<(string Method, JsonElement Payload)>();
+        _workspace.UiBridge.Notifier = (method, payload) =>
+        {
+            sent.Add((method, JsonSerializer.SerializeToElement(payload)));
+            return Task.CompletedTask;
+        };
+        await _rpc.ApplyCommentsAsync(chapter.Guid, scene.Id, [new("import", "Editor", "", "Imported", "Words")]);
+        _ = _workspace.ExtensionsHost;
+        var review = _workspace.HostServices!.ReviewService;
+        var id = await review.AddCommentAsync(chapter.Guid, scene.Id, "Words", "SDK note", "Editor");
+        await review.SetCommentResolvedAsync(chapter.Guid, scene.Id, id, true);
+        await review.DeleteCommentAsync(chapter.Guid, scene.Id, id);
+
+        Assert.Equal(4, sent.Count);
+        foreach (var (method, payload) in sent)
+        {
+            Assert.Equal("writing/annotationsChanged", method);
+            Assert.Equal(_workspace.Projects.ProjectRoot, payload.GetProperty("workspaceId").GetString());
+            Assert.Equal(0, payload.GetProperty("workspaceEpoch").GetInt64());
+            var reference = payload.GetProperty("reference");
+            Assert.Equal(_workspace.Projects.ActiveBook!.Id, reference.GetProperty("BookId").GetString());
+            Assert.Equal(_workspace.Projects.ActiveBook.ActiveDraftId, reference.GetProperty("DraftId").GetString());
+            Assert.Equal(chapter.Guid, reference.GetProperty("ChapterGuid").GetString());
+            Assert.Equal(scene.Id, reference.GetProperty("SceneId").GetString());
+        }
+        sent.Clear();
+        await _rpc.ApplyCommentsAsync(chapter.Guid, scene.Id, []);
+        Assert.False(await review.DeleteCommentAsync(chapter.Guid, scene.Id, "absent"));
+        Assert.Empty(sent);
     }
 }

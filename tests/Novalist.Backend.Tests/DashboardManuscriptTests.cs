@@ -270,6 +270,53 @@ public sealed class DashboardManuscriptTests : IDisposable
     }
 
     [Fact]
+    public async Task CoverAltText_IsSavedWithTheBookTrimmed_AndOnlyWhenItChanged()
+    {
+        var rpc = new DashboardRpc(_workspace);
+        Assert.Equal(string.Empty, rpc.GetCoverAltText());
+
+        await rpc.SetCoverAltTextAsync("  A lighthouse in a storm  ");
+        Assert.Equal("A lighthouse in a storm", rpc.GetCoverAltText());
+        Assert.Equal("A lighthouse in a storm", _workspace.Projects.ActiveBook!.CoverAltText);
+
+        // Reopening the project reads it back from disk.
+        await _workspace.OpenProjectAsync(_workspace.Projects.ProjectRoot!);
+        Assert.Equal("A lighthouse in a storm", new DashboardRpc(_workspace).GetCoverAltText());
+
+        // The same text again, as leaving the field untouched sends, is a no-op.
+        await new DashboardRpc(_workspace).SetCoverAltTextAsync("A lighthouse in a storm ");
+        Assert.Equal("A lighthouse in a storm", _workspace.Projects.ActiveBook!.CoverAltText);
+    }
+
+    [Fact]
+    public async Task CoverAltText_IsClearedWhenTheCoverIsReplaced_AndKeptWhenItIsNot()
+    {
+        var first = Path.Combine(_root, "first.png");
+        var second = Path.Combine(_root, "second.png");
+        await File.WriteAllBytesAsync(first, [0x89, 0x50, 1]);
+        await File.WriteAllBytesAsync(second, [0x89, 0x50, 2]);
+        var rpc = new DashboardRpc(_workspace);
+
+        await rpc.SetCoverAsync(first);
+        await rpc.SetCoverAltTextAsync("A lighthouse");
+        await rpc.SetCoverAsync(first);
+        Assert.Equal("A lighthouse", rpc.GetCoverAltText());
+
+        await rpc.SetCoverAsync(second);
+        Assert.Equal(string.Empty, rpc.GetCoverAltText());
+    }
+
+    [Fact]
+    public async Task CoverAltText_NoProject_ReadsEmptyAndRefusesToWrite()
+    {
+        using var empty = new Workspace(Path.Combine(_root, "empty-settings"));
+        var rpc = new DashboardRpc(empty);
+
+        Assert.Equal(string.Empty, rpc.GetCoverAltText());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => rpc.SetCoverAltTextAsync("x"));
+    }
+
+    [Fact]
     public async Task Banner_NoImages_GetReturnsNull()
     {
         var dto = await new DashboardRpc(_workspace).GetBannerAsync();

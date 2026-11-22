@@ -46,13 +46,13 @@ public sealed class SessionSynchronizerTests
             await live.StartAsync(createProject: false, ct);
             var item = Guid.NewGuid();
             session.Save(item, [1]);
-            await sending.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
+            await sending.Task.WaitAsync(TestWait.Deadline, ct);
             session.Save(item, [2]);
             session.Save(item, [3]);
             if (operation == "complete")
             {
                 release.TrySetResult(1);
-                await delivered.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
+                await delivered.Task.WaitAsync(TestWait.Deadline, ct);
                 await live.DisposeAsync();
                 Assert.Equal(3, count);
                 Assert.Empty(journal.Pending());
@@ -65,7 +65,7 @@ public sealed class SessionSynchronizerTests
                     "close" => session.CloseAsync(ct),
                     _ => session.DisposeAsync().AsTask()
                 };
-                await stop.WaitAsync(TimeSpan.FromSeconds(5), ct);
+                await stop.WaitAsync(TestWait.Deadline, ct);
                 await live.DisposeAsync();
                 Assert.Equal(1, count);
                 Assert.False(delivered.Task.IsCompleted);
@@ -73,7 +73,7 @@ public sealed class SessionSynchronizerTests
             }
             Assert.Equal(3, session.ReadItem(item).Count);
         }
-        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+        finally { TestFiles.DeleteTree(folder); }
     }
 
     [Theory]
@@ -119,19 +119,16 @@ public sealed class SessionSynchronizerTests
             await live.StartAsync(createProject: false, ct);
             connected = false;
             session.Save(Guid.NewGuid(), "offline edit"u8.ToArray());
-            if (retries) await delivered.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
+            if (retries) await delivered.Task.WaitAsync(TestWait.Deadline, ct);
             else
             {
-                var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
-                while (live.Status.State != SessionConnectionState.Failed && DateTimeOffset.UtcNow < deadline)
-                    await Task.Delay(10, ct);
-                Assert.Equal(SessionConnectionState.Failed, live.Status.State);
+                await TestWait.UntilAsync(() => live.Status.State == SessionConnectionState.Failed, "the synchronizer to give up", ct);
                 Assert.Equal(1, attempts);
                 Assert.Single(journal.Pending());
                 Assert.False(delivered.Task.IsCompleted);
             }
         }
-        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+        finally { TestFiles.DeleteTree(folder); }
     }
 
     private static async IAsyncEnumerable<SequencedUpdate> EmptyUpdates()
@@ -174,6 +171,6 @@ public sealed class SessionSynchronizerTests
                 yield break;
             }
         }
-        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+        finally { TestFiles.DeleteTree(folder); }
     }
 }

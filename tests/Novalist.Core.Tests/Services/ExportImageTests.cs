@@ -342,6 +342,68 @@ public class ExportImageTests : IDisposable
         Assert.Contains("no images to describe", opf);
     }
 
+    private async Task<string> OpfAsync(string html)
+    {
+        var path = Path.Combine(_dir.Path, Guid.NewGuid().ToString("N") + ".epub");
+        await new ExportService(_project).ExportAsync(Setup(ExportFormat.Epub, html), path);
+        using var zip = ZipFile.OpenRead(path);
+        using var reader = new StreamReader(zip.GetEntry("OEBPS/content.opf")!.Open(), Encoding.UTF8);
+        return await reader.ReadToEndAsync();
+    }
+
+    private const string Undescribed = "<p class=\"nv-image\"><img src=\"Images/map.png\" alt=\"  \"></p>";
+    private const string Missing = "<p class=\"nv-image\"><img src=\"Images/gone.png\" alt=\"\"></p>";
+
+    [Fact]
+    public async Task Epub_SomeUndescribedImagesAreNotClaimedAsDescribed()
+    {
+        var opf = await OpfAsync(WithImage + Undescribed);
+
+        Assert.Contains("schema:accessMode\">visual", opf);
+        Assert.DoesNotContain("alternativeText", opf);
+        Assert.Contains("Some images have no text description.", opf);
+        Assert.DoesNotContain("descriptions the author wrote", opf);
+    }
+
+    [Fact]
+    public async Task Epub_NoDescribedImagesSaysSo()
+    {
+        var opf = await OpfAsync("<p>Words.</p>" + Undescribed);
+
+        Assert.DoesNotContain("alternativeText", opf);
+        Assert.Contains("The images have no text descriptions.", opf);
+    }
+
+    [Fact]
+    public async Task Epub_AnImageWhoseFileIsGoneIsNotCountedAgainstTheBook()
+    {
+        // The chapter writer drops it, so it is not in the file to describe.
+        var opf = await OpfAsync(WithImage + Missing);
+
+        Assert.Contains("schema:accessibilityFeature\">alternativeText", opf);
+        Assert.Contains("Images carry the descriptions the author wrote.", opf);
+    }
+
+    [Fact]
+    public async Task Epub_AnUndescribedImageInAnUnselectedChapterDoesNotCount()
+    {
+        var options = Setup(ExportFormat.Epub, WithImage);
+        var left = new ChapterData { Title = "Left out", Order = 2 };
+        var leftScene = new SceneData { Title = "S", Order = 1, ChapterGuid = left.Guid };
+        _project.ReadSceneContentAsync(left, leftScene).Returns(Undescribed);
+        _project.GetChaptersOrdered().Returns([.. _project.GetChaptersOrdered(), left]);
+        _project.GetScenesForChapter(left.Guid).Returns([leftScene]);
+
+        var path = Path.Combine(_dir.Path, "selected.epub");
+        await new ExportService(_project).ExportAsync(options, path);
+        using var zip = ZipFile.OpenRead(path);
+        using var reader = new StreamReader(zip.GetEntry("OEBPS/content.opf")!.Open(), Encoding.UTF8);
+        var opf = await reader.ReadToEndAsync();
+
+        Assert.Contains("schema:accessibilityFeature\">alternativeText", opf);
+        Assert.Contains("Images carry the descriptions the author wrote.", opf);
+    }
+
     [Fact]
     public async Task ThePreviewCountsPicturesNobodyDescribed()
     {

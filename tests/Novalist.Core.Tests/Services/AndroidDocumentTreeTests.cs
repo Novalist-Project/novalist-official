@@ -8,6 +8,25 @@ namespace Novalist.Core.Tests.Services;
 
 public sealed partial class AndroidDocumentTreeTests
 {
+    [Fact]
+    public async Task CoverPreviewReceivesTheCurrentGrantedDocumentWithoutReadingOriginalBytes()
+    {
+        using var fixture = new DocumentFixture();
+        var file = fixture.Provider.Combine("cover.png");
+        var path = Path.Combine(fixture.Mount, "cover.png");
+        fixture.Tree.ReadOverride = _ => throw new InvalidOperationException("Preview loaded original bytes.");
+        File.WriteAllBytes(file, [1]);
+        using (fixture.Files.UseFreshReads())
+            Assert.Equal(file, await fixture.Files.ReadDocumentPreviewAsync(path, document => document.Id));
+
+        File.WriteAllBytes(file, [1, 2, 3]);
+        using (fixture.Files.UseFreshReads())
+            Assert.Equal("3", await fixture.Files.ReadDocumentPreviewAsync(path, document => document.Size.ToString()));
+
+        fixture.Tree.Granted = false;
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.Files.ReadDocumentPreviewAsync(path, _ => "stale"));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -29,19 +48,19 @@ public sealed partial class AndroidDocumentTreeTests
             var count = Interlocked.Increment(ref active);
             lock (paths) peak = Math.Max(peak, count);
             if (count >= 2) entered.TrySetResult();
-            if (!release.Wait(TimeSpan.FromSeconds(10))) throw new TimeoutException();
+            if (!release.Wait(TestWait.Deadline)) throw new TimeoutException();
             try { return File.ReadAllBytes(path); }
             finally { Interlocked.Decrement(ref active); }
         };
         var reading = existingOnly ? fixture.Files.ReadExistingTextsAsync(paths) : fixture.Files.ReadTextsAsync(paths);
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await entered.Task.WaitAsync(TestWait.Deadline);
             var writing = fixture.Files.WriteTextAsync(paths[0], "changed");
             Assert.False(writing.IsCompleted);
             release.Set();
-            var result = await reading.WaitAsync(TimeSpan.FromSeconds(5));
-            await writing.WaitAsync(TimeSpan.FromSeconds(5));
+            var result = await reading.WaitAsync(TestWait.Deadline);
+            await writing.WaitAsync(TestWait.Deadline);
             Assert.Equal("text 0", result[paths[0]]);
             Assert.Equal(8, result.Count);
             Assert.InRange(peak, 2, 4);

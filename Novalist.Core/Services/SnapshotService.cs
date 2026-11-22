@@ -26,7 +26,12 @@ public sealed class SnapshotService : ISnapshotService
     public Task<SceneSnapshot> TakeContentAsync(ChapterData chapter, SceneData scene, string label, string content)
         => SaveSnapshotAsync(chapter, scene, label, content, ScriptAwareCounting.Count(new HtmlSearchText(content).Text));
 
-    private async Task<SceneSnapshot> SaveSnapshotAsync(ChapterData chapter, SceneData scene, string label, string content, int wordCount)
+    public Task<SceneSnapshot> TakeWritingContentAsync(ResolvedWritingScene document, string label, string content)
+        => SaveSnapshotAsync(document.Chapter, document.Scene, label, content,
+            ScriptAwareCounting.Count(new HtmlSearchText(content).Text),
+            SceneDocumentReader.ResolveProjectPath(document.DraftRoot, document.Book.SnapshotFolder, document.Scene.Id));
+
+    private async Task<SceneSnapshot> SaveSnapshotAsync(ChapterData chapter, SceneData scene, string label, string content, int wordCount, string? directory = null)
     {
         var snapshot = new SceneSnapshot
         {
@@ -39,7 +44,8 @@ public sealed class SnapshotService : ISnapshotService
             Meta = CaptureMeta(scene)
         };
 
-        var dir = await EnsureSceneDirAsync(scene);
+        var dir = directory ?? await EnsureSceneDirAsync(scene);
+        if (directory is not null) await _fileService.CreateDirectoryAsync(directory);
         var fileName = $"{snapshot.CreatedAt:yyyyMMdd-HHmmssfff}-{snapshot.Id}.json";
         var path = _fileService.CombinePath(dir, fileName);
         var json = JsonSerializer.Serialize(snapshot, JsonOptions);

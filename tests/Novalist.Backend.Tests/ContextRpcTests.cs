@@ -30,6 +30,37 @@ public sealed class ContextRpcTests : IDisposable
 
     private EntityService Entities => new(_workspace.Projects);
 
+    [Theory]
+    [InlineData("The door stood open.<p></p>", 4)]
+    [InlineData("Mira <strong>opened</strong> the door.<p></p>", 4)]
+    [InlineData("The &lt;door&gt; stood open.<p></p>", 4)]
+    [InlineData("&lt;Mira&gt; arrived.<p></p>", 2)]
+    public async Task Analyze_LiveHtmlNormalizesMarkupAfterLeadingText(string html, int words)
+    {
+        var chapter = await _workspace.Projects.CreateChapterAsync("Opening");
+        var scene = await _workspace.Projects.CreateSceneAsync(chapter.Guid, "Arrival");
+        await Entities.SaveCharacterAsync(new() { Id = "paragraph-tag", Name = "p" });
+        await Write(chapter, scene, "Saved prose stays unchanged.");
+
+        var context = await _rpc.AnalyzeAsync(chapter.Guid, scene.Id, html);
+
+        Assert.Equal(words, context.Analysis.WordCount);
+        Assert.Empty(context.Characters);
+        Assert.Equal("Saved prose stays unchanged.", await _workspace.Projects.ReadSceneContentAsync(chapter, scene));
+    }
+
+    [Fact]
+    public async Task Analyze_SavedPlainTextRetainsLiteralAnglesAndEncodedWords()
+    {
+        var chapter = await _workspace.Projects.CreateChapterAsync("Opening");
+        var scene = await _workspace.Projects.CreateSceneAsync(chapter.Guid, "Arrival");
+        await Write(chapter, scene, "The <door> stood open &amp; quiet.");
+
+        var context = await _rpc.AnalyzeAsync(chapter.Guid, scene.Id);
+
+        Assert.Equal(6, context.Analysis.WordCount);
+    }
+
     [Fact]
     public async Task Analyze_UsesUnsavedHtmlForEntitiesAnalysisAndCurrentChapterMentions()
     {

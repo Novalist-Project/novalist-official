@@ -1,11 +1,14 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { loadRendererSource } from './renderer-source-loader.mjs'
+import { loadPaneSources } from './pane-source-loader.mjs'
 
 function harness(storage = new Map()) {
   const localStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) }
-  const panes = loadRendererSource('src/stores/shellPanes.ts', {}, { localStorage })
-  const placement = loadRendererSource('src/shell/sceneNotesPlacement.ts', { '../stores/shellPanes': panes }, { localStorage })
+  const { panes, migration, environment } = loadPaneSources({ localStorage })
+  const placement = loadRendererSource('src/shell/sceneNotesPlacement.ts', {
+    '../stores/shellPanes': panes, '../stores/writingLayoutMigration': migration
+  }, environment)
   return { panes, placement, storage }
 }
 
@@ -33,6 +36,16 @@ test('removing notes from the layout clears automatic placement rather than resu
   h.placement.saveNotesPlacement(h.panes.dockNotesPane(editor, editor.id, 'right'), editor.id)
   h.placement.saveNotesPlacement(editor, editor.id)
   assert.equal(h.placement.readNotesPlacement(), null)
+})
+
+test('saved notes placement migrates a legacy manuscript leaf to the unified writer', () => {
+  const h = harness()
+  const writer = h.panes.newLeaf('manuscript')
+  h.placement.saveNotesPlacement(h.panes.dockNotesPane(writer, writer.id, 'right'), writer.id)
+  const restored = h.placement.readNotesPlacement()
+  const pane = h.panes.findPane(restored.panes, restored.activePaneId)
+  assert.equal(pane.view, 'write')
+  assert.equal(pane.writingScope, 'manuscript')
 })
 
 test('corrupt or incomplete placement cannot replace the reachable main content area', () => {

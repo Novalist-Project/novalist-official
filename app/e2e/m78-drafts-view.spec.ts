@@ -54,8 +54,8 @@ test('drafts can be renamed, reordered, and fed chapters from each other', async
   await page.evaluate(async () => {
     const store = window.novalistStores.project.getState()
     await store.createChapter('The letter')
-    const guid = window.novalistStores.project.getState().chapters[0].guid
-    await window.novalistStores.project.getState().createScene(guid, 'The kitchen')
+    const chapter = window.novalistStores.project.getState().chapters[0]
+    await store.renameScene(chapter.guid, chapter.scenes[0].id, 'The kitchen')
     await window.novalistRpc.request('project/createDraft', ['Beta cut', null])
   })
 

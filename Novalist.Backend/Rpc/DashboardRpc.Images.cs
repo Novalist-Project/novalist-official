@@ -39,10 +39,35 @@ public sealed partial class DashboardRpc
         var relative = await ImportOrClearAsync(path);
         project.CoverImage = relative;
         if (projects.ActiveBook != null)
+        {
+            // A description of the old picture is wrong for the new one.
+            if (projects.ActiveBook.CoverImage != relative)
+                projects.ActiveBook.CoverAltText = string.Empty;
             projects.ActiveBook.CoverImage = relative;
+        }
         await projects.SaveProjectAsync();
         // Keep the welcome-screen thumbnail in step with the new/removed cover.
         await _workspace.RefreshRecentProjectAsync();
+    }
+
+    /// <summary>
+    /// The active book's description of its cover, for a reader who cannot see
+    /// it. Empty when none has been written or no book is open.
+    /// </summary>
+    [JsonRpcMethod("dashboard/getCoverAltText")]
+    public string GetCoverAltText() => _workspace.Projects.ActiveBook?.CoverAltText ?? string.Empty;
+
+    /// <summary>Records the active book's cover description. Saved only when it
+    /// changed, so leaving the field without typing writes nothing.</summary>
+    [JsonRpcMethod("dashboard/setCoverAltText")]
+    public async Task SetCoverAltTextAsync(string text)
+    {
+        var book = _workspace.Projects.ActiveBook
+            ?? throw new InvalidOperationException("No project open.");
+        var trimmed = (text ?? string.Empty).Trim();
+        if (book.CoverAltText == trimmed) return;
+        book.CoverAltText = trimmed;
+        await _workspace.Projects.SaveProjectAsync();
     }
 
     /// <summary>

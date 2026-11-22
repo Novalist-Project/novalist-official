@@ -130,7 +130,7 @@
   max-width: 220px;
   overflow: hidden;
   padding: var(--nl-space-tightest) var(--nl-space-tighter);
-  text-align: left;
+  text-align: start;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -156,7 +156,7 @@
   display: flex;
   gap: var(--nl-space-sm);
   padding: var(--nl-space-tighter) var(--nl-space-none);
-  text-align: left;
+  text-align: start;
 }
 
 .timeline-reading-row:hover {

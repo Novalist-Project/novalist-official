@@ -257,8 +257,13 @@ public static class TextDiff
     }
 
     /// <summary>
-    /// Strips HTML tags so diffs over scene HTML look like plain prose.
+    /// Separates block elements before resolving suggestions and stripping inline markup.
     /// </summary>
+    public static string StripBlockHtml(string html)
+        => StripHtml(Regex.Replace(html,
+            @"</?(?:p|div|h[1-6]|ul|ol|li|dl|dt|dd|blockquote|pre|table|thead|tbody|tfoot|tr|td|th|figure|figcaption|br|hr)\b[^>]*>",
+            "\n", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(2)));
+
     public static string StripHtml(string html)
     {
         if (string.IsNullOrEmpty(html))

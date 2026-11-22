@@ -1,0 +1,40 @@
+name: E2E run
+description: Run Playwright inside the isolated credential session, then report flaky tests and upload traces. Shared by CI and the stress workflow so both use one environment.
+inputs:
+  playwright-args:
+    description: Arguments passed to `npx playwright test` (a shard, spec files, repeat options).
+    required: true
+  label:
+    description: Short label for the flaky-test summary, for example 2/4.
+    required: true
+  artifact-name:
+    description: Name of the uploaded trace artifact.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Run Playwright against the real app
+      shell: bash
+      working-directory: app
+      env:
+        E2E_ARGS: ${{ inputs.playwright-args }}
+      run: bash ../eng/run-e2e-session.sh npx playwright test $E2E_ARGS
+
+    - name: Flaky tests
+      if: always()
+      shell: bash
+      working-directory: app
+      env:
+        E2E_LABEL: ${{ inputs.label }}
+      run: node scripts/flaky-report.mjs --shard "$E2E_LABEL"
+
+    - name: Upload E2E traces
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          app/test-results/
+          app/playwright-report/
+        if-no-files-found: ignore
+        retention-days: 7

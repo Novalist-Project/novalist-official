@@ -57,7 +57,7 @@ public class BackendHostTests
             Assert.Equal("<p>Cloud prose</p>", content.Html);
             Assert.Equal("Mira", loaded.GetProperty("name").GetString());
         }
-        finally { Directory.Delete(root, recursive: true); }
+        finally { TestFiles.DeleteTree(root); }
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class BackendHostTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var capture = dispatch(async () => { entered.SetResult(); await release.Task; }, ct);
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
+        await entered.Task.WaitAsync(TestWait.Deadline, ct);
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         try
@@ -119,7 +119,7 @@ public class BackendHostTests
         finally { release.SetResult(); }
         await capture;
         await Assert.ThrowsAsync<IOException>(() => dispatch(() => throw new IOException("Capture failed."), ct));
-        Assert.True(await client.InvokeAsync<bool>("system/barrier").WaitAsync(TimeSpan.FromSeconds(5), ct));
+        Assert.True(await client.InvokeAsync<bool>("system/barrier").WaitAsync(TestWait.Deadline, ct));
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class BackendHostTests
         using var client = CreateClient(clientStream);
 
         await client.InvokeAsync("system/shutdown");
-        await runTask.WaitAsync(TimeSpan.FromSeconds(10));
+        await runTask.WaitAsync(TestWait.Deadline);
 
         Assert.True(host.IsShutdownRequested);
     }
@@ -158,7 +158,7 @@ public class BackendHostTests
             await client.InvokeAsync<PingResult>("system/ping");
         }
 
-        await runTask.WaitAsync(TimeSpan.FromSeconds(10));
+        await runTask.WaitAsync(TestWait.Deadline);
 
         Assert.False(host.IsShutdownRequested);
     }
@@ -182,7 +182,7 @@ public class BackendHostTests
         // as a ui/showNotification notification on the renderer side.
         host.Workspace.UiBridge.ShowNotification("hello from host");
 
-        var message = await received.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var message = await received.Task.WaitAsync(TestWait.Deadline);
         Assert.Equal("hello from host", message);
     }
 
@@ -202,7 +202,7 @@ public class BackendHostTests
         try
         {
             VoiceEngineRpc.AudioChunk!(expected);
-            Assert.Equal(expected, await received.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.Equal(expected, await received.Task.WaitAsync(TestWait.Deadline));
         }
         finally { VoiceEngineRpc.AudioChunk = null; }
     }

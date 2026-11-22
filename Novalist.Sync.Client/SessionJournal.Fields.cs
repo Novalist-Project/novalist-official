@@ -89,6 +89,32 @@ public sealed partial class SessionJournal
         }
     }
 
+    internal void RebindPendingField(Guid item, FieldLeaseRequest previous, FieldLeaseRequest next) => Atomic(() =>
+    {
+        using var update = Command("""
+            UPDATE field_edits SET lease = $next
+            WHERE resource = $resource AND epoch = $epoch AND lease = $previous
+            AND sender_seq IN (SELECT sender_seq FROM changes WHERE item = $item AND sender = $device AND pending = 1)
+            """, ("$next", next.LeaseId.ToString("D")), ("$resource", previous.ResourceId.ToString("D")),
+            ("$epoch", (long)previous.Epoch), ("$previous", previous.LeaseId.ToString("D")),
+            ("$item", item.ToString("D")), ("$device", device.ToString("D")));
+        var affected = update.ExecuteNonQuery();
+        using var clearDeadline = Command("""
+            DELETE FROM field_acquisition_deadlines WHERE sender_seq IN
+            (SELECT c.sender_seq FROM changes c JOIN field_edits f ON c.sender_seq = f.sender_seq
+            WHERE c.item = $item AND c.sender = $device AND c.pending = 1 AND f.lease = $next)
+            """, ("$item", item.ToString("D")), ("$device", device.ToString("D")), ("$next", next.LeaseId.ToString("D")));
+        clearDeadline.ExecuteNonQuery();
+        using var deadline = Command("""
+            INSERT OR REPLACE INTO field_acquisition_deadlines
+            SELECT c.sender_seq, $deadline FROM changes c JOIN field_edits f ON c.sender_seq = f.sender_seq
+            WHERE c.item = $item AND c.sender = $device AND c.pending = 1 AND f.lease = $next
+            """, ("$deadline", AcquisitionDeadline(next)), ("$item", item.ToString("D")),
+            ("$device", device.ToString("D")), ("$next", next.LeaseId.ToString("D")));
+        if (next.AcquireBefore is not null) deadline.ExecuteNonQuery();
+        return affected;
+    });
+
     private static object AcquisitionDeadline(FieldLeaseRequest lease) =>
         lease.AcquireBefore is { } deadline ? deadline.ToString("O", CultureInfo.InvariantCulture) : DBNull.Value;
 
