@@ -11,7 +11,7 @@
     surface.append(canvas);
     canvas.append(content);
     let scale = 1;
-    let appliedScale = 1;
+    let requestedScale = 1;
     let layoutWidth = 0;
     let layoutKey = '';
     let scheduled = false;
@@ -89,8 +89,18 @@
         return width;
     }
 
+    function pageZoomLimit() {
+        // The canvas stylesheet includes the fixed sheet, visible rail and gutters in this width.
+        const width = parseFloat(getComputedStyle(content).maxWidth);
+        return width > 0 && wrapper.clientWidth > 0 ? wrapper.clientWidth / width : Infinity;
+    }
+
     window.getWritingZoomToFit = () => {
         if (document.body.classList.contains('unified-writing-canvas')) {
+            if (document.body.classList.contains('page-view')) {
+                const limit = pageZoomLimit();
+                if (Number.isFinite(limit)) return limit;
+            }
             const page = content.querySelector('.nv-page');
             const style = getComputedStyle(content);
             if (page && document.body.classList.contains('page-view')) {
@@ -121,14 +131,17 @@
         const unified = document.body.classList.contains('unified-writing-canvas');
         const paper = unified && document.body.classList.contains('page-view');
         const textZoom = unified && !paper;
+        document.body.style.setProperty('--writing-text-scale', textZoom ? String(requestedScale) : '1');
+        const previousScale = scale;
+        scale = paper ? Math.min(requestedScale, pageZoomLimit()) : requestedScale;
+        content.style.setProperty('--writing-zoom-scale', String(scale));
         document.body.style.setProperty('--writing-page-scale', paper ? String(scale) : '1');
-        document.body.style.setProperty('--writing-text-scale', textZoom ? String(scale) : '1');
         const root = getComputedStyle(document.documentElement);
         const key = ['--book-width', '--font-size', '--font-family'].map(name => root.getPropertyValue(name)).join('|') +
             ['page-view', 'has-comments', 'mobile'].map(name => document.body.classList.contains(name)).join('|');
         const scrollTop = wrapper.scrollTop;
         const scrollLeft = wrapper.scrollLeft;
-        const ratio = scale / appliedScale;
+        const ratio = scale / previousScale;
         if (scale === 1 || unified) {
             clearLayout();
             layoutWidth = 0;
@@ -152,7 +165,6 @@
         content.style.minHeight = (wrapper.clientHeight / (textZoom ? 1 : scale)) + 'px';
         resizeSurface();
         layoutKey = key;
-        appliedScale = scale;
         window.setWritingScroll(scrollTop * ratio, textZoom ? 0 : scrollLeft * ratio);
         restoreCaretAnchor();
         window.scheduleCommentRender?.();
@@ -175,8 +187,7 @@
             caretAnchor = captureCaretAnchor();
             if (caretAnchor) window.NovalistEditorState?.cancelFocusScrollRestore?.();
         }
-        scale = factor;
-        content.style.setProperty('--writing-zoom-scale', String(scale));
+        requestedScale = factor;
         document.body.classList.toggle('zoom-typewriter', typewriterAnchor !== null);
         refresh();
         window.dispatchEvent(new Event('writingzoomchange'));

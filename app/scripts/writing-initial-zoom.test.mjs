@@ -70,6 +70,20 @@ test('a manual wheel choice while fonts settle wins over the delayed initial fit
   assert.equal(f.zoom.getState().percent, 90)
 })
 
+test('wheel zoom starts from the fit of the pane receiving the gesture', async t => {
+  const { zoom } = await fixture(t)
+  zoom.getState().fitOnce(240)
+  zoom.getState().change(-1, 138.7)
+  assert.equal(zoom.getState().percent, 128)
+  zoom.getState().change(1, 138.7)
+  zoom.getState().change(1, 138.7)
+  assert.equal(zoom.getState().percent, 138)
+  zoom.getState().change(1)
+  assert.equal(zoom.getState().percent, 148)
+  zoom.getState().change(-1, 38.5)
+  assert.equal(zoom.getState().percent, 50)
+})
+
 test('an empty projection or detached iframe cannot consume the first fit', async t => {
   const f = await fixture(t)
   await React.act(() => f.settings.setState({ view: { effective: { editorFontSize: 17 } } }))

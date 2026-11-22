@@ -85,7 +85,10 @@ export function createEditorActionMessages(context: EditorHandlerContext): Edito
       }
     },
     zoom: (message) => {
-      useWritingZoomStore.getState().change(Number(message.delta ?? 0))
+      const live = editorRef.current
+      const limit = live?.document.body.matches('.unified-writing-canvas.page-view')
+        ? live.getWritingZoomToFit() * 100 : undefined
+      useWritingZoomStore.getState().change(Number(message.delta ?? 0), limit)
     }
   }
 }

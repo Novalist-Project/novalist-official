@@ -149,11 +149,15 @@ for (const width of [480, 1200]) for (const mode of ['ordinary', 'book', 'page']
       editor.setPageView(mode === 'page')
       editor.setWritingZoom(zoom)
     }, { mode, zoom })
-    await page.waitForTimeout(100)
+    await expect.poll(() => page.locator('#editor-wrapper').evaluate(root => root.scrollWidth - root.clientWidth)).toBeLessThanOrEqual(1)
     if (mode === 'page') {
-      expect((await page.locator('.nv-page').first().boundingBox())!.width).toBeCloseTo(210 * 96 / 25.4 * zoom, 0)
-    } else {
-      expect(await page.locator('#editor-wrapper').evaluate(root => root.scrollWidth - root.clientWidth)).toBeLessThanOrEqual(1)
+      const paper = page.locator('.nv-page').first()
+      await expect(paper).toBeVisible()
+      const sheetWidth = 210 * 96 / 25.4
+      expect(await paper.evaluate(el => parseFloat(getComputedStyle(el).width))).toBeCloseTo(sheetWidth, 0)
+      const renderedWidth = (await paper.boundingBox())!.width
+      expect(renderedWidth).toBeLessThanOrEqual(Math.min(sheetWidth * zoom, width) + 1)
+      if (zoom === 0.5) expect(renderedWidth).toBeCloseTo(sheetWidth * zoom, 0)
     }
     await expect(page.locator('[data-writing-scene] p').first()).toHaveCSS('direction', 'rtl')
     await expect(page.locator('[data-writing-scene] p').last()).toHaveCSS('direction', 'ltr')

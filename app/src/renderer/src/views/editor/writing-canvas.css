@@ -39,14 +39,15 @@ body.unified-writing-canvas.book-width.page-view #editor-wrapper {
 body.unified-writing-canvas.page-view #editor { display: block; max-width: calc(var(--page-width) + var(--writing-page-side-space)); }
 body.unified-writing-canvas.writing-narrow.page-view #editor-wrapper { --writing-page-side-space: calc(2 * var(--nl-writing-outer)); }
 body.unified-writing-canvas.page-view .writing-zoom-surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   width: max(100%, calc((var(--page-width) + var(--writing-page-side-space)) * var(--writing-page-scale, 1)));
 }
 body.unified-writing-canvas.page-view .writing-page-canvas {
   display: block;
   container-type: inline-size;
   width: calc(100% / var(--writing-page-scale, 1));
-  margin-right: auto;
-  margin-left: 0;
+  justify-self: left;
   transform-origin: top left;
   transform: scale(var(--writing-page-scale, 1));
 }

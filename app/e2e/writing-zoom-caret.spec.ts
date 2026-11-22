@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { launchApp, resizeWindow, seedBook } from './harness'
+import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 
 async function caretBounds(scroller: Locator) {
   return scroller.evaluate(element => {
@@ -38,7 +39,10 @@ async function waitForPagination(editor: Locator) {
 
 async function zoom(page: Page, editor: Locator, delta: number, steps: number) {
   const scale = () => editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))
-  const expected = Math.max(0.5, Math.min(3, Math.round((await scale()) * 100 - Math.sign(delta) * steps * 10) / 100))
+  const maximum = await editor.evaluate(() => document.body.classList.contains('page-view')
+    ? Math.min(3, Math.floor((window as unknown as EditorWindow).getWritingZoomToFit() * 100) / 100) : 3)
+  const start = Math.min(maximum, await scale())
+  const expected = Math.min(maximum, Math.max(0.5, Math.round(start * 100 - Math.sign(delta) * steps * 10) / 100))
   for (let step = 0; step < steps; step++) await page.mouse.wheel(0, delta)
   await expect.poll(scale).toBe(expected)
   await waitForPagination(editor)
@@ -113,7 +117,9 @@ for (const mode of ['scene', 'pages', 'focus', 'manuscript'] as const) {
         const bounds = (await scroller.boundingBox())!
         await h.page.mouse.move(bounds.x + bounds.width / 2, bounds.y + 100)
         await h.page.keyboard.down('Control')
-        for (const delta of [-100, 100]) {
+        // Page view can open at the zoom limit. Start by shrinking the paper
+        // so both directions move the caret through a real scale change.
+        for (const delta of mode === 'pages' || mode === 'focus' ? [100, -100] : [-100, 100]) {
           await zoom(h.page, editor, delta, 10)
           await expectCaret(scroller, anchor, before)
         }

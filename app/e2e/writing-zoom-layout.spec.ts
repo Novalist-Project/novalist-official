@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 import { launchApp, seedBook, resizeWindow } from './harness'
 
 async function readLines(editor: Locator) {
@@ -23,6 +23,39 @@ async function readLines(editor: Locator) {
     }
     return { lines, glyphHeight, fontSize: parseFloat(getComputedStyle(root).fontSize) }
   })
+}
+
+async function checkPageZoom(page: Page, editor: Locator) {
+  const geometry = () => editor.evaluate(element => {
+    const viewport = document.getElementById('editor-wrapper')!
+    const insets = getComputedStyle(document.getElementById('editor')!)
+    const paper = element.querySelector<HTMLElement>('.nv-page')!
+    const width = paper.offsetWidth
+    const fit = viewport.clientWidth / (width + parseFloat(insets.paddingLeft) + parseFloat(insets.paddingRight))
+    return {
+      scale: paper.getBoundingClientRect().width / width, fit: Math.min(3, fit),
+      overflow: viewport.scrollWidth - viewport.clientWidth
+    }
+  })
+  // Start below fit so both text magnification and the fit limit are observable.
+  await expect.poll(async () => (await geometry()).scale).toBeCloseTo(0.5, 2)
+  const before = await readLines(editor)
+  expect(before.lines.length).toBeGreaterThan(3)
+  for (let step = 0; step < 25; step++) await page.mouse.wheel(0, -100)
+  await expect.poll(async () => {
+    const { scale, fit } = await geometry()
+    return Math.abs(scale - fit)
+  }).toBeLessThan(0.011)
+  const capped = await geometry()
+  const fitted = await readLines(editor)
+  expect(capped.fit).toBeLessThan(3)
+  expect(capped.overflow).toBeLessThanOrEqual(1)
+  expect(fitted.glyphHeight).toBeGreaterThan(before.glyphHeight)
+  expect(fitted.lines).toEqual(before.lines)
+  expect(fitted.fontSize).toBe(before.fontSize)
+  await page.mouse.wheel(0, 100)
+  await expect.poll(async () => (await geometry()).scale).toBeLessThan(capped.scale - 0.08)
+  expect((await readLines(editor)).lines).toEqual(before.lines)
 }
 
 for (const mode of ['scene', 'pages', 'manuscript'] as const) {
@@ -50,12 +83,15 @@ for (const mode of ['scene', 'pages', 'manuscript'] as const) {
         if (mode === 'pages') await expect(frame.locator('body')).toHaveClass(/\bpage-view\b/)
         else await expect(frame.locator('body')).not.toHaveClass(/\bpage-view\b/)
         await expect(editor).toHaveText(prose)
-        if (mode === 'pages') await expect(frame.locator('.nv-page')).toBeVisible()
-        // Startup now fits the first scene. Establish 100% through the real
-        // gesture before checking exact doubling/halving and zoom limits.
+        if (mode === 'pages') await expect(frame.locator('.nv-page').first()).toBeVisible()
         await editor.hover()
         await h.page.keyboard.down('Control')
         for (let step = 0; step < 25; step++) await h.page.mouse.wheel(0, 100)
+        if (mode === 'pages') {
+          await checkPageZoom(h.page, editor)
+          await h.page.keyboard.up('Control')
+          return
+        }
         for (let step = 0; step < 5; step++) await h.page.mouse.wheel(0, -100)
         await h.page.keyboard.up('Control')
         await expect.poll(() => editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))).toBe(1)
@@ -71,22 +107,17 @@ for (const mode of ['scene', 'pages', 'manuscript'] as const) {
         await expect.poll(async () => (await readLines(editor)).lines.length).toBeGreaterThanOrEqual(before.lines.length)
         const scroller = frame.locator('#editor-wrapper')
         const overflow = await scroller.evaluate(el => ({ width: el.scrollWidth, visible: el.clientWidth, overflow: getComputedStyle(el).overflowX }))
-        if (mode === 'pages') {
-          expect((await readLines(editor)).lines).toEqual(before.lines)
-          expect(overflow.width).toBeGreaterThan(overflow.visible)
-        } else {
-          expect(overflow.width - overflow.visible).toBeLessThanOrEqual(1)
-          const column = await editor.boundingBox(), viewport = await scroller.boundingBox()
-          expect(column!.x).toBeGreaterThanOrEqual(viewport!.x)
-          expect(column!.x + column!.width).toBeLessThanOrEqual(viewport!.x + viewport!.width)
-        }
+        expect(overflow.width - overflow.visible).toBeLessThanOrEqual(1)
+        const column = await editor.boundingBox(), viewport = await scroller.boundingBox()
+        expect(column!.x).toBeGreaterThanOrEqual(viewport!.x)
+        expect(column!.x + column!.width).toBeLessThanOrEqual(viewport!.x + viewport!.width)
         expect(overflow.overflow).toBe('auto')
         for (let step = 0; step < 9; step++) await h.page.mouse.wheel(0, 100)
         await h.page.mouse.wheel(0, 100)
         await expect.poll(async () => (await readLines(editor)).glyphHeight).toBeCloseTo(before.glyphHeight, 1)
         await expect.poll(async () => (await readLines(editor)).lines).toEqual(before.lines)
         for (let step = 0; step < 5; step++) await h.page.mouse.wheel(0, 100)
-        await expect.poll(async () => (await readLines(editor)).fontSize).toBeCloseTo(mode === 'pages' ? before.fontSize : before.fontSize / 2, 1)
+        await expect.poll(async () => (await readLines(editor)).fontSize).toBeCloseTo(before.fontSize / 2, 1)
         expect((await readLines(editor)).glyphHeight).toBeLessThan(before.glyphHeight)
         await expect.poll(async () => (await readLines(editor)).lines.length).toBeLessThanOrEqual(before.lines.length)
         expect(await scroller.evaluate(element => element.scrollWidth)).toBe(await scroller.evaluate(element => element.clientWidth))
