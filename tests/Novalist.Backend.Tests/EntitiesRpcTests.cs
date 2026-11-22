@@ -361,6 +361,19 @@ public sealed class EntitiesRpcTests : IDisposable
     }
 
     [Fact]
+    public async Task LocalizedPackCopiesKeepFieldKeysAndPreserveExistingTypes()
+    {
+        var pack = Assert.Single(_rpc.TypePacks(), p => p.TypeKey == "religion");
+        var localized = pack with { TypeKey = null, SuggestedTypeKey = pack.TypeKey, DisplayName = "ديانة" };
+        await _rpc.SaveCustomTypeAsync(localized);
+        var types = await _rpc.SaveCustomTypeAsync(localized with { DisplayName = "Second copy" });
+        var first = Assert.Single(types, t => t.TypeKey == "religion");
+        Assert.Equal("ديانة", first.DisplayName);
+        Assert.Contains(first.DefaultFields, field => field.Key == "belief");
+        Assert.Equal("Second copy", Assert.Single(types, t => t.TypeKey == "religion_2").DisplayName);
+    }
+
+    [Fact]
     public async Task CustomTypes_ExtensionSourceIsProtected()
     {
         await new Novalist.Core.Services.EntityService(_workspace.Projects)

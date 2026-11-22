@@ -27,7 +27,7 @@ async function readLines(editor: Locator) {
 
 for (const mode of ['scene', 'pages', 'manuscript'] as const) {
   for (const bookWidth of [false, true]) {
-    test(`${mode} zoom reflows prose inside a stable column with book width=${bookWidth}`, async () => {
+    test(`${mode} zoom preserves its layout behavior with book width=${bookWidth}`, async () => {
       const h = await launchApp('nl-zoom-layout-')
       try {
         await h.page.evaluate(enabled => window.novalistStores.settings.getState().update('global', { pageViewEnabled: enabled }), mode === 'pages')
@@ -71,17 +71,22 @@ for (const mode of ['scene', 'pages', 'manuscript'] as const) {
         await expect.poll(async () => (await readLines(editor)).lines.length).toBeGreaterThanOrEqual(before.lines.length)
         const scroller = frame.locator('#editor-wrapper')
         const overflow = await scroller.evaluate(el => ({ width: el.scrollWidth, visible: el.clientWidth, overflow: getComputedStyle(el).overflowX }))
-        expect(overflow.width - overflow.visible).toBeLessThanOrEqual(1)
-        const column = await editor.boundingBox(), viewport = await scroller.boundingBox()
-        expect(column!.x).toBeGreaterThanOrEqual(viewport!.x)
-        expect(column!.x + column!.width).toBeLessThanOrEqual(viewport!.x + viewport!.width)
+        if (mode === 'pages') {
+          expect((await readLines(editor)).lines).toEqual(before.lines)
+          expect(overflow.width).toBeGreaterThan(overflow.visible)
+        } else {
+          expect(overflow.width - overflow.visible).toBeLessThanOrEqual(1)
+          const column = await editor.boundingBox(), viewport = await scroller.boundingBox()
+          expect(column!.x).toBeGreaterThanOrEqual(viewport!.x)
+          expect(column!.x + column!.width).toBeLessThanOrEqual(viewport!.x + viewport!.width)
+        }
         expect(overflow.overflow).toBe('auto')
         for (let step = 0; step < 9; step++) await h.page.mouse.wheel(0, 100)
         await h.page.mouse.wheel(0, 100)
         await expect.poll(async () => (await readLines(editor)).glyphHeight).toBeCloseTo(before.glyphHeight, 1)
         await expect.poll(async () => (await readLines(editor)).lines).toEqual(before.lines)
         for (let step = 0; step < 5; step++) await h.page.mouse.wheel(0, 100)
-        await expect.poll(async () => (await readLines(editor)).fontSize).toBeCloseTo(before.fontSize / 2, 1)
+        await expect.poll(async () => (await readLines(editor)).fontSize).toBeCloseTo(mode === 'pages' ? before.fontSize : before.fontSize / 2, 1)
         expect((await readLines(editor)).glyphHeight).toBeLessThan(before.glyphHeight)
         await expect.poll(async () => (await readLines(editor)).lines.length).toBeLessThanOrEqual(before.lines.length)
         expect(await scroller.evaluate(element => element.scrollWidth)).toBe(await scroller.evaluate(element => element.clientWidth))

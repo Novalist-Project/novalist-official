@@ -27,6 +27,7 @@ interface WritingCanvasChromeProps {
   revision: number
   limited: boolean
   narrow: boolean
+  showRail: boolean
   showSynopsis: boolean
   bookTitle: string
   draftName: string
@@ -36,10 +37,10 @@ interface WritingCanvasChromeProps {
 }
 
 export const WritingCanvasChrome = memo(function WritingCanvasChrome({ live, registry, snapshots, chapters,
-  scope, anchorChapter, revision, limited, narrow, showSynopsis, onStructure, bookTitle, draftName, activeSceneId, onFocusScene }: WritingCanvasChromeProps) {
+  scope, anchorChapter, revision, limited, narrow, showRail, showSynopsis, onStructure, bookTitle, draftName, activeSceneId, onFocusScene }: WritingCanvasChromeProps) {
   const { t } = useTranslation()
   const chapterOrder = useMemo(() => [...chapters].sort((left, right) => left.order - right.order), [chapters])
-  const { targets, emptyTargets, endTarget, introTarget } = useWritingChromeTargets(live, snapshots, chapterOrder, scope, anchorChapter, revision, !limited)
+  const { targets, emptyTargets, endTarget, introTarget } = useWritingChromeTargets(live, snapshots, chapterOrder, scope, anchorChapter, revision, !limited, showRail)
   const boundaries = useMemo(() => writingBoundaryRequests(chapterOrder, snapshots, scope, anchorChapter, limited),
     [chapterOrder, snapshots, scope, anchorChapter, limited])
   const stages = useStageStore(state => state.stages)
@@ -84,7 +85,7 @@ export const WritingCanvasChrome = memo(function WritingCanvasChrome({ live, reg
             save={title => useProjectStore.getState().renameChapter(chapter.guid, title)} /> : chapter.title}</h2>
           {(chapter.description || chapter.subtitle) && <p dir={contentDirection(chapter.description || chapter.subtitle)}>{chapter.description || chapter.subtitle}</p>}
         </header>}
-        {registry && <WritingSceneMargin scene={scene} registry={registry} wordCount={metadata?.wordCount ?? 0}
+        {registry && showRail && <WritingSceneMargin scene={scene} registry={registry} wordCount={metadata?.wordCount ?? 0}
           number={(chapter?.scenes.findIndex(value => value.id === scene.sceneId) ?? index) + 1} title={metadata?.title ?? ''} stage={stages.find(stage => stage.key === metadata?.stage)}
           onFocus={scope === 'scene' ? undefined : onFocusScene}
           synopsisVisible={showSynopsis} narrow={narrow} expanded={expanded.has(scene.sceneId)} onExpandedChange={toggleExpanded} />}

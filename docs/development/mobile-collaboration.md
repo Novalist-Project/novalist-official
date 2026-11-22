@@ -1,8 +1,6 @@
 # Mobile collaboration
 
-iPhone and iPad use the existing relay and direct TCP protocols. Steam is excluded
-from the mobile backend and connection menu. The relay retains no projects; hosting
-requires a running app. iOS suspension interrupts networking, so prefer a desktop
+iPhone and iPad support persistent server, relay and direct TCP connections. Persistent servers store encrypted projects and accept edits while the owner is offline. Relay and direct TCP sessions require a running host. iOS suspension interrupts networking, so prefer a desktop
 host for long sessions and keep the mobile app in the foreground while editing.
 
 The MAUI host supplies Keychain credentials and `WebAuthenticator` sign-in. Register

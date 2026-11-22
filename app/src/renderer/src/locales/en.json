@@ -1,5 +1,6 @@
 {
   "unifiedWriting": {
+    "sceneInformation": "Scene information",
     "write": "Write",
     "sceneCount_one": "{{count}} scene",
     "sceneCount_other": "{{count}} scenes",
@@ -2145,16 +2146,17 @@
     "defaultCustomProperties": "Default Custom Properties",
     "propertyName": "Property name",
     "propertyValue": "Default value",
-    "propType.string": "String",
-    "propType.int": "Integer",
-    "propType.bool": "Boolean",
+    "propType.string": "Text",
+    "propType.int": "Whole number",
+    "propType.bool": "Yes or no",
     "propType.date": "Date",
-    "propType.enum": "Enum",
-    "propType.timespan": "Timespan",
+    "propType.enum": "List of choices",
+    "propType.timespan": "Duration",
+    "propType.entityref": "Link to another entry",
     "removeProperty": "Remove property",
     "enumOptionsHint": "Comma-separated options (e.g. Red, Green, Blue)",
-    "boolTrue": "True",
-    "boolFalse": "False",
+    "boolTrue": "Yes",
+    "boolFalse": "No",
     "addProperty": "+ Add Property",
     "sections": "Sections",
     "sectionTitle": "Section title",
@@ -4263,7 +4265,152 @@
     "cousinRemoved": "first cousin, {{removed}}x removed",
     "cousinRemoved_other": "cousin {{count}}, {{removed}}x removed"
   },
+  "chapterTypes": {
+    "chapter": "Chapter",
+    "prologue": "Prologue",
+    "epilogue": "Epilogue",
+    "interlude": "Interlude",
+    "part": "Part"
+  },
   "typePacks": {
+    "species": {
+      "name": "Species",
+      "plural": "Species",
+      "fields": {
+        "habitat": {
+          "name": "Habitat",
+          "prompt": "Where do they live, and what does that cost them?"
+        },
+        "lifespan": {
+          "name": "Lifespan",
+          "prompt": "How long do they live, and how does that change what they care about?"
+        },
+        "physiology": {
+          "name": "Physiology",
+          "prompt": "What can their bodies do that a human's cannot, and what can they not do?"
+        },
+        "culture": {
+          "name": "Culture",
+          "prompt": "What do they value, and what do they find unforgivable?"
+        },
+        "standing": {
+          "name": "Standing",
+          "prompt": "How do the other peoples of this world treat them, and why?"
+        }
+      }
+    },
+    "magic_system": {
+      "name": "Magic system",
+      "plural": "Magic systems",
+      "fields": {
+        "source": {
+          "name": "Source",
+          "prompt": "Where does the power come from, and does it run out?"
+        },
+        "cost": {
+          "name": "Cost",
+          "prompt": "What does using it take out of the user, and who pays if they cannot?"
+        },
+        "limits": {
+          "name": "Limits",
+          "prompt": "What can it not do? This is the field that keeps the ending earned."
+        },
+        "who_can_use_it": {
+          "name": "Who can use it",
+          "prompt": "Is it inherited, learned, granted, or stolen?"
+        },
+        "how_it_is_learned": {
+          "name": "How it is learned",
+          "prompt": "Who teaches it, and what do they want in return?"
+        },
+        "what_it_looks_like": {
+          "name": "What it looks like",
+          "prompt": "What does somebody in the room see, hear and smell?"
+        }
+      }
+    },
+    "faction": {
+      "name": "Faction",
+      "plural": "Factions",
+      "fields": {
+        "purpose": {
+          "name": "Purpose",
+          "prompt": "What does it exist to do, and what would finishing look like?"
+        },
+        "leadership": {
+          "name": "Leadership",
+          "prompt": "Who decides, and how did they get to decide?"
+        },
+        "membership": {
+          "name": "Membership",
+          "prompt": "Who joins, how, and what happens to somebody who leaves?"
+        },
+        "resources": {
+          "name": "Resources",
+          "prompt": "What does it actually have - money, people, force, information?"
+        },
+        "rivals": {
+          "name": "Rivals",
+          "prompt": "Who wants it gone, and what is the fight really about?"
+        },
+        "public_face": {
+          "name": "Public face",
+          "prompt": "What does everyone believe about it that is not quite true?"
+        }
+      }
+    },
+    "language": {
+      "name": "Language",
+      "plural": "Languages",
+      "fields": {
+        "speakers": {
+          "name": "Speakers",
+          "prompt": "Who speaks it, and who used to?"
+        },
+        "sound": {
+          "name": "Sound",
+          "prompt": "What does it sound like to somebody who does not speak it?"
+        },
+        "script": {
+          "name": "Script",
+          "prompt": "Is it written, and by whom?"
+        },
+        "grammar_notes": {
+          "name": "Grammar notes",
+          "prompt": "The two or three rules you need to keep names consistent."
+        },
+        "useful_phrases": {
+          "name": "Useful phrases",
+          "prompt": "The handful you will actually put in the prose."
+        }
+      }
+    },
+    "religion": {
+      "name": "Religion",
+      "plural": "Religions",
+      "fields": {
+        "belief": {
+          "name": "Belief",
+          "prompt": "What does it say the world is, and what is it for?"
+        },
+        "practice": {
+          "name": "Practice",
+          "prompt": "What does a follower do daily, weekly, yearly?"
+        },
+        "authority": {
+          "name": "Authority",
+          "prompt": "Who speaks for it, and who checks them?"
+        },
+        "heresy": {
+          "name": "Heresy",
+          "prompt": "What belief gets somebody thrown out, and who currently holds it?"
+        },
+        "reach": {
+          "name": "Reach",
+          "prompt": "Who follows it, where, and who is quietly done with it?"
+        }
+      }
+    },
     "startFrom": "Start from a pack"
   },
   "entityHistory": {

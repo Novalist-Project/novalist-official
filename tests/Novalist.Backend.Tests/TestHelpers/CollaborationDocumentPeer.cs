@@ -10,7 +10,8 @@ internal sealed class CollaborationDocumentPeer
     private readonly Dictionary<(Guid Session, Guid Item), byte[]> states = [];
     private readonly Dictionary<(Guid Session, Guid Item), byte[]> removed = [];
     internal Func<CancellationToken, Task>? BeforeSeed { get; set; }
-    internal Action? BeforeCapture { get; set; }
+    internal Func<CancellationToken, Task>? BeforeCapture { get; set; }
+    internal Action? OnClose { get; set; }
     internal bool RejectNextLoad { get; set; }
     internal Guid? RejectLoadItem { get; set; }
     internal bool RemoveSeededScenes { get; set; }
@@ -42,6 +43,7 @@ internal sealed class CollaborationDocumentPeer
         string? entityId = null, string? oldName = null, string? newName = null, Guid sessionId = default, byte[]? @base = null, string? local = null,
         Dictionary<string, string>? choices = null, CancellationToken cancellationToken = default)
     {
+        if (action == "close") OnClose?.Invoke();
         if (action == "merge") return Merge(sessionId, id ?? throw new ArgumentException("Missing merge identity."),
             @base ?? throw new ArgumentException("Missing merge base."), local ?? throw new ArgumentException("Missing local prose."), choices);
         if (action == "rename")
@@ -79,7 +81,7 @@ internal sealed class CollaborationDocumentPeer
             }
         }
         if (action != "capture" || id is null) return null;
-        BeforeCapture?.Invoke();
+        if (BeforeCapture is { } beforeCapture) await beforeCapture(cancellationToken);
         var state = states[(sessionId, id.Value)];
         var value = Encoding.UTF8.GetString(state);
         if (value.StartsWith("html:", StringComparison.Ordinal)) value = value[5..];

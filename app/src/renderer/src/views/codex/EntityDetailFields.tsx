@@ -11,12 +11,13 @@ import { useEntityFieldSuggestions } from './useEntityFieldSuggestions'
 import { SharedEntityReferenceList } from './SharedEntityReferenceList'
 import { ContentSelect } from '../../shell/ContentSelect'
 import { contentDirection, syncContentDirection } from '../../shell/contentDirection'
+import { booleanChoices, selectedFieldChoice, type FieldChoice } from './fieldChoices'
 
 const LORE_CATEGORIES = ['Organization', 'Culture', 'History', 'Other']
 const refTargetType = (field: CustomTypeDefinition['defaultFields'][number]): string =>
   (field.enumOptions?.[0] || 'character').toLowerCase()
 
-type Control = 'text' | 'textarea' | 'plainText' | 'refList' | 'category' | 'parent' | 'date' | 'ref' | 'group'
+type Control = 'text' | 'textarea' | 'plainText' | 'refList' | 'category' | 'bool' | 'parent' | 'date' | 'ref' | 'group'
 
 interface FieldSpec {
   key: string
@@ -152,7 +153,7 @@ export function EntityDetailFields({
     key: string,
     control: Control,
     isCustom: boolean,
-    options?: string[],
+    options?: FieldChoice[],
     label?: string,
     refType?: string
   ): React.JSX.Element => {
@@ -180,18 +181,18 @@ export function EntityDetailFields({
         key={`${record.id}:${key}:${value}`} defaultValue={value} onInput={event => syncContentDirection(event.currentTarget)} onBlur={(event) => commit(event.target.value)} />
     }
     if (control === 'category' || (options && options.length > 0)) {
-      const opts = options ?? LORE_CATEGORIES
-      if (shared && itemId) return <SharedFieldControl key={itemId} binding={{ sessionId: shared.sessionId, itemId }} value={value} label={label} options={opts} disabled={record.locked === true} />
+      const opts = options ?? LORE_CATEGORIES.map(category => ({ value: category, label: category }))
+      if (shared && itemId) return <SharedFieldControl key={itemId} binding={{ sessionId: shared.sessionId, itemId }} value={value} label={label} options={opts} type={control} disabled={record.locked === true} />
       return (
         <ContentSelect
           className="dialog-input codex-field-input"
           aria-label={label}
-          value={value || opts[0]}
+          value={selectedFieldChoice(value, opts, control === 'bool')}
           onChange={(e) => commit(e.target.value)}
         >
-          {opts.map((o) => (
-            <option dir={contentDirection(o)} key={o} value={o}>
-              {o}
+          {opts.map((option) => (
+            <option dir={contentDirection(option.label)} key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </ContentSelect>
@@ -250,20 +251,20 @@ export function EntityDetailFields({
     )
   }
 
-  const customControl = (fieldType: string): { control: Control; options?: string[] } => {
+  const customControl = (fieldType: string): Control => {
     switch (fieldType) {
       case 'Date':
-        return { control: 'date' }
+        return 'date'
       case 'Bool':
-        return { control: 'category', options: ['true', 'false'] }
+        return 'bool'
       case 'EntityRef':
-        return { control: 'ref' }
+        return 'ref'
       case 'EntityRefList':
-        return { control: 'refList' }
+        return 'refList'
       case 'Text':
-        return { control: 'plainText' }
+        return 'plainText'
       default:
-        return { control: 'text' }
+        return 'text'
     }
   }
 
@@ -275,7 +276,7 @@ export function EntityDetailFields({
             ...(customDef?.defaultFields ?? []).map((f) => ({
               key: f.key,
               labelKey: '',
-              control: customControl(f.type).control
+              control: customControl(f.type)
             })),
             // Templates can add fields beyond the type's shared schema.
             ...Object.keys(customFields ?? {})
@@ -322,9 +323,9 @@ export function EntityDetailFields({
               : undefined
             const options = def
               ? def.type === 'Enum'
-                ? (def.enumOptions ?? [])
+                ? (def.enumOptions ?? []).map(option => ({ value: option, label: option }))
                 : def.type === 'Bool'
-                  ? ['true', 'false']
+                  ? booleanChoices(t)
                   : undefined
               : undefined
             const birthday =

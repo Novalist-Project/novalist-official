@@ -46,9 +46,9 @@ window.NovalistEditorState.editor.addEventListener('beforeinput', (e) => {
         return;
     }
 
-    if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') {
+    if (/^delete(?:Content|Word)(?:Backward|Forward)$/.test(e.inputType)) {
         e.preventDefault();
-        if (window.selectOneCharacter(e.inputType === 'deleteContentBackward')) window.markSelectionDeleted();
+        if (window.selectDeletionTarget(e)) window.markSelectionDeleted();
         return;
     }
 

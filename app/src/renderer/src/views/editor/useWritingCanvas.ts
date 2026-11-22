@@ -49,7 +49,7 @@ function chrome(live: EditorWindow, className = ''): HTMLElement {
 }
 
 export function useWritingChromeTargets(live: EditorWindow | null, snapshots: SceneSnapshot[], chapterOrder: ChapterDto[],
-  scope: WritingScope, anchorChapter: string | undefined, revision: number, includeEmpty: boolean) {
+  scope: WritingScope, anchorChapter: string | undefined, revision: number, includeEmpty: boolean, showRail: boolean) {
   const [targets, setTargets] = useState<{ scene: SceneRef; element: HTMLElement }[]>([])
   const [emptyTargets, setEmptyTargets] = useState<{ chapter: ChapterDto; element: HTMLElement }[]>([])
   const [endTarget, setEndTarget] = useState<HTMLElement | null>(null)
@@ -84,7 +84,7 @@ export function useWritingChromeTargets(live: EditorWindow | null, snapshots: Sc
     setEndTarget(end)
     return () => { [...next, ...empty].forEach(target => target.element.remove()); end.remove(); intro?.remove() }
   }, [live, structureKey, revision])
-  useEffect(() => live ? followWritingSceneRails(live, targets) : undefined, [live, targets])
+  useEffect(() => live && showRail ? followWritingSceneRails(live, targets) : undefined, [live, targets, showRail])
   const currentChapters = new Map(chapterOrder.map(chapter => [chapter.guid, chapter]))
   return { targets, introTarget, emptyTargets: emptyTargets.map(target => ({ ...target,
     chapter: currentChapters.get(target.chapter.guid) ?? target.chapter })), endTarget }

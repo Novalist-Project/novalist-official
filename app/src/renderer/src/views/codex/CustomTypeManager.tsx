@@ -7,6 +7,8 @@ import { rpc } from '../../rpc/client'
 import { ConfirmDialog } from '../../shell/ConfirmDialog'
 import './custom-type-manager.css'
 import { EntityReferenceList } from './EntityReferenceList'
+import { localizeTypePack, type TypePack } from './typePacks'
+import { booleanChoices, fieldTypeLabel } from './fieldChoices'
 
 export interface CustomTypeDefinition {
   typeKey: string
@@ -46,27 +48,9 @@ interface FieldRow {
   prompt: string
 }
 
-/** One shipped pack, in the shape the save call already takes. */
-interface TypePackDto {
-  typeKey: string | null
-  displayName: string
-  displayNamePlural: string | null
-  fields: {
-    key: string | null
-    displayName: string
-    type: string
-    defaultValue: string | null
-    enumOptions: string[] | null
-    required: boolean
-    prompt: string | null
-  }[] | null
-  includeImages: boolean
-  includeRelationships: boolean
-  includeSections: boolean
-}
-
 interface FormState {
   typeKey: string | null
+  pack?: { key: string; name: string }
   displayName: string
   displayNamePlural: string
   fields: FieldRow[]
@@ -102,11 +86,11 @@ export function CustomTypeManager({
    * A list in the renderer would drift from the packs that actually ship, and
    * the picker would offer one that is not there.
    */
-  const [packs, setPacks] = useState<TypePackDto[]>([])
+  const [packs, setPacks] = useState<TypePack[]>([])
 
   useEffect(() => {
     void rpc
-      .request<TypePackDto[]>('entities/typePacks')
+      .request<TypePack[]>('entities/typePacks')
       .then(setPacks)
       .catch(() => setPacks([]))
   }, [])
@@ -125,6 +109,7 @@ export function CustomTypeManager({
     const updated = await rpc.request<CustomTypeDefinition[]>('entities/saveCustomType', [
       {
         typeKey: form.typeKey,
+        suggestedTypeKey: form.pack?.name === form.displayName.trim() ? form.pack.key : null,
         displayName: form.displayName,
         displayNamePlural: form.displayNamePlural || null,
         fields: form.fields
@@ -232,23 +217,24 @@ export function CustomTypeManager({
               <div className="type-pack-row">
                 <span className="export-field-label">{t('typePacks.startFrom')}</span>
                 <div className="type-pack-buttons">
-                  {packs.map((pack) => (
+                  {packs.map(pack => localizeTypePack(pack, t)).map((pack) => (
                     <button
-                      key={pack.typeKey ?? pack.displayName}
+                      key={pack.typeKey}
                       className="dialog-button type-pack"
                       onClick={() =>
                         setForm({
                           typeKey: null,
+                          pack: { key: pack.typeKey, name: pack.displayName },
                           displayName: pack.displayName,
-                          displayNamePlural: pack.displayNamePlural ?? '',
-                          fields: (pack.fields ?? []).map((f) => ({
-                            key: f.key ?? '',
+                          displayNamePlural: pack.displayNamePlural,
+                          fields: pack.fields.map((f) => ({
+                            key: f.key,
                             displayName: f.displayName,
                             type: f.type,
                             defaultValue: f.defaultValue ?? '',
                             enumOptionsText: (f.enumOptions ?? []).join(', '),
                             required: f.required,
-                            prompt: f.prompt ?? ''
+                            prompt: f.prompt
                           })),
                           includeImages: pack.includeImages,
                           includeRelationships: pack.includeRelationships,
@@ -309,7 +295,7 @@ export function CustomTypeManager({
                   >
                     {FIELD_TYPES.map((ft) => (
                       <option key={ft} value={ft}>
-                        {ft === 'Text' ? t('entityTypeManager.textType') : ft === 'EntityRefList' ? t('entityTypeManager.referenceListType') : ft}
+                        {fieldTypeLabel(ft, t)}
                       </option>
                     ))}
                   </select>
@@ -320,7 +306,15 @@ export function CustomTypeManager({
                     rows={3}
                     value={field.defaultValue}
                     onChange={(e) => patchField(index, { defaultValue: e.target.value })}
-                  /> : field.type === 'EntityRefList' ? <EntityReferenceList
+                  /> : field.type === 'Bool' ? <select
+                    className="dialog-input type-manager-type"
+                    aria-label={t('entityTypeManager.defaultValue')}
+                    value={field.defaultValue.toLowerCase()}
+                    onChange={event => patchField(index, { defaultValue: event.target.value })}
+                  >
+                    <option value="">{t('entityTypeManager.defaultValue')}</option>
+                    {booleanChoices(t).map(choice => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
+                  </select> : field.type === 'EntityRefList' ? <EntityReferenceList
                     key={field.enumOptionsText}
                     targetType={field.enumOptionsText || 'character'}
                     label={t('entityTypeManager.defaultValue')}

@@ -15,11 +15,12 @@ export function followWritingSceneRails(live: EditorWindow, targets: RailTarget[
     const narrow = live.document.body.classList.contains('writing-narrow')
     const gap = parseFloat(getComputedStyle(viewport).getPropertyValue('--nl-space-md'))
     const top = viewport.getBoundingClientRect().top + gap
+    const scale = Number(live.document.body.style.getPropertyValue('--writing-page-scale')) || 1
     for (const root of visible) {
       const rail = rails.get(root)!
       const bounds = root.getBoundingClientRect()
       const inset = parseFloat(getComputedStyle(rail).marginBlockStart)
-      const offset = narrow ? 0 : Math.max(0, Math.min(top - bounds.top - inset, bounds.height - inset - rail.offsetHeight))
+      const offset = narrow ? 0 : Math.max(0, Math.min((top - bounds.top) / scale - inset, bounds.height / scale - inset - rail.offsetHeight))
       rail.style.translate = `0 ${offset}px`
     }
   }

@@ -22,13 +22,12 @@ for (const pageView of [false, true]) {
       if (pageView) await expect(frame.locator('body')).toHaveClass(/\bpage-view\b/)
       else await expect(frame.locator('body')).not.toHaveClass(/\bpage-view\b/)
       const scale = () => editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))
-      await expect.poll(scale).toBeGreaterThanOrEqual(1.3)
-      const presentationScale = pageView ? 1.3 : await editor.evaluate(() => {
+      const presentationScale = await editor.evaluate((_, pages) => {
         const fit = (window as Window & { getWritingZoomToFit?: () => number }).getWritingZoomToFit!()
-        return Math.max(1.3, Math.min(3, Math.floor(fit * 100) / 100))
-      })
+        return Math.max(pages ? 0.5 : 1.3, Math.min(3, Math.floor(fit * 100) / 100))
+      }, pageView)
       await expect.poll(scale).toBe(presentationScale)
-      await expect.poll(() => frame.locator('[data-writing-scene]').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeCloseTo(17 * presentationScale, 1)
+      await expect.poll(() => frame.locator('[data-writing-scene]').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeCloseTo(17 * (pageView ? 1 : presentationScale), 1)
       expect(await frame.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
       const fitted = await scale()
       await editor.hover()

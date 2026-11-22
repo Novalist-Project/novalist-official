@@ -67,6 +67,72 @@ test('cross-scene paste retains boundaries and sanitizes external HTML', async (
   await expect(page.locator('#editor [onerror]')).toHaveCount(0)
 })
 
+for (const format of ['text/plain', 'text/html']) {
+  test(`pasted ${format} paragraphs accept independent heading styles`, async ({ page }) => {
+    await page.evaluate(format => {
+      const editor = window as unknown as EditorWindow
+      const point = { sceneId: 's1', offset: 0, affinity: 'after' as const }
+      editor.restoreWritingSelection({ anchor: point, focus: { ...point, offset: 12 } })
+      const transfer = new DataTransfer()
+      transfer.setData(format, format === 'text/plain' ? 'First\r\nSecond\r\nThird' :
+        '<div><div>First<br>continued</div><div><b>Second</b></div><div>Third</div></div>')
+      document.getElementById('editor')!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }))
+    }, format)
+    const blocks = page.locator('[data-writing-scene="s1"] > p')
+    await expect(blocks).toHaveCount(3)
+    await blocks.nth(1).evaluate(block => {
+      const editor = window as unknown as EditorWindow
+      window.getSelection()!.collapse(block, 0)
+      editor.setParagraphStyle('heading')
+    })
+    await expect(page.locator('.nv-style-heading')).toHaveText('Second')
+    if (format === 'text/html') {
+      await expect(blocks.first().locator('br')).toHaveCount(1)
+      await expect(blocks.nth(1).locator('b')).toHaveText('Second')
+    }
+  })
+}
+
+for (const prose of ['First word', 'مرحبا عالم']) {
+  test(`word deletion works in both directions and stops at scene boundaries for ${prose}`, async ({ page }) => {
+    await page.evaluate(({ snapshots, prose }) => {
+      const editor = window as unknown as EditorWindow
+      editor.updateWritingScene({ ...snapshots[1], html: `<p>${prose}</p>`, revision: 1 })
+      const point = { sceneId: 's2', offset: 0, affinity: 'after' as const }
+      editor.restoreWritingSelection({ anchor: point, focus: point })
+    }, { snapshots: scenes, prose })
+    const scene = page.locator('[data-writing-scene="s2"]')
+    await page.keyboard.press('Control+Backspace')
+    await expect(scene).toHaveText(prose)
+    await page.keyboard.press('Control+Delete')
+    await expect(scene).toHaveText(prose.split(' ')[1])
+    await scene.locator('p').evaluate(p => window.getSelection()!.collapse(p, p.childNodes.length))
+    await page.keyboard.press('Control+Delete')
+    await expect(scene).toHaveText(prose.split(' ')[1])
+    await page.keyboard.press('Control+Backspace')
+    await expect(scene).toHaveText('')
+    await expect(page.locator('[data-writing-scene="s1"]')).toHaveText('First scene.')
+    await expect(page.locator('[data-writing-scene="s3"]')).toHaveText('Third scene.')
+  })
+}
+
+test('pasting into a paragraph preserves line breaks and the text on both sides of the caret', async ({ page }) => {
+  await page.evaluate(() => {
+    const editor = window as unknown as EditorWindow
+    const point = { sceneId: 's1', offset: 6, affinity: 'after' as const }
+    editor.restoreWritingSelection({ anchor: point, focus: point })
+    const transfer = new DataTransfer()
+    transfer.setData('text/html', '<p>First line<br>Second line</p><p>Last line<br>End </p>')
+    document.getElementById('editor')!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }))
+  })
+  const paragraphs = page.locator('[data-writing-scene="s1"] > p')
+  await expect(paragraphs).toHaveCount(2)
+  await expect(paragraphs.first().locator('br')).toHaveCount(1)
+  await expect(paragraphs.last().locator('br')).toHaveCount(1)
+  await page.keyboard.type('X')
+  await expect(paragraphs.last()).toContainText('End Xscene.')
+})
+
 test('page view and typewriter keep scene serialization and reverse selection', async ({ page }) => {
   const result = await page.evaluate(() => {
     const editor = window as unknown as EditorWindow

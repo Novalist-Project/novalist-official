@@ -10,7 +10,8 @@ public sealed record CustomTypeSpecDto(
     CustomFieldSpecDto[]? Fields,
     bool IncludeImages,
     bool IncludeRelationships,
-    bool IncludeSections);
+    bool IncludeSections,
+    string? SuggestedTypeKey = null);
 
 public sealed record CustomFieldSpecDto(
     string? Key,

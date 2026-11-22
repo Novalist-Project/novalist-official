@@ -11,5 +11,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
     <PackageReference Include="Nerdbank.Streams" Version="2.13.16" />
     <Compile Include="../Novalist.Sync.Client.Tests/TestIdentityProvider.cs" Link="TestIdentityProvider.cs" />
+    <Compile Include="../Novalist.Backend.Tests/TestHelpers/CollaborationDocumentPeer.cs" Link="CollaborationDocumentPeer.cs" />
   </ItemGroup>
 </Project>

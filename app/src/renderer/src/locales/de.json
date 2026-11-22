@@ -1,5 +1,6 @@
 {
   "unifiedWriting": {
+    "sceneInformation": "Szeneninformationen",
     "write": "Schreiben",
     "sceneCount_one": "{{count}} Szene",
     "sceneCount_other": "{{count}} Szenen",
@@ -1604,15 +1605,16 @@
     "propertyName": "Eigenschaftsname",
     "propertyValue": "Standardwert",
     "propType.string": "Text",
-    "propType.int": "Ganzzahl",
-    "propType.bool": "Wahrheitswert",
+    "propType.int": "Ganze Zahl",
+    "propType.bool": "Ja oder Nein",
     "propType.date": "Datum",
-    "propType.enum": "Aufzählung",
-    "propType.timespan": "Zeitspanne",
+    "propType.enum": "Auswahlliste",
+    "propType.timespan": "Zeitdauer",
+    "propType.entityref": "Verknüpfung mit einem anderen Eintrag",
     "removeProperty": "Eigenschaft entfernen",
     "enumOptionsHint": "Kommagetrennte Optionen (z.B. Rot, Grün, Blau)",
-    "boolTrue": "Wahr",
-    "boolFalse": "Falsch",
+    "boolTrue": "Ja",
+    "boolFalse": "Nein",
     "addProperty": "+ Eigenschaft hinzufügen",
     "sections": "Abschnitte",
     "sectionTitle": "Abschnittstitel",
@@ -4271,7 +4273,152 @@
     "cousinRemoved": "Cousin/Cousine, {{removed}}x entfernt",
     "cousinRemoved_other": "Cousin/Cousine {{count}}. Grades, {{removed}}x entfernt"
   },
+  "chapterTypes": {
+    "chapter": "Kapitel",
+    "prologue": "Prolog",
+    "epilogue": "Epilog",
+    "interlude": "Zwischenspiel",
+    "part": "Teil"
+  },
   "typePacks": {
+    "species": {
+      "name": "Spezies",
+      "plural": "Spezies",
+      "fields": {
+        "habitat": {
+          "name": "Lebensraum",
+          "prompt": "Wo leben sie, und welchen Preis zahlen sie dafür?"
+        },
+        "lifespan": {
+          "name": "Lebensdauer",
+          "prompt": "Wie lange leben sie, und wie prägt das, was ihnen wichtig ist?"
+        },
+        "physiology": {
+          "name": "Physiologie",
+          "prompt": "Was können ihre Körper, was Menschen nicht können? Und was können sie nicht?"
+        },
+        "culture": {
+          "name": "Kultur",
+          "prompt": "Was schätzen sie, und was finden sie unverzeihlich?"
+        },
+        "standing": {
+          "name": "Ansehen",
+          "prompt": "Wie behandeln die anderen Völker dieser Welt sie, und warum?"
+        }
+      }
+    },
+    "magic_system": {
+      "name": "Magiesystem",
+      "plural": "Magiesysteme",
+      "fields": {
+        "source": {
+          "name": "Quelle",
+          "prompt": "Woher kommt die Macht, und kann sie versiegen?"
+        },
+        "cost": {
+          "name": "Preis",
+          "prompt": "Was kostet die Magie diejenigen, die sie nutzen? Wer zahlt, wenn sie es nicht können?"
+        },
+        "limits": {
+          "name": "Grenzen",
+          "prompt": "Was kann die Magie nicht? Ihre Grenzen machen das Ende der Geschichte glaubwürdig."
+        },
+        "who_can_use_it": {
+          "name": "Wer sie nutzen kann",
+          "prompt": "Wird die Magie vererbt, erlernt, verliehen oder gestohlen?"
+        },
+        "how_it_is_learned": {
+          "name": "Wie man sie erlernt",
+          "prompt": "Wer lehrt sie, und was verlangt diese Person dafür?"
+        },
+        "what_it_looks_like": {
+          "name": "Erscheinungsbild",
+          "prompt": "Was sieht, hört und riecht jemand, der dabei ist?"
+        }
+      }
+    },
+    "faction": {
+      "name": "Fraktion",
+      "plural": "Fraktionen",
+      "fields": {
+        "purpose": {
+          "name": "Zweck",
+          "prompt": "Wozu gibt es die Fraktion, und woran würde man erkennen, dass sie ihr Ziel erreicht hat?"
+        },
+        "leadership": {
+          "name": "Führung",
+          "prompt": "Wer entscheidet, und wie kam es dazu?"
+        },
+        "membership": {
+          "name": "Mitgliedschaft",
+          "prompt": "Wer tritt ihr bei, wie kommt man hinein, und was geschieht mit jemandem, der austritt?"
+        },
+        "resources": {
+          "name": "Ressourcen",
+          "prompt": "Worüber verfügt sie tatsächlich: Geld, Leute, Streitkräfte oder Informationen?"
+        },
+        "rivals": {
+          "name": "Gegner",
+          "prompt": "Wer will sie loswerden, und worum geht es in dem Streit wirklich?"
+        },
+        "public_face": {
+          "name": "Öffentliches Bild",
+          "prompt": "Was glauben alle über sie, obwohl es nicht ganz stimmt?"
+        }
+      }
+    },
+    "language": {
+      "name": "Sprache",
+      "plural": "Sprachen",
+      "fields": {
+        "speakers": {
+          "name": "Sprecher",
+          "prompt": "Wer spricht sie heute, und wer sprach sie früher?"
+        },
+        "sound": {
+          "name": "Klang",
+          "prompt": "Wie klingt sie für jemanden, der sie nicht spricht?"
+        },
+        "script": {
+          "name": "Schrift",
+          "prompt": "Wird sie geschrieben, und wenn ja, von wem?"
+        },
+        "grammar_notes": {
+          "name": "Grammatik",
+          "prompt": "Welche zwei oder drei Regeln brauchst du, um Namen einheitlich zu bilden?"
+        },
+        "useful_phrases": {
+          "name": "Nützliche Wendungen",
+          "prompt": "Welche wenigen Wendungen wirst du tatsächlich im Text verwenden?"
+        }
+      }
+    },
+    "religion": {
+      "name": "Religion",
+      "plural": "Religionen",
+      "fields": {
+        "belief": {
+          "name": "Glaube",
+          "prompt": "Wie erklärt diese Religion die Welt und den Sinn ihrer Existenz?"
+        },
+        "practice": {
+          "name": "Praxis",
+          "prompt": "Was tun Gläubige täglich, wöchentlich oder jährlich?"
+        },
+        "authority": {
+          "name": "Autorität",
+          "prompt": "Wer spricht für die Religion, und wer kontrolliert diese Personen?"
+        },
+        "heresy": {
+          "name": "Ketzerei",
+          "prompt": "Für welchen Glauben wird man ausgeschlossen, und wer vertritt ihn gerade?"
+        },
+        "reach": {
+          "name": "Verbreitung",
+          "prompt": "Wer folgt ihr, wo, und wer hat sich still von ihr abgewandt?"
+        }
+      }
+    },
     "startFrom": "Aus einer Vorlage starten"
   },
   "entityHistory": {

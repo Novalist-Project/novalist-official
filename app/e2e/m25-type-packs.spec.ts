@@ -31,7 +31,10 @@ test('a type pack fills the builder, and creates nothing until it is saved', asy
   }, workDir)
   await expect(page.locator('.mode-rail')).toBeVisible({ timeout: 30_000 })
 
-  await page.evaluate(() => window.novalistStores.shell.getState().setMainView('codex'))
+  await page.evaluate(async () => {
+    await window.novalistStores.settings.getState().update('global', { language: 'ar' })
+    window.novalistStores.shell.getState().setMainView('codex')
+  })
   await page.locator('.codex-tab-manage').click()
 
   const packs = page.locator('.type-pack')
@@ -44,14 +47,19 @@ test('a type pack fills the builder, and creates nothing until it is saved', asy
     )
   ).toBe(0)
 
-  await packs.filter({ hasText: /Magic system|Magiesystem|魔法/ }).first().click()
+  await packs.filter({ hasText: 'نظام سحري' }).click()
 
   // The form is filled in and still the writer's to change: the field that
   // keeps an ending earned is in there, with the question it is for.
   const card = page.locator('.type-manager-card')
-  await expect(card.locator('input.dialog-input').first()).toHaveValue(/Magic system|Magiesystem|魔法/)
-  await expect(card.locator('.type-manager-prompt').first()).not.toHaveValue('')
-  await expect(card.locator('input[value="Limits"]')).toHaveCount(1)
+  await expect(card.locator('input.dialog-input').first()).toHaveValue('نظام سحري')
+  const firstField = card.locator('.type-manager-field').first()
+  await expect(firstField.locator('input').first()).toHaveValue('المصدر')
+  await expect(firstField.locator('.type-manager-prompt')).toHaveValue('من أين تأتي القوة، وهل يمكن أن تنفد؟')
+  await expect(firstField.locator('option[value="EntityRef"]')).toContainText('ربط بعنصر آخر')
+  await firstField.locator('input').first().fill('My source')
+  await firstField.locator('select').first().selectOption('Bool')
+  await firstField.locator('select').nth(1).selectOption('false')
 
   // Still nothing created until it is saved.
   expect(
@@ -74,6 +82,26 @@ test('a type pack fills the builder, and creates nothing until it is saved', asy
       { timeout: 15_000 }
     )
     .toBeGreaterThan(3)
+
+  await card.locator('.type-manager-title-row button').click()
+  const entry = await page.evaluate(async () => {
+    const { id } = await window.novalistRpc.request<{ id: string }>('entities/create', ['magic_system', 'Arcana'])
+    await window.novalistStores.codex.getState().setType('magic_system')
+    await window.novalistStores.codex.getState().select(id)
+    return id
+  })
+  const choice = page.getByRole('combobox', { name: 'My source', exact: true })
+  await expect(choice).toHaveValue('false')
+  await expect(choice.locator('option[value="true"]')).toContainText('نعم')
+  await expect(choice.locator('option[value="false"]')).toContainText('لا')
+  await choice.selectOption('true')
+  await expect.poll(() => page.evaluate(async id => {
+    const saved = await window.novalistRpc.request<{ fields: Record<string, string> }>('entities/get', ['magic_system', id])
+    return saved.fields.source
+  }, entry)).toBe('true')
+  await page.evaluate(() => window.novalistStores.settings.getState().update('global', { language: 'en' }))
+  await expect(choice.locator('option[value="true"]')).toHaveText('Yes')
+  await expect(choice).toHaveValue('true')
 
   await app.close()
 })

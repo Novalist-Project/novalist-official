@@ -159,7 +159,7 @@ public sealed class ProjectRpc
     public SectionTypeDto[] SectionTypes()
         => [.. Core.Models.SectionTypes
             .All(_workspace.Projects.ActiveBook?.SectionTypes)
-            .Select(t => new SectionTypeDto(t.Key, t.Name, t.Numbered))];
+            .Select(t => new SectionTypeDto(t.Key, t.Name, t.Numbered, Core.Models.SectionTypes.Defaults.Contains(t)))];
 
     [JsonRpcMethod("project/renameScene")]
     public async Task<ProjectStateDto> RenameSceneAsync(string chapterGuid, string sceneId, string newTitle)
@@ -345,4 +345,4 @@ public sealed record TrashedChapterDto(
     string Guid, string Title, string DeletedAt, int SceneCount);
 
 /// <summary>What a chapter is, as opposed to what it is called.</summary>
-public sealed record SectionTypeDto(string Key, string Name, bool Numbered);
+public sealed record SectionTypeDto(string Key, string Name, bool Numbered, bool BuiltIn);

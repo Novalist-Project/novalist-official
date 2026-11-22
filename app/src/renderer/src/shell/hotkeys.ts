@@ -36,6 +36,10 @@ export interface HotkeyAction {
  */
 let customGestures: Record<string, string> = {}
 
+export function effectiveGesture(binding: string | undefined, defaultGesture: string): string {
+  return binding === undefined || /(?:^|\+)Unidentified$/i.test(binding) ? defaultGesture : binding
+}
+
 /**
  * Applies persisted gesture overrides. Updates the module map and mutates the
  * gestures of the currently installed actions in place, so the live keydown
@@ -45,7 +49,7 @@ let customGestures: Record<string, string> = {}
 export function applyCustomGestures(map: Record<string, string>): void {
   customGestures = map ?? {}
   for (const action of installedActions) {
-    action.gesture = customGestures[action.actionId] ?? action.defaultGesture
+    action.gesture = effectiveGesture(customGestures[action.actionId], action.defaultGesture)
   }
 }
 
@@ -156,7 +160,7 @@ export function buildDefaultHotkeys(): HotkeyAction[] {
   }))
   return defs.map((def) => ({
     ...def,
-    gesture: customGestures[def.actionId] ?? def.defaultGesture
+    gesture: effectiveGesture(customGestures[def.actionId], def.defaultGesture)
   }))
 }
 

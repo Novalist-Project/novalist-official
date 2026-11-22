@@ -33,10 +33,12 @@ function setFont(family, size) {
     window.scheduleCommentRender();
 }
 
-function setBookWidth(enabled, widthPx) {
+function setBookWidth(enabled, widthPx, pageWidthPx = widthPx + 120, pageHeightPx = pageWidthPx * 1.5) {
     const root = document.documentElement;
     root.style.setProperty('--book-width', enabled ? 'calc(' + widthPx + 'px + 2 * var(--padding-h))' : 'none');
     root.style.setProperty('--writing-book-text-width', widthPx + 'px');
+    root.style.setProperty('--writing-book-page-width', pageWidthPx + 'px');
+    root.style.setProperty('--writing-book-page-height', pageHeightPx + 'px');
     document.body.classList.toggle('book-width', enabled);
 }
 

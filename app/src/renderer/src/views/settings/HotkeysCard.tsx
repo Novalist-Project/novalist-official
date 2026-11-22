@@ -4,6 +4,7 @@ import { RotateCcw } from 'lucide-react'
 import {
   buildDefaultHotkeys,
   canonicalGesture,
+  effectiveGesture,
   eventToGesture,
   type HotkeyAction
 } from '../../shell/hotkeys'
@@ -39,7 +40,7 @@ export function HotkeysCard(): React.JSX.Element {
   }, [recordingId])
 
   const gestureOf = (actionId: string, fallback: string): string =>
-    bindings?.[actionId] ?? fallback
+    effectiveGesture(bindings?.[actionId], fallback)
 
   const isModified = (d: HotkeyAction): boolean =>
     gestureOf(d.actionId, d.defaultGesture) !== d.defaultGesture

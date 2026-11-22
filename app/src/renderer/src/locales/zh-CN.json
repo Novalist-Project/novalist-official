@@ -1,5 +1,6 @@
 {
   "unifiedWriting": {
+    "sceneInformation": "场景信息",
     "write": "写作",
     "sceneCount_one": "{{count}} 个场景",
     "sceneCount_other": "{{count}} 个场景",
@@ -2180,12 +2181,13 @@
     "defaultCustomProperties": "默认自定义属性",
     "propertyName": "属性名称",
     "propertyValue": "默认值",
-    "propType.string": "字符串",
+    "propType.string": "文本",
     "propType.int": "整数",
-    "propType.bool": "布尔值",
+    "propType.bool": "是或否",
     "propType.date": "日期",
-    "propType.enum": "枚举",
-    "propType.timespan": "时间跨度",
+    "propType.enum": "选项列表",
+    "propType.timespan": "时长",
+    "propType.entityref": "关联其他条目",
     "removeProperty": "移除属性",
     "enumOptionsHint": "以逗号分隔的选项（例如：红, 绿, 蓝）",
     "boolTrue": "是",
@@ -4305,7 +4307,152 @@
     "cousinRemoved": "堂表亲，隔 {{removed}} 代",
     "cousinRemoved_other": "{{count}} 从堂表亲，隔 {{removed}} 代"
   },
+  "chapterTypes": {
+    "chapter": "章",
+    "prologue": "序章",
+    "epilogue": "终章",
+    "interlude": "间章",
+    "part": "部"
+  },
   "typePacks": {
+    "species": {
+      "name": "物种",
+      "plural": "物种",
+      "fields": {
+        "habitat": {
+          "name": "栖息地",
+          "prompt": "它们生活在哪里？在那里生活要付出什么代价？"
+        },
+        "lifespan": {
+          "name": "寿命",
+          "prompt": "它们能活多久？寿命如何影响它们在意的事？"
+        },
+        "physiology": {
+          "name": "生理特征",
+          "prompt": "它们的身体能做到哪些人类做不到的事？又有哪些事是它们做不到的？"
+        },
+        "culture": {
+          "name": "文化",
+          "prompt": "它们重视什么？什么行为在它们看来不可原谅？"
+        },
+        "standing": {
+          "name": "地位",
+          "prompt": "这个世界的其他族群如何对待它们？为什么？"
+        }
+      }
+    },
+    "magic_system": {
+      "name": "魔法体系",
+      "plural": "魔法体系",
+      "fields": {
+        "source": {
+          "name": "力量来源",
+          "prompt": "力量来自哪里？会耗尽吗？"
+        },
+        "cost": {
+          "name": "代价",
+          "prompt": "施法者要付出什么代价？如果付不起，由谁承担？"
+        },
+        "limits": {
+          "name": "限制",
+          "prompt": "魔法有哪些做不到的事？明确这些限制，故事的结局才令人信服。"
+        },
+        "who_can_use_it": {
+          "name": "使用者",
+          "prompt": "魔法可以继承、学会、获赐，还是窃取？"
+        },
+        "how_it_is_learned": {
+          "name": "学习方式",
+          "prompt": "谁来传授魔法？对方想得到什么回报？"
+        },
+        "what_it_looks_like": {
+          "name": "施法景象",
+          "prompt": "在场的人会看到什么、听到什么、闻到什么？"
+        }
+      }
+    },
+    "faction": {
+      "name": "派系",
+      "plural": "派系",
+      "fields": {
+        "purpose": {
+          "name": "宗旨",
+          "prompt": "这个派系为何而存在？实现目标后会是什么样子？"
+        },
+        "leadership": {
+          "name": "领导层",
+          "prompt": "谁作决定？他们是如何取得决定权的？"
+        },
+        "membership": {
+          "name": "成员",
+          "prompt": "谁会加入，如何加入？离开的人会怎样？"
+        },
+        "resources": {
+          "name": "资源",
+          "prompt": "这个派系实际掌握了哪些资源？资金、人手、武力还是情报？"
+        },
+        "rivals": {
+          "name": "对手",
+          "prompt": "谁希望它消失？这场争斗背后的真正原因是什么？"
+        },
+        "public_face": {
+          "name": "公众形象",
+          "prompt": "外界对它有哪些不完全符合事实的看法？"
+        }
+      }
+    },
+    "language": {
+      "name": "语言",
+      "plural": "语言",
+      "fields": {
+        "speakers": {
+          "name": "使用者",
+          "prompt": "现在有哪些人说这种语言？以前又有哪些人说？"
+        },
+        "sound": {
+          "name": "语音",
+          "prompt": "在不会说这种语言的人听来，它是什么样的？"
+        },
+        "script": {
+          "name": "文字",
+          "prompt": "这种语言有书面形式吗？哪些人会书写？"
+        },
+        "grammar_notes": {
+          "name": "语法要点",
+          "prompt": "记下两三条规则，让命名方式前后一致。"
+        },
+        "useful_phrases": {
+          "name": "常用语",
+          "prompt": "记下几句你确实会写进正文的话。"
+        }
+      }
+    },
+    "religion": {
+      "name": "宗教",
+      "plural": "宗教",
+      "fields": {
+        "belief": {
+          "name": "信仰",
+          "prompt": "在这个宗教看来，世界是什么，又为何存在？"
+        },
+        "practice": {
+          "name": "宗教实践",
+          "prompt": "信徒每天、每周、每年要做些什么？"
+        },
+        "authority": {
+          "name": "权威",
+          "prompt": "谁代表这个宗教发声？谁监督这些人？"
+        },
+        "heresy": {
+          "name": "异端",
+          "prompt": "持有什么信念会被逐出教门？目前有谁持这种信念？"
+        },
+        "reach": {
+          "name": "传播范围",
+          "prompt": "信徒有哪些人，分布在哪里？又有谁已经悄悄放弃了信仰？"
+        }
+      }
+    },
     "startFrom": "从模板开始"
   },
   "entityHistory": {

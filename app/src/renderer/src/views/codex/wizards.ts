@@ -1,10 +1,7 @@
 import type { TFunction } from 'i18next'
 import type { CustomTypeDefinition } from './CustomTypeManager'
 
-export interface WizardChoice {
-  value: string
-  label: string
-}
+import { booleanChoices, type FieldChoice } from './fieldChoices'
 
 export interface WizardStepDef {
   id: string
@@ -13,7 +10,7 @@ export interface WizardStepDef {
   skippable: boolean
   kind: 'text' | 'choice' | 'number' | 'date' | 'plainText' | 'refList'
   multiline?: boolean
-  choices?: WizardChoice[]
+  choices?: FieldChoice[]
   defaultValue?: string
   /** Entity type whose entities populate the choices at dialog-open time. */
   entityRefType?: string
@@ -119,10 +116,7 @@ export function buildGuidedSteps(
               title: field.displayName,
               skippable: true,
               kind: 'choice' as const,
-              choices: [
-                { value: 'true', label: 'Yes' },
-                { value: 'false', label: 'No' }
-              ]
+              choices: booleanChoices(t)
             }
           case 'Enum':
             return {
@@ -144,7 +138,7 @@ export function buildGuidedSteps(
               entityRefType: (field.enumOptions?.[0] ?? 'Character').toLowerCase()
             }
           default:
-            return text(field.key, field.displayName)
+            return text(field.key, field.displayName, { help: field.prompt })
         }
       })
   }

@@ -287,6 +287,44 @@ function dragEditor() {
   return w
 }
 
+test('pasted plain text and nested rich paragraphs produce separate prose blocks', () => {
+  const w = dragEditor()
+  try {
+    const root = w.NovalistEditorState.editor
+    w.NovalistEditorState.wrapper = root.parentElement
+    w.eval(readFileSync(new URL('../src/renderer/public/editor/read-aloud.js', import.meta.url), 'utf8'))
+    w.eval(readFileSync(new URL('../src/renderer/public/editor/clipboard-focus-events.js', import.meta.url), 'utf8'))
+    w.restoreWritingSelection({ anchor: point('empty', 0), focus: point('empty', 0) })
+    const clipboard = new Map()
+    const pasted = w.document.createElement('div')
+    w.document.execCommand = (command, _unused, value) => {
+      assert.equal(command, 'insertHTML')
+      pasted.innerHTML = value
+      return true
+    }
+    const paste = () => {
+      const event = new w.Event('paste', { bubbles: true, cancelable: true })
+      Object.defineProperty(event, 'clipboardData', { value: { getData: type => clipboard.get(type) || '' } })
+      root.dispatchEvent(event)
+      assert.equal(event.defaultPrevented, true)
+    }
+    clipboard.set('text/plain', 'First\r\n\r\n<Second>\nThird')
+    paste()
+    assert.equal(pasted.innerHTML, '<p>First</p><p><br></p><p>&lt;Second&gt;</p><p>Third</p>')
+    clipboard.set('text/html', '<div dir="rtl"><div><b>First</b><br>continued</div><div dir="ltr">Second</div></div>')
+    paste()
+    assert.equal(pasted.innerHTML, '<p dir="rtl"><b>First</b><br>continued</p><p dir="ltr">Second</p>')
+    clipboard.set('text/html', '<span style="white-space:pre-wrap">One\nTwo</span>')
+    paste()
+    assert.equal(pasted.innerHTML, '<p>One</p><p>Two</p>')
+    clipboard.set('text/html', '<b style="font-weight:normal;"><p>One</p><p><b>Two</b></p></b>')
+    paste()
+    assert.deepEqual(Array.from(pasted.children, node => node.tagName), ['P', 'P'])
+    assert.equal(pasted.firstChild.style.fontWeight, 'normal')
+    assert.equal(pasted.lastChild.querySelector('b').textContent, 'Two')
+  } finally { w.close() }
+})
+
 test('internal rich drag preserves allowed list, link, image and paragraph style markup', () => {
   const w = dragEditor()
   try {

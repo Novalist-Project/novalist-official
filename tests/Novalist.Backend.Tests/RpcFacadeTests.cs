@@ -322,9 +322,13 @@ public sealed class RpcFacadeTests : IAsyncDisposable
             "project/setChapterOpener", chapter.Guid, null, false);
         Assert.Equal("prologue", untouched.Chapters.Single().SectionTypeKey);
 
-        var types = await InvokeAsync<SectionTypeDto[]>("project/sectionTypes");
-        Assert.Contains(types, t => t.Key == "chapter" && t.Numbered);
-        Assert.Contains(types, t => t.Key == "prologue" && !t.Numbered);
+        _host.Workspace.Projects.ActiveBook!.SectionTypes.Add(new() { Key = "prologue", Name = "Author's opening", Numbered = false });
+        var types = await InvokeAsync<JsonElement[]>("project/sectionTypes");
+        var standard = Assert.Single(types, t => t.GetProperty("key").GetString() == "chapter");
+        Assert.True(standard.GetProperty("builtIn").GetBoolean());
+        var custom = Assert.Single(types, t => t.GetProperty("key").GetString() == "prologue");
+        Assert.False(custom.GetProperty("builtIn").GetBoolean());
+        Assert.Equal("Author's opening", custom.GetProperty("name").GetString());
 
         var sceneDeleted = await InvokeAsync<ProjectStateDto>(
             "project/deleteScene", chapter.Guid, scene.Id);

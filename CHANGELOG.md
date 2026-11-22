@@ -23,6 +23,20 @@ could encounter in a previously released version.
 
 ### Added
 
+- **Scene information toggle** — hide the scene number, stage, word count and synopsis together to give the manuscript more room. Each writing pane remembers its choice for the project.
+
+### Fixed
+
+- Page View keeps its paper size, margins and line breaks when zooming or resizing the writing pane.
+- Pasted paragraphs can be styled individually and use the configured paragraph spacing. Ctrl+Delete and Ctrl+Backspace delete words in the writing editor on Windows.
+- Arabic chapter and Codex type labels, preset fields and Yes/No choices use translated names. Bold works with Ctrl+B on the Arabic keyboard layout.
+
+---
+
+## [3.8.0] - 2026-11-22
+
+### Added
+
 - **Persistent project hosting** — invited writers can open an encrypted project and sync changes while its owner is offline. When you reconnect after writing offline, Novalist merges independent edits and lets you choose between conflicting versions. You can pair another device or register a replacement with a recovery token. [Persistent server setup and recovery](https://github.com/Novalist-Project/novalist-official/blob/893cf13c0273a2ef73659ac8772281ab45e5cc67/docs/manual/23-settings.md#persistent-server)
 - **Unified writing workspace** — switch between Scene, Chapter and Manuscript in the same editor without losing your place. Edit and undo across scenes, apply paragraph styles with Quick edit, or start a scene or chapter at the caret. Each pane can show a different scope. [Writing in the editor](https://github.com/Novalist-Project/novalist-official/blob/893cf13c0273a2ef73659ac8772281ab45e5cc67/docs/manual/05-editor.md)
 - **Structure view** — under **Plan → Structure**, arrange acts, chapters and scenes, move several at once, and edit chapter summaries and scene synopses alongside the outline. Corkboard, Outliner and Board are now under Plan as well. [Planning the book’s structure](https://github.com/Novalist-Project/novalist-official/blob/893cf13c0273a2ef73659ac8772281ab45e5cc67/docs/manual/10-manuscript.md#structure-mode)
@@ -1916,7 +1930,8 @@ First public release.
 
 ---
 
-[Unreleased]: https://github.com/Drommedhar/novalist-official/compare/v3.7.2...HEAD
+[Unreleased]: https://github.com/Drommedhar/novalist-official/compare/v3.8.0...HEAD
+[3.8.0]: https://github.com/Drommedhar/novalist-official/compare/v3.7.2...v3.8.0
 [3.7.2]: https://github.com/Drommedhar/novalist-official/compare/v3.7.0...v3.7.2
 [3.7.0]: https://github.com/Drommedhar/novalist-official/compare/v3.6.2...v3.7.0
 [3.6.2]: https://github.com/Drommedhar/novalist-official/compare/v3.6.1...v3.6.2

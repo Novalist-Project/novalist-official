@@ -10,7 +10,7 @@ import { useWritingCanvasStyles } from './useWritingCanvas'
 import { useWritingInitialZoom } from './useWritingInitialZoom'
 import { writingErrorMessage } from './writingError'
 import { useProjectStore } from '../../stores/projectStore'
-import { PanelRight, FileText, Layers } from 'lucide-react'
+import { PanelLeft, PanelRight, FileText, Layers } from 'lucide-react'
 import { useShellStore } from '../../stores/shellStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { updateEditorSetting } from '../../shell/commandContext'
@@ -29,6 +29,10 @@ export function UnifiedWritingEditor({ paneId }: { paneId: string }): React.JSX.
   const focusScene = useCallback((scene: SceneRef) => writing.setScope('scene', scene), [writing.setScope])
   const { live, registry, snapshots, chapters } = writing
   const [showSynopsis, setShowSynopsis] = useState(true)
+  const railKey = registry && `nl.writing.sceneInformation.${JSON.stringify([registry.context.workspaceId, paneId])}`
+  const [showRail, setShowRail] = useState(true)
+  useEffect(() => { setShowRail(!railKey || localStorage.getItem(railKey) !== 'false') }, [railKey])
+  useEffect(() => { live?.document.body.classList.toggle('writing-rail-hidden', !showRail) }, [live, showRail])
   const pageView = useSettingsStore(state => state.view?.effective.pageViewEnabled === true)
   const setPageView = useCallback((enabled: boolean) => updateEditorSetting({ pageViewEnabled: enabled }), [])
   const bookTitle = useProjectStore(state => state.books.find(book => book.id === state.activeBookId)?.name ?? '')
@@ -58,7 +62,12 @@ export function UnifiedWritingEditor({ paneId }: { paneId: string }): React.JSX.
           aria-pressed={writing.scope === scope} onClick={() => writing.setScope(scope)}>{t(`unifiedWriting.${scope}`)}</button>)}
       </div>
       <span className="writing-scope-description">{writing.scope === 'scene' ? selectedChapter?.title : t('unifiedWriting.sceneCount', { count: writing.refs.length })}</span>
-      <button className="writing-toolbar-icon" type="button" aria-pressed={showSynopsis} title={t('sceneNotes.synopsisTitle')}
+      <button className="writing-toolbar-icon" type="button" aria-pressed={showRail} title={t('unifiedWriting.sceneInformation')}
+        aria-label={t('unifiedWriting.sceneInformation')} onClick={() => {
+        if (railKey) localStorage.setItem(railKey, String(!showRail))
+        setShowRail(!showRail)
+      }}><PanelLeft size={17} className="icon-directional" /></button>
+      <button className="writing-toolbar-icon" type="button" disabled={!showRail} aria-pressed={showSynopsis} title={t('sceneNotes.synopsisTitle')}
         aria-label={t('sceneNotes.synopsisTitle')} onClick={() => {
         const next = !showSynopsis
         if (registry) localStorage.setItem(synopsisVisibilityKey(registry.context), String(next))
@@ -89,7 +98,7 @@ export function UnifiedWritingEditor({ paneId }: { paneId: string }): React.JSX.
     <EditorFrame paneId={paneId} writing={writing.adapter} />
     <WritingCanvasChrome live={live} registry={registry} snapshots={snapshots} chapters={chapters} scope={writing.scope}
       anchorChapter={anchorChapter} revision={writing.projectionRevision} limited={limited} narrow={narrow}
-      showSynopsis={showSynopsis} onStructure={onStructure} bookTitle={bookTitle} draftName={draftName}
+      showRail={showRail} showSynopsis={showSynopsis} onStructure={onStructure} bookTitle={bookTitle} draftName={draftName}
       activeSceneId={writing.selection?.focus.sceneId ?? writing.anchor?.sceneId}
       onFocusScene={focusScene} />
   </section>

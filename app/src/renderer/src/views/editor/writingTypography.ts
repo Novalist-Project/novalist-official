@@ -1,10 +1,10 @@
 import type { EffectiveSettings } from '../../stores/settingsStore'
 import { useWritingZoomStore } from '../../stores/writingZoomStore'
-import { PAGE_FORMAT_WIDTHS } from '../settings/settingsTypography'
+import { PAGE_FORMATS, PAGE_FORMAT_WIDTHS } from '../settings/settingsTypography'
 
 interface WritingSurface {
   setFont(family: string, size: number): void
-  setBookWidth(enabled: boolean, widthPx: number): void
+  setBookWidth(enabled: boolean, widthPx: number, pageWidthPx?: number, pageHeightPx?: number): void
   setWritingZoom(factor: number, typewriterAnchor?: string | null): void
 }
 
@@ -20,7 +20,9 @@ export function pushWritingTypography(surface: WritingSurface, settings: Effecti
     settings.enableBookWidth ? settings.bookFontFamily : settings.editorFontFamily,
     writingFontSize(settings)
   )
-  surface.setBookWidth(settings.enableBookWidth, inches * 96)
+  const format = PAGE_FORMATS.find(value => value.code === settings.bookPageFormat)
+  surface.setBookWidth(settings.enableBookWidth, inches * 96,
+    format?.width && format.width * 96, format?.height && format.height * 96)
   surface.setWritingZoom(
     useWritingZoomStore.getState().percent / 100,
     settings.typewriterScrollEnabled && window.novalist.isMobile !== true ? settings.typewriterScrollAnchor : null

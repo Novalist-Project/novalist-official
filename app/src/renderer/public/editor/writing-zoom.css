@@ -10,6 +10,8 @@
     margin-inline: auto;
 }
 
+.writing-page-canvas { display: contents; }
+
 #editor,
 #manuscript-content {
     margin-inline: 0;

@@ -42,7 +42,8 @@ function writingSelectedRanges() {
     const last = window.writingPointFromDom(selected.endContainer, selected.endOffset)?.sceneId;
     const start = state.order.indexOf(first), end = state.order.indexOf(last);
     if (start < 0 || end < 0) return [];
-    return state.order.slice(start, end + 1).map(id => {
+    const ids = state.order.slice(start, end + 1).filter(id => selected.collapsed || selected.intersectsNode(state.scenes.get(id).root));
+    return ids.map(id => {
         const root = state.scenes.get(id).root;
         const range = document.createRange();
         range.selectNodeContents(root);
@@ -141,22 +142,34 @@ function ensureWritingParagraph() {
     selection.setBaseAndExtent(...remap(anchor), ...remap(focus));
 }
 
+function restoreWritingRootCaret() {
+    const nativeSelection = window.getSelection();
+    if (nativeSelection?.isCollapsed && nativeSelection.anchorNode === window.NovalistEditorState.editor) {
+        window.restoreWritingSelection(window.getWritingSelection());
+    }
+}
+
+function confineWritingSelection({ root, range }) {
+    const selection = window.getSelection();
+    if (root.contains(selection.anchorNode) && root.contains(selection.focusNode)) return;
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
 function writingBeforeInput(event) {
     const state = window.NovalistWritingDocument;
     if (!state.enabled || window.NovalistEditorState.isComposing || event.defaultPrevented ||
         event.target.closest?.('[data-editor-chrome]')) return;
     state.beforeSelection ||= window.getWritingSelection();
-    const nativeSelection = window.getSelection();
-    if (nativeSelection?.isCollapsed && nativeSelection.anchorNode === window.NovalistEditorState.editor) {
-        window.restoreWritingSelection(window.getWritingSelection());
-    }
-    if (event.inputType === 'insertParagraph') ensureWritingParagraph();
+    restoreWritingRootCaret();
     if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
         event.preventDefault();
         window.sendMessage({ type: 'writingHistoryRequested', direction: event.inputType === 'historyUndo' ? 'undo' : 'redo' });
         return;
     }
     const ranges = writingSelectedRanges();
+    if (ranges.length === 1) confineWritingSelection(ranges[0]);
+    if (event.inputType === 'insertParagraph') ensureWritingParagraph();
     const format = { formatBold: 'toggleBold', formatItalic: 'toggleItalic', formatUnderline: 'toggleUnderline' }[event.inputType];
     if (ranges.length > 1 && format) {
         event.preventDefault();
@@ -180,6 +193,17 @@ function writingBeforeInput(event) {
     if (backwards) prefix.setEnd(current.range.startContainer, current.range.startOffset);
     else prefix.setStart(current.range.endContainer, current.range.endOffset);
     if (!prefix.toString()) event.preventDefault();
+}
+
+function prepareWritingPaste() {
+    restoreWritingRootCaret();
+    const ranges = writingSelectedRanges();
+    if (!ranges.length) return false;
+    window.NovalistWritingDocument.beforeSelection ||= window.getWritingSelection();
+    if (ranges.length > 1) deleteWritingSelection();
+    else confineWritingSelection(ranges[0]);
+    ensureWritingParagraph();
+    return true;
 }
 
 function writingSelectedContent(root, range) {
@@ -238,10 +262,7 @@ writingRoot.addEventListener('keydown', event => {
 writingRoot.addEventListener('beforeinput', writingBeforeInput, true);
 writingRoot.addEventListener('copy', writingClipboard);
 writingRoot.addEventListener('cut', writingClipboard);
-writingRoot.addEventListener('paste', () => {
-    if (window.NovalistWritingDocument.enabled && !window.NovalistEditorState.suggestionMode) deleteWritingSelection();
-}, true);
-Object.assign(window, { queueWritingChanges, captureWritingChanges, writingSelectedRanges, deleteWritingSelection, ensureWritingCaret });
+Object.assign(window, { queueWritingChanges, captureWritingChanges, writingSelectedRanges, deleteWritingSelection, ensureWritingCaret, prepareWritingPaste });
 
 function writingIsolatedCommand(root, range, command, args) {
     const editor = window.NovalistEditorState.editor;

@@ -18,6 +18,7 @@ interface SectionType {
   key: string
   name: string
   numbered: boolean
+  builtIn: boolean
 }
 
 interface ChapterDialogProps {
@@ -67,7 +68,7 @@ function useChapterDraft({ chapter, onClose }: ChapterDialogProps) {
   const dates = useChapterDates(chapter)
   const [subtitle, setSubtitle] = useState(chapter?.subtitle ?? '')
   const [hideHeading, setHideHeading] = useState(chapter?.hideHeading ?? false)
-  const [sectionType, setSectionType] = useState(chapter?.sectionTypeKey ?? '')
+  const [sectionType, setSectionType] = useState(chapter?.sectionTypeKey || 'chapter')
   const sectionTypes = useChapterSectionTypes()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -102,7 +103,7 @@ function useChapterDraft({ chapter, onClose }: ChapterDialogProps) {
         if (
           subtitle.trim() !== (chapter.subtitle ?? '') ||
           hideHeading !== chapter.hideHeading ||
-          sectionType !== (chapter.sectionTypeKey ?? '')
+          sectionType !== (chapter.sectionTypeKey || 'chapter')
         ) {
           store.applyState(
             await rpc.request<ProjectStateDto>('project/setChapterOpener', [
@@ -169,7 +170,7 @@ export function ChapterDialog({ chapter, onClose }: ChapterDialogProps): React.J
         >
           {sectionTypes.map((type) => (
             <option key={type.key} value={type.key}>
-              {type.name}
+              {type.builtIn ? t(`chapterTypes.${type.key}`, { defaultValue: type.name }) : type.name}
               {type.numbered ? '' : ` (${t('dialog.sectionTypeUnnumbered')})`}
             </option>
           ))}

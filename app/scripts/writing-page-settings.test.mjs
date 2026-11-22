@@ -73,7 +73,7 @@ async function fixture(t, { saved, mobile = false, enabled = true, overridden = 
   w.novalist = { isMobile: mobile }; w.updates = []
   if (saved !== undefined) w.localStorage.setItem('nl.writing.pageView', saved)
   w.models = Object.fromEntries(Object.keys(pages).map(pane => [pane, {
-    live: { setPageView: enabled => pages[pane].push(enabled) }, registry: null, snapshots: [], chapters: [], refs: [{}],
+    live: { document: w.document.implementation.createHTMLDocument(), setPageView: enabled => pages[pane].push(enabled) }, registry: null, snapshots: [], chapters: [], refs: [{}],
     adapter: {}, scope: 'manuscript', selectedSceneIds: null, projectionRevision: 1, selection: null,
     loading: false, error: null, setScope() {}
   }]))

@@ -26,7 +26,7 @@ for (const language of ['en', 'ar']) for (const book of [false, true]) {
         editor.document.getElementById('editor-wrapper')!.scrollTop = 0
       }, { language, zoom, pages })
       const prose = canvas.locator('.writing-scene p').first()
-      await expect(prose).toHaveCSS('font-size', `${(book ? 11 : 17) * zoom}px`)
+      await expect(prose).toHaveCSS('font-size', `${(book ? 11 : 17) * (pages ? 1 : zoom)}px`)
       const text = (await prose.boundingBox())!
       for (const heading of [canvas.locator('.writing-book-heading h1'), canvas.locator('.writing-chapter-heading h2').first(), canvas.locator('.writing-act-name').first()]) {
         const box = (await heading.boundingBox())!
@@ -55,7 +55,7 @@ for (const language of ['en', 'ar']) for (const book of [false, true]) {
     expect(heading.width).toBeCloseTo(text.width, 0)
     const panel = (await rail.boundingBox())!
     expect(panel.y + panel.height).toBeLessThanOrEqual(text.y)
-    expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+    expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth)).toBeGreaterThan(450)
   })
 }
 
@@ -114,7 +114,7 @@ for (const language of ['de', 'ar']) for (const zoom of [1, 2]) {
       editor.setPageView(true)
       editor.setWritingZoom(zoom)
     }, { language, zoom })
-    await expect(rail).toHaveCSS('font-size', `${13 * zoom}px`)
+    await expect(rail).toHaveCSS('font-size', '13px')
     for (const expanded of [false, true]) {
       if (expanded) await rail.locator('button[aria-expanded]').click()
       await expect(rail.locator('button[aria-expanded]')).toHaveAttribute('aria-expanded', String(expanded))
@@ -125,6 +125,44 @@ for (const language of ['de', 'ar']) for (const zoom of [1, 2]) {
     }
   })
 }
+
+test('each pane can hide scene information to reclaim its width and remembers the choice', async ({ page }) => {
+  const canvas = page.frameLocator('iframe')
+  const button = page.getByRole('button', { name: 'Scene information', exact: true })
+  const scene = canvas.locator('.writing-scene').first()
+  const width = (await scene.boundingBox())!.width
+  await button.click()
+  await expect(canvas.locator('.writing-scene-margin')).toHaveCount(0)
+  await expect.poll(async () => (await scene.boundingBox())!.width).toBeGreaterThan(width)
+  await page.reload()
+  await expect(button).toHaveAttribute('aria-pressed', 'false')
+  await button.click()
+  await expect(canvas.locator('.writing-scene-margin').first()).toBeVisible()
+})
+
+test('a long paragraph flows over sheets without splitting the saved prose', async ({ page }) => {
+  const text = 'A long paragraph continues across the next sheet. '.repeat(300)
+  await page.getByRole('button', { name: 'Page view', exact: true }).click()
+  const frame = page.frames()[1]
+  await frame.evaluate(prose => {
+    const live = window as unknown as EditorWindow
+    live.updateWritingScene({ bookId: 'book', draftId: 'draft', chapterGuid: 'chapter-1', sceneId: 'first',
+      html: `<p>${prose}</p>`, hash: 'long', revision: 1 })
+    live.repaginatePageView()
+  }, text)
+  const paragraph = frame.locator('.writing-scene').first().locator('p')
+  await expect(paragraph).toHaveCount(1)
+  await expect(paragraph).toHaveText(text.trimEnd())
+  const fragments = () => paragraph.evaluate(el => Array.from(el.getClientRects(), rect => rect.height))
+  await expect.poll(async () => (await fragments()).length).toBeGreaterThan(1)
+  await frame.evaluate(() => (window as unknown as EditorWindow).setWritingZoom(1))
+  const before = await fragments()
+  await frame.evaluate(() => (window as unknown as EditorWindow).setWritingZoom(1.7))
+  const after = await fragments()
+  expect(after).toHaveLength(before.length)
+  after.forEach((height, index) => expect(height / 1.7).toBeCloseTo(before[index], 1))
+  expect(await frame.evaluate(() => (window as unknown as EditorWindow).serializeWritingScene('first'))).toBe(`<p>${text}</p>`)
+})
 
 test('scope switches and optional pages retain the continuous editor controls', async ({ page }) => {
   const canvas = page.frameLocator('iframe')
@@ -341,9 +379,10 @@ test('book text measure is also honored in page view and in a narrow pane', asyn
   await page.locator('iframe').evaluate(element => ((element as HTMLIFrameElement).contentWindow as unknown as EditorWindow).setWritingZoom(2))
   const canvas = page.frameLocator('iframe')
   await expect(canvas.locator('.nv-page').first()).toBeVisible()
-  await expect.poll(async () => (await canvas.locator('.writing-scene p').first().boundingBox())!.width).toBeCloseTo(528, 0)
+  await expect.poll(async () => (await canvas.locator('.writing-scene p').first().boundingBox())!.width).toBeCloseTo(768, 0)
   await page.setViewportSize({ width: 500, height: 900 })
-  await expect.poll(() => canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+  await expect.poll(async () => (await canvas.locator('.writing-scene p').first().boundingBox())!.width).toBeCloseTo(768, 0)
+  expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth)).toBeGreaterThan(768)
 })
 
 test('an existing book opens with its saved paper and book font fitted into the writing pane', async ({ page }, testInfo) => {
@@ -353,15 +392,16 @@ test('an existing book opens with its saved paper and book font fitted into the 
   await expect(page.getByRole('button', { name: 'Page view', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const paper = canvas.locator('.nv-page').first(), paragraph = paper.locator('p').first()
   await expect(paragraph).toHaveCSS('font-family', /Times New Roman/)
-  await expect(paragraph).toHaveCSS('font-size', '33px')
-  expect(await canvas.locator('.writing-scene-margin small').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeLessThan(33)
-  await expect.poll(async () => (await paper.boundingBox())!.width).toBeCloseTo(1056, 0)
-  await expect.poll(async () => (await paper.boundingBox())!.height).toBeCloseTo(1848, 0)
+  await expect(paragraph).toHaveCSS('font-size', '11px')
+  const scale = await paper.evaluate(el => Number(getComputedStyle(el).getPropertyValue('--writing-page-scale')))
+  const width = 6 * 96 * scale
+  await expect.poll(async () => (await paper.boundingBox())!.width).toBeCloseTo(width, 0)
+  await expect.poll(async () => (await paper.boundingBox())!.height).toBeCloseTo(9 * 96 * scale, 0)
   expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
   await page.screenshot({ path: testInfo.outputPath('saved-book-page.png') })
   await page.setViewportSize({ width: 900, height: 900 })
-  await expect(paragraph).toHaveCSS('font-size', '33px')
-  await expect.poll(() => canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+  await expect.poll(async () => (await paper.boundingBox())!.width).toBeCloseTo(width, 0)
+  expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth)).toBeGreaterThan(900)
 })
 
 for (const pages of [false, true]) {
@@ -388,7 +428,7 @@ for (const pages of [false, true]) {
       const viewport = wrapper.getBoundingClientRect()
       return caret.left >= viewport.left && caret.right <= viewport.right && caret.top >= viewport.top && caret.bottom <= viewport.bottom
     })).toBe(true)
-    expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+    if (!pages) expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
     await page.keyboard.type('visible')
     await expect(canvas.locator('.writing-scene').first()).toContainText('visible')
   })

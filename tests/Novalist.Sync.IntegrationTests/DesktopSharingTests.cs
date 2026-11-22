@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Nerdbank.Streams;
 using Novalist.Backend;
 using Novalist.Backend.Rpc;
+using Novalist.Backend.Tests.TestHelpers;
 using Novalist.Core.Services;
 using Novalist.Sync.Client;
 using Novalist.Sync.Client.Tests;
@@ -33,6 +34,7 @@ public sealed partial class DesktopSharingTests
         DesktopParticipant? owner = null;
         DesktopParticipant? guest = null;
         Task? creating = null;
+        var unblockCapture = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         try
         {
             var project = new ProjectService(new FileService());
@@ -44,8 +46,9 @@ public sealed partial class DesktopSharingTests
             await owner.Rpc.InvokeWithParameterObjectAsync("project/open", new { path = project.ProjectRoot }, ct);
             await owner.Rpc.InvokeWithParameterObjectAsync("collaboration/account/signIn", new { server = server.Address }, ct);
             var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            if (interruption == "capture") owner.Peer.CaptureEntered = entered;
-            else if (interruption == "external") owner.Peer.OnClose = () => File.WriteAllText(project.GetSceneFilePath(chapter, scene),
+            Task WaitForCapture(CancellationToken token) => entered.TrySetResult() ? unblockCapture.Task.WaitAsync(token) : Task.CompletedTask;
+            if (interruption == "capture") owner.Documents.BeforeCapture = WaitForCapture;
+            else if (interruption == "external") owner.Documents.OnClose = () => File.WriteAllText(project.GetSceneFilePath(chapter, scene),
                 Novalist.Core.Models.FileFrontMatter.Stamp("<p>External writing during upload.</p>", scene.Id));
             creating = owner.Rpc.InvokeWithParameterObjectAsync("collaboration/create", new { server = server.Address }, ct);
             if (interruption == "join")
@@ -56,7 +59,7 @@ public sealed partial class DesktopSharingTests
                 issuer.Subject = "guest-" + Guid.NewGuid();
                 guest = new DesktopParticipant(Path.Combine(folder, "guest-settings"), issuer);
                 await guest.Rpc.InvokeWithParameterObjectAsync("collaboration/account/signIn", new { server = server.Address }, ct);
-                owner.Peer.CaptureEntered = entered;
+                owner.Documents.BeforeCapture = WaitForCapture;
                 creating = guest.Rpc.InvokeWithParameterObjectAsync("collaboration/join",
                     new { server = server.Address, link, destination = Path.Combine(folder, "Joined novel") }, ct);
             }
@@ -79,7 +82,7 @@ public sealed partial class DesktopSharingTests
         {
             if (owner is not null)
             {
-                owner.Peer.UnblockCapture.TrySetResult();
+                unblockCapture.TrySetResult();
                 if (creating is not null) await creating.ContinueWith(_ => { }, TaskScheduler.Default);
                 await owner.DisposeAsync();
             }
@@ -151,7 +154,7 @@ public sealed partial class DesktopSharingTests
     {
         private readonly BackendHost host;
         public JsonRpc Rpc { get; }
-        public DesktopPeer Peer { get; }
+        public CollaborationDocumentPeer Documents { get; } = new();
         internal HostedProjectWorkspace Persistent => host.Workspace.HostedProjects!;
 
         public DesktopParticipant(string settings, TestIdentityProvider issuer)
@@ -162,8 +165,8 @@ public sealed partial class DesktopSharingTests
             var formatter = new SystemTextJsonFormatter();
             formatter.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             Rpc = new(new HeaderDelimitedMessageHandler(desktop, desktop, formatter));
-            Peer = new DesktopPeer(issuer);
-            Rpc.AddLocalRpcTarget(Peer);
+            Rpc.AddLocalRpcTarget(new DesktopPeer(issuer));
+            Rpc.AddLocalRpcTarget(Documents);
             Rpc.StartListening();
         }
 
@@ -173,10 +176,6 @@ public sealed partial class DesktopSharingTests
     private sealed class DesktopPeer(TestIdentityProvider issuer)
     {
         private readonly Dictionary<string, string> credentials = [];
-        private readonly Dictionary<Guid, byte[]> documents = [];
-        public Action? OnClose { get; set; }
-        public TaskCompletionSource? CaptureEntered { get; set; }
-        public TaskCompletionSource UnblockCapture { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         [JsonRpcMethod("collaboration/openBrowser")]
         public Task OpenBrowserAsync(Uri url, CancellationToken cancellationToken) => issuer.OpenBrowserAsync(url, cancellationToken);
@@ -191,31 +190,5 @@ public sealed partial class DesktopSharingTests
             return null;
         }
 
-        [JsonRpcMethod("collaboration/documents")]
-        public async Task<object?> Documents(Guid sessionId, string action, JsonElement command = default, Guid? id = null, CancellationToken cancellationToken = default)
-        {
-            if (action == "close") OnClose?.Invoke();
-            if (action == "capture")
-            {
-                if (CaptureEntered is { } entered)
-                {
-                    CaptureEntered = null;
-                    entered.TrySetResult();
-                    await UnblockCapture.Task.WaitAsync(cancellationToken);
-                }
-                var state = documents[id!.Value];
-                var value = Encoding.UTF8.GetString(state);
-                return value.StartsWith("text:", StringComparison.Ordinal)
-                    ? new SharedSceneSnapshot(state, [], null, null) { Text = value[5..] }
-                    : new SharedSceneSnapshot(state, [], value, null);
-            }
-            if (action != "execute") return null;
-            var kind = command.GetProperty("kind").GetString();
-            var item = command.GetProperty("id").GetGuid();
-            if (kind == "seed") documents[item] = Encoding.UTF8.GetBytes(command.GetProperty("html").GetString()!);
-            else if (kind == "seedText") documents[item] = Encoding.UTF8.GetBytes("text:" + command.GetProperty("text").GetString());
-            else if (kind != "validate") documents[item] = command.GetProperty("state").GetBytesFromBase64();
-            return kind == "receive" ? new SceneApplyResult(true, []) : null;
-        }
     }
 }

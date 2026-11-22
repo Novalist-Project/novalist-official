@@ -127,7 +127,7 @@ function groupPageBlocks(children, heights, pageContentHeight) {
     return groups;
 }
 
-function reconcilePageGroups(root, pages, groups, measuringPage) {
+function reconcilePageGroups(root, pages, groups, measuringPage, oversized) {
     let changed = !!measuringPage;
     groups.forEach((group, index) => {
         let page = pages[index];
@@ -137,6 +137,7 @@ function reconcilePageGroups(root, pages, groups, measuringPage) {
             root.insertBefore(page, measuringPage);
             changed = true;
         }
+        page.classList.toggle('nv-overflow-pages', oversized.has(group[0]));
         let next = page.firstChild;
         for (const node of group) {
             if (node === next) next = next.nextSibling;
@@ -189,15 +190,19 @@ function repaginatePageView(root = window.NovalistEditorState.editor) {
             changed = true;
         }
         const style = getComputedStyle(window.NovalistEditorState.editor);
-        const zoom = document.body.classList.contains('unified-writing-canvas') ? 1 : Number(style.getPropertyValue('--writing-zoom-scale')) || 1;
+        const zoom = Number(style.getPropertyValue('--writing-zoom-scale')) || 1;
+        const paper = getComputedStyle(measuringPage || pages[0]);
+        const contentHeight = parseFloat(paper.minHeight) - parseFloat(paper.paddingTop) - parseFloat(paper.paddingBottom);
         const heights = children.map(node => {
             if (node.nodeType === Node.ELEMENT_NODE) return Math.max(1, node.offsetHeight);
             const range = document.createRange();
             range.selectNode(node);
             return Math.max(1, range.getBoundingClientRect().height / zoom);
         });
-        const groups = groupPageBlocks(children, heights, 48 * (parseFloat(style.fontSize) || 16));
-        changed = reconcilePageGroups(root, pages, groups, measuringPage) || changed;
+        const budget = contentHeight > 0 ? contentHeight : 48 * (parseFloat(style.fontSize) || 16);
+        const groups = groupPageBlocks(children, heights, budget);
+        const oversized = new Set(children.filter((_, index) => heights[index] > budget));
+        changed = reconcilePageGroups(root, pages, groups, measuringPage, oversized) || changed;
         if (changed) restoreSelectionForRepaginate(savedSelection);
     } finally {
         if (changed) {
