@@ -25,6 +25,12 @@ Nothing yet.
 
 ---
 
+## [3.8.1] - 2026-11-22
+
+Nothing yet.
+
+---
+
 ## [3.8.0] - 2026-11-22
 
 ### Added
@@ -1936,7 +1942,8 @@ First public release.
 
 ---
 
-[Unreleased]: https://github.com/Drommedhar/novalist-official/compare/v3.8.0...HEAD
+[Unreleased]: https://github.com/Drommedhar/novalist-official/compare/v3.8.1...HEAD
+[3.8.1]: https://github.com/Drommedhar/novalist-official/compare/v3.8.0...v3.8.1
 [3.8.0]: https://github.com/Drommedhar/novalist-official/compare/v3.7.2...v3.8.0
 [3.7.2]: https://github.com/Drommedhar/novalist-official/compare/v3.7.0...v3.7.2
 [3.7.0]: https://github.com/Drommedhar/novalist-official/compare/v3.6.2...v3.7.0
