@@ -21,6 +21,12 @@ could encounter in a previously released version.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [3.8.0] - 2026-11-22
+
 ### Added
 
 - **Persistent project hosting** — invited writers can open an encrypted project and sync changes while its owner is offline. When you reconnect after writing offline, Novalist merges independent edits and lets you choose between conflicting versions. You can pair another device or register a replacement with a recovery token. [Persistent server setup and recovery](https://github.com/Novalist-Project/novalist-official/blob/893cf13c0273a2ef73659ac8772281ab45e5cc67/docs/manual/23-settings.md#persistent-server)
@@ -1916,7 +1922,8 @@ First public release.
 
 ---
 
-[Unreleased]: https://github.com/Drommedhar/novalist-official/compare/v3.7.2...HEAD
+[Unreleased]: https://github.com/Drommedhar/novalist-official/compare/v3.8.0...HEAD
+[3.8.0]: https://github.com/Drommedhar/novalist-official/compare/v3.7.2...v3.8.0
 [3.7.2]: https://github.com/Drommedhar/novalist-official/compare/v3.7.0...v3.7.2
 [3.7.0]: https://github.com/Drommedhar/novalist-official/compare/v3.6.2...v3.7.0
 [3.6.2]: https://github.com/Drommedhar/novalist-official/compare/v3.6.1...v3.6.2
