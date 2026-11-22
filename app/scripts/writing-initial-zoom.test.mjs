@@ -99,7 +99,7 @@ test('initial paper fit waits for the actual page layout before consuming the fi
     paper.append(...scene.childNodes)
     scene.append(paper)
   })
-  assert.equal(f.zoom.getState().percent, 130)
+  assert.equal(f.zoom.getState().percent, 123)
 })
 
 test('a large configured writing font starts at 100 percent', async t => {

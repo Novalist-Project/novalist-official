@@ -60,6 +60,9 @@
   --nl-writing-gap: 12px;
   --nl-writing-outer: 12px;
   --nl-writing-document-width: 1120px;
+  --nl-writing-paper-width: 210mm;
+  --nl-writing-paper-height: 297mm;
+  --nl-writing-paper-margin: 20mm;
   --nl-writing-min-prose: 320px;
   --nl-writing-scene-estimate: 600px;
   --nl-writing-synopsis-min-height: 3lh;

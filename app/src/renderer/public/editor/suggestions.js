@@ -100,12 +100,18 @@ function markSelectionDeleted() {
     return true;
 }
 
-/** Extends a collapsed caret over the character a delete key would remove. */
-function selectOneCharacter(backward) {
+/** Selects the text the native deletion would remove so it can be marked. */
+function selectDeletionTarget(event) {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return false;
     if (!sel.getRangeAt(0).collapsed) return true;
-    sel.modify('extend', backward ? 'backward' : 'forward', 'character');
+    const target = event.getTargetRanges?.()[0];
+    if (target) {
+        sel.setBaseAndExtent(target.startContainer, target.startOffset, target.endContainer, target.endOffset);
+    } else {
+        sel.modify('extend', event.inputType.endsWith('Backward') ? 'backward' : 'forward',
+            event.inputType.startsWith('deleteWord') ? 'word' : 'character');
+    }
     return !sel.getRangeAt(0).collapsed;
 }
 
@@ -115,5 +121,5 @@ Object.assign(window, {
     currentInsertion,
     insertSuggested,
     markSelectionDeleted,
-    selectOneCharacter
+    selectDeletionTarget
 });

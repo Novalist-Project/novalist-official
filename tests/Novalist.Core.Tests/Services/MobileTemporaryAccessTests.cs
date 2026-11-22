@@ -6,6 +6,23 @@ namespace Novalist.Core.Tests.Services;
 
 public sealed class MobileTemporaryAccessTests
 {
+    [Fact]
+    public void JoiningIntoAPickedParentKeepsItsGrantUntilTheProjectCloses()
+    {
+        var grants = new Dictionary<string, string> {
+            ["/files/library"] = "library",
+            ["/files/library/books"] = "picked",
+            ["/files/library/book"] = "similarly named sibling"
+        };
+        const string project = "/files/library/books/joined";
+        var detached = SecurityScopedFolders.DetachUnusedGrants(grants, project);
+        Assert.Equal(["library", "similarly named sibling"], detached.Order().ToArray());
+        Assert.Equal(new KeyValuePair<string, string>(project, "picked"), Assert.Single(grants));
+        Assert.Empty(SecurityScopedFolders.DetachUnusedGrants(grants, project));
+        Assert.Equal(["picked"], SecurityScopedFolders.DetachUnusedGrants(grants, null));
+        Assert.Empty(grants);
+    }
+
     private static TemporaryAccessRegistry Registry() => new(error => Assert.Fail(error.ToString()));
 
     [Fact]

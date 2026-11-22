@@ -138,6 +138,7 @@ for (const width of [480, 1200]) for (const mode of ['ordinary', 'book', 'page']
   test(`${mode} Arabic and English reflow at width ${width}, zoom ${zoom}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })
     await load(page, '<p>' + 'مرحبا بالعالم English 123. '.repeat(30) + '</p><p>' + 'English العربية 123. '.repeat(30) + '</p>')
+    await page.addStyleTag({ path: resolve('src/renderer/src/styles/tokens.css') })
     await page.addStyleTag({ path: resolve('src/renderer/src/views/editor/writing-canvas.css') })
     await page.evaluate(({ mode, zoom }) => {
       const editor = window as unknown as EditorWindow
@@ -149,7 +150,11 @@ for (const width of [480, 1200]) for (const mode of ['ordinary', 'book', 'page']
       editor.setWritingZoom(zoom)
     }, { mode, zoom })
     await page.waitForTimeout(100)
-    expect(await page.locator('#editor-wrapper').evaluate(root => root.scrollWidth - root.clientWidth)).toBeLessThanOrEqual(1)
+    if (mode === 'page') {
+      expect((await page.locator('.nv-page').first().boundingBox())!.width).toBeCloseTo(210 * 96 / 25.4 * zoom, 0)
+    } else {
+      expect(await page.locator('#editor-wrapper').evaluate(root => root.scrollWidth - root.clientWidth)).toBeLessThanOrEqual(1)
+    }
     await expect(page.locator('[data-writing-scene] p').first()).toHaveCSS('direction', 'rtl')
     await expect(page.locator('[data-writing-scene] p').last()).toHaveCSS('direction', 'ltr')
   })

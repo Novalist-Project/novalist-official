@@ -47,7 +47,7 @@ export interface EditorWindow extends Window {
     scrollbarThumbActive?: string
   ): void
   setFont(family: string, size: number): void
-  setBookWidth(enabled: boolean, widthPx: number): void
+  setBookWidth(enabled: boolean, widthPx: number, pageWidthPx?: number, pageHeightPx?: number): void
   setWritingZoom(factor: number, typewriterAnchor?: string | null): void
   getWritingZoomToFit(): number
   /** Where a book-relative image path hangs off, for display in the frame. */

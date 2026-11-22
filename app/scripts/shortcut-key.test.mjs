@@ -30,11 +30,27 @@ test('Latin layouts retain logical keys and unmodified Arabic stays prose', () =
 test('composition and AltGraph never become shortcuts', () => {
   for (const event of [{isComposing:true}, {keyCode:229}, {altGraph:true}, {getModifierState: name => name === 'AltGraph'}]) assert.equal(key(event), null)
 })
+test('an unidentified key can bind only when its physical modified key is known', () => {
+  assert.equal(key({key:'Unidentified',code:'KeyB'}), 'b')
+  assert.equal(key({key:'Unidentified',code:''}), null)
+  assert.equal(key({key:'Unidentified',code:'KeyB',ctrlKey:false}), null)
+})
 test('native editing reservations retain Arabic clipboard/history', () => {
   const local = vm.createContext({window:context})
   vm.runInContext(readFileSync(new URL('clipboard-focus.js', root), 'utf8'), local)
   for (const code of ['KeyA','KeyC','KeyV','KeyX','KeyZ','KeyY']) assert.equal(local.isTextEditingShortcut({key:'ش',code,ctrlKey:true}), true)
   assert.equal(local.isTextEditingShortcut({key:'ش',code:'KeyB',ctrlKey:true,metaKey:false}), false)
+})
+
+test('word deletion reaches the editing surface without consuming other modifier combinations', () => {
+  const local = vm.createContext({window:context})
+  vm.runInContext(readFileSync(new URL('clipboard-focus.js', root), 'utf8'), local)
+  for (const key of ['Delete', 'Backspace']) {
+    const gesture = {key, code:key, ctrlKey:true}
+    assert.equal(local.isTextEditingShortcut(gesture), true)
+    assert.equal(local.isTextEditingShortcut({...gesture, altKey:true}), false)
+    assert.equal(local.isTextEditingShortcut({...gesture, shiftKey:true}), false)
+  }
 })
 
 const hotkeys = {}
@@ -44,7 +60,26 @@ const shell = vm.createContext({ exports: hotkeys, require: () => ({ COMMANDS: [
   window: { addEventListener: (name, handler) => listeners.set(name, handler), removeEventListener: name => listeners.delete(name) } })
 const shellSource = stripTypeScriptTypes(readFileSync(new URL('../src/renderer/src/shell/hotkeys.ts', import.meta.url), 'utf8'))
   .replace(/^import .*$/gm, '').replace(/^export \{.*$/gm, '').replace(/export /g, '')
-vm.runInContext(shellSource + '\nObject.assign(exports, { matchGesture, eventToGesture, installHotkeys, dispatchForwardedHotkey })', shell)
+vm.runInContext(shellSource + '\nObject.assign(exports, { matchGesture, eventToGesture, installHotkeys, dispatchForwardedHotkey, applyCustomGestures })', shell)
+test('Arabic bold records, and previously unidentifiable bindings recover their default', () => {
+  const event = { key: 'Unidentified', code: 'KeyB', ctrlKey: true }
+  const ran = []
+  const bold = { actionId: 'bold', defaultGesture: 'Ctrl+B', gesture: 'Ctrl+B', run: () => ran.push('bold') }
+  const dispose = hotkeys.installHotkeys([bold])
+  try {
+    hotkeys.applyCustomGestures({ bold: 'Ctrl+Unidentified' })
+    assert.equal(bold.gesture, 'Ctrl+B')
+    assert.equal(hotkeys.eventToGesture(event), 'Ctrl+B')
+    assert.equal(hotkeys.dispatchForwardedHotkey(event), true)
+    assert.deepEqual(ran, ['bold'])
+    hotkeys.applyCustomGestures({ bold: 'Alt+I' })
+    assert.equal(bold.gesture, 'Alt+I')
+    assert.equal(hotkeys.dispatchForwardedHotkey(event), false)
+  } finally {
+    hotkeys.applyCustomGestures({})
+    dispose()
+  }
+})
 test('shell matches, records and forwards Arabic save/find and custom bindings', () => {
   const event = { key: 'ش', code: 'KeyS', ctrlKey: true, metaKey: false, altKey: false, shiftKey: false }
   assert.equal(hotkeys.matchGesture(event, 'Ctrl+S'), true)
@@ -73,7 +108,7 @@ test('both native paste paths retain directed quotations and lists', () => {
     const source = readFileSync(new URL(filename, root), 'utf8')
     const paste = source.match(/function sanitizePastedHtml\(html\) \{[\s\S]*?\n\}/)[0]
     const context = vm.createContext({ window, document })
-    vm.runInContext(paste, context)
+    vm.runInContext(filename === 'clipboard-focus.js' ? source : paste, context)
     const host = document.createElement('div')
     host.innerHTML = context.sanitizePastedHtml('<blockquote dir="rtl"><p>English العربية</p></blockquote><ul style="direction:rtl"><li>مرحبا</li></ul>')
     assert.equal(host.querySelector('blockquote').getAttribute('dir'), 'rtl')

@@ -2,12 +2,12 @@
 
 // Handle paste: strip external formatting, keep only basic formatting
 window.NovalistEditorState.editor.addEventListener('paste', (e) => {
+    if (e.defaultPrevented || e.target.closest?.('[data-editor-chrome]')) return;
     const html = e.clipboardData?.getData('text/html');
-    if (html) {
-        e.preventDefault();
-        const cleaned = window.sanitizePastedHtml(html);
-        document.execCommand('insertHTML', false, cleaned);
-    }
+    const text = e.clipboardData?.getData('text/plain');
+    if (!html && !text) return;
+    e.preventDefault();
+    window.insertPastedContent(html, text);
 });
 
 // ── Scroll Zoom (Ctrl+Wheel) ───────────────────────────────────

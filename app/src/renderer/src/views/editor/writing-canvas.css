@@ -2,40 +2,75 @@ body.unified-writing-canvas {
   --padding-h: var(--nl-writing-outer);
   --writing-chrome-scale: var(--writing-text-scale, 1);
   --writing-rail: calc(var(--nl-writing-margin-collapsed) * var(--writing-chrome-scale));
+  --writing-rail-space: calc(var(--writing-rail) + var(--nl-writing-gap));
   --writing-prose-start: calc(var(--nl-space-xl) + var(--nl-space-hairline));
   --writing-prose-end: var(--nl-space-none);
   --writing-rail-top: var(--nl-space-none);
 }
+body.unified-writing-canvas.writing-rail-hidden { --writing-rail-space: var(--nl-space-none); }
 body.unified-writing-canvas.book-width { --writing-chrome-scale: calc(var(--writing-text-scale, 1) * min(1, var(--font-size) / var(--nl-font-body))); }
 body.unified-writing-canvas #editor-wrapper { max-width: none; overflow-anchor: auto; container-type: inline-size; background: transparent; }
 body.unified-writing-canvas .writing-zoom-surface { width: 100%; }
-body.unified-writing-canvas.typewriter-on #editor { padding-top: var(--nl-writing-typewriter-space); }
-body.unified-writing-canvas.typewriter-on #editor::after { height: var(--nl-writing-typewriter-space); }
+body.unified-writing-canvas.typewriter-on #editor { padding-top: calc(var(--nl-writing-typewriter-space) / var(--writing-page-scale, 1)); }
+body.unified-writing-canvas.typewriter-on #editor::after { height: calc(var(--nl-writing-typewriter-space) / var(--writing-page-scale, 1)); }
 body.unified-writing-canvas #editor {
   box-sizing: border-box;
   max-width: calc(var(--nl-writing-document-width) + 2 * var(--nl-space-xl));
   margin-inline: auto;
   padding-block: var(--nl-space-xxl);
-  padding-inline: calc(var(--writing-rail) + var(--nl-writing-gap) + var(--nl-space-xl)) var(--nl-space-xl);
+  padding-inline: calc(var(--writing-rail-space) + var(--nl-space-xl)) var(--nl-space-xl);
 }
-body.unified-writing-canvas.book-width:not(.page-view) #editor { max-width: min(100%, calc(var(--writing-book-text-width) * var(--writing-text-scale, 1) + var(--writing-rail) + var(--nl-writing-gap) + 3 * var(--nl-space-xl) + var(--nl-space-hairline))); }
+body.unified-writing-canvas.book-width:not(.page-view) #editor { max-width: min(100%, calc(var(--writing-book-text-width) * var(--writing-text-scale, 1) + var(--writing-rail-space) + 3 * var(--nl-space-xl) + var(--nl-space-hairline))); }
 body.unified-writing-canvas.page-view #editor-wrapper {
-  --writing-page-side-space: calc(var(--writing-rail) + var(--nl-writing-gap) + 2 * var(--nl-space-xl));
-  --writing-page-available: calc(100cqw - var(--writing-page-side-space));
-  --writing-page-container: var(--writing-page-available);
-  --page-target-width: calc(32 * var(--font-size) * var(--writing-text-scale, 1));
-  --page-outer-gap: min(calc(var(--nl-space-xl) * var(--writing-text-scale, 1)), calc(var(--writing-page-container) * 0.02));
-  --page-h-padding: clamp(calc(var(--nl-space-md) * var(--writing-text-scale, 1)), calc((var(--writing-page-container) - 2 * var(--page-outer-gap) - 24 * var(--font-size) * var(--writing-text-scale, 1)) / 2), calc(4 * var(--font-size) * var(--writing-text-scale, 1)));
-  --page-v-padding: calc(4 * var(--font-size) * var(--writing-text-scale, 1));
-  --page-width: min(var(--page-target-width), calc(var(--writing-page-container) - 2 * var(--page-outer-gap)));
+  --writing-page-side-space: calc(var(--writing-rail-space) + 2 * var(--nl-space-xl));
+  --page-width: var(--nl-writing-paper-width);
+  --page-height: var(--nl-writing-paper-height);
+  --page-h-padding: var(--nl-writing-paper-margin);
+  --page-v-padding: var(--page-h-padding);
   --writing-prose-start: var(--page-h-padding);
   --writing-prose-end: var(--page-h-padding);
   --writing-rail-top: var(--page-v-padding);
 }
-body.unified-writing-canvas.book-width.page-view #editor-wrapper { --writing-page-container: min(var(--writing-page-available), calc((var(--writing-book-text-width) + 2 * var(--nl-space-xl)) * var(--writing-text-scale, 1))); }
-body.unified-writing-canvas.page-view #editor { display: block; max-width: min(100%, calc(var(--page-width) + var(--writing-page-side-space))); }
+body.unified-writing-canvas.book-width.page-view #editor-wrapper {
+  --page-width: var(--writing-book-page-width);
+  --page-height: var(--writing-book-page-height);
+  --page-h-padding: calc((var(--page-width) - var(--writing-book-text-width)) / 2);
+}
+body.unified-writing-canvas.page-view #editor { display: block; max-width: calc(var(--page-width) + var(--writing-page-side-space)); }
 body.unified-writing-canvas.writing-narrow.page-view #editor-wrapper { --writing-page-side-space: calc(2 * var(--nl-writing-outer)); }
-body.unified-writing-canvas .writing-scene > .nv-page { margin-inline: auto; margin-bottom: var(--nl-space-xl); }
+body.unified-writing-canvas.page-view .writing-zoom-surface {
+  width: max(100%, calc((var(--page-width) + var(--writing-page-side-space)) * var(--writing-page-scale, 1)));
+}
+body.unified-writing-canvas.page-view .writing-page-canvas {
+  display: block;
+  container-type: inline-size;
+  width: calc(100% / var(--writing-page-scale, 1));
+  margin-right: auto;
+  margin-left: 0;
+  transform-origin: top left;
+  transform: scale(var(--writing-page-scale, 1));
+}
+body.unified-writing-canvas .writing-scene > .nv-page {
+  min-height: var(--page-height);
+  margin-inline: auto;
+  margin-bottom: var(--nl-space-xl);
+}
+/* Fragment a long paragraph without splitting the editable or saved paragraph. */
+@supports (column-wrap: wrap) {
+  body.unified-writing-canvas.page-view .writing-scene > .nv-overflow-pages {
+    column-count: 1;
+    column-fill: auto;
+    column-wrap: wrap;
+    column-height: calc(var(--page-height) - 2 * var(--page-v-padding));
+    row-gap: calc(2 * var(--page-v-padding) + var(--nl-space-xl));
+    background: repeating-linear-gradient(to bottom, var(--page-bg) 0 var(--page-height), transparent var(--page-height) calc(var(--page-height) + var(--nl-space-xl)));
+    box-shadow: none;
+  }
+}
+body.unified-writing-canvas.page-view .nv-page img {
+  max-height: calc(var(--page-height) - 2 * var(--page-v-padding));
+  object-fit: contain;
+}
 body.unified-writing-canvas #editor [data-editor-chrome] {
   font: calc(var(--nl-font-caption) * var(--writing-chrome-scale))/var(--nl-leading-body) var(--nl-font-family);
   color: var(--nl-text-dim);
@@ -118,6 +153,7 @@ html:lang(ar) :is(.writing-eyebrow, .writing-scene-number) { letter-spacing: nor
 .writing-scene-chrome:first-of-type > .writing-boundary-insert { margin-top: 0; }
 body.writing-narrow #editor { padding-inline: var(--nl-writing-outer); --writing-rail-top: var(--nl-space-none); }
 body.writing-narrow .writing-scene-margin { position: static; width: 100%; min-width: 0; max-width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: var(--nl-space-md); }
+body.writing-narrow.page-view .writing-scene-margin { max-width: min(100%, calc(100vw / var(--writing-page-scale, 1) - 2 * var(--nl-writing-outer))); }
 .writing-synopsis-popover { position: fixed; margin: 0; inset: auto; box-sizing: border-box; width: min(calc(var(--nl-writing-margin-expanded) * var(--writing-chrome-scale)), calc(100vw - 2 * var(--nl-space-md))); max-height: calc(100vh - 2 * var(--nl-space-md)); overflow: auto; padding: var(--nl-space-md); background: var(--nl-surface-input); color: var(--nl-text); border: var(--nl-space-hairline) solid var(--nl-border); border-radius: var(--nl-radius-md); }
 .writing-synopsis-popover textarea { display: block; margin-block: var(--nl-space-sm); }
 body.dim-others #editor > .writing-scene { opacity: 1; }

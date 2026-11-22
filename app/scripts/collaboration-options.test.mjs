@@ -10,7 +10,7 @@ const bundle = await build({
     import { createRoot } from 'react-dom/client'
     import { CollaborationCard } from './src/renderer/src/views/settings/CollaborationCard'
     const root = createRoot(document.getElementById('root'))
-    export const mount = () => root.render(<CollaborationCard />)
+    export const mount = key => root.render(<CollaborationCard key={key} />)
     export const close = () => root.unmount()
   ` },
   bundle: true, write: false, platform: 'browser', format: 'iife', globalName: 'fixture', jsx: 'automatic',
@@ -29,7 +29,7 @@ const bundle = await build({
   } }]
 })
 
-async function fixture(t, { mobile = false, loaded = true, session = null, saved = null, authenticationRequired = false,
+async function fixture(t, { mobile = false, platform = mobile ? 'darwin' : 'win32', loaded = true, session = null, saved = null, authenticationRequired = false,
   restored = null, request = null } = {}) {
   const dom = new JSDOM('<div id="root"></div>', { url: 'https://novalist.test/', runScripts: 'outside-only', pretendToBeVisual: true })
   const calls = [], links = []
@@ -39,7 +39,7 @@ async function fixture(t, { mobile = false, loaded = true, session = null, saved
   dom.window.projectLoaded = loaded
   dom.window.savePath = '/chosen/recovery-token.txt'
   dom.window.saveDialogs = 0
-  dom.window.novalist = { isMobile: mobile, pickFolder: async () => '/chosen-folder',
+  dom.window.novalist = { isMobile: mobile, platform, pickFolder: async () => '/chosen-folder',
     saveFile: async () => { dom.window.saveDialogs++; return dom.window.savePath },
     openExternal: async url => { links.push(url); return true } }
   dom.window.rpc = { request: async (method, params) => {
@@ -197,16 +197,29 @@ test('reset finishes with the automatically registered device and its new recove
   assert.equal(f.calls.filter(method => method === 'collaboration/account/enrollDevice').length, 0)
 })
 
-test('mobile keeps its current connection choices without offering persistent hosting', async t => {
-  const f = await fixture(t, { mobile: true })
+test('iOS offers persistent server setup from the library and remembers it on reopening', async t => {
+  const f = await fixture(t, { mobile: true, loaded: false })
+  const document = f.dom.window.document
+  assert.deepEqual(Array.from(f.mode().options, option => option.value), ['tcp', 'hosted', 'persistent'])
+  f.select('persistent')
+  await f.waitFor(() => document.querySelector('#set-collaboration-server'))
+  const original = f.mode()
+  f.dom.window.fixture.mount('reopened')
+  await f.waitFor(() => f.mode() !== original)
+  assert.equal(f.mode().value, 'persistent')
+  assert.equal(document.querySelector('#collaboration-server-help').textContent, 'collaboration.persistentServerHint')
+})
+
+test('Android keeps its document-provider connection choices', async t => {
+  const f = await fixture(t, { mobile: true, platform: 'android' })
   assert.equal(f.dom.window.document.querySelector('option[value="persistent"]'), null)
 })
 
-test('saving writes the recovery token through the backend and keeps it visible on cancellation or failure', async t => {
+for (const mobile of [false, true]) test(`${mobile ? 'iOS' : 'desktop'} recovery token remains available until its file is saved`, async t => {
   const account = { subject: 'writer', displayName: 'Writer', deviceRegistered: true, recoveryToken: 'private-token' }
   let reject = true
   const saves = []
-  const f = await fixture(t, { authenticationRequired: true,
+  const f = await fixture(t, { mobile, authenticationRequired: true,
     saved: { mode: 'persistent', server: 'https://stored.example', projectId: 'saved-project' },
     request: async (method, params) => {
       if (method === 'collaboration/account/signIn') return account
@@ -214,6 +227,12 @@ test('saving writes the recovery token through the backend and keeps it visible 
       saves.push(Array.from(params))
       if (reject) throw new Error('Disk full')
     } })
+  const released = [], shared = []
+  let finishSharing = false
+  if (mobile) {
+    f.dom.window.novalist.shareExport = async path => { shared.push(path); return finishSharing }
+    f.dom.window.novalist.releaseExport = async path => { released.push(path) }
+  }
   const document = f.dom.window.document
   const button = key => [...document.querySelectorAll('button')].find(item => item.textContent === 'collaboration.' + key)
   await f.waitFor(() => button('signIn'))
@@ -231,10 +250,20 @@ test('saving writes the recovery token through the backend and keeps it visible 
   assert.equal(document.querySelector('#collaboration-recovery-token').value, 'private-token')
   assert.equal(document.querySelector('[data-shared]'), null)
   reject = false
+  if (mobile) {
+    button('saveRecoveryTokenFile').click()
+    await f.waitFor(() => shared.length === 1 && !button('saveRecoveryTokenFile').disabled)
+    assert.equal(document.querySelector('#collaboration-recovery-token').value, 'private-token')
+    finishSharing = true
+  }
   button('saveRecoveryTokenFile').click()
   await f.waitFor(() => document.querySelector('[data-shared]'))
   assert.equal(document.querySelector('#collaboration-recovery-token'), null)
-  assert.deepEqual(saves, Array(2).fill(['https://stored.example', '/chosen/recovery-token.txt']))
+  assert.deepEqual(saves, Array(mobile ? 3 : 2).fill(['https://stored.example', '/chosen/recovery-token.txt']))
+  if (mobile) {
+    assert.deepEqual(shared, Array(2).fill('/chosen/recovery-token.txt'))
+    assert.deepEqual(released, Array(3).fill('/chosen/recovery-token.txt'))
+  }
 })
 
 test('a saved token authorizes an unregistered device without an identity reset', async t => {

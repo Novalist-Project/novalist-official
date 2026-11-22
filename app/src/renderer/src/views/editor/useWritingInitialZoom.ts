@@ -17,7 +17,7 @@ export function useWritingInitialZoom(live: EditorWindow | null, projectionRevis
       if (pageView && (!live.document.body.classList.contains('page-view') || !live.document.querySelector('.nv-page'))) return
       const readable = Math.max(100, Math.ceil(22 / fontSize * 10) * 10)
       const fitted = fitPaper ? live.getWritingZoomToFit() * 100 : 100
-      useWritingZoomStore.getState().fitOnce(Math.max(readable, fitted))
+      useWritingZoomStore.getState().fitOnce(pageView && fitted > 0 ? fitted : Math.max(readable, fitted))
       observer?.disconnect()
     }
     void live.document.fonts.ready.then(async () => {

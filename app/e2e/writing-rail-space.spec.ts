@@ -73,20 +73,23 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
       editor.setPageView(mode === 'page')
       editor.setWritingZoom(zoom)
     }, { language, mode, zoom })
-    await expect(rail).toHaveCSS('font-size', `${13 * zoom}px`)
+    const paperScale = mode === 'page' ? zoom : 1
+    await expect(rail).toHaveCSS('font-size', `${13 * zoom / paperScale}px`)
     const reserved = await rail.evaluate((element, zoom) => parseFloat(getComputedStyle(element).getPropertyValue('--nl-writing-margin-collapsed')) * zoom, zoom)
-    await expect.poll(async () => (await rail.boundingBox())!.width).toBeGreaterThan(reserved + 10)
+    const railWidth = async () => (await rail.boundingBox())!.width
+    if (mode === 'page') await expect.poll(railWidth).toBeGreaterThanOrEqual(reserved - 1)
+    else await expect.poll(railWidth).toBeGreaterThan(reserved + 10)
     const wide = (await rail.boundingBox())!
     const synopsis = rail.locator('button[aria-expanded]')
     const singleLineHeight = await synopsis.evaluate(element => {
       const style = getComputedStyle(element)
       return parseFloat(style.lineHeight) + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
     })
-    expect((await synopsis.boundingBox())!.height).toBeLessThanOrEqual(singleLineHeight + 1)
+    expect((await synopsis.boundingBox())!.height).toBeLessThanOrEqual(singleLineHeight * paperScale + 1)
 
     const prose = canvas.locator('.writing-scene p').first()
     const original = (await prose.boundingBox())!
-    await rail.evaluate((element, width) => { element.style.width = `${width}px` }, reserved)
+    await rail.evaluate((element, width) => { element.style.width = `${width}px` }, reserved / paperScale)
     const fixedRail = (await rail.boundingBox())!
     const unchanged = (await prose.boundingBox())!
     expect(unchanged.x).toBeCloseTo(original.x, 1)
@@ -96,7 +99,8 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
 
     const narrowWidth = zoom === 1 ? 600 : 800
     await page.setViewportSize({ width: narrowWidth, height: 1000 })
-    await expect.poll(async () => (await rail.boundingBox())!.width).toBeLessThan(wide.width - 10)
+    if (mode === 'page') await expect.poll(railWidth).toBeLessThanOrEqual(wide.width + 1)
+    else await expect.poll(railWidth).toBeLessThan(wide.width - 10)
     const narrow = (await rail.boundingBox())!
     const scene = (await canvas.locator('.writing-scene').first().boundingBox())!
     expect(narrow.x).toBeGreaterThanOrEqual(0)
@@ -109,6 +113,8 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
     await page.setViewportSize({ width: 500, height: 1000 })
     await expect(canvas.locator('body')).toHaveClass(/writing-narrow/)
     expect((await rail.boundingBox())!.width).toBeLessThanOrEqual(500)
-    expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+    const overflow = await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)
+    if (mode === 'page') expect(overflow).toBeGreaterThan(0)
+    else expect(overflow).toBeLessThanOrEqual(1)
   })
 }

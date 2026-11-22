@@ -99,7 +99,7 @@ public sealed class PersistentProjectLifecycleTests
         await removed.Rpc.InvokeAsync("collaboration/end");
         var members = await owner.Rpc.InvokeAsync<HostedProjectMember[]>("collaboration/members");
         var removedId = Assert.Single(members, member => member.Role == "Contributor" && member.UserId != writerId).UserId;
-        owner.Documents.BeforeCapture = () => throw new IOException("Checkpoint capture failed.");
+        owner.Documents.BeforeCapture = _ => throw new IOException("Checkpoint capture failed.");
         await Assert.ThrowsAsync<RemoteInvocationException>(() => owner.Rpc.InvokeAsync("collaboration/removeMember", removedId));
         owner.Documents.BeforeCapture = null;
         await owner.Rpc.InvokeAsync("collaboration/removeMember", removedId);

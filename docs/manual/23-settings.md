@@ -35,7 +35,7 @@ Settings. Select **Share** for the open project or **Join** for an invitation.
 With no project open, only joining is available. Connection choices follow the
 runtime: **Direct connection (TCP)** is selected by default in the regular app
 and on mobile; Steam-enabled builds select **Steam** when its runtime is available.
-**Relay server** remains an option in both editions. Desktop also offers
+**Relay server** remains an option in both editions. Desktop and iOS also offer
 **Persistent server** for encrypted server storage and owner-offline access.
 Active sessions keep their connection type, and retained projects open the
 reconnect controls for their saved mode. Each project remembers the connection
@@ -59,14 +59,12 @@ transfer, and red means sharing is paused or needs attention. Hover for details.
 This indicates the session connection, not confirmation that every edit has reached
 every writer.
 
-iPhone and iPad offer **Relay server** and **Direct TCP**, and can collaborate with
-desktop writers using either mode. Steam is available only on desktop. Mobile joins
+iPhone and iPad offer **Persistent server**, **Relay server** and **Direct TCP**, and can collaborate with desktop writers in all three modes. Steam is available only on desktop. Mobile joins
 create a local copy in **Files → Novalist** by default; change the folder name or
 choose another folder before joining. You can also reuse an existing local project.
 Keep Novalist in the foreground during collaboration: iOS can suspend network activity
 when you switch apps or lock the device. Pending edits are saved before suspension,
-and the connection retries when the app runs again. A mobile host must remain open
-and active for other writers to join or synchronize.
+and the connection retries when the app runs again. With direct TCP or a relay, a mobile host must remain open and active for other writers to join or synchronize. A persistent server lets invited writers sync while the owner is offline.
 
 ### Persistent server
 
@@ -79,7 +77,7 @@ A relay-only deployment cannot store persistent projects.
 Enter its base URL and sign in. The first sign-in on a device asks for fresh
 multi-factor authentication in the browser and registers the device in the same
 step. Novalist then shows your **Recovery token**. Choose **Save recovery token to
-file…** to write it to a location you choose. Cancelling the dialog or a failed
+file…** to write it to a location you choose. On iPhone and iPad, choose **Save to Files** in the share sheet. Cancelling the dialog or a failed
 write keeps the token visible. If you save it in a password manager instead,
 choose **I have saved the token — continue**. **Account** also offers file saving
 later, using the token kept in the app's secure credential store.

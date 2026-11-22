@@ -23,6 +23,34 @@ function editor(extraScripts = []) {
 const scene = (sceneId, html) => ({ bookId: 'b', draftId: 'd', chapterGuid: 'c', sceneId, html, hash: 'h', revision: 0 })
 const point = (sceneId, offset) => ({ sceneId, offset, affinity: 'after' })
 
+test('pasting at a collapsed caret between scene wrappers keeps the next scene unselected', () => {
+  const w = editor()
+  try {
+    w.setWritingProjection([scene('s1', '<p>First</p>'), scene('s2', '<p>Second</p>')], null)
+    const selection = w.getSelection()
+    selection.collapse(w.NovalistEditorState.editor, 1)
+    assert.equal(w.prepareWritingPaste(), true)
+    assert.equal(selection.isCollapsed, true)
+    assert.equal(w.getWritingSelection().focus.sceneId, 's2')
+    assert.equal(w.getWritingSelection().focus.offset, 0)
+  } finally { w.close() }
+})
+
+for (const action of ['paste', 'deleteWordBackward']) test(`${action} on a selected scene wrapper excludes its neighbor`, () => {
+  const w = editor()
+  try {
+    w.setWritingProjection([scene('s1', '<p>First</p>'), scene('s2', '<p>Second</p>')], null)
+    const selection = w.getSelection()
+    const editorRoot = w.NovalistEditorState.editor
+    selection.setBaseAndExtent(editorRoot, 0, editorRoot, 1)
+    if (action === 'paste') w.prepareWritingPaste()
+    else editorRoot.dispatchEvent(new w.InputEvent('beforeinput', { inputType: action, bubbles: true, cancelable: true }))
+    assert.equal(selection.toString(), 'First')
+    assert.equal(w.getWritingSceneRoot('s1').contains(selection.anchorNode), true)
+    assert.equal(w.getWritingSceneRoot('s2').textContent, 'Second')
+  } finally { w.close() }
+})
+
 for (const pages of [false, true]) test(`Enter prepares loose rich prose without moving its selection or neighbouring blocks, pages=${pages}`, () => {
   const w = editor()
   const html = '<p>Before</p>Loose <b>bold</b> tail<p>After</p>'
@@ -141,13 +169,13 @@ test('a cross-scene comment emits one scene-qualified annotation batch without m
   w.close()
 })
 
-test('tracked deletion across scenes preserves both scene roots and all proposed text', () => {
+for (const inputType of ['deleteContentBackward', 'deleteWordBackward', 'deleteWordForward']) test(`tracked ${inputType} across scenes preserves both scene roots and all proposed text`, () => {
   const w = editor(['suggestions', 'suggestion-events'])
   w.setWritingProjection([scene('s1', '<p>First</p>'), scene('s2', '<p>Second</p>')], null)
   const roots = [w.getWritingSceneRoot('s1'), w.getWritingSceneRoot('s2')]
   w.setSuggestionMode(true, 'Writer')
   w.restoreWritingSelection({ anchor: point('s1', 2), focus: point('s2', 3) })
-  w.NovalistEditorState.editor.dispatchEvent(new w.InputEvent('beforeinput', { inputType: 'deleteContentBackward', bubbles: true, cancelable: true }))
+  w.NovalistEditorState.editor.dispatchEvent(new w.InputEvent('beforeinput', { inputType, bubbles: true, cancelable: true }))
   assert.equal(roots[0].parentElement, w.NovalistEditorState.editor)
   assert.equal(roots[1].parentElement, w.NovalistEditorState.editor)
   assert.equal(roots[0].textContent, 'First')

@@ -32,7 +32,7 @@ async function measure(frame: Frame, selector: string) {
 }
 
 for (const zoom of [1, 2, 3]) {
-  test(`book layout matches v3.7.2 typography and native page geometry at ${zoom * 100}%`, async ({ page, context }, testInfo) => {
+  test(`book layout retains v3.7.2 typography and scales the chosen text measure at ${zoom * 100}%`, async ({ page, context }, testInfo) => {
     await page.setViewportSize({ width: 2400, height: 1500 })
     await page.goto(currentUrl)
     await expect(page.frameLocator('iframe').locator('.writing-scene')).toHaveCount(3)
@@ -82,12 +82,12 @@ for (const zoom of [1, 2, 3]) {
     await testInfo.attach('book-layout-metrics', { path: metrics, contentType: 'application/json' })
     expect.soft(after.paragraphs[0].fontFamily).toBe(before.paragraphs[0].fontFamily)
     expect.soft(after.paragraphs[0].physicalFontSize).toBeCloseTo(before.paragraphs[0].physicalFontSize, 1)
-    for (const key of ['width', 'height', 'paddingTop', 'paddingLeft'] as const) expect.soft(after.paper[key], `paper ${key}`).toBeCloseTo(before.paper[key], 0)
-    expect.soft(after.pages).toBe(before.pages)
+    expect(after.paper.width).toBeCloseTo((4 * 96 + 120) * zoom, 0)
+    expect(after.paper.height).toBeCloseTo(after.paper.width * 1.5, 0)
+    expect(after.pages).toBe(1)
     for (let index = 0; index < before.paragraphs.length; index++) {
-      expect.soft(after.paragraphs[index].width, `paragraph ${index} width`).toBeCloseTo(before.paragraphs[index].width, 0)
-      expect.soft(after.paragraphs[index].height, `paragraph ${index} height`).toBeCloseTo(before.paragraphs[index].height, 0)
-      expect.soft(after.paragraphs[index].lines, `paragraph ${index} line breaks`).toBe(before.paragraphs[index].lines)
+      expect.soft(after.paragraphs[index].width, `paragraph ${index} width`).toBeCloseTo(4 * 96 * zoom, 0)
+      expect.soft(after.paragraphs[index].physicalFontSize).toBeCloseTo(before.paragraphs[index].physicalFontSize, 1)
     }
     await legacy.close()
   })

@@ -58,7 +58,7 @@ const bundle = await build({ stdin: { resolveDir: directory, loader: 'tsx', cont
     root = createRoot(document.getElementById('host'))
     await act(async () => root.render(<><WritingStructureHost /><WritingCanvasChrome live={null} registry={registry} snapshots={snapshots}
       chapters={chapters} scope={options.scope ?? 'manuscript'} limited={options.limited ?? false} revision={1} narrow={false}
-      showSynopsis={false} bookTitle="Book" draftName="Draft" onFocusScene={() => {}} onStructure={onStructure} /></>))
+      showRail={true} showSynopsis={false} bookTitle="Book" draftName="Draft" onFocusScene={() => {}} onStructure={onStructure} /></>))
   }
   export async function click(element) { await act(async () => element.click()) }
   export async function unmount() { await act(async () => root.unmount()) }

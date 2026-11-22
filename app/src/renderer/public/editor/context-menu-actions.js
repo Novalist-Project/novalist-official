@@ -135,7 +135,7 @@ function applyContextAction(action) {
             break;
         case 'paste':
             navigator.clipboard.readText().then(text => {
-                document.execCommand('insertText', false, text);
+                window.insertPastedContent('', text);
             }).catch(() => {
                 document.execCommand('paste');
             });

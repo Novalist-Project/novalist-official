@@ -226,6 +226,11 @@ public static partial class SecurityScopedFolders
             if (!Active.TryGetValue(path, out url)) return;
             Active.Remove(path);
         }
+        StopAccess(url);
+    }
+
+    private static void StopAccess(NSUrl url)
+    {
         try { url.StopAccessingSecurityScopedResource(); }
         catch { /* already released */ }
     }
@@ -241,9 +246,9 @@ public static partial class SecurityScopedFolders
 
     public static void ReleaseExcept(string? projectPath)
     {
-        string[] paths;
-        lock (Gate) paths = Active.Keys.Where(path => path != projectPath).ToArray();
-        foreach (var path in paths) EndAccess(path);
+        NSUrl[] detached;
+        lock (Gate) detached = DetachUnusedGrants(Active, projectPath);
+        foreach (var url in detached) StopAccess(url);
     }
 
     // Exact bookmark for path, else the longest ancestor bookmark that contains it
@@ -253,16 +258,7 @@ public static partial class SecurityScopedFolders
         lock (Gate)
         {
             var map = Load();
-            if (map.TryGetValue(path, out var exact)) return (exact, path);
-            string? bestKey = null;
-            foreach (var key in map.Keys)
-            {
-                var prefix = key.EndsWith('/') ? key : key + "/";
-                if (path.StartsWith(prefix, StringComparison.Ordinal)
-                    && (bestKey == null || key.Length > bestKey.Length))
-                    bestKey = key;
-            }
-            return bestKey == null ? (null, null) : (map[bestKey], bestKey);
+            return CoveringFolder(map.Keys, path) is { } key ? (map[key], key) : (null, null);
         }
     }
 

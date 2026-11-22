@@ -66,7 +66,7 @@ export function CollaborationCard(): React.JSX.Element {
       {steamAvailable && <option value="steam">{t('collaboration.modeSteam')}</option>}
       <option value="tcp">{t('collaboration.modeTcp')}</option>
       <option value="hosted">{t('collaboration.modeHosted')}</option>
-      {!window.novalist.isMobile && <option value="persistent">{t('collaboration.modePersistent')}</option>}
+      {window.novalist.platform !== 'android' && <option value="persistent">{t('collaboration.modePersistent')}</option>}
     </select>
     {!serverMode ? <PeerProjectCard key={mode} steam={mode === 'steam'} intent={intent} /> : <>
       <details><summary>{t('collaboration.serverHelp')}</summary>
@@ -154,6 +154,6 @@ export function CollaborationCard(): React.JSX.Element {
 function remembered(project: string | null, steamAvailable: boolean): string | undefined {
   const mode = readPreference(project).mode
   if (mode === 'steam' && !steamAvailable) return undefined
-  if (mode === 'persistent' && window.novalist.isMobile) return undefined
+  if (mode === 'persistent' && window.novalist.platform === 'android') return undefined
   return mode === 'tcp' || mode === 'hosted' || mode === 'persistent' || mode === 'steam' ? mode : undefined
 }

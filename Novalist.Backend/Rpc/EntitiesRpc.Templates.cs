@@ -42,7 +42,7 @@ public sealed partial class EntitiesRpc
             if (existing is { IsUserSource: false })
                 throw new InvalidOperationException($"Custom type is not editable: {spec.TypeKey}");
         }
-        var key = string.IsNullOrWhiteSpace(spec.TypeKey) ? GenerateTypeKey(spec.DisplayName) : spec.TypeKey;
+        var key = string.IsNullOrWhiteSpace(spec.TypeKey) ? NewTypeKey(spec) : spec.TypeKey;
         var name = spec.DisplayName.Trim();
         await _entities.SaveCustomEntityTypeAsync(new CustomEntityTypeDefinition
         {
@@ -92,6 +92,16 @@ public sealed partial class EntitiesRpc
         return string.Concat(displayName.Trim().ToLowerInvariant()
             .Select(c => char.IsLetterOrDigit(c) ? c : '_'))
             .Trim('_');
+    }
+
+    private string NewTypeKey(CustomTypeSpecDto spec)
+    {
+        var stem = GenerateTypeKey(spec.SuggestedTypeKey ?? spec.DisplayName);
+        var taken = _entities.GetCustomEntityTypes().Select(type => type.TypeKey).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var key = stem;
+        for (var suffix = 2; taken.Contains(key); suffix++)
+            key = $"{stem}_{suffix}";
+        return key;
     }
 
     private bool IsCustomType(string type) =>

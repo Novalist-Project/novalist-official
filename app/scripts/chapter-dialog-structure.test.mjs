@@ -30,7 +30,7 @@ const bundle = await build({ stdin: { resolveDir: directory, loader: 'tsx', cont
       MotionPresence: 'export const useMotionPresent = () => true',
       useDialogKeyboard: 'export const useDialogAutoFocus = () => {}',
       'react-i18next': 'export const useTranslation = () => ({ t: key => key })',
-      client: 'export const rpc = { request: async () => [] }',
+      client: "export const rpc = { request: async method => method === 'project/sectionTypes' ? window.sectionTypes : [] }",
       projectStore: 'const state = { chapters: [], applyState() {} }; export const useProjectStore = { getState: () => state }',
       manuscriptPropsStore: 'export const useManuscriptPropsStore = selector => selector({ definitions: [] }); useManuscriptPropsStore.getState = () => ({ load() {} })',
       ManuscriptPropertyField: 'export const ManuscriptPropertyField = () => null',
@@ -53,12 +53,20 @@ test('ChapterDialog retains its draft during command preparation and restores it
   w.MessageChannel = class extends MessageChannel { constructor() { super(); channels.push(this) } }
   w.IS_REACT_ACT_ENVIRONMENT = true
   w.novalist = { isMobile: false }
+  w.sectionTypes = [
+    { key: 'interlude', name: 'My interlude', builtIn: false, numbered: false },
+    { key: 'chapter', name: 'Chapter', builtIn: true, numbered: true }
+  ]
   let resolve, calls = 0
   w.prepare = () => new Promise(done => { resolve = done })
   w.execute = async () => { calls++; assert.equal(w.fixture.guarded(), false); throw new Error('Structure failed') }
   w.eval(bundle.outputFiles[0].text)
   t.after(async () => { await w.fixture.close(); w.close(); for (const channel of channels) { channel.port1.close(); channel.port2.close() } })
   await w.fixture.render()
+  const picker = w.document.querySelector('select')
+  assert.equal(picker.value, 'chapter')
+  assert.equal(picker.selectedOptions[0].textContent, 'chapterTypes.chapter')
+  assert.match(picker.options[0].textContent, /^My interlude/)
   await w.fixture.submit()
   assert.equal(w.fixture.guarded(), true)
   assert.equal(calls, 0)

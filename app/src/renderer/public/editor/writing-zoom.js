@@ -6,7 +6,10 @@
     const surface = document.createElement('div');
     surface.className = 'writing-zoom-surface';
     content.before(surface);
-    surface.append(content);
+    const canvas = document.createElement('div');
+    canvas.className = 'writing-page-canvas';
+    surface.append(canvas);
+    canvas.append(content);
     let scale = 1;
     let appliedScale = 1;
     let layoutWidth = 0;
@@ -53,7 +56,7 @@
         const y = fraction ? wrapper.clientHeight * fraction
             : Math.max(margin, Math.min(caretAnchor.y, wrapper.clientHeight - caret.rect.height - margin));
         window.setWritingScroll(wrapper.scrollTop + caret.rect.top - viewport.top - y,
-            document.body.classList.contains('unified-writing-canvas') ? wrapper.scrollLeft
+            document.body.matches('.unified-writing-canvas:not(.page-view)') ? wrapper.scrollLeft
                 : wrapper.scrollLeft + caret.rect.left - viewport.left - x);
     }
 
@@ -67,7 +70,9 @@
     }
 
     function resizeSurface() {
-        if (scale !== 1 && !document.body.classList.contains('unified-writing-canvas'))
+        if (document.body.matches('.unified-writing-canvas.page-view'))
+            surface.style.height = canvas.getBoundingClientRect().height + 'px';
+        else if (scale !== 1 && !document.body.classList.contains('unified-writing-canvas'))
             surface.style.height = content.getBoundingClientRect().height + 'px';
     }
 
@@ -89,13 +94,15 @@
         if (document.body.classList.contains('unified-writing-canvas')) {
             const page = content.querySelector('.nv-page');
             const style = getComputedStyle(content);
+            if (page && document.body.classList.contains('page-view')) {
+                const insets = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+                return wrapper.clientWidth / (page.offsetWidth + insets);
+            }
             const margin = content.querySelector('.writing-scene-margin');
             // Spare space occupied by the panel remains available when fitting the page.
             const rail = margin && !document.body.classList.contains('writing-narrow')
                 ? parseFloat(getComputedStyle(margin).minWidth) / scale : 0;
             const outer = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) - rail * scale;
-            if (page && document.body.classList.contains('page-view'))
-                return (wrapper.clientWidth - outer) / (page.offsetWidth / scale + rail);
             if (document.body.classList.contains('book-width')) {
                 const width = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--writing-book-text-width'));
                 const scene = content.querySelector('.writing-scene');
@@ -112,7 +119,10 @@
     };
 
     function refresh() {
-        const textZoom = document.body.classList.contains('unified-writing-canvas');
+        const unified = document.body.classList.contains('unified-writing-canvas');
+        const paper = unified && document.body.classList.contains('page-view');
+        const textZoom = unified && !paper;
+        document.body.style.setProperty('--writing-page-scale', paper ? String(scale) : '1');
         document.body.style.setProperty('--writing-text-scale', textZoom ? String(scale) : '1');
         const root = getComputedStyle(document.documentElement);
         const key = ['--book-width', '--font-size', '--font-family'].map(name => root.getPropertyValue(name)).join('|') +
@@ -120,7 +130,7 @@
         const scrollTop = wrapper.scrollTop;
         const scrollLeft = wrapper.scrollLeft;
         const ratio = scale / appliedScale;
-        if (scale === 1 || textZoom) {
+        if (scale === 1 || unified) {
             clearLayout();
             layoutWidth = 0;
         } else {
@@ -162,7 +172,10 @@
     window.setWritingZoom = (factor, anchor = typewriterAnchor) => {
         if (!Number.isFinite(factor) || factor <= 0) return;
         typewriterAnchor = anchor == null ? null : (anchor === 'top' || anchor === 'bottom' ? anchor : 'middle');
-        if (factor !== scale) caretAnchor = captureCaretAnchor();
+        if (factor !== scale) {
+            caretAnchor = captureCaretAnchor();
+            if (caretAnchor) window.NovalistEditorState?.cancelFocusScrollRestore?.();
+        }
         scale = factor;
         content.style.setProperty('--writing-zoom-scale', String(scale));
         document.body.classList.toggle('zoom-typewriter', typewriterAnchor !== null);

@@ -6,6 +6,21 @@ import { readPreference, writePreference } from './projectPreferences'
 export interface CollaborationAccount { subject: string; displayName: string; deviceRegistered: boolean; hasRecoveryToken: boolean; deviceRegistrationError?: string | null; recoveryToken?: string | null }
 type Account = CollaborationAccount
 interface Configuration { authenticationRequired: boolean; accountIdentityReset?: boolean }
+
+async function exportRecoveryToken(server: string): Promise<boolean> {
+  const host = window.novalist
+  const path = await host.saveFile('novalist-recovery-token.txt')
+  if (!path) return false
+  try {
+    await rpc.request('collaboration/account/saveRecoveryToken', [server, path])
+    if (!host.isMobile) return true
+    if (!host.shareExport) throw new Error('Export sharing is unavailable')
+    return Boolean(await host.shareExport(path))
+  } finally {
+    await host.releaseExport?.(path)
+  }
+}
+
 export function useCollaborationAccount(enabled: boolean, project: string | null = null) {
   const [server, setServer] = useState(() => readPreference(project).server ?? '')
   const [account, setAccount] = useState<Account | null>(null)
@@ -99,10 +114,7 @@ export function useCollaborationAccount(enabled: boolean, project: string | null
     active.current = true
     setError(''); setBusy('saving')
     try {
-      const path = await window.novalist.saveFile('novalist-recovery-token.txt')
-      if (!path) return
-      await rpc.request('collaboration/account/saveRecoveryToken', [server.trim(), path])
-      setRecoveryToken('')
+      if (await exportRecoveryToken(server.trim())) setRecoveryToken('')
     } catch (reason) { setError(String(reason)) }
     finally { active.current = false; setBusy(null) }
   }

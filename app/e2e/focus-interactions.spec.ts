@@ -57,21 +57,24 @@ test('F11 works in prose and panel fields, and text zoom preserves the focus col
     const initialHoverWidth = initialBounds.hoverWidth
     expect(initialHoverWidth).toBeGreaterThan(24)
     const paper = h.page.frameLocator('iframe.editor-frame').locator('.nv-page').first()
-    const textSize = () => h.page.frameLocator('iframe.editor-frame').locator('[data-writing-scene] p').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))
+    const textSize = () => h.page.frameLocator('iframe.editor-frame').locator('[data-writing-scene] p').first().evaluate(element => {
+      const range = document.createRange()
+      range.selectNodeContents(element)
+      return range.getClientRects()[0].height
+    })
+    const initialPaper = (await paper.boundingBox())!
     const initialTextSize = await textSize()
     await editor.evaluate((element) => element.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -100, bubbles: true, cancelable: true })))
     await expect.poll(textSize).toBeGreaterThan(initialTextSize)
     await expect.poll(async () => (await frame.boundingBox())!.width).toBe(initialWidth)
     const paperBounds = (await paper.boundingBox())!
-    const frameBounds = (await frame.boundingBox())!
-    expect(paperBounds.x).toBeGreaterThanOrEqual(frameBounds.x)
-    expect(paperBounds.x + paperBounds.width).toBeLessThanOrEqual(frameBounds.x + frameBounds.width)
-    expect(await h.page.frameLocator('iframe.editor-frame').locator('#editor-wrapper')
-      .evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+    expect(paperBounds.width).toBeGreaterThan(initialPaper.width)
+    expect(paperBounds.height / paperBounds.width).toBeCloseTo(initialPaper.height / initialPaper.width, 3)
     expect(await h.page.evaluate(() => window.novalistStores.settings.getState().view?.effective.editorFontSize)).toBe(17)
     const zoomedWidth = (await frame.boundingBox())!.width
+    const zoomedTextSize = await textSize()
     await h.page.evaluate(() => window.novalistStores.settings.getState().update('global', { editorFontSize: 30 }))
-    await expect.poll(textSize).toBeGreaterThan(30)
+    await expect.poll(textSize).toBeGreaterThan(zoomedTextSize)
     await expect.poll(async () => (await frame.boundingBox())!.width).toBe(zoomedWidth)
     await expect.poll(async () => (await h.page.locator('.focus-edge-left').boundingBox())!.width).toBe(initialHoverWidth)
     const zoomedBounds = await alignedFocusBounds(frame)

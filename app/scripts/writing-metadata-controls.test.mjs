@@ -42,7 +42,7 @@ const bundle = await build({ stdin: { resolveDir: directory, loader: 'tsx', cont
     window.targets = { targets: [{ scene: ref, element: document.getElementById('chrome') }], emptyTargets: [], endTarget: null, introTarget: document.getElementById('intro') }
     const registry = { context, subscribe: () => () => {}, getSnapshot: () => undefined }
     props = { live: null, registry, snapshots: [ref], chapters: [chapter], scope: 'manuscript', revision: 1, limited: false,
-      narrow: false, showSynopsis: false, bookTitle: 'Book title', draftName: 'Draft 1', onStructure() {}, onFocusScene() {} }
+      narrow: false, showRail: true, showSynopsis: false, bookTitle: 'Book title', draftName: 'Draft 1', onStructure() {}, onFocusScene() {} }
     const i18n = createInstance(); await i18n.init({ lng: 'en', resources: { en: { translation: en } } })
     root = createRoot(document.getElementById('host'))
     await act(async () => root.render(<I18nextProvider i18n={i18n}><WritingCanvasChrome {...props} /></I18nextProvider>))

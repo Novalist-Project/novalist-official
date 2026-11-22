@@ -39,11 +39,11 @@ export const SYSTEM_FONTS = [
 
 
 
-export const PAGE_FORMATS: { code: string; name: string }[] = [
-  { code: 'USTrade6x9', name: 'US Trade (6x9)' },
-  { code: 'Digest5_5x8_5', name: 'Digest (5.5x8.5)' },
-  { code: 'A5', name: 'A5 (5.83x8.27)' },
-  { code: 'MassMarket', name: 'Mass Market (4.25x6.87)' },
+export const PAGE_FORMATS: { code: string; name: string; width?: number; height?: number }[] = [
+  { code: 'USTrade6x9', width: 6, height: 9, name: 'US Trade (6x9)' },
+  { code: 'Digest5_5x8_5', width: 5.5, height: 8.5, name: 'Digest (5.5x8.5)' },
+  { code: 'A5', width: 5.83, height: 8.27, name: 'A5 (5.83x8.27)' },
+  { code: 'MassMarket', width: 4.25, height: 6.87, name: 'Mass Market (4.25x6.87)' },
   { code: 'Custom', name: 'Custom' }
 ]
 
