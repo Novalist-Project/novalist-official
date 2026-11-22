@@ -101,18 +101,24 @@ public sealed class CompactionTests
         var ct = TestContext.Current.CancellationToken;
         await using var fixture = await SessionFixture.CreateAsync();
         var attempts = 0;
-        var delivered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        fixture.Wire.PushAsync(Arg.Any<UpdateEnvelope>(), Arg.Any<CancellationToken>()).Returns(_ =>
+        var retried = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var reply = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var committed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.Session.CommittedHistoryChanged += () => committed.TrySetResult();
+        fixture.Wire.PushAsync(Arg.Any<UpdateEnvelope>(), Arg.Any<CancellationToken>()).Returns(call =>
         {
             if (Interlocked.Increment(ref attempts) == 1) throw new HubException(HostedProtocol.TransitionInProgress);
-            delivered.TrySetResult();
-            return Task.FromResult(1L);
+            retried.TrySetResult();
+            return reply.Task.WaitAsync(call.Arg<CancellationToken>());
         });
         await using var live = new SessionSynchronizer(fixture.Session);
         await live.StartAsync(createProject: false, ct);
 
         fixture.Session.Save(Guid.NewGuid(), [1]);
-        await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), ct);
+        await retried.Task.WaitAsync(TimeSpan.FromSeconds(10), ct);
+        Assert.True(fixture.Session.HasPendingUpdates);
+        reply.SetResult(1L);
+        await committed.Task.WaitAsync(TimeSpan.FromSeconds(10), ct);
 
         Assert.Equal(2, attempts);
         Assert.NotEqual(SessionConnectionState.Failed, live.Status.State);
