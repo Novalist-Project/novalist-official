@@ -62,9 +62,19 @@ test('F11 works in prose and panel fields, and text zoom preserves the focus col
       range.selectNodeContents(element)
       return range.getClientRects()[0].height
     })
+    const wheelZoom = (deltaY: number) => editor.evaluate((element, deltaY) =>
+      element.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY, bubbles: true, cancelable: true })), deltaY)
+    const scale = () => editor.evaluate(el => Number(getComputedStyle(el).getPropertyValue('--writing-zoom-scale')))
+    if (await scale() <= 0.5) {
+      await wheelZoom(-100)
+      await expect.poll(scale).toBeGreaterThan(0.5)
+    }
+    const openedSize = await textSize()
+    await wheelZoom(100)
+    await expect.poll(textSize).toBeLessThan(openedSize)
     const initialPaper = (await paper.boundingBox())!
     const initialTextSize = await textSize()
-    await editor.evaluate((element) => element.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -100, bubbles: true, cancelable: true })))
+    await wheelZoom(-100)
     await expect.poll(textSize).toBeGreaterThan(initialTextSize)
     await expect.poll(async () => (await frame.boundingBox())!.width).toBe(initialWidth)
     const paperBounds = (await paper.boundingBox())!

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type FrameLocator } from '@playwright/test'
 import { buildWritingAppearance } from './fixtures/writingAppearance'
 import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 
@@ -9,6 +9,14 @@ test.beforeEach(async ({ page }) => {
   await expect(page.frameLocator('iframe').locator('.writing-book-heading')).toBeVisible()
   await expect(page.frameLocator('iframe').locator('.writing-scene p').first()).toHaveCSS('font-size', '22.1px')
 })
+
+async function expectPaperFits(canvas: FrameLocator): Promise<void> {
+  await expect.poll(() => canvas.locator('#editor-wrapper').evaluate(wrapper => {
+    const paper = wrapper.querySelector('.nv-page')!.getBoundingClientRect()
+    const left = wrapper.getBoundingClientRect().left + wrapper.clientLeft
+    return Math.max(wrapper.scrollWidth - wrapper.clientWidth, left - paper.left, paper.right - left - wrapper.clientWidth)
+  })).toBeLessThanOrEqual(1)
+}
 
 for (const language of ['en', 'ar']) for (const book of [false, true]) {
   test(`${language} headings and scene information align with prose across page layouts, book=${book}`, async ({ page }, testInfo) => {
@@ -55,7 +63,7 @@ for (const language of ['en', 'ar']) for (const book of [false, true]) {
     expect(heading.width).toBeCloseTo(text.width, 0)
     const panel = (await rail.boundingBox())!
     expect(panel.y + panel.height).toBeLessThanOrEqual(text.y)
-    expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth)).toBeGreaterThan(450)
+    await expectPaperFits(canvas)
   })
 }
 
@@ -141,6 +149,7 @@ test('each pane can hide scene information to reclaim its width and remembers th
 })
 
 test('a long paragraph flows over sheets without splitting the saved prose', async ({ page }) => {
+  await page.setViewportSize({ width: 2000, height: 1000 })
   const text = 'A long paragraph continues across the next sheet. '.repeat(300)
   await page.getByRole('button', { name: 'Page view', exact: true }).click()
   const frame = page.frames()[1]
@@ -373,16 +382,54 @@ test('enabled book width applies the chosen text measure and book typography at 
   await expect.poll(async () => (await paragraph.boundingBox())!.width).toBeGreaterThan(700)
 })
 
-test('book text measure is also honored in page view and in a narrow pane', async ({ page }) => {
+test('a zoomed book fits pane and rail changes while retaining its sheet and line breaks', async ({ page }) => {
   await page.evaluate('window.setBookLayout(true, 4)')
   await page.getByRole('button', { name: 'Page view', exact: true }).click()
   await page.locator('iframe').evaluate(element => ((element as HTMLIFrameElement).contentWindow as unknown as EditorWindow).setWritingZoom(2))
   const canvas = page.frameLocator('iframe')
-  await expect(canvas.locator('.nv-page').first()).toBeVisible()
-  await expect.poll(async () => (await canvas.locator('.writing-scene p').first().boundingBox())!.width).toBeCloseTo(768, 0)
-  await page.setViewportSize({ width: 500, height: 900 })
-  await expect.poll(async () => (await canvas.locator('.writing-scene p').first().boundingBox())!.width).toBeCloseTo(768, 0)
-  expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth)).toBeGreaterThan(768)
+  const paper = canvas.locator('.nv-page').first()
+  const paragraph = paper.locator('p').nth(1)
+  const proseWidth = async () => (await paragraph.boundingBox())!.width
+  const bookLayout = () => paragraph.evaluate(element => {
+    const paper = element.closest<HTMLElement>('.nv-page')!
+    const text = element.firstChild!
+    const range = document.createRange()
+    const lineStarts: number[] = []
+    let previousTop: number | undefined
+    for (const word of text.textContent!.matchAll(/\S+/g)) {
+      range.setStart(text, word.index)
+      range.setEnd(text, word.index + word[0].length)
+      const top = range.getBoundingClientRect().top
+      if (top !== previousTop) lineStarts.push(word.index)
+      previousTop = top
+    }
+    return { sheet: [paper.offsetWidth, paper.offsetHeight], textWidth: element.clientWidth, lineStarts }
+  })
+  await expect.poll(proseWidth).toBeCloseTo(768, 0)
+  const layout = await bookLayout()
+  expect(layout.sheet).toEqual([504, 756])
+  expect(layout.textWidth).toBe(384)
+  expect(layout.lineStarts.length).toBeGreaterThan(1)
+  await page.setViewportSize({ width: 900, height: 900 })
+  await expectPaperFits(canvas)
+  const withRail = await proseWidth()
+  expect(withRail).toBeLessThan(768)
+  const railToggle = page.getByRole('button', { name: 'Scene information', exact: true })
+  await railToggle.click()
+  await expect(canvas.locator('.writing-scene-margin')).toHaveCount(0)
+  await expect.poll(proseWidth).toBeGreaterThan(withRail + 1)
+  await expectPaperFits(canvas)
+  expect(await bookLayout()).toEqual(layout)
+  await railToggle.click()
+  await expect.poll(proseWidth).toBeCloseTo(withRail, 0)
+  await page.setViewportSize({ width: 450, height: 900 })
+  await expect(canvas.locator('body')).toHaveClass(/writing-narrow/)
+  await expectPaperFits(canvas)
+  expect(await proseWidth()).toBeLessThan(withRail)
+  expect(await bookLayout()).toEqual(layout)
+  await page.setViewportSize({ width: 1600, height: 900 })
+  await expect.poll(proseWidth).toBeCloseTo(768, 0)
+  await expectPaperFits(canvas)
 })
 
 test('an existing book opens with its saved paper and book font fitted into the writing pane', async ({ page }, testInfo) => {
@@ -397,11 +444,12 @@ test('an existing book opens with its saved paper and book font fitted into the 
   const width = 6 * 96 * scale
   await expect.poll(async () => (await paper.boundingBox())!.width).toBeCloseTo(width, 0)
   await expect.poll(async () => (await paper.boundingBox())!.height).toBeCloseTo(9 * 96 * scale, 0)
-  expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+  await expectPaperFits(canvas)
   await page.screenshot({ path: testInfo.outputPath('saved-book-page.png') })
   await page.setViewportSize({ width: 900, height: 900 })
-  await expect.poll(async () => (await paper.boundingBox())!.width).toBeCloseTo(width, 0)
-  expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth)).toBeGreaterThan(900)
+  await expectPaperFits(canvas)
+  expect((await paper.boundingBox())!.width).toBeLessThan(width)
+  expect(await paper.evaluate(el => [el.clientWidth, el.clientHeight])).toEqual([6 * 96, 9 * 96])
 })
 
 for (const pages of [false, true]) {
@@ -428,7 +476,7 @@ for (const pages of [false, true]) {
       const viewport = wrapper.getBoundingClientRect()
       return caret.left >= viewport.left && caret.right <= viewport.right && caret.top >= viewport.top && caret.bottom <= viewport.bottom
     })).toBe(true)
-    if (!pages) expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+    expect(await canvas.locator('#editor-wrapper').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
     await page.keyboard.type('visible')
     await expect(canvas.locator('.writing-scene').first()).toContainText('visible')
   })

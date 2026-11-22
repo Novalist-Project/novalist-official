@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { enterWriting, launchApp, resizeWindow, seedBook } from './harness'
+import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 
 for (const pageView of [false, true]) {
   test(`first scene uses its presentation scale once and preserves manual zoom, page view=${pageView}`, async () => {
@@ -7,7 +8,8 @@ for (const pageView of [false, true]) {
     try {
       await h.page.evaluate(enabled => window.novalistStores.settings.getState().update('global', { pageViewEnabled: enabled }), pageView)
       await seedBook(h, { One: ['Opening', 'Next scene'] }, 'Spec', false)
-      await resizeWindow(h, 1500, 900)
+      const expandedWidth = pageView ? 1800 : 1500
+      await resizeWindow(h, expandedWidth, 900)
       await h.page.evaluate(async (pages) => {
         await window.novalistStores.settings.getState().update('global', {
           enableBookWidth: !pages, bookPageFormat: 'Custom', bookTextBlockWidth: 4.2,
@@ -23,8 +25,9 @@ for (const pageView of [false, true]) {
       else await expect(frame.locator('body')).not.toHaveClass(/\bpage-view\b/)
       const scale = () => editor.evaluate(element => Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale')))
       const presentationScale = await editor.evaluate((_, pages) => {
-        const fit = (window as Window & { getWritingZoomToFit?: () => number }).getWritingZoomToFit!()
-        return Math.max(pages ? 0.5 : 1.3, Math.min(3, Math.floor(fit * 100) / 100))
+        const fit = (window as unknown as EditorWindow).getWritingZoomToFit()
+        const requested = Math.max(pages ? 0.5 : 1.3, Math.min(3, Math.floor(fit * 100) / 100))
+        return pages ? Math.min(fit, requested) : requested
       }, pageView)
       await expect.poll(scale).toBe(presentationScale)
       await expect.poll(() => frame.locator('[data-writing-scene]').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeCloseTo(17 * (pageView ? 1 : presentationScale), 1)
@@ -38,12 +41,25 @@ for (const pageView of [false, true]) {
       const chosen = await scale()
       await h.page.locator('.binder-scene-row').nth(1).click()
       await expect.poll(scale).toBe(chosen)
+      const width = () => editor.evaluate(() => document.getElementById('editor-wrapper')!.clientWidth)
+      const initialWidth = await width()
       await resizeWindow(h, 1300, 900)
-      await expect.poll(() => h.page.locator('iframe[title="editor"]').evaluate(element => element.clientWidth)).toBeLessThan(1200)
-      await expect.poll(scale).toBe(chosen)
+      await expect.poll(width).toBeLessThan(initialWidth)
+      const expectResizedScale = () => expect.poll(async () => editor.evaluate((element, { chosen, pageView }) => {
+        const fit = (window as unknown as EditorWindow).getWritingZoomToFit()
+        const actual = Number(getComputedStyle(element).getPropertyValue('--writing-zoom-scale'))
+        return Math.abs(actual - (pageView ? Math.min(chosen, fit) : chosen))
+      }, { chosen, pageView })).toBeLessThan(0.001)
+      await expectResizedScale()
+      if (pageView) {
+        expect(await scale()).toBeLessThan(chosen)
+        expect(await frame.locator('#editor-wrapper').evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1)
+      }
       await h.page.evaluate(() => window.novalistStores.shell.getState().setMainView('dashboard'))
       await expect(editor).toHaveCount(0)
       await h.page.evaluate(() => window.novalistStores.shell.getState().setMainView('write'))
+      await expectResizedScale()
+      await resizeWindow(h, expandedWidth, 900)
       await expect.poll(scale).toBe(chosen)
     } finally {
       await h.close()

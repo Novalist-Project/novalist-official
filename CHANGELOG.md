@@ -33,7 +33,7 @@ Nothing yet.
 
 ### Fixed
 
-- Page View keeps its paper size, margins and line breaks when zooming or resizing the writing pane.
+- Page View keeps its paper size, margins and line breaks when zooming. Zoom stops at the writing pane’s width and adjusts when the pane narrows, so an entire line stays visible.
 - Pasted paragraphs can be styled individually and use the configured paragraph spacing. Ctrl+Delete and Ctrl+Backspace delete words in the writing editor on Windows.
 - Arabic chapter and Codex type labels, preset fields and Yes/No choices use translated names. Bold works with Ctrl+B on the Arabic keyboard layout.
 

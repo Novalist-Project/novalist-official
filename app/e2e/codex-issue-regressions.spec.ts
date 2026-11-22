@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import type { CustomTypeDefinition } from '../src/renderer/src/views/codex/CustomTypeManager'
 import { dismissTour, launchApp, resizeWindow, seedBook, selectCodexTab } from './harness'
 import { expectReadableReferenceList } from './referenceListLayout'
 
@@ -132,10 +133,13 @@ test('custom types support plain multiline text and multiple references through 
       await manager.locator('.type-manager-fields > button').click()
       const field = manager.locator('.type-manager-field').last()
       await field.locator('input').first().fill(name)
-      await field.locator('select').first().selectOption(type)
+      await field.locator('select').first().selectOption({ value: type })
     }
     await manager.locator('.dialog-actions .primary').click()
     await expect(manager.locator('.type-manager-field')).toHaveCount(0)
+    const definitions = await h.rpc<CustomTypeDefinition[]>('entities/customTypes')
+    expect(definitions.find(def => def.typeKey === 'guild')?.defaultFields.map(field => [field.key, field.type]))
+      .toEqual([['History', 'Text'], ['Members', 'EntityRefList']])
     await manager.locator('.type-manager-title-row button').click()
     const entry = await h.rpc<{ id: string }>('entities/create', ['guild', 'Watch'])
     await h.page.evaluate(async id => {
