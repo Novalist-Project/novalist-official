@@ -1,17 +1,21 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { buildWritingAppearance } from './fixtures/writingAppearance'
 import type { EditorWindow } from '../src/renderer/src/views/editor/editorBridge'
 
 let url: string
 test.beforeAll(async () => { url = await buildWritingAppearance() })
 
+async function openFittedManuscript(page: Page, pages: boolean) {
+  await page.goto(`${url}?long=1${pages ? '&book=1' : ''}`)
+  await expect(page.locator('html')).toHaveAttribute('data-writing-zoom-ready', 'true')
+  return page.frameLocator('iframe')
+}
+
 for (const pages of [false, true]) {
   test(`outline reveal reaches an unvisited scene and remains there with pages=${pages}`, async ({ page }) => {
-    await page.goto(`${url}?long=1${pages ? '&book=1' : ''}`)
-    const frame = page.frameLocator('iframe')
+    const frame = await openFittedManuscript(page, pages)
     await expect(frame.locator('[data-writing-scene]')).toHaveCount(40)
     await expect(frame.locator('.writing-book-heading')).toBeVisible()
-    await expect(frame.locator('[data-writing-scene="first"] p').first()).toHaveCSS('font-size', pages ? '33px' : '22.1px')
     if (pages) await expect(frame.locator('[data-writing-scene="scene-29"] .nv-page')).toHaveCount(0)
     for (const id of ['scene-29', 'scene-10', 'scene-34', 'second']) {
       await page.locator('iframe').evaluate((element, sceneId) => {
@@ -37,9 +41,7 @@ for (const pages of [false, true]) {
 }
 
 test('an outline jump survives a late scroll restoration without a layout change', async ({ page }) => {
-  await page.goto(`${url}?long=1&book=1`)
-  const frame = page.frameLocator('iframe')
-  await expect(frame.locator('[data-writing-scene="first"] p').first()).toHaveCSS('font-size', '33px')
+  const frame = await openFittedManuscript(page, true)
   await page.locator('iframe').evaluate(element => {
     const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
     live.revealWritingPoint({ sceneId: 'scene-29', offset: 0, affinity: 'after' })
@@ -65,9 +67,7 @@ test('an outline jump survives a late scroll restoration without a layout change
 
 for (const navigation of ['footnote', 'comment', 'suggestion', 'proofing', 'read aloud', 'continued read aloud']) {
   test(`${navigation} navigation replaces a retained outline jump`, async ({ page }) => {
-    await page.goto(`${url}?long=1`)
-    const frame = page.frameLocator('iframe')
-    await expect(frame.locator('[data-writing-scene="first"] p').first()).toHaveCSS('font-size', '22.1px')
+    const frame = await openFittedManuscript(page, false)
     await page.locator('iframe').evaluate(element => {
       const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
       const paragraphs = live.getWritingSceneRoot('scene-28')!.querySelectorAll('p')
@@ -129,9 +129,7 @@ test('scrolling never paints an unpaginated scene before its paper appears', asy
 })
 
 test('a newer outline jump supersedes the first and manual scrolling releases its anchor', async ({ page }) => {
-  await page.goto(`${url}?long=1&book=1`)
-  const frame = page.frameLocator('iframe')
-  await expect(frame.locator('[data-writing-scene="first"] p').first()).toHaveCSS('font-size', '33px')
+  const frame = await openFittedManuscript(page, true)
   await page.locator('iframe').evaluate(element => {
     const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
     for (const sceneId of ['scene-29', 'scene-10']) live.revealWritingPoint({ sceneId, offset: 0, affinity: 'after' })
@@ -155,9 +153,7 @@ test('a newer outline jump supersedes the first and manual scrolling releases it
 })
 
 test('a retained reading position survives surrounding scenes finishing layout', async ({ page }) => {
-  await page.goto(`${url}?long=1&book=1`)
-  const frame = page.frameLocator('iframe')
-  await expect(frame.locator('[data-writing-scene="first"] p').first()).toHaveCSS('font-size', '33px')
+  await openFittedManuscript(page, true)
   const top = await page.locator('iframe').evaluate(async element => {
     const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
     const point = { sceneId: 'scene-29', offset: 50, affinity: 'after' as const }
@@ -171,9 +167,7 @@ test('a retained reading position survives surrounding scenes finishing layout',
 })
 
 test('scenes prepared ahead of scrolling have the same page groups as fully rendered scenes', async ({ page }) => {
-  await page.goto(`${url}?long=1&book=1`)
-  const frame = page.frameLocator('iframe')
-  await expect(frame.locator('[data-writing-scene="first"] p').first()).toHaveCSS('font-size', '33px')
+  await openFittedManuscript(page, true)
   const groups = await page.locator('iframe').evaluate(async element => {
     const live = (element as HTMLIFrameElement).contentWindow as unknown as EditorWindow
     const viewport = live.document.getElementById('editor-wrapper')!

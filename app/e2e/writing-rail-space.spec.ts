@@ -5,6 +5,11 @@ import { buildWritingAppearance } from './fixtures/writingAppearance'
 let url: string
 test.beforeAll(async () => { url = await buildWritingAppearance() })
 
+function singleLineHeight(element: Element): number {
+  const style = getComputedStyle(element)
+  return parseFloat(style.lineHeight) + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+}
+
 for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'page']) {
   test(`${language} ${mode} panels keep their dimensions and prose position when synopses change`, async ({ page }) => {
     const query = new URLSearchParams({ short: '', 'sceneTitle-first': 'One',
@@ -30,16 +35,19 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
         prose: Array.from(viewport.querySelectorAll('.writing-scene'), box)
       }
     })
-    await expect.poll(async () => (await layout()).rails.map(rail => rail.width)).toEqual([
-      (await rails.first().boundingBox())!.width, (await rails.first().boundingBox())!.width, (await rails.first().boundingBox())!.width
-    ])
+    await expect(rails).toHaveCount(3)
     const before = await layout()
-    for (const rail of before.rails) expect(rail.height).toBeCloseTo(before.rails[0].height, 1)
+    for (const rail of before.rails) {
+      expect(rail.width).toBeCloseTo(before.rails[0].width, 1)
+      expect(rail.height).toBeCloseTo(before.rails[0].height, 1)
+    }
     const focus = rails.first().locator('.writing-focus-scene')
     const focusOffset = () => focus.evaluate(element => element.getBoundingClientRect().top - element.parentElement!.getBoundingClientRect().top)
     const collapsedOffset = await focusOffset()
-    const collapsedGap = await focus.evaluate(element => element.getBoundingClientRect().top -
-      element.parentElement!.querySelector('button[aria-expanded]')!.getBoundingClientRect().bottom)
+    const collapsedGap = await rails.first().evaluate(rail => {
+      const toggle = rail.querySelector<HTMLButtonElement>('button[aria-expanded]')!
+      return rail.querySelector<HTMLButtonElement>('.writing-focus-scene')!.offsetTop - (toggle.offsetTop + toggle.offsetHeight)
+    })
     expect(collapsedGap).toBeLessThanOrEqual(20)
     const input = rails.first().locator('textarea')
     await rails.first().locator('button[aria-expanded]').click()
@@ -49,7 +57,7 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
       await input.fill(text)
       await expect.poll(layout).toEqual(before)
     }
-    expect(await input.evaluate(element => element.scrollHeight)).toBeGreaterThan((await input.boundingBox())!.height)
+    expect(await input.evaluate(element => element.scrollHeight - element.clientHeight)).toBeGreaterThan(0)
     await input.evaluate(element => { element.scrollTop = element.scrollHeight })
     expect(await input.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
     await rails.first().locator('button[aria-expanded]').click()
@@ -60,7 +68,8 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
 
 for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'page']) for (const zoom of [1, 2]) {
   test(`${language} ${mode} rail uses spare margin before wrapping at ${zoom * 100}%`, async ({ page }) => {
-    await page.setViewportSize({ width: 1600, height: 1000 })
+    const paperScale = mode === 'page' ? zoom : 1
+    await page.setViewportSize({ width: 1600 * paperScale, height: 1000 })
     await page.goto(`${url}?sceneTitle=${encodeURIComponent('Szene 1: Ein Morgen am Meer')}`)
     const canvas = page.frameLocator('iframe')
     const rail = canvas.locator('.writing-scene-margin').first()
@@ -73,19 +82,13 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
       editor.setPageView(mode === 'page')
       editor.setWritingZoom(zoom)
     }, { language, mode, zoom })
-    const paperScale = mode === 'page' ? zoom : 1
     await expect(rail).toHaveCSS('font-size', `${13 * zoom / paperScale}px`)
     const reserved = await rail.evaluate((element, zoom) => parseFloat(getComputedStyle(element).getPropertyValue('--nl-writing-margin-collapsed')) * zoom, zoom)
     const railWidth = async () => (await rail.boundingBox())!.width
-    if (mode === 'page') await expect.poll(railWidth).toBeGreaterThanOrEqual(reserved - 1)
-    else await expect.poll(railWidth).toBeGreaterThan(reserved + 10)
+    await expect.poll(railWidth).toBeGreaterThan(reserved + 10)
     const wide = (await rail.boundingBox())!
     const synopsis = rail.locator('button[aria-expanded]')
-    const singleLineHeight = await synopsis.evaluate(element => {
-      const style = getComputedStyle(element)
-      return parseFloat(style.lineHeight) + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
-    })
-    expect((await synopsis.boundingBox())!.height).toBeLessThanOrEqual(singleLineHeight * paperScale + 1)
+    expect((await synopsis.boundingBox())!.height).toBeLessThanOrEqual(await synopsis.evaluate(singleLineHeight) * paperScale + 1)
 
     const prose = canvas.locator('.writing-scene p').first()
     const original = (await prose.boundingBox())!
@@ -99,15 +102,14 @@ for (const language of ['de', 'ar']) for (const mode of ['ordinary', 'book', 'pa
 
     const narrowWidth = zoom === 1 ? 600 : 800
     await page.setViewportSize({ width: narrowWidth, height: 1000 })
-    if (mode === 'page') await expect.poll(railWidth).toBeLessThanOrEqual(wide.width + 1)
-    else await expect.poll(railWidth).toBeLessThan(wide.width - 10)
+    await expect.poll(railWidth).toBeLessThan(wide.width - 10)
     const narrow = (await rail.boundingBox())!
     const scene = (await canvas.locator('.writing-scene').first().boundingBox())!
     expect(narrow.x).toBeGreaterThanOrEqual(0)
     expect(narrow.x + narrow.width).toBeLessThanOrEqual(narrowWidth)
     expect(language === 'ar' ? narrow.x >= scene.x + scene.width : narrow.x + narrow.width <= scene.x).toBe(true)
     const title = rail.locator('.writing-metadata-name')
-    expect((await title.boundingBox())!.height).toBeGreaterThan(await title.evaluate(element => parseFloat(getComputedStyle(element).lineHeight)))
+    expect((await title.boundingBox())!.height).toBeGreaterThan(await title.evaluate(singleLineHeight) * paperScale + 1)
     expect(await rail.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
 
     await page.setViewportSize({ width: 500, height: 1000 })

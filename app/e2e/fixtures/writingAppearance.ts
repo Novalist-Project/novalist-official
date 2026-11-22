@@ -101,7 +101,10 @@ window.connectEditor = live => {
     tokens.getPropertyValue('--nl-accent'), tokens.getPropertyValue('--nl-surface-selected'),
     tokens.getPropertyValue('--nl-surface-card'), tokens.getPropertyValue('--nl-text'))
   pushWritingTypography(live, useSettingsStore.getState().view.effective)
-  useWritingZoomStore.subscribe(state => live.setWritingZoom(state.percent / 100))
+  useWritingZoomStore.subscribe(state => {
+    live.setWritingZoom(state.percent / 100)
+    if (state.initialized) document.documentElement.dataset.writingZoomReady = 'true'
+  })
   live.setReadingComfort(1.95, 0, .8, 0)
   live.setBookParagraphSpacing(true)
   model.setState({ live, projectionRevision: 1 })

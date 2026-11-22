@@ -70,9 +70,8 @@
     }
 
     function resizeSurface() {
-        if (document.body.matches('.unified-writing-canvas.page-view'))
-            surface.style.height = canvas.getBoundingClientRect().height + 'px';
-        else if (scale !== 1 && !document.body.classList.contains('unified-writing-canvas'))
+        if (document.body.matches('.unified-writing-canvas.page-view') ||
+            (scale !== 1 && !document.body.classList.contains('unified-writing-canvas')))
             surface.style.height = content.getBoundingClientRect().height + 'px';
     }
 
