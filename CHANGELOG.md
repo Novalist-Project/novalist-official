@@ -27,21 +27,16 @@ Nothing yet.
 
 ## [3.8.1] - 2026-11-22
 
-Nothing yet.
-
----
-
-## [3.8.0] - 2026-11-22
-
 ### Added
 
-- **Scene information toggle** — hide the scene number, stage, word count and synopsis together to give the manuscript more room. Each writing pane remembers its choice for the project.
+- **Scene information toggle** — hide the scene details beside the manuscript to give the page more room. Each writing pane remembers your choice for the project.
 
 ### Fixed
 
-- Page View keeps its paper size, margins and line breaks when zooming. Zoom stops at the writing pane’s width and adjusts when the pane narrows, so an entire line stays visible.
-- Pasted paragraphs can be styled individually and use the configured paragraph spacing. Ctrl+Delete and Ctrl+Backspace delete words in the writing editor on Windows.
-- Arabic chapter and Codex type labels, preset fields and Yes/No choices use translated names. Bold works with Ctrl+B on the Arabic keyboard layout.
+- Page View keeps the selected paper proportions, margins and line breaks as you zoom. Zoom stops when the sheet fills the writing pane and adjusts when a side panel opens, so you can read each line without scrolling sideways.
+- Pasted paragraphs use your configured paragraph spacing. You can apply a heading or style to one paragraph at a time.
+- On Windows, Ctrl+Backspace deletes the previous word and Ctrl+Delete deletes the next word in the writing editor.
+- The Arabic interface shows translated chapter labels, Codex types, preset fields and Yes/No choices. Ctrl+B applies bold with the Arabic keyboard layout.
 
 ---
 
