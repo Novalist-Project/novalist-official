@@ -20,7 +20,7 @@ taps. Use dedicated screenshot simulators and isolated Electron profiles.
 npm --prefix app run build
 npm --prefix app run build:mobile
 dotnet build Novalist.Backend/Novalist.Backend.csproj -p:NuGetAudit=false
-dotnet build Novalist.Mobile/Novalist.Mobile.csproj -f net10.0-ios27.0 \
+dotnet build Novalist.Mobile/Novalist.Mobile.csproj -f net10.0-ios \
   -p:RuntimeIdentifier=iossimulator-arm64 -p:EnableCodeSigning=true \
   -p:CodesignKey=- -p:NuGetAudit=false -m:1 -nr:false
 ```

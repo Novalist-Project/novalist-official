@@ -226,6 +226,12 @@ Steam builds receive application updates through Steam. Their GitHub application
 
 The **Mac App Store edition has no extension feature** - no gallery, no installing from a folder, and no extension loaded. An extension is code the app downloads and runs to add features, which App Store rules do not permit and the sandbox would not load. The directly downloaded builds (macOS `.dmg`, Windows, Linux) are unaffected. Projects are identical across editions. See [`docs/manual/24-extensions.md`](docs/manual/24-extensions.md).
 
+## Packages
+
+Installers for Windows, macOS, and Linux are attached to every [GitHub release](https://github.com/Drommedhar/novalist-official/releases). Novalist is also packaged by these distributions:
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/novalist.svg)](https://repology.org/project/novalist/versions)
+
 ## Building
 
 Novalist is an Electron + React front end over a bundled .NET 10 core process (`Novalist.Backend`).

@@ -38,7 +38,9 @@ jobs:
       # it on macOS with its workloads, never through an all-csproj Linux scan.
       - name: Install iOS workloads
         if: matrix.target == 'ios'
-        run: dotnet workload install maui-ios --version 10.0.401.1
+        run: |
+          dotnet new globaljson --sdk-version "${{ matrix.dotnet }}" --roll-forward disable
+          dotnet workload install maui-ios --version 10.0.401.1
 
       - name: Restore dependencies
         run: dotnet restore "${{ matrix.project }}"

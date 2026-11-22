@@ -556,7 +556,7 @@ jobs:
           # intermediate DLL or deps.json concurrently.
           dotnet publish Novalist.Mobile/Novalist.Mobile.csproj \
             -maxcpucount:1 \
-            -f net10.0-ios27.0 -c Release \
+            -f net10.0-ios -c Release \
             -p:RuntimeIdentifier=ios-arm64 \
             -p:CodesignKey="$identity" \
             -p:CodesignProvision="$profile" \
